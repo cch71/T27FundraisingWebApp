@@ -26,16 +26,6 @@ var WildRydes = window.WildRydes || {};
         AWSCognito.config.region = _config.cognito.region;
     }
 
-    userPool.client.listUsers({
-        'UserPoolId': _config.cognito.userPoolId
-    }, function(err, data) {
-        if (err) console.log(err, err.stack); // an error occurred
-        else {
-            console.log("User Data:");
-            console.log(data);           // successful response
-        }
-    });
-
     WildRydes.signOut = function signOut() {
         userPool.getCurrentUser().signOut();
     };
@@ -50,14 +40,26 @@ var WildRydes = window.WildRydes || {};
                 } else if (!session.isValid()) {
                     resolve(null);
                 } else {
-                    resolve(session.getIdToken().getJwtToken());
+                    const token = session.getIdToken().getJwtToken();
+
+                    // console.log("Getting User Pool Data");
+                    // userPool.client.listUsers({
+                    //     'UserPoolId': _config.cognito.userPoolId
+                    // }, function(err, data) {
+                    //     if (err) console.log(err, err.stack); // an error occurred
+                    //     else {
+                    //         console.log("User Data:");
+                    //         console.log(data);           // successful response
+                    //     }
+                    // });
+
+                    resolve(token);
                 }
             });
         } else {
             resolve(null);
         }
     });
-
 
     /*
      * Cognito User Pool functions
