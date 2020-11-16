@@ -2,7 +2,6 @@ import React, { useState } from "react"
 import NavBar from "../components/navbar"
 import {Card, Form, Button} from "react-bootstrap"
 import auth from "../js/auth"
-
 import { navigate } from "gatsby"
 
 export default function signon() {
