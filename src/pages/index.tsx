@@ -4,6 +4,7 @@ import NavBar from "../components/navbar"
 import Config from "../config"
 import auth from "../js/auth"
 import { navigate } from "gatsby"
+import {orderDb} from "../js/ordersdb"
 
 
 export default function home() {
@@ -29,25 +30,28 @@ export default function home() {
         console.log("Add new order");
         navigate('/order_step_1', {replace: true});
     };
+
+    const summary = orderDb.getOrderSummary();
     
     return (
         <div>
             <NavBar/>
-            <Card className="col-xs-1 d-flex justify-content-center">
-                <Card.Body>
-                    <Card.Title>Summary Information</Card.Title>
-                    <div>You have sold</div>
-                    <div>Summary X</div>
-                    <div>Summary Y</div>
-                    <div>Summary Z</div>
-                    <div>Summary R</div>
-                </Card.Body>
-            </Card>
-            <button type="button"
-                    className="btn btn-outline-light add-order-btn"
-                    onClick={addNewOrder}>
-                +
-            </button>
+            <div className="col-xs-1 d-flex justify-content-center">
+                <Card>
+                    <Card.Body>
+                        <Card.Title>Summary Information</Card.Title>
+                        <div>You have {summary.numOrders} orders.</div>
+                        <div>You have collected ${summary.totalOrderCost}</div>
+                        <div>Of that ${summary.totalDonations} are donations</div>
+                        <div>${summary.totalOrders} is from product</div>
+                    </Card.Body>
+                </Card>
+                <button type="button"
+                        className="btn btn-outline-light add-order-btn"
+                        onClick={addNewOrder}>
+                    +
+                </button>
+            </div>
         </div>
     );
 }

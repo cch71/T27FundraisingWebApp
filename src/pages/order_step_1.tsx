@@ -1,42 +1,94 @@
 import React, { useState } from "react"
 import NavBar from "../components/navbar"
-import {Card, Form, Button, ButtonGroup, Col} from "react-bootstrap"
-
+import {Card, Form, Button, ListGroup, Col} from "react-bootstrap"
+import {orderDb, NewOrder} from "../js/ordersdb"
+import OrderItem from "../components/order_item"
+import { navigate } from "gatsby"
 
 
 export default function orderStep1() {
     const [validated, setValidated] = useState(false);
 
+    let currentOrder: NewOrder = orderDb.getCurrentOrder();
+
+    const saveCurrentOrder = ()=>{
+        currentOrder.name = (document.getElementById('formCustomerName') as HTMLInputElement).value;
+        currentOrder.addr1 = (document.getElementById('formAddr1') as HTMLInputElement).value;
+        currentOrder.addr2 = (document.getElementById('formAddr2') as HTMLInputElement).value;
+        currentOrder.city = (document.getElementById('formCity') as HTMLInputElement).value;
+        currentOrder.state = (document.getElementById('formState') as HTMLInputElement).value;
+        currentOrder.zip = (document.getElementById('formZip') as HTMLInputElement).value;
+        currentOrder.specialInstructions =
+            (document.getElementById('formSpecialInstructions') as HTMLInputElement).value;
+        console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
+        orderDb.setCurrentOrder(currentOrder);
+    }
+    
     const onFormSubmission = (event: any) => {
         event.preventDefault();
         event.stopPropagation();
 
-        const form = event.currentTarget;
-
-        //const loginId = form[0].value;
-        //const pw = form[1].value;
-        //console.log(`Form submttted uid: pw: ${loginId} ${pw}`)
     }
 
     const onAddOrder = (event: any)=>{
-        const form = event.currentTarget.form;
         event.preventDefault();
         event.stopPropagation();
-        console.log(`Adding New Fundraising Order`);
+
+        saveCurrentOrder()
+
+        const btn = event.currentTarget;
+        console.log(`Add New Fundraising Order for ${btn.dataset.deliverydate}`);
+
+        //if (config.fundraiser===mulch) {
+        navigate('/add_mulch', {replace: true, state: {deliveryDate: btn.dataset.deliverydate}});
+        // ) else {
+        // navigate('/add_donations', {replace: true});
+        // }
     };
 
     const onAddDonation = (event: any)=>{
-        const form = event.currentTarget.form;
         event.preventDefault();
         event.stopPropagation();
         console.log(`Adding New Donation`);
+
+        saveCurrentOrder()
+        navigate('/add_donations', {replace: true});
     };
 
+    const doesSubmitGetEnabled = (event: any)=>{
+        if (event.currentTarget.value) {
+            (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = false;
+        } else {
+            (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = true;
+        }
+    };
+
+    let totalDue = 0.0;
+    const recalculateTotal = ()=> {
+        totalDue = 0.0;
+        for (let foundOrder of currentOrder.orderItems.values()) {
+            console.log(`Found Order: ${foundOrder.totalDue}`);
+            totalDue += foundOrder.totalDue;
+        }
+        const totElm = document.getElementById('orderTotalDue');
+        if (null!==totElm) {
+            totElm.innerText = `Total Due: $${totalDue}`;
+        }
+    }
     
-    /* <Form.Text className="text-muted">
-       If you don't know what yours is check with TODO: Email
-       </Form.Text>
-     */
+    const ordersByDeliveryBtns = []
+    for (const deliveryDate of orderDb.deliveryDates()) {
+        const onClickHandler = ("donation" === deliveryDate)? onAddDonation : onAddOrder;
+        
+        ordersByDeliveryBtns.push(
+            <ListGroup.Item key={deliveryDate}>
+                <OrderItem onClick={onClickHandler} deliveryDate={deliveryDate} onDelete={recalculateTotal} />
+            </ListGroup.Item>
+        );
+    }
+
+    recalculateTotal();
+    
     return (
         <div>
             <NavBar/>
@@ -48,58 +100,89 @@ export default function orderStep1() {
                             <Form.Row>
                                 <Form.Group as={Col} md="12" controlId="formCustomerName">
                                     <Form.Label>Customer Name</Form.Label>
-                                    <Form.Control required type="text" placeholder="Enter Customer Name" />
+                                    <Form.Control required type="text" placeholder="Enter Customer Name"
+                                                  onInput={doesSubmitGetEnabled}
+                                                  defaultValue={currentOrder.name}/>
+                                    <Form.Text className="text-muted">* Required</Form.Text>
+                                </Form.Group>
+                            </Form.Row>
+                            <Form.Row>
+                                <Form.Group as={Col} md="4" controlId="formNeighborhood">
+                                    <Form.Label>Neighborhood</Form.Label>
+                                    <Form.Control as="select">
+                                        <option>Round Rock</option>
+                                        <option>Forest Creek</option>
+                                    </Form.Control>
+                                </Form.Group>
+                                <Form.Group as={Col} md="4" controlId="formPhone">
+                                    <Form.Label>Phone</Form.Label>
+                                    <Form.Control type="text" placeholder="Phone"/>
+                                </Form.Group>
+                                <Form.Group as={Col} md="4" controlId="formEmail">
+                                    <Form.Label>Email</Form.Label>
+                                    <Form.Control type="text" placeholder="Email"/>
                                 </Form.Group>
                             </Form.Row>
                             <Form.Row>
                                 <Form.Group as={Col} md="6" controlId="formAddr1">
                                     <Form.Label>Address 1</Form.Label>
-                                    <Form.Control required type="text" placeholder="Address 1" />
+                                    <Form.Control required type="text" placeholder="Address 1" defaultValue={currentOrder.addr1}/>
                                 </Form.Group>
 
                                 <Form.Group as={Col} md="6" controlId="formAddr2">
                                     <Form.Label>Address 2</Form.Label>
-                                    <Form.Control type="text" placeholder="Address 2" />
+                                    <Form.Control type="text" placeholder="Address 2" defaultValue={currentOrder.addr2} />
                                 </Form.Group>
                             </Form.Row>
-
                             <Form.Row>
                                 <Form.Group as={Col} md="7" controlId="formCity">
                                     <Form.Label>City</Form.Label>
-                                    <Form.Control required type="text" placeholder="City" />
+                                    <Form.Control required type="text" placeholder="City" defaultValue={currentOrder.city} />
                                 </Form.Group>
 
                                 <Form.Group as={Col} md="2" controlId="formState">
                                     <Form.Label>State</Form.Label>
-                                    <Form.Control type="text" placeholder="State" defaultValue="TX" />
+                                    <Form.Control type="text" placeholder="State" defaultValue={currentOrder.state} />
                                 </Form.Group>
 
                                 <Form.Group as={Col} md="3" controlId="formZip">
                                     <Form.Label>Zip</Form.Label>
-                                    <Form.Control type="text" placeholder="Zip" />
+                                    <Form.Control type="text" placeholder="Zip" defaultValue={currentOrder.zip} />
                                 </Form.Group>
                             </Form.Row>
-
+                            
                             <Form.Row>
                                 <Form.Group as={Col} md="12" controlId="formSpecialInstructions">
                                     <Form.Label>Special Instructions</Form.Label>
-                                    <Form.Control as="textarea" rows={4} />
+                                    <Form.Control as="textarea" rows={4} defaultValue={currentOrder.specialInstructions} />
+                                </Form.Group>
+                            </Form.Row>
+                            
+                            <ListGroup>
+                                {ordersByDeliveryBtns}
+                            </ListGroup>
+
+                            <Form.Row>
+                                <Form.Group as={Col} md="6" controlId="formCashAmount" >
+                                    <Form.Label>Amount paid with cash</Form.Label>
+                                    <Form.Control required type="number"
+                                                  placeholder="Amount paid with cash" />
+                                </Form.Group>
+                                <Form.Group as={Col} md="6" controlId="formCheckAmount" >
+                                    <Form.Label>Amount paid with check</Form.Label>
+                                    <Form.Control required type="number"
+                                                  placeholder="Amount paid with check" />
                                 </Form.Group>
                             </Form.Row>
 
-                            <ButtonGroup aria-label="Basic example">
-                                <Button variant="primary" className="mr-2" type="button" onClick={onAddDonation}>
-                                    Add Donation
-                                </Button>
 
-                                <Button variant="primary" type="button" onClick={onAddOrder}>
-                                    Add Order
-                                </Button>
+                            <div>Total Paid: $Calculation TBD</div>
+                            <div id="orderTotalDue">Total Due: ${totalDue}</div>
 
-                                <Button variant="primary" className="ml-2" type="submit">
-                                    Submit
-                                </Button>
-                            </ButtonGroup>
+
+                            <Button variant="primary" className="my-2 float-right" type="submit" disabled id="formOrderSubmit">
+                                Submit
+                            </Button>
                         </Form>
                     </Card.Body>
                 </Card>

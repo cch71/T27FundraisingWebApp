@@ -4,21 +4,40 @@
 //
 interface OrderItemIf {
     totalDue: number;
-    kind: String;
+    deliveryDate?: string
+    kind: string;
 }
 
+/////////////////////////////////////////////
+//
+class NewOrder {
+    name?: string;
+    addr1?: string;
+    addr2?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    specialInstructions?: string;
+    orderItems: Map<string, OrderItemIf>; //TODO: Don't want to lock in yet
+
+
+    constructor() {
+        this.state = "TX";
+        this.orderItems = new Map<string, OrderItemIf>();
+    }
+}
 
 /////////////////////////////////////////////
 //
 interface OrderIf {
     id: number;
-    name: String;
-    addr1: String;
-    addr2?: String;
-    city: String;
-    state: String;
-    zip: String;
-    specialInstructions?: String;
+    name: string;
+    addr1: string;
+    addr2?: string;
+    city: string;
+    state: string;
+    zip: string;
+    specialInstructions?: string;
     totalDue: number;
     orderItems?: Array<OrderItemIf>; //TODO: Don't want to lock in yet
 }
@@ -26,13 +45,15 @@ interface OrderIf {
 /////////////////////////////////////////////
 //
 class OrderDb {
-    private db_: Array<OrderIf>;
+    private orders_: Array<OrderIf>;
+    private deliveryDates_: any;
+    private currentOrder_: NewOrder = new NewOrder();
 
     constructor() {
         const fakeOrder1 = {kind: 'mulch', bags: 20, toSpread: 20, totalDue: 20.40};
         const fakeOrder2 = {kind: 'donation', totalDue: 42.00};
 
-        this.db_ = [
+        this.orders_ = [
             {
                 id: 23, name: "MeMa Jons", addr1: '2020 I Rd',
                 city: "Round Rock", state: "TX", zip: "78641", totalDue: 0,
@@ -72,7 +93,7 @@ class OrderDb {
             }
         ];
 
-        for (const order of this.db_) {
+        for (const order of this.orders_) {
             let totalDue = 0;
             if (order.orderItems) {
                 for (const item of order.orderItems) {
@@ -82,16 +103,90 @@ class OrderDb {
             order.totalDue = totalDue;
         }
 
+        this.deliveryDates_ = [
+            {
+                date: '3/2/21',
+                disabledDate: '3/4/21'
+            },{
+                date: '4/2/21',
+                disabledDate: '4/4/21'
+            }];
+
     }
 
     /////////////////////////////////////////
     //
-    getOrders(): Array<OrderIf> {
+    getCurrentFundraiserConfig(): any {
+        //For Mulch
+        return({
+            pricePerBag: 5.00,
+            pricePerSpread: 3.00
+        });
+    }
 
-        return this.db_;
+
+    /////////////////////////////////////////
+    //
+    setCurrentOrder(order: NewOrder) {
+        this.currentOrder_ = order;
+    }
+
+    /////////////////////////////////////////
+    //
+    getCurrentOrder(): NewOrder {
+        return this.currentOrder_;
+    }
+
+    /////////////////////////////////////////
+    //
+    // Todo need to define summary type
+    getOrderSummary(): any  {
+        // Todo save the summary so we don't keep calc
+        let totalDue = 0.0;
+        let totalDonations = 0.0;
+        let totalOrders = 0.0;
+        for (const order of this.orders_) {
+            totalDue += order.totalDue;
+            if (order.orderItems) {
+                for (const item of order.orderItems) {
+                    if ('donation'===item.kind) {
+                        totalDonations += item.totalDue;
+                    } else {
+                        totalOrders += item.totalDue;
+                    }
+                }
+            }
+        }
+
+        return({
+            totalOrderCost: totalDue,
+            numOrders: this.orders_.length,
+            totalDonations: totalDonations,
+            totalOrders: totalOrders
+        });
+        
+    }
+    
+    /////////////////////////////////////////
+    //
+    *deliveryDates(): IterableIterator<string> {
+        
+        for (let deliveryDate of this.deliveryDates_) {
+            //if delivery date < disabledDate
+            yield deliveryDate.date;
+        }
+        yield 'donation';
+    }
+    
+    /////////////////////////////////////////
+    //
+    *orders(): IterableIterator<OrderIf> {
+        for (let order of this.orders_) {
+            yield order;
+        }
     }
 }
 
 const orderDb = new OrderDb()
 
-export {orderDb, OrderIf};
+export {orderDb, OrderIf, NewOrder, OrderItemIf};
