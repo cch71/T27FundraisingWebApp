@@ -1,3 +1,4 @@
+import currency from "currency.js"
 
 
 /////////////////////////////////////////////
@@ -157,12 +158,13 @@ class OrderDb {
                 }
             }
         }
-
+        const USD = (value: number) => currency(value, { symbol: "$", precision: 2 });
+        
         return({
-            totalOrderCost: totalDue,
+            totalOrderCost: USD(totalDue).format(),
             numOrders: this.orders_.length,
-            totalDonations: totalDonations,
-            totalOrders: totalOrders
+            totalDonations: USD(totalDonations).format(),
+            totalOrders: USD(totalOrders).format()
         });
         
     }

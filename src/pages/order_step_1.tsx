@@ -4,10 +4,12 @@ import {Card, Form, Button, ListGroup, Col} from "react-bootstrap"
 import {orderDb, NewOrder} from "../js/ordersdb"
 import OrderItem from "../components/order_item"
 import { navigate } from "gatsby"
+import currency from "currency.js"
 
 
 export default function orderStep1() {
     const [validated, setValidated] = useState(false);
+    const USD = (value: number) => currency(value, { symbol: "$", precision: 2 });
 
     let currentOrder: NewOrder = orderDb.getCurrentOrder();
 
@@ -72,7 +74,7 @@ export default function orderStep1() {
         }
         const totElm = document.getElementById('orderTotalDue');
         if (null!==totElm) {
-            totElm.innerText = `Total Due: $${totalDue}`;
+            totElm.innerText = `Total Due: ${USD(totalDue).format()}`;
         }
     }
     
@@ -177,7 +179,7 @@ export default function orderStep1() {
 
 
                             <div>Total Paid: $Calculation TBD</div>
-                            <div id="orderTotalDue">Total Due: ${totalDue}</div>
+                            <div id="orderTotalDue">Total Due: {USD(totalDue).format()}</div>
 
 
                             <Button variant="primary" className="my-2 float-right" type="submit" disabled id="formOrderSubmit">

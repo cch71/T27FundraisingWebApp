@@ -1,7 +1,7 @@
 import React from "react"
 import {Button} from "react-bootstrap"
 import {orderDb} from "../js/ordersdb"
-
+import currency from "currency.js"
 
 export default class OrderItem extends React.Component {
     // constructor(props) {
@@ -19,6 +19,8 @@ export default class OrderItem extends React.Component {
         const newTag = `new-${deliveryDate}`;
         const foundTag = `found-${deliveryDate}`
         
+        const USD = (value) => currency(value, { symbol: "$", precision: 2 });
+
         const onDeleteOrder = (event)=>{
             const btn = event.currentTarget;
             
@@ -39,7 +41,7 @@ export default class OrderItem extends React.Component {
         const foundOrderStyle = (undefined!==foundOrder)? {display: 'block'}:{display: 'none'};
         let orderTotalStr = '';
         if (undefined !== foundOrder) {
-            orderTotalStr = `${label} Cost: $${foundOrder.totalDue} `;
+            orderTotalStr = `${label} Cost: ${USD(foundOrder.totalDue).format()} `;
         }
         
         return(

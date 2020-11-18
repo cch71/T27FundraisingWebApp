@@ -41,9 +41,9 @@ export default function home() {
                     <Card.Body>
                         <Card.Title>Summary Information</Card.Title>
                         <div>You have {summary.numOrders} orders.</div>
-                        <div>You have collected ${summary.totalOrderCost}</div>
-                        <div>Of that ${summary.totalDonations} are donations</div>
-                        <div>${summary.totalOrders} is from product</div>
+                        <div>You have collected {summary.totalOrderCost}</div>
+                        <div>Of that {summary.totalDonations} are donations</div>
+                        <div>{summary.totalOrders} is from product</div>
                     </Card.Body>
                 </Card>
                 <button type="button"
