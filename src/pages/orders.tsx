@@ -6,7 +6,7 @@ import {orderDb, OrderIf} from "../js/ordersdb"
 import currency from "currency.js"
 
 export default function orders() {
-    const USD = (value: number) => currency(value, { symbol: "$", precision: 2 });
+    const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
     const addNewOrder=()=>{
         console.log("Add new order");
@@ -20,7 +20,7 @@ export default function orders() {
     for (const order of orderDb.orders()) {
         orders.push(
             <ListGroup horizontal='lg' onClick={()=>{editOrder(order)}} key={order.id} className='my-2'>
-                <ListGroup.Item style={{width: '150px'}}>{order.name}</ListGroup.Item>
+                <ListGroup.Item style={{width: '150px'}}>{order.firstName}, {order.lastName}</ListGroup.Item>
                 <ListGroup.Item style={{width: '400px'}}>{order.addr1} {order.addr2} {order.city} {order.state} {order.zip}</ListGroup.Item>
                 <ListGroup.Item style={{width: '150px'}}>{USD(order.totalDue).format()}</ListGroup.Item>
                 <ListGroup.Item>

@@ -14,7 +14,7 @@ export default class OrderItem extends React.Component {
         const label = ("donation" === deliveryDate)? 'Donation' : `Order for ${deliveryDate}`;
 
         const currentOrder = orderDb.getCurrentOrder();
-        const foundOrder = currentOrder.orderItems.get(deliveryDate);
+        const foundOrder = currentOrder.deliverables.get(deliveryDate);
 
         const newTag = `new-${deliveryDate}`;
         const foundTag = `found-${deliveryDate}`
@@ -26,7 +26,7 @@ export default class OrderItem extends React.Component {
             
             console.log(`Deleting Order for ${btn.dataset.deliverydate}`);
 
-            currentOrder.orderItems.delete(btn.dataset.deliverydate);
+            currentOrder.deliverables.delete(btn.dataset.deliverydate);
             document.getElementById(newTag).style.display = "block";
             document.getElementById(foundTag).style.display = "none";
 

@@ -1,30 +1,39 @@
 import currency from "currency.js"
 
-
 /////////////////////////////////////////////
 //
-interface OrderItemIf {
-    totalDue: number;
-    deliveryDate?: string
+interface DeliverableOrderIf {
+    totalDue: currency;
+    deliveryDate?: string;
     kind: string;
+    items?: Map<string, number> //productId, numOrders
 }
 
 /////////////////////////////////////////////
 //
 class NewOrder {
-    name?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    email?: string;
     addr1?: string;
     addr2?: string;
     city?: string;
     state?: string;
     zip?: string;
+    neighborhood: string;
     specialInstructions?: string;
-    orderItems: Map<string, OrderItemIf>; //TODO: Don't want to lock in yet
+    cashPaid: currency;
+    checkPaid: currency;
+    deliverables: Map<string, DeliverableOrderIf>; //TODO: Don't want to lock in yet
 
 
-    constructor() {
+    constructor(neighborhood: string) {
         this.state = "TX";
-        this.orderItems = new Map<string, OrderItemIf>();
+        this.cashPaid = currency(0.0);
+        this.checkPaid = currency(0.0);
+        this.neighborhood = neighborhood;
+        this.deliverables = new Map<string, DeliverableOrderIf>();
     }
 }
 
@@ -32,97 +41,121 @@ class NewOrder {
 //
 interface OrderIf {
     id: number;
-    name: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    email?: string;
     addr1: string;
     addr2?: string;
     city: string;
     state: string;
     zip: string;
+    neighborhood: string;
     specialInstructions?: string;
-    totalDue: number;
-    orderItems?: Array<OrderItemIf>; //TODO: Don't want to lock in yet
+    cashPaid?: currency;
+    checkPaid?: currency;
+    totalDue: currency;
+    orderItems?: Array<DeliverableOrderIf>; //TODO: Don't want to lock in yet
 }
 
 /////////////////////////////////////////////
 //
 class OrderDb {
     private orders_: Array<OrderIf>;
-    private deliveryDates_: any;
-    private currentOrder_: NewOrder = new NewOrder();
+    private readonly fundraiserConfig_: any;
+    private currentOrder_: NewOrder;
 
     constructor() {
-        const fakeOrder1 = {kind: 'mulch', bags: 20, toSpread: 20, totalDue: 20.40};
-        const fakeOrder2 = {kind: 'donation', totalDue: 42.00};
+        this.fundraiserConfig_ = {
+            description: "Mulch",
+            kind: 'mulch',
+            products: {
+                bags: {
+                    costDescription: "Price Per Bag",
+                    cost: currency(5.00),
+                    label: "Number of Bags"
+                },
+                spreading: {
+                    costDescription: "Price Per Bag To Spread",
+                    cost: currency(3.00),
+                    label: "Bags to Spread"
+                }
+            },
+            neighborhoods: ["Round Rock", "Forest Creek"],
+            deliveryDates: [
+                {
+                date: '3/2/21',
+                    disabledDate: '3/4/21'
+                },{
+                    date: '4/2/21',
+                    disabledDate: '4/4/21'
+                }
+            ]
+        };
+
+        const defaultHood = this.fundraiserConfig_.neighborhoods[0];
+        this.currentOrder_ = new NewOrder(defaultHood);
+
+        const fakeOrder1 = {kind: 'mulch', bags: 20, toSpread: 20, totalDue: currency(20.40)};
+        const fakeOrder2 = {kind: 'donation', totalDue: currency(42.00)};
 
         this.orders_ = [
             {
-                id: 23, name: "MeMa Jons", addr1: '2020 I Rd',
-                city: "Round Rock", state: "TX", zip: "78641", totalDue: 0,
-                orderItems: [fakeOrder1]
+                id: 23, firstName: "MeMa", lastName:"Jons", addr1: '2020 I Rd',
+                city: "Round Rock", state: "TX", zip: "78641", totalDue: currency(0.0),
+                orderItems: [fakeOrder1], neighborhood: defaultHood
             },{
-                id: 33, name: "La La", addr1: '1924 e ln',
-                city: "Round Rock", state: "TX", zip: "78641", totalDue: 0,
-                orderItems: [fakeOrder1]
+                id: 33, firstName: "La", lastName: "La", addr1: '1924 e ln',
+                city: "Round Rock", state: "TX", zip: "78641", totalDue: currency(0.0),
+                orderItems: [fakeOrder1], neighborhood: defaultHood
             },{
-                id: 43, name: "The Royals", addr1: '221b Baker Street', addr2: "Loft C",
-                city: "Round Rock", state: "TX", zip: "78641", totalDue: 0,
-                orderItems: [fakeOrder1]
+                id: 43, firstName: "The", lastName:"Royals", addr1: '221b Baker Street',
+                addr2: "Loft C",
+                city: "Round Rock", state: "TX", zip: "78641", totalDue: currency(0.0),
+                orderItems: [fakeOrder1], neighborhood: defaultHood
             },{
-                id: 53, name: "Road Trippers", addr1: 'f323 cr',
-                city: "Round Rock", state: "TX", zip: "78641", totalDue: 0,
-                orderItems: [fakeOrder2]
+                id: 53, firstName: "Road", lastName:"Trippers", addr1: 'f323 cr',
+                city: "Round Rock", state: "TX", zip: "78641", totalDue: currency(0.0),
+                orderItems: [fakeOrder2], neighborhood: defaultHood
             },{
-                id: 63, name: "I Known Know", addr1: '234 sfd',
-                city: "Round Rock", state: "TX", zip: "78641", totalDue: 0,
-                orderItems: [fakeOrder1, fakeOrder2]
+                id: 63, firstName: "I Known", lastName:"Know", addr1: '234 sfd',
+                city: "Round Rock", state: "TX", zip: "78641", totalDue: currency(0.0),
+                orderItems: [fakeOrder1, fakeOrder2], neighborhood: defaultHood
             },{
-                id: 73, name: "The Jones", addr1: '567 wer',
-                city: "Round Rock", state: "TX", zip: "78641", totalDue: 0,
-                orderItems: [fakeOrder1]
+                id: 73, firstName: "The", lastName: "Jones", addr1: '567 wer',
+                city: "Round Rock", state: "TX", zip: "78641", totalDue: currency(0.0),
+                orderItems: [fakeOrder1], neighborhood: defaultHood
             },{
-                id: 83, name: "The Blakes", addr1: '243 sdf',
-                city: "Round Rock", state: "TX", zip: "78641", totalDue: 0,
-                orderItems: [fakeOrder1]
+                id: 83, firstName: "The", lastName:"Blakes", addr1: '243 sdf',
+                city: "Round Rock", state: "TX", zip: "78641", totalDue: currency(0.0),
+                orderItems: [fakeOrder1], neighborhood: defaultHood
             },{
-                id: 93, name: "The Bonds", addr1: '4564 sf',
-                city: "Round Rock", state: "TX", zip: "78641", totalDue: 0,
-                orderItems: [fakeOrder1, fakeOrder2]
+                id: 93, firstName: "The", lastName:"Bonds", addr1: '4564 sf',
+                city: "Round Rock", state: "TX", zip: "78641", totalDue: currency(0.0),
+                orderItems: [fakeOrder1, fakeOrder2], neighborhood: defaultHood
             },{
-                id: 94, name: "Spectre", addr1: '243 ewre',
-                city: "Round Rock", state: "TX", zip: "78641", totalDue: 0,
-                orderItems: [fakeOrder1]
+                id: 94, firstName: "a", lastName: "Spectre", addr1: '243 ewre',
+                city: "Round Rock", state: "TX", zip: "78641", totalDue: currency(0.0),
+                orderItems: [fakeOrder1], neighborhood: defaultHood
             }
         ];
 
         for (const order of this.orders_) {
-            let totalDue = 0;
+            let totalDue = currency(0.0);
             if (order.orderItems) {
                 for (const item of order.orderItems) {
-                    totalDue += item.totalDue;
+                    totalDue = totalDue.add(item.totalDue);
                 }
             }
             order.totalDue = totalDue;
         }
-
-        this.deliveryDates_ = [
-            {
-                date: '3/2/21',
-                disabledDate: '3/4/21'
-            },{
-                date: '4/2/21',
-                disabledDate: '4/4/21'
-            }];
 
     }
 
     /////////////////////////////////////////
     //
     getCurrentFundraiserConfig(): any {
-        //For Mulch
-        return({
-            pricePerBag: 5.00,
-            pricePerSpread: 3.00
-        });
+        return this.fundraiserConfig_;
     }
 
 
@@ -143,28 +176,28 @@ class OrderDb {
     // Todo need to define summary type
     getOrderSummary(): any  {
         // Todo save the summary so we don't keep calc
-        let totalDue = 0.0;
-        let totalDonations = 0.0;
-        let totalOrders = 0.0;
+        let totalDue = currency(0.0);
+        let totalDonationsAmmount = currency(0.0);
+        let totalOrdersAmount = currency(0.0);
         for (const order of this.orders_) {
-            totalDue += order.totalDue;
+            totalDue = totalDue.add(order.totalDue);
             if (order.orderItems) {
                 for (const item of order.orderItems) {
                     if ('donation'===item.kind) {
-                        totalDonations += item.totalDue;
+                        totalDonationsAmmount = totalDonationsAmmount.add(item.totalDue);
                     } else {
-                        totalOrders += item.totalDue;
+                        totalOrdersAmount = totalOrdersAmount.add(item.totalDue);
                     }
                 }
             }
         }
-        const USD = (value: number) => currency(value, { symbol: "$", precision: 2 });
+        const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
         
         return({
             totalOrderCost: USD(totalDue).format(),
             numOrders: this.orders_.length,
-            totalDonations: USD(totalDonations).format(),
-            totalOrders: USD(totalOrders).format()
+            totalDonations: USD(totalDonationsAmmount).format(),
+            totalOrders: USD(totalOrdersAmount).format()
         });
         
     }
@@ -173,7 +206,7 @@ class OrderDb {
     //
     *deliveryDates(): IterableIterator<string> {
         
-        for (let deliveryDate of this.deliveryDates_) {
+        for (let deliveryDate of this.getCurrentFundraiserConfig().deliveryDates) {
             //if delivery date < disabledDate
             yield deliveryDate.date;
         }
@@ -191,4 +224,4 @@ class OrderDb {
 
 const orderDb = new OrderDb()
 
-export {orderDb, OrderIf, NewOrder, OrderItemIf};
+export {orderDb, OrderIf, NewOrder, DeliverableOrderIf};

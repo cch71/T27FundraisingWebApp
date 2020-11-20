@@ -2,19 +2,22 @@ import React, { useState } from "react"
 import NavBar from "../components/navbar"
 import {Card, Form, Button, ListGroup, Col} from "react-bootstrap"
 import {orderDb, NewOrder} from "../js/ordersdb"
-import OrderItem from "../components/order_item"
+import OrderItem from "../components/order_item" //TODO: Rename DeliveryOrderSummary
 import { navigate } from "gatsby"
 import currency from "currency.js"
 
 
 export default function orderStep1() {
     const [validated, setValidated] = useState(false);
-    const USD = (value: number) => currency(value, { symbol: "$", precision: 2 });
+    const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
     let currentOrder: NewOrder = orderDb.getCurrentOrder();
 
     const saveCurrentOrder = ()=>{
-        currentOrder.name = (document.getElementById('formCustomerName') as HTMLInputElement).value;
+        currentOrder.firstName = (document.getElementById('formFirstName') as HTMLInputElement).value;
+        currentOrder.lastName = (document.getElementById('formLastName') as HTMLInputElement).value;
+        currentOrder.email = (document.getElementById('formEmail') as HTMLInputElement).value;
+        currentOrder.phone = (document.getElementById('formPhone') as HTMLInputElement).value;
         currentOrder.addr1 = (document.getElementById('formAddr1') as HTMLInputElement).value;
         currentOrder.addr2 = (document.getElementById('formAddr2') as HTMLInputElement).value;
         currentOrder.city = (document.getElementById('formCity') as HTMLInputElement).value;
@@ -22,10 +25,14 @@ export default function orderStep1() {
         currentOrder.zip = (document.getElementById('formZip') as HTMLInputElement).value;
         currentOrder.specialInstructions =
             (document.getElementById('formSpecialInstructions') as HTMLInputElement).value;
+        currentOrder.cashPaid =
+            currency((document.getElementById('formCashAmount') as HTMLInputElement).value);
+        currentOrder.checkPaid =
+            currency((document.getElementById('formCheckAmount') as HTMLInputElement).value);
         console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
         orderDb.setCurrentOrder(currentOrder);
     }
-    
+
     const onFormSubmission = (event: any) => {
         event.preventDefault();
         event.stopPropagation();
@@ -42,7 +49,7 @@ export default function orderStep1() {
         console.log(`Add New Fundraising Order for ${btn.dataset.deliverydate}`);
 
         //if (config.fundraiser===mulch) {
-        navigate('/add_mulch', {replace: true, state: {deliveryDate: btn.dataset.deliverydate}});
+        navigate('/add_products_order', {replace: true, state: {deliveryDate: btn.dataset.deliverydate}});
         // ) else {
         // navigate('/add_donations', {replace: true});
         // }
@@ -65,23 +72,23 @@ export default function orderStep1() {
         }
     };
 
-    let totalDue = 0.0;
+    let totalDue = currency(0.0);
     const recalculateTotal = ()=> {
-        totalDue = 0.0;
-        for (let foundOrder of currentOrder.orderItems.values()) {
-            console.log(`Found Order: ${foundOrder.totalDue}`);
-            totalDue += foundOrder.totalDue;
+        totalDue = currency(0.0);
+        for (let deliverable of currentOrder.deliverables.values()) {
+            console.log(`Found Order: ${deliverable.totalDue}`);
+            totalDue = totalDue.add(deliverable.totalDue);
         }
         const totElm = document.getElementById('orderTotalDue');
         if (null!==totElm) {
             totElm.innerText = `Total Due: ${USD(totalDue).format()}`;
         }
     }
-    
+
     const ordersByDeliveryBtns = []
     for (const deliveryDate of orderDb.deliveryDates()) {
         const onClickHandler = ("donation" === deliveryDate)? onAddDonation : onAddOrder;
-        
+
         ordersByDeliveryBtns.push(
             <ListGroup.Item key={deliveryDate}>
                 <OrderItem onClick={onClickHandler} deliveryDate={deliveryDate} onDelete={recalculateTotal} />
@@ -90,7 +97,12 @@ export default function orderStep1() {
     }
 
     recalculateTotal();
-    
+
+    const neighborhoods=[];
+    for (let hood of orderDb.getCurrentFundraiserConfig().neighborhoods) {
+        neighborhoods.push(<option>{hood}</option>);
+    }
+
     return (
         <div>
             <NavBar/>
@@ -100,11 +112,18 @@ export default function orderStep1() {
                         <Card.Title>Customer Information</Card.Title>
                         <Form noValidate validated={validated} onSubmit={onFormSubmission}>
                             <Form.Row>
-                                <Form.Group as={Col} md="12" controlId="formCustomerName">
-                                    <Form.Label>Customer Name</Form.Label>
-                                    <Form.Control required type="text" placeholder="Enter Customer Name"
+                                <Form.Group as={Col} md="6" controlId="formFirstName">
+                                    <Form.Label>First Name</Form.Label>
+                                    <Form.Control required type="text" placeholder="First Name"
                                                   onInput={doesSubmitGetEnabled}
-                                                  defaultValue={currentOrder.name}/>
+                                                  defaultValue={currentOrder.firstName}/>
+                                    <Form.Text className="text-muted">* Required</Form.Text>
+                                </Form.Group>
+                                <Form.Group as={Col} md="6" controlId="formLastName">
+                                    <Form.Label>Last Name</Form.Label>
+                                    <Form.Control required type="text" placeholder="Last Name"
+                                                  onInput={doesSubmitGetEnabled}
+                                                  defaultValue={currentOrder.lastName}/>
                                     <Form.Text className="text-muted">* Required</Form.Text>
                                 </Form.Group>
                             </Form.Row>
@@ -112,17 +131,18 @@ export default function orderStep1() {
                                 <Form.Group as={Col} md="4" controlId="formNeighborhood">
                                     <Form.Label>Neighborhood</Form.Label>
                                     <Form.Control as="select">
-                                        <option>Round Rock</option>
-                                        <option>Forest Creek</option>
+                                        {neighborhoods}
                                     </Form.Control>
                                 </Form.Group>
                                 <Form.Group as={Col} md="4" controlId="formPhone">
                                     <Form.Label>Phone</Form.Label>
-                                    <Form.Control type="text" placeholder="Phone"/>
+                                    <Form.Control type="text" placeholder="Phone"
+                                                  defaultValue={currentOrder.phone} />
                                 </Form.Group>
                                 <Form.Group as={Col} md="4" controlId="formEmail">
                                     <Form.Label>Email</Form.Label>
-                                    <Form.Control type="text" placeholder="Email"/>
+                                    <Form.Control type="text" placeholder="Email"
+                                                  defaultValue={currentOrder.email} />
                                 </Form.Group>
                             </Form.Row>
                             <Form.Row>
@@ -152,14 +172,14 @@ export default function orderStep1() {
                                     <Form.Control type="text" placeholder="Zip" defaultValue={currentOrder.zip} />
                                 </Form.Group>
                             </Form.Row>
-                            
+
                             <Form.Row>
                                 <Form.Group as={Col} md="12" controlId="formSpecialInstructions">
                                     <Form.Label>Special Instructions</Form.Label>
                                     <Form.Control as="textarea" rows={4} defaultValue={currentOrder.specialInstructions} />
                                 </Form.Group>
                             </Form.Row>
-                            
+
                             <ListGroup>
                                 {ordersByDeliveryBtns}
                             </ListGroup>
@@ -168,12 +188,14 @@ export default function orderStep1() {
                                 <Form.Group as={Col} md="6" controlId="formCashAmount" >
                                     <Form.Label>Amount paid with cash</Form.Label>
                                     <Form.Control required type="number"
-                                                  placeholder="Amount paid with cash" />
+                                                  placeholder="Amount paid with cash"
+                                                  defaultValue={currentOrder.cashPaid.toString()} />
                                 </Form.Group>
                                 <Form.Group as={Col} md="6" controlId="formCheckAmount" >
                                     <Form.Label>Amount paid with check</Form.Label>
                                     <Form.Control required type="number"
-                                                  placeholder="Amount paid with check" />
+                                                  placeholder="Amount paid with check"
+                                                  defaultValue={currentOrder.checkPaid.toString()}  />
                                 </Form.Group>
                             </Form.Row>
 

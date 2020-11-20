@@ -1,7 +1,8 @@
 import React, { useState } from "react"
 import {Card, Form, Button, Col} from "react-bootstrap"
-import {orderDb, NewOrder, OrderItemIf} from "../js/ordersdb"
+import {orderDb, NewOrder, DeliverableOrderIf} from "../js/ordersdb"
 import { navigate } from "gatsby"
+import currency from "currency.js"
 
 
 export default function addDonation() {
@@ -25,18 +26,18 @@ export default function addDonation() {
         event.preventDefault();
         event.stopPropagation();
 
-        const donationOrder: OrderItemIf = {
-            totalDue: parseFloat((document.getElementById('formDonationAmount') as HTMLInputElement).value),
+        const donationOrder: DeliverableOrderIf = {
+            totalDue: currency((document.getElementById('formDonationAmount') as HTMLInputElement).value),
             kind: 'donation'
         };
 
-        currentOrder.orderItems.set('donation', donationOrder);
+        currentOrder.deliverables.set('donation', donationOrder);
 
         navigate('/order_step_1', {replace: true});
     }
 
-    let donationAmt = 0.0;
-    let currentDonation = currentOrder.orderItems.get('donation');
+    let donationAmt = currency(0.0);
+    let currentDonation = currentOrder.deliverables.get('donation');
     if (undefined!==currentDonation) {
         donationAmt=currentDonation.totalDue;
     }
@@ -51,7 +52,7 @@ export default function addDonation() {
                             <Form.Group as={Col} md="12" controlId="formDonationAmount">
                                 <Form.Control required type="number"
                                               placeholder="Enter Donation Amount"
-                                              defaultValue={donationAmt}
+                                              defaultValue={donationAmt.toString()}
                                               onInput={doesSubmitGetEnabled} />
                             </Form.Group>
                         </Form.Row>
@@ -59,7 +60,7 @@ export default function addDonation() {
                             Back
                         </Button>
                         <Button variant="primary" className="my-2 float-right" type="submit"
-                                disabled={0===donationAmt} id="formDonationSubmit">
+                                disabled={0.0===donationAmt.value} id="formDonationSubmit">
                             Add
                         </Button>
                     </Form>
