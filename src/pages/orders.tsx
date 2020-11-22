@@ -10,7 +10,7 @@ export default function orders() {
 
     const addNewOrder=()=>{
         console.log("Add new order");
-        navigate('/order_step_1', {replace: true});
+        navigate('/order_step_1/', {replace: true});
     };
     const editOrder=(order: OrderIf)=>{
         console.log(`Editorder ${order.id}`);

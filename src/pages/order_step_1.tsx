@@ -5,11 +5,19 @@ import {orderDb, NewOrder} from "../js/ordersdb"
 import OrderItem from "../components/order_item" //TODO: Rename DeliveryOrderSummary
 import { navigate } from "gatsby"
 import currency from "currency.js"
+import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 
 
-export default function orderStep1() {
+export default (location: any)=>{
     const [validated, setValidated] = useState(false);
     const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
+
+    const fundraiserConfig: FundraiserConfig = getFundraiserConfig();
+    if (!fundraiserConfig) {
+        alert("Failed to load fundraiser config");
+        return(<div/>);
+    }
+
 
     let currentOrder: NewOrder = orderDb.getCurrentOrder();
 
@@ -48,11 +56,7 @@ export default function orderStep1() {
         const btn = event.currentTarget;
         console.log(`Add New Fundraising Order for ${btn.dataset.deliverydate}`);
 
-        //if (config.fundraiser===mulch) {
-        navigate('/add_products_order', {replace: true, state: {deliveryDate: btn.dataset.deliverydate}});
-        // ) else {
-        // navigate('/add_donations', {replace: true});
-        // }
+        navigate('/add_products_order/', {replace: true, state: {deliveryDate: btn.dataset.deliverydate}});
     };
 
     const onAddDonation = (event: any)=>{
@@ -61,7 +65,7 @@ export default function orderStep1() {
         console.log(`Adding New Donation`);
 
         saveCurrentOrder()
-        navigate('/add_donations', {replace: true});
+        navigate('/add_donations/', {replace: true});
     };
 
     const doesSubmitGetEnabled = (event: any)=>{
@@ -86,7 +90,7 @@ export default function orderStep1() {
     }
 
     const ordersByDeliveryBtns = []
-    for (const deliveryDate of orderDb.deliveryDates()) {
+    for (const deliveryDate of fundraiserConfig.validDeliveryDates()) {
         const onClickHandler = ("donation" === deliveryDate)? onAddDonation : onAddOrder;
 
         ordersByDeliveryBtns.push(
@@ -96,12 +100,13 @@ export default function orderStep1() {
         );
     }
 
+    const hoods=[];
+    for (let hood of fundraiserConfig.neighborhoods) {
+        hoods.push(<option key={hood}>{hood}</option>);
+    }
+
     recalculateTotal();
 
-    const neighborhoods=[];
-    for (let hood of orderDb.getCurrentFundraiserConfig().neighborhoods) {
-        neighborhoods.push(<option>{hood}</option>);
-    }
 
     return (
         <div>
@@ -131,7 +136,7 @@ export default function orderStep1() {
                                 <Form.Group as={Col} md="4" controlId="formNeighborhood">
                                     <Form.Label>Neighborhood</Form.Label>
                                     <Form.Control as="select">
-                                        {neighborhoods}
+                                        {hoods}
                                     </Form.Control>
                                 </Form.Group>
                                 <Form.Group as={Col} md="4" controlId="formPhone">

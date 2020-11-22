@@ -6,7 +6,6 @@ import config from '../config';
 
 class CognitoAuth {
     private userPool: any | null = null;
-    private authToken: any | null = null;
 
     constructor() {
         if (!(config.cognito.userPoolId &&
@@ -24,36 +23,36 @@ class CognitoAuth {
 
         this.userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
-        this.authToken = new Promise((resolve: any, reject: any)=>{
-            var cognitoUser = this.userPool.getCurrentUser();
+        // this.authToken = new Promise((resolve: any, reject: any)=>{
+        //     var cognitoUser = this.userPool.getCurrentUser();
 
-            if (cognitoUser) {
-                cognitoUser.getSession((err: any, session: any)=>{
-                    if (err) {
-                        reject(err);
-                    } else if (!session.isValid()) {
-                        resolve(null);
-                    } else {
-                        const token = session.getIdToken().getJwtToken();
+        //     if (cognitoUser) {
+        //         cognitoUser.getSession((err: any, session: any)=>{
+        //             if (err) {
+        //                 reject(err);
+        //             } else if (!session.isValid()) {
+        //                 resolve(null);
+        //             } else {
+        //                 const token = session.getIdToken().getJwtToken();
 
-                        // console.log("Getting User Pool Data");
-                        // userPool.client.listUsers({
-                        //     'UserPoolId': _config.cognito.userPoolId
-                        // }, function(err, data) {
-                        //     if (err) console.log(err, err.stack); // an error occurred
-                        //     else {
-                        //         console.log("User Data:");
-                        //         console.log(data);           // successful response
-                        //     }
-                        // });
+        //                 // console.log("Getting User Pool Data");
+        //                 // userPool.client.listUsers({
+        //                 //     'UserPoolId': _config.cognito.userPoolId
+        //                 // }, function(err, data) {
+        //                 //     if (err) console.log(err, err.stack); // an error occurred
+        //                 //     else {
+        //                 //         console.log("User Data:");
+        //                 //         console.log(data);           // successful response
+        //                 //     }
+        //                 // });
 
-                        resolve(token);
-                    }
-                });
-            } else {
-                resolve(null);
-            }
-        });
+        //                 resolve(token);
+        //             }
+        //         });
+        //     } else {
+        //         resolve(null);
+        //     }
+        // });
 
     }
 
@@ -61,16 +60,20 @@ class CognitoAuth {
         return this.userPool.getCurrentUser();
     }
 
-    validateSession(): Promise<any> {
+    currentUserEmail(): string {
+        return this.currentUser().getUsername().replace('-at-', '@')
+    }
+    
+    getSession(): Promise<any> {
         return new Promise((resolve) => {
             const cognitoUser = this.userPool.getCurrentUser();
  
             if (cognitoUser != null) {
                 cognitoUser.getSession((err: any, session: any)=>{
                     if (err) {
-                        resolve([false, cognitoUser.getUsername()]);
+                        resolve([false, session]);
                     } else {
-                        resolve([session.isValid(), cognitoUser.getUsername()]);
+                        resolve([session.isValid(), session]);
                     }
                 });
             } else {

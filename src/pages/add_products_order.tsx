@@ -3,18 +3,23 @@ import {Card, Form, Button, Col} from "react-bootstrap"
 import {orderDb, NewOrder, DeliverableOrderIf} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
+import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 
 
-export default function addMulch(params: any) {
+export default (params: any) => {
     const [validated, setValidated] = useState(false);
 
     const deliveryDate = params.location.state.deliveryDate;
     const currentOrder: NewOrder = orderDb.getCurrentOrder();
     const deliveryDateOrder = currentOrder.deliverables.get(deliveryDate);
-    const fundraiserConfig: any = orderDb.getCurrentFundraiserConfig();
+    const fundraiserConfig: FundraiserConfig = getFundraiserConfig();
+    if (!fundraiserConfig) {
+        alert("Failed to load fundraiser config");
+        return(<div/>);
+    }
 
     const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
-    
+
     const doesSubmitGetEnabled = (event: any)=>{
         if (event.currentTarget.value) {
             (document.getElementById('formAddProductsSubmit') as HTMLButtonElement).disabled = false;
@@ -24,7 +29,7 @@ export default function addMulch(params: any) {
     };
 
     const onCancelItem = ()=>{
-        navigate('/order_step_1', {replace: true});
+        navigate('/order_step_1/', {replace: true});
     }
 
     const onFormSubmission = (event: any) => {
@@ -43,12 +48,12 @@ export default function addMulch(params: any) {
         }
         let mulchOrder = {
             totalDue: totalDue,
-            kind: fundraiserConfig.id,
+            kind: fundraiserConfig.kind,
             items: items
         };
         currentOrder.deliverables.set(deliveryDate, (mulchOrder as DeliverableOrderIf));
 
-        navigate('/order_step_1', {replace: true});
+        navigate('/order_step_1/', {replace: true});
     }
 
     const products=[];
@@ -63,8 +68,8 @@ export default function addMulch(params: any) {
             }
         }
         products.push(
-            <Form.Row>
-                <Form.Group as={Col} md="12" controlId={formId}>
+            <Form.Row key={`${formId}RowId`}>
+                <Form.Group as={Col} md="12" controlId={formId} >
                     <Form.Label>{product.costDescription}: {USD(product.cost).format()}</Form.Label>
                     <Form.Control required type="number"
                                   placeholder={product.label}
@@ -82,7 +87,7 @@ export default function addMulch(params: any) {
                     <Card.Title>Add {fundraiserConfig.description} Order for {deliveryDate}</Card.Title>
                     <Form noValidate validated={validated} onSubmit={onFormSubmission}>
                         {products}
-                        <Button variant="primary" className="my-2" type="submit" onClick={onCancelItem}>
+                        <Button variant="primary" className="my-2" onClick={onCancelItem}>
                             Back
                         </Button>
                         <Button variant="primary" className="my-2 float-right" type="submit"

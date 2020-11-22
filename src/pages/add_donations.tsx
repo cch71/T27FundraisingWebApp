@@ -19,7 +19,7 @@ export default function addDonation() {
     };
 
     const onCancelItem = ()=>{
-        navigate('/order_step_1', {replace: true});
+        navigate('/order_step_1/', {replace: true});
     }
 
     const onFormSubmission = (event: any) => {
@@ -33,7 +33,7 @@ export default function addDonation() {
 
         currentOrder.deliverables.set('donation', donationOrder);
 
-        navigate('/order_step_1', {replace: true});
+        navigate('/order_step_1/', {replace: true});
     }
 
     let donationAmt = currency(0.0);
@@ -56,7 +56,7 @@ export default function addDonation() {
                                               onInput={doesSubmitGetEnabled} />
                             </Form.Group>
                         </Form.Row>
-                        <Button variant="primary" className="my-2" type="submit" onClick={onCancelItem}>
+                        <Button variant="primary" className="my-2" onClick={onCancelItem}>
                             Back
                         </Button>
                         <Button variant="primary" className="my-2 float-right" type="submit"
