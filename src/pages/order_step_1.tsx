@@ -101,8 +101,21 @@ export default (location: any)=>{
     }
 
     const hoods=[];
-    for (let hood of fundraiserConfig.neighborhoods) {
+    for (let hood of fundraiserConfig.neighborhoods()) {
         hoods.push(<option key={hood}>{hood}</option>);
+    }
+
+    const stateAbbreviations = [
+        'AL','AK','AS','AZ','AR','CA','CO','CT','DE','DC','FM','FL','GA',
+        'GU','HI','ID','IL','IN','IA','KS','KY','LA','ME','MH','MD','MA',
+        'MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND',
+        'MP','OH','OK','OR','PW','PA','PR','RI','SC','SD','TN','TX','UT',
+        'VT','VI','VA','WA','WV','WI','WY'
+    ];
+
+    const states=[];
+    for (let st of stateAbbreviations) {
+        states.push(<option key={st}>{st}</option>);
     }
 
     recalculateTotal();
@@ -169,7 +182,9 @@ export default (location: any)=>{
 
                                 <Form.Group as={Col} md="2" controlId="formState">
                                     <Form.Label>State</Form.Label>
-                                    <Form.Control type="text" placeholder="State" defaultValue={currentOrder.state} />
+                                    <Form.Control as="select" defaultValue='TX'>
+                                        {states}
+                                    </Form.Control>
                                 </Form.Group>
 
                                 <Form.Group as={Col} md="3" controlId="formZip">

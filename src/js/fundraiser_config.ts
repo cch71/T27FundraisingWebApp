@@ -7,13 +7,8 @@ interface Product<T> {
     cost: T,
 }
 
-interface ProductCurrency {
-    label: string,
-    costDescription: string,
-    cost: currency,
-}
-
 interface DeliveryDate {
+    id: string;
     date: string;
     disabledDate: string;
 }
@@ -27,36 +22,14 @@ interface FundraiserConfigBase<T> {
 }
 
 
+/////////////////////////////////////////
+//
 class FundraiserConfig {
-    readonly kind: string;
-    readonly description: string;
-    readonly products: Record<string, ProductCurrency>;
-    readonly neighborhoods: Array<string>;
-    readonly deliveryDates: Array<DeliveryDate>
+    private readonly loadedFrConfig_: FundraiserConfigBase<string>;
 
+    /////////////////////////////////////////
+    //
     constructor(dlFrConfig: FundraiserConfigBase<string>|null) {
-
-        const getCurrencyProdMap = (oldProd: Record<string, Product<string>>): Record<string, ProductCurrency> => {
-
-            let newProdMap: Record<string, ProductCurrency> = {};
-            for (let entry of Object.entries(oldProd)) {
-                const productId: string = entry[0];
-                const oldProd: Product<string> = entry[1];
-
-                const newProd: ProductCurrency = {
-                    cost: currency(oldProd.cost),
-                    label: oldProd.label,
-                    costDescription: oldProd.costDescription
-                };
-                console.log(`Add Config: ${productId}: ${JSON.stringify(newProd)}`);
-                newProdMap[productId] = newProd; 
-            };
-
-            console.log(`Old Prod Map: ${JSON.stringify(newProdMap)}`);
-            return(newProdMap);
-        };
-
-
         const getConfig = (): FundraiserConfigBase<string> => {
             if (null === dlFrConfig) {
                 let sessionFrConfig = window.sessionStorage.getItem('frConfig');
@@ -72,22 +45,43 @@ class FundraiserConfig {
             }
         };
 
-        
-
-        const loadedFrConfig: FundraiserConfigBase<string> = getConfig();
-
-        this.kind = loadedFrConfig.kind;
-        this.products = getCurrencyProdMap(loadedFrConfig.products);
-        this.description = loadedFrConfig.description;
-        this.neighborhoods = loadedFrConfig.neighborhoods;
-        this.deliveryDates = loadedFrConfig.deliveryDates;
+        this.loadedFrConfig_ = getConfig();
     }
 
     /////////////////////////////////////////
     //
+    kind(): string { return this.loadedFrConfig_.kind; }
+
+    /////////////////////////////////////////
+    //
+    description(): string { return this.loadedFrConfig_.description; }
+
+    /////////////////////////////////////////
+    //
+    neighborhoods(): Array<string> { return this.loadedFrConfig_.neighborhoods; }
+    
+    /////////////////////////////////////////
+    //
+    *products(): IterableIterator<[string, Product<currency>]> {
+        for (let [productId, oldProd] of Object.entries(this.loadedFrConfig_.products)) {
+            //const productId: string = entry[0];
+            //const oldProd: Product<string> = entry[1];
+            const newProd: Product<currency> = {
+                cost: currency(oldProd.cost),
+                label: oldProd.label,
+                costDescription: oldProd.costDescription
+            };
+            //console.log(`Add Config: ${productId}: ${JSON.stringify(newProd)}`);
+            yield [productId, newProd];
+        }
+    }
+
+    
+    /////////////////////////////////////////
+    //
     *validDeliveryDates(): IterableIterator<string> {
         
-        for (let deliveryDate of this.deliveryDates) {
+        for (let deliveryDate of this.loadedFrConfig_.deliveryDates) {
             //if delivery date < disabledDate
             yield deliveryDate.date;
         }
@@ -97,8 +91,12 @@ class FundraiserConfig {
 }
 
 
+/////////////////////////////////////////
+//
 let frConfig: FundraiserConfig|null = null;
 
+/////////////////////////////////////////
+//
 function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig | null> {
     return new Promise(async (resolve, reject)=>{
         try {
@@ -130,6 +128,8 @@ function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig |
     });
 }
 
+/////////////////////////////////////////
+//
 function getFundraiserConfig(): FundraiserConfig {
     if (null===frConfig) {
         return new FundraiserConfig(null);

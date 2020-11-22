@@ -13,13 +13,13 @@ export default function orders() {
         navigate('/order_step_1/', {replace: true});
     };
     const editOrder=(order: OrderIf)=>{
-        console.log(`Editorder ${order.id}`);
+        console.log(`Editorder ${order.orderId}`);
     };
 
     const orders = [];
     for (const order of orderDb.orders()) {
         orders.push(
-            <ListGroup horizontal='lg' onClick={()=>{editOrder(order)}} key={order.id} className='my-2'>
+            <ListGroup horizontal='lg' onClick={()=>{editOrder(order)}} key={order.orderId} className='my-2'>
                 <ListGroup.Item style={{width: '150px'}}>{order.firstName}, {order.lastName}</ListGroup.Item>
                 <ListGroup.Item style={{width: '400px'}}>{order.addr1} {order.addr2} {order.city} {order.state} {order.zip}</ListGroup.Item>
                 <ListGroup.Item style={{width: '150px'}}>{USD(order.totalDue).format()}</ListGroup.Item>

@@ -5,7 +5,7 @@ import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 //
 interface DeliverableOrderIf {
     totalDue: currency;
-    deliveryDate?: string;
+    deliveryId?: string;
     kind: string;
     items?: Map<string, number> //productId, numOrders
 }
@@ -40,7 +40,8 @@ class NewOrder {
 /////////////////////////////////////////////
 //
 interface OrderIf {
-    id: number;
+    orderOwner: string;
+    orderId: string;
     firstName: string;
     lastName: string;
     phone?: string;

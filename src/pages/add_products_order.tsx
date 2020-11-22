@@ -38,7 +38,7 @@ export default (params: any) => {
 
         let totalDue = currency(0.0);
         const items: Map<string, number> = new Map<string, number>();
-        for (let [productId, product] of Object.entries(fundraiserConfig.products)) {
+        for (let [productId, product] of fundraiserConfig.products()) {
             const formId = `form${productId}`;
             const numOrdered = parseInt((document.getElementById(formId) as HTMLInputElement).value);
             if (0 < numOrdered) {
@@ -48,7 +48,7 @@ export default (params: any) => {
         }
         let mulchOrder = {
             totalDue: totalDue,
-            kind: fundraiserConfig.kind,
+            kind: fundraiserConfig.kind(),
             items: items
         };
         currentOrder.deliverables.set(deliveryDate, (mulchOrder as DeliverableOrderIf));
@@ -57,9 +57,7 @@ export default (params: any) => {
     }
 
     const products=[];
-    for (let entry of Object.entries(fundraiserConfig.products)) {
-        let productId: string = entry[0];
-        let product: any = entry[1];
+    for (let [productId, product] of fundraiserConfig.products()) {
         const formId = `form${productId}`;
         let numOrdered = undefined;
         if (undefined !== deliveryDateOrder) {
@@ -84,7 +82,7 @@ export default (params: any) => {
         <div className="col-xs-1 d-flex justify-content-center">
             <Card>
                 <Card.Body>
-                    <Card.Title>Add {fundraiserConfig.description} Order for {deliveryDate}</Card.Title>
+                    <Card.Title>Add {fundraiserConfig.description()} Order for {deliveryDate}</Card.Title>
                     <Form noValidate validated={validated} onSubmit={onFormSubmission}>
                         {products}
                         <Button variant="primary" className="my-2" onClick={onCancelItem}>

@@ -5,8 +5,38 @@ import auth from "../js/auth"
 import { navigate } from "gatsby"
 import {orderDb} from "../js/ordersdb"
 import {FundraiserConfig, downloadFundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
+import awsConfig from "../config"
 
 
+/* function queryOrders(authToken: string): Promise<null> {
+ *     return new Promise(async (resolve, reject)=>{
+ *         try {
+ *             const resp = await fetch(awsConfig.api.invokeUrl + '/queryorders', {
+ *                 method: 'post',
+ *                 headers: {
+ *                     'Content-Type': 'application/json',
+ *                     Authorization: authToken
+ *                 },
+ *                 body: JSON.stringify({})
+ *             });
+ * 
+ *             if (!resp.ok) { // if HTTP-status is 200-299
+ *                 alert("HTTP Resp Error: " + resp.status);
+ *                 reject(null);
+ *             } else {
+ *                 const ordersReturned: any = await resp.json();
+ *                 console.log(`Query Orders: ${JSON.stringify(ordersReturned)}`);
+ * 
+ *                 resolve(null);
+ *             }
+ *         } catch(error) {
+ *             console.error(error);
+ *             alert("HTTP-Error: " + error);
+ *             reject(null);
+ *         }
+ *     });
+ * }
+ *  */
 
 export default function home() {
 
@@ -23,7 +53,9 @@ export default function home() {
         console.log(`Active User: ${auth.currentUserEmail()}`);
 
         const authToken = session.getIdToken().getJwtToken();
+        //queryOrders(authToken);
 
+        
         const enableReady = ()=>{
             const readyViewElm = document.getElementById('readyView');
             if (readyViewElm) {
