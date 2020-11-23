@@ -63,6 +63,18 @@ class CognitoAuth {
     currentUserEmail(): string {
         return this.currentUser().getUsername().replace('-at-', '@')
     }
+
+    getAuthToken() : Promise<string> {
+        return new Promise((resolve, reject) => {
+            this.getSession().then(([isValid, session]: [boolean, any])=>{
+                if (session.isValid) {
+                    resolve(session.getIdToken().getJwtToken());
+                } else {
+                    reject("Invalid Session");
+                }
+            });
+        });
+    }
     
     getSession(): Promise<any> {
         return new Promise((resolve) => {

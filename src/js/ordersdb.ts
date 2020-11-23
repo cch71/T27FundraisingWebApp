@@ -1,5 +1,7 @@
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
+import awsConfig from "../config"
+import auth from "../js/auth"
 
 /////////////////////////////////////////////
 //
@@ -112,13 +114,41 @@ class OrderDb {
         });
         
     }
-        
-    /////////////////////////////////////////
-    //
-    *orders(): IterableIterator<OrderIf> {
-        for (let order of this.orders_) {
-            yield order;
-        }
+
+    query(fields: Array<string>): Promise<Array<any>> {
+        return new Promise(async (resolve, reject)=>{
+            try {
+                auth.getAuthToken().then(async (authToken: string)=>{
+                    const resp = await fetch(awsConfig.api.invokeUrl + '/queryorders', {
+                        method: 'post',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: authToken
+                        },
+                        body: JSON.stringify({
+                            orderOwner: auth.currentUser().getUsername(),
+                            fields: fields
+                        })
+                    });
+                    
+                    if (!resp.ok) { // if HTTP-status is 200-299
+                        const errRespBody = await resp.text();
+                        alert(`HTTP Resp Error: ${resp.status}  ${errRespBody}`);
+                        reject(null);
+                    } else {
+                        const ordersReturned: any = await resp.json();
+                        console.log(`Query Orders: ${JSON.stringify(ordersReturned)}`);
+                        resolve(ordersReturned);
+                    }
+                });
+
+                
+            } catch(error) {
+                console.error(error);
+                alert("HTTP-Error: " + error);
+                reject(null);
+            }
+        });
     }
 }
 

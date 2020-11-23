@@ -8,35 +8,6 @@ import {FundraiserConfig, downloadFundraiserConfig, getFundraiserConfig} from ".
 import awsConfig from "../config"
 
 
-/* function queryOrders(authToken: string): Promise<null> {
- *     return new Promise(async (resolve, reject)=>{
- *         try {
- *             const resp = await fetch(awsConfig.api.invokeUrl + '/queryorders', {
- *                 method: 'post',
- *                 headers: {
- *                     'Content-Type': 'application/json',
- *                     Authorization: authToken
- *                 },
- *                 body: JSON.stringify({})
- *             });
- * 
- *             if (!resp.ok) { // if HTTP-status is 200-299
- *                 alert("HTTP Resp Error: " + resp.status);
- *                 reject(null);
- *             } else {
- *                 const ordersReturned: any = await resp.json();
- *                 console.log(`Query Orders: ${JSON.stringify(ordersReturned)}`);
- * 
- *                 resolve(null);
- *             }
- *         } catch(error) {
- *             console.error(error);
- *             alert("HTTP-Error: " + error);
- *             reject(null);
- *         }
- *     });
- * }
- *  */
 
 export default function home() {
 
@@ -47,7 +18,7 @@ export default function home() {
     auth.getSession().then((results)=>{
         const [isValidSession, session] = results;
         if (!isValidSession) {
-            navigate('/signon/', {replace: true});
+            navigate('/signon/');
             return;
         }
         console.log(`Active User: ${auth.currentUserEmail()}`);
@@ -92,9 +63,7 @@ export default function home() {
 
     const addNewOrder = ()=>{
         console.log("Add new order");
-        navigate('/order_step_1/', {
-            replace: true
-        });
+        navigate('/order_step_1/');
     };
 
     const summary = orderDb.getOrderSummary();
