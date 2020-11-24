@@ -6,6 +6,7 @@ import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 
 
 export default (params: any) => {
+    if (undefined === params.location.state) { return(<div/>); } //only used for building 
     const deliveryDate = params.location.state.deliveryDate;
     const currentOrder: NewOrder = orderDb.getCurrentOrder();
     const deliveryDateOrder = currentOrder.deliverables.get(deliveryDate);
@@ -92,9 +93,6 @@ export default (params: any) => {
                     </form>
                 </div>
             </div>
-
-            
         </div>
     );
-    
 }

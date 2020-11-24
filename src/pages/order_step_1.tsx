@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import NavBar from "../components/navbar"
 import {orderDb, NewOrder} from "../js/ordersdb"
 import OrderItem from "../components/order_item" //TODO: Rename DeliveryOrderSummary
@@ -74,9 +74,26 @@ export default (location: any)=>{
         }
     };
 
-    let totalDue = currency(0.0);
+
+
+    const [initTotalDue, setInitTotalDue] = useState(USD(currency(0.0)).format());
+    useEffect(() => {
+        let newTotalDue = currency(0.0);
+        for (let deliverable of currentOrder.deliverables.values()) {
+            console.log(`Found Order: ${deliverable.totalDue}`);
+            newTotalDue = newTotalDue.add(deliverable.totalDue);
+        }
+        /* const totElm = document.getElementById('orderTotalDue');
+         * if (null!==totElm) {
+         *     totElm.innerText = `Total Due:}`;
+         * }
+         */
+        setInitTotalDue(USD(newTotalDue).format());
+    }, [])
+
+
     const recalculateTotal = ()=> {
-        totalDue = currency(0.0);
+        const totalDue = currency(0.0);
         for (let deliverable of currentOrder.deliverables.values()) {
             console.log(`Found Order: ${deliverable.totalDue}`);
             totalDue = totalDue.add(deliverable.totalDue);
@@ -103,7 +120,6 @@ export default (location: any)=>{
         hoods.push(<option key={hood}>{hood}</option>);
     }
 
-    recalculateTotal();
 
     /* const stateAbbreviations = [
      *     'AL','AK','AS','AZ','AR','CA','CO','CT','DE','DC','FM','FL','GA',
@@ -242,7 +258,7 @@ export default (location: any)=>{
                             </ul>
                             
                             <div>Total Paid: $Calculation TBD</div>
-                            <div id="orderTotalDue">Total Due: {USD(totalDue).format()}</div>
+                            <div id="orderTotalDue">Total Due: {initTotalDue}</div>
                             
                             <button type="submit" className="btn btn-primary my-2 float-right" id="formOrderSubmit">
                                 Submit

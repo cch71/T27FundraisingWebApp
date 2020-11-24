@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import NavBar from "../components/navbar"
 import auth from "../js/auth"
 import { navigate } from "gatsby"
@@ -14,55 +14,57 @@ export default function home() {
     let readyView = {display: 'none'};
 
     // If no active user go to login screen
-    auth.getSession().then((results)=>{
-        const [isValidSession, session] = results;
-        if (!isValidSession) {
-            navigate('/signon/');
-            return;
-        }
-        console.log(`Active User: ${auth.currentUserEmail()}`);
-
-        const authToken = session.getIdToken().getJwtToken();
-        
-        const enableReady = ()=>{
-            const readyViewElm = document.getElementById('readyView');
-            if (readyViewElm) {
-                readyViewElm.style.display = "block";
-            } else {
-                readyView = {display: 'block'};
+    useEffect(() => {
+        auth.getSession().then((results)=>{
+            const [isValidSession, session] = results;
+            if (!isValidSession) {
+                navigate('/signon/');
+                return;
             }
+            console.log(`Active User: ${auth.currentUserEmail()}`);
 
-            const notReadyViewElm = document.getElementById('notReadyView');
-            if (notReadyViewElm) {
-                notReadyViewElm.className = "d-none";
-            } else {
-                notReadyView = 'd-none';
-            }
-        };
+            const authToken = session.getIdToken().getJwtToken();
+            
+            const enableReady = ()=>{
+                const readyViewElm = document.getElementById('readyView');
+                if (readyViewElm) {
+                    readyViewElm.style.display = "block";
+                } else {
+                    readyView = {display: 'block'};
+                }
 
-        try {
-            getFundraiserConfig();
-            enableReady();
-        } catch(err: any) {
+                const notReadyViewElm = document.getElementById('notReadyView');
+                if (notReadyViewElm) {
+                    notReadyViewElm.className = "d-none";
+                } else {
+                    notReadyView = 'd-none';
+                }
+            };
+
             try {
-                downloadFundraiserConfig(authToken).then((loadedConfig: FundraiserConfig | null)=>{
-                    if (null===loadedConfig) {
-                        alert("Failed to load session fundraising config");
-                    }
-                    enableReady();
-                });
+                getFundraiserConfig();
+                enableReady();
             } catch(err: any) {
-                alert("Failed: " + err);
+                try {
+                    downloadFundraiserConfig(authToken).then((loadedConfig: FundraiserConfig | null)=>{
+                        if (null===loadedConfig) {
+                            alert("Failed to load session fundraising config");
+                        }
+                        enableReady();
+                    });
+                } catch(err: any) {
+                    alert("Failed: " + err);
+                }
             }
-        }
-    });
+        });
+    }, []);
 
 
     const addNewOrder = ()=>{
         console.log("Add new order");
         navigate('/order_step_1/');
     };
-
+    
     const summary = orderDb.getOrderSummary();
 
     return (

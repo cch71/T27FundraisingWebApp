@@ -21,7 +21,6 @@ interface FundraiserConfigBase<T> {
     deliveryDates: Array<DeliveryDate>;
 }
 
-
 /////////////////////////////////////////
 //
 class FundraiserConfig {
@@ -32,6 +31,15 @@ class FundraiserConfig {
     constructor(dlFrConfig: FundraiserConfigBase<string>|null) {
         const getConfig = (): FundraiserConfigBase<string> => {
             if (null === dlFrConfig) {
+                if (typeof window === 'undefined')  {
+                    return({
+                        kind: '',
+                        description: '',
+                        products: {},
+                        neighborhoods: [],
+                        deliveryDates: []
+                    });
+                } // should only hit while building
                 let sessionFrConfig = window.sessionStorage.getItem('frConfig');
                 if (sessionFrConfig) {
                     //console.error('Loading from session');
