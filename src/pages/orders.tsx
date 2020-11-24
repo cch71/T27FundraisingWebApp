@@ -43,9 +43,9 @@ export default function orders() {
                 const totalDueStr = USD(order.totalDue).format();
                 orderElmList.push(
                     <ul className="list-group list-group-horizontal-lg my-2" key={order.orderId}>
-                        <li className="list-group-item order-list-name">${nameStr}</li>
-                        <li className="list-group-item order-list-addr">${addrStr}</li>
-                        <li className="list-group-item order-list-due">${totalDueStr}</li>
+                        <li className="list-group-item order-list-name">{nameStr}</li>
+                        <li className="list-group-item order-list-addr">{addrStr}</li>
+                        <li className="list-group-item order-list-due">{totalDueStr}</li>
                         <li className="list-group-item">
                             <button type="button" className="btn btn-danger mx-1 float-right">X</button>
                             <button type="button" className="btn btn-info float-right">I</button>
@@ -53,6 +53,11 @@ export default function orders() {
                     </ul>
                 );
             }
+            const spinnerElm = document.getElementById('orderLoadingSpinner');
+            if (spinnerElm) {
+                spinnerElm.className = "d-none";
+            }
+
             setOrderList(orderElmList);
         });
     }, [])
@@ -70,6 +75,9 @@ export default function orders() {
                     <div className="card-body">
                         <h5 className="card-title" id="orderCardTitle">Orders</h5>
                         {orderList}
+                        <div className="spinner-border" role="status" id="orderLoadingSpinner">
+                            <span className="sr-only">Loading...</span>
+                        </div>
                     </div>
                 </div>
             </div>

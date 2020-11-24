@@ -10,9 +10,6 @@ import awsConfig from "../config"
 
 export default function home() {
 
-    let notReadyView = 'col-xs-1 d-flex justify-content-center';
-    let readyView = {display: 'none'};
-
     // If no active user go to login screen
     useEffect(() => {
         auth.getSession().then((results)=>{
@@ -29,15 +26,11 @@ export default function home() {
                 const readyViewElm = document.getElementById('readyView');
                 if (readyViewElm) {
                     readyViewElm.style.display = "block";
-                } else {
-                    readyView = {display: 'block'};
                 }
 
                 const notReadyViewElm = document.getElementById('notReadyView');
                 if (notReadyViewElm) {
                     notReadyViewElm.className = "d-none";
-                } else {
-                    notReadyView = 'd-none';
                 }
             };
 
@@ -69,12 +62,12 @@ export default function home() {
 
     return (
         <div>
-            <div id="notReadyView" className={notReadyView} >
+            <div id="notReadyView" className='col-xs-1 d-flex justify-content-center' >
                 <div className="spinner-border" role="status">
                     <span className="sr-only">Loading...</span>
                 </div>
             </div>
-            <div id="readyView" style={readyView}>
+            <div id="readyView" style={{display: 'none'}}>
                 <NavBar/>
                 <div className="col-xs-1 d-flex justify-content-center">
                     <div className="card">
