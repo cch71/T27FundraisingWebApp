@@ -5,18 +5,17 @@
  */
 const path = require("path");
 
+
 module.exports = {
     siteMetadata: {
         title: 'T27 Orders',
         description: 'Troop 27 Fundraising Order Form',
     },
     plugins: [
-        `gatsby-plugin-sharp`,
-        `gatsby-transformer-sharp`,
         {
             resolve: `gatsby-plugin-manifest`,
             options: {
-                name: `t27-mulch-order-system`,
+                name: `T27OrderSystem`,
                 short_name: `t27Orders`,
                 start_url: `/`,
                 background_color: `#f7f0eb`,
@@ -25,13 +24,14 @@ module.exports = {
                 icon: `static/favicon.ico`,
             },
         },
-        'gatsby-plugin-offline',
+        `gatsby-plugin-sharp`,
+        `gatsby-transformer-sharp`,
+        `gatsby-plugin-offline`,
         {
             resolve: `gatsby-plugin-sass`,
             options: {
                 implementation: require("sass"),
             },
-        },
-        'gatsby-plugin-ts'
-    ],
+        }
+    ]
 }

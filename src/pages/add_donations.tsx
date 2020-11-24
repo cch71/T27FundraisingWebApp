@@ -1,13 +1,10 @@
-import React, { useState } from "react"
-import {Card, Form, Button, Col} from "react-bootstrap"
+import React from "react"
 import {orderDb, NewOrder, DeliverableOrderIf} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 
 
 export default function addDonation() {
-    const [validated, setValidated] = useState(false);
-
     let currentOrder: NewOrder = orderDb.getCurrentOrder();
 
     const doesSubmitGetEnabled = (event: any)=>{
@@ -19,7 +16,7 @@ export default function addDonation() {
     };
 
     const onCancelItem = ()=>{
-        navigate('/order_step_1/', {replace: true});
+        navigate('/order_step_1/');
     }
 
     const onFormSubmission = (event: any) => {
@@ -33,7 +30,7 @@ export default function addDonation() {
 
         currentOrder.deliverables.set('donation', donationOrder);
 
-        navigate('/order_step_1/', {replace: true});
+        navigate('/order_step_1/');
     }
 
     let donationAmt = currency(0.0);
@@ -44,28 +41,30 @@ export default function addDonation() {
 
     return (
         <div className="col-xs-1 d-flex justify-content-center">
-            <Card>
-                <Card.Body>
-                    <Card.Title>Add Donation</Card.Title>
-                    <Form noValidate validated={validated} onSubmit={onFormSubmission}>
-                        <Form.Row>
-                            <Form.Group as={Col} md="12" controlId="formDonationAmount">
-                                <Form.Control required type="number"
-                                              placeholder="Enter Donation Amount"
-                                              defaultValue={donationAmt.toString()}
-                                              onInput={doesSubmitGetEnabled} />
-                            </Form.Group>
-                        </Form.Row>
-                        <Button variant="primary" className="my-2" onClick={onCancelItem}>
+            <div className="card">
+                <div className="card-body">
+                    <h5 className="card-title">Add Donation</h5>
+                    <form onSubmit={onFormSubmission}>
+
+                        <div className="form-group row col-sm-12">
+                            <label htmlFor="formDonationAmount">Donation</label>
+                            <input type="number" className="form-control" id="formDonationAmount"
+                                   defaultValue={donationAmt.toString()}
+                                   placeholder="Enter Donation Amount"
+                                   onInput={doesSubmitGetEnabled}/>
+                        </div>
+
+
+                        <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
                             Back
-                        </Button>
-                        <Button variant="primary" className="my-2 float-right" type="submit"
+                        </button>
+                        <button type="submit" className="btn btn-primary my-2 float-right"
                                 disabled={0.0===donationAmt.value} id="formDonationSubmit">
-                            Add
-                        </Button>
-                    </Form>
-                </Card.Body>
-            </Card>
+                            Add                            
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     );
     

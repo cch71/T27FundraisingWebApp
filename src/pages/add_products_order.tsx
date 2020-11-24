@@ -1,5 +1,4 @@
-import React, { useState } from "react"
-import {Card, Form, Button, Col} from "react-bootstrap"
+import React from "react"
 import {orderDb, NewOrder, DeliverableOrderIf} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
@@ -7,8 +6,6 @@ import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 
 
 export default (params: any) => {
-    const [validated, setValidated] = useState(false);
-
     const deliveryDate = params.location.state.deliveryDate;
     const currentOrder: NewOrder = orderDb.getCurrentOrder();
     const deliveryDateOrder = currentOrder.deliverables.get(deliveryDate);
@@ -29,7 +26,7 @@ export default (params: any) => {
     };
 
     const onCancelItem = ()=>{
-        navigate('/order_step_1/', {replace: true});
+        navigate('/order_step_1/');
     }
 
     const onFormSubmission = (event: any) => {
@@ -53,7 +50,7 @@ export default (params: any) => {
         };
         currentOrder.deliverables.set(deliveryDate, (mulchOrder as DeliverableOrderIf));
 
-        navigate('/order_step_1/', {replace: true});
+        navigate('/order_step_1/');
     }
 
     const products=[];
@@ -66,35 +63,37 @@ export default (params: any) => {
             }
         }
         products.push(
-            <Form.Row key={`${formId}RowId`}>
-                <Form.Group as={Col} md="12" controlId={formId} >
-                    <Form.Label>{product.costDescription}: {USD(product.cost).format()}</Form.Label>
-                    <Form.Control required type="number"
-                                  placeholder={product.label}
-                                  defaultValue={numOrdered} />
-                </Form.Group>
-            </Form.Row>
+            <div className="form-group row col-sm-12" key={`${formId}RowId`}>
+                <label htmlFor={formId}>{product.costDescription}: {USD(product.cost).format()}</label>
+                <input type="number" className="form-control" id={formId}
+                       defaultValue={numOrdered}
+                       placeholder={product.label}/>
+            </div>
         );
 
     };
 
     return (
         <div className="col-xs-1 d-flex justify-content-center">
-            <Card>
-                <Card.Body>
-                    <Card.Title>Add {fundraiserConfig.description()} Order for {deliveryDate}</Card.Title>
-                    <Form noValidate validated={validated} onSubmit={onFormSubmission}>
+            <div className="card">
+                <div className="card-body">
+                    <h5 className="card-title">Add {fundraiserConfig.description()} Order for {deliveryDate}</h5>
+                    <form onSubmit={onFormSubmission}>
+
                         {products}
-                        <Button variant="primary" className="my-2" onClick={onCancelItem}>
+
+                        <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
                             Back
-                        </Button>
-                        <Button variant="primary" className="my-2 float-right" type="submit"
-                                id="formAddProductsSubmit">
-                            Add
-                        </Button>
-                    </Form>
-                </Card.Body>
-            </Card>
+                        </button>
+                        <button type="submit" className="btn btn-primary my-2 float-right" id="formAddProductsSubmit">
+                            Add                            
+                        </button>
+
+                    </form>
+                </div>
+            </div>
+
+            
         </div>
     );
     

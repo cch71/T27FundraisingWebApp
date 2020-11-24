@@ -1,5 +1,4 @@
 import React from "react"
-import {ListGroup, Card, Spinner} from 'react-bootstrap';
 import NavBar from "../components/navbar"
 import auth from "../js/auth"
 import { navigate } from "gatsby"
@@ -24,8 +23,6 @@ export default function home() {
         console.log(`Active User: ${auth.currentUserEmail()}`);
 
         const authToken = session.getIdToken().getJwtToken();
-        //queryOrders(authToken);
-
         
         const enableReady = ()=>{
             const readyViewElm = document.getElementById('readyView');
@@ -71,22 +68,22 @@ export default function home() {
     return (
         <div>
             <div id="notReadyView" className={notReadyView} >
-                <Spinner animation="border" role="status">
+                <div className="spinner-border" role="status">
                     <span className="sr-only">Loading...</span>
-                </Spinner>
+                </div>
             </div>
             <div id="readyView" style={readyView}>
                 <NavBar/>
                 <div className="col-xs-1 d-flex justify-content-center">
-                    <Card>
-                        <Card.Body>
-                            <Card.Title>Summary Information</Card.Title>
+                    <div className="card">
+                        <div className="card-body">
+                            <h5 className="card-title">Summary Information</h5>
                             <div>You have {summary.numOrders} orders.</div>
                             <div>You have collected {summary.totalOrderCost}</div>
                             <div>Of that {summary.totalDonations} are donations</div>
                             <div>{summary.totalOrders} is from product</div>
-                        </Card.Body>
-                    </Card>
+                        </div>
+                    </div>
                     <button type="button"
                             className="btn btn-outline-light add-order-btn"
                             onClick={addNewOrder}>

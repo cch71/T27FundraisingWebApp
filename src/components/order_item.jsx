@@ -1,5 +1,4 @@
 import React from "react"
-import {Button} from "react-bootstrap"
 import {orderDb} from "../js/ordersdb"
 import currency from "currency.js"
 
@@ -47,17 +46,17 @@ export default class OrderItem extends React.Component {
         return(
             <div>
                 <div id={newTag} style={newOrderStyle} >
-                    <Button variant="primary" type="button" onClick={this.props.onClick}
+                    <button className="btn btn-primary" type="button" onClick={this.props.onClick}
                             data-deliverydate={deliveryDate} >
                         {label}
-                    </Button>
+                    </button>
                 </div>
                 <div id={foundTag} style={foundOrderStyle}>
                     {orderTotalStr}
-                    <Button variant="outline-danger" className="mx-1 float-right"
-                            data-deliverydate={deliveryDate} onClick={onDeleteOrder}>X</Button>
-                    <Button variant="outline-info" className="float-right"
-                            data-deliverydate={deliveryDate} onClick={this.props.onClick}>I</Button>
+                    <button className="btn btn-outline-danger mx-1 float-right"
+                            data-deliverydate={deliveryDate} onClick={onDeleteOrder}>X</button>
+                    <button className="btn btn-outline-info float-right"
+                            data-deliverydate={deliveryDate} onClick={this.props.onClick}>I</button>
                 </div>
             </div>
         );

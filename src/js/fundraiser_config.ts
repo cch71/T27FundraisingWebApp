@@ -34,7 +34,7 @@ class FundraiserConfig {
             if (null === dlFrConfig) {
                 let sessionFrConfig = window.sessionStorage.getItem('frConfig');
                 if (sessionFrConfig) {
-                    console.error('Loading from session');
+                    //console.error('Loading from session');
                     return JSON.parse(sessionFrConfig);
                 } else {
                     console.error("Failed to load Session Fr Config");

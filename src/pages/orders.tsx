@@ -1,5 +1,4 @@
 import React from "react"
-import {ListGroup, Card, Button} from "react-bootstrap"
 import NavBar from "../components/navbar"
 import { navigate } from "gatsby"
 import {orderDb, OrderIf} from "../js/ordersdb"
@@ -69,15 +68,12 @@ export default function orders() {
                 +
             </button>
             <div className="col-xs-1 d-flex justify-content-center">
-                <Card>
-                    <Card.Body id="orderCardBody">
-                        <Card.Title id="orderCardTitle">Orders</Card.Title>
-                    </Card.Body>
-                </Card>
+                <div className="card">
+                    <div className="card-body">
+                        <h5 className="card-title" id="orderCardTitle">Orders</h5>
+                    </div>
+                </div>
             </div>
-
-            <template id="orderRow">
-            </template>
         </div>
-);
+    );
 }
