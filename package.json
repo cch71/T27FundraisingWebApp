@@ -1,0 +1,45 @@
+{
+  "name": "T27FundraiserApp",
+  "private": true,
+  "description": "A web app to support T27 fundraising activities",
+  "version": "0.1.0",
+  "license": "0BSD",
+  "scripts": {
+    "build": "gatsby build",
+    "develop": "gatsby develop",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "start": "npm run develop",
+    "serve": "gatsby serve",
+    "clean": "gatsby clean",
+    "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing\" && exit 1"
+  },
+  "dependencies": {
+    "amazon-cognito-identity-js": "^4.5.5",
+    "bootstrap": "^4.5.3",
+    "currency.js": "^2.0.3",
+    "gatsby": "^2.27.1",
+    "gatsby-plugin-manifest": "^2.7.0",
+    "gatsby-plugin-offline": "^3.5.0",
+    "gatsby-plugin-sass": "^2.6.0",
+    "gatsby-plugin-sharp": "^2.9.0",
+    "gatsby-transformer-sharp": "^2.7.0",
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0"
+  },
+  "devDependencies": {
+    "@types/bootstrap": "^5.0.0",
+    "@types/node": "^14.14.9",
+    "@types/react": "^17.0.0",
+    "@types/react-bootstrap": "^0.32.24",
+    "@types/react-dom": "^17.0.0",
+    "prettier": "2.2.0",
+    "sass": "^1.29.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cch71/T27FundraisingWebApp"
+  },
+  "bugs": {
+    "url": "https://github.com/cch71/T27FundraisingWebApp/issues"
+  }
+}
