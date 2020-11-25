@@ -1,11 +1,15 @@
 import React from "react"
-import {orderDb, NewOrder, DeliverableOrderIf} from "../js/ordersdb"
+import {orderDb, Order, OrdersForDeliveryDate} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 
 
 export default function addDonation() {
-    let currentOrder: NewOrder = orderDb.getCurrentOrder();
+    const currentOrder: Order = orderDb.getActiveOrder();
+    if (!currentOrder) {
+        navigate('/');
+        return(<div/>);
+    }
 
     const doesSubmitGetEnabled = (event: any)=>{
         if (event.currentTarget.value) {
@@ -24,19 +28,19 @@ export default function addDonation() {
         event.stopPropagation();
 
         const donationOrder: DeliverableOrderIf = {
-            totalDue: currency((document.getElementById('formDonationAmount') as HTMLInputElement).value),
+            amountDue: currency((document.getElementById('formDonationAmount') as HTMLInputElement).value),
             kind: 'donation'
         };
 
-        currentOrder.deliverables.set('donation', donationOrder);
+        currentOrder.orderByDelivery.set('donation', donationOrder);
 
         navigate('/order_step_1/');
     }
 
     let donationAmt = currency(0.0);
-    let currentDonation = currentOrder.deliverables.get('donation');
+    let currentDonation = currentOrder.orderByDelivery.get('donation');
     if (undefined!==currentDonation) {
-        donationAmt=currentDonation.totalDue;
+        donationAmt=currentDonation.amountDue;
     }
 
     return (

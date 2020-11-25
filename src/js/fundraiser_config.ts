@@ -2,6 +2,7 @@ import currency from "currency.js"
 import awsConfig from "../config"
 
 interface Product<T> {
+    id: string,
     label: string,
     costDescription: string,
     cost: T,
@@ -16,7 +17,7 @@ interface DeliveryDate {
 interface FundraiserConfigBase<T> {
     kind: string;
     description: string;
-    products: Record<string, Product<T>>;
+    products: Array<Product<T>>;
     neighborhoods: Array<string>;
     deliveryDates: Array<DeliveryDate>;
 }
@@ -24,18 +25,18 @@ interface FundraiserConfigBase<T> {
 /////////////////////////////////////////
 //
 class FundraiserConfig {
-    private readonly loadedFrConfig_: FundraiserConfigBase<string>;
+    private readonly loadedFrConfig_: FundraiserConfigBase<number>;
 
     /////////////////////////////////////////
     //
-    constructor(dlFrConfig: FundraiserConfigBase<string>|null) {
-        const getConfig = (): FundraiserConfigBase<string> => {
+    constructor(dlFrConfig: FundraiserConfigBase<number>|null) {
+        const getConfig = (): FundraiserConfigBase<number> => {
             if (null === dlFrConfig) {
                 if (typeof window === 'undefined')  {
                     return({
                         kind: '',
                         description: '',
-                        products: {},
+                        products: [],
                         neighborhoods: [],
                         deliveryDates: []
                     });
@@ -69,31 +70,32 @@ class FundraiserConfig {
     neighborhoods(): Array<string> { return this.loadedFrConfig_.neighborhoods; }
     
     /////////////////////////////////////////
-    //
-    *products(): IterableIterator<[string, Product<currency>]> {
-        for (let [productId, oldProd] of Object.entries(this.loadedFrConfig_.products)) {
-            //const productId: string = entry[0];
-            //const oldProd: Product<string> = entry[1];
+    //)/*: Generator<>*/
+    *products(): Generator<Product<currency>> {
+        const oldProds = this.loadedFrConfig_.products;
+        for (let x=0; x<oldProds.length; x++) {
+            const oldProd = oldProds[x];
             const newProd: Product<currency> = {
+                id: oldProd.id,
                 cost: currency(oldProd.cost),
                 label: oldProd.label,
                 costDescription: oldProd.costDescription
             };
-            //console.log(`Add Config: ${productId}: ${JSON.stringify(newProd)}`);
-            yield [productId, newProd];
+            console.log(`Generating: ${JSON.stringify(newProd)}`);
+            yield newProd;
         }
     }
 
     
     /////////////////////////////////////////
-    //
-    *validDeliveryDates(): IterableIterator<string> {
+    // return [id, date]
+    *validDeliveryDates(): IterableIterator<[string,string]> {
         
         for (let deliveryDate of this.loadedFrConfig_.deliveryDates) {
             //if delivery date < disabledDate
-            yield deliveryDate.date;
+            yield [deliveryDate.id, deliveryDate.date];
         }
-        yield 'donation';
+        yield ['donation', 'Donation'];
     }
 
 }
@@ -121,7 +123,7 @@ function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig |
                 alert("HTTP Resp Error: " + resp.status);
                 reject(null);
             } else {
-                const loadedFrConfig: FundraiserConfigBase<string> = await resp.json();
+                const loadedFrConfig: FundraiserConfigBase<number> = await resp.json();
                 console.log(`Fundraiser Config: ${JSON.stringify(loadedFrConfig)}`);
 
                 window.sessionStorage.setItem('frConfig', JSON.stringify(loadedFrConfig));

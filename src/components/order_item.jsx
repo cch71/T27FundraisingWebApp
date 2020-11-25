@@ -9,28 +9,31 @@ export default class OrderItem extends React.Component {
 
 
     render() {
-        const deliveryDate = this.props.deliveryDate;
-        const label = ("donation" === deliveryDate)? 'Donation' : `Order for ${deliveryDate}`;
+        const deliveryId = this.props.deliveryId;
+        const deliveryLabel = this.props.deliveryLabel;
+        const label = ("donation" === deliveryId)? 'Donation' : `Order for ${deliveryLabel}`;
 
-        const currentOrder = orderDb.getCurrentOrder();
-        const foundOrder = currentOrder.deliverables.get(deliveryDate);
+        const currentOrder = orderDb.getActiveOrder();
+        const foundOrder = currentOrder.orderByDelivery.get(deliveryId);
 
-        const newTag = `new-${deliveryDate}`;
-        const foundTag = `found-${deliveryDate}`
+        const newTag = `new-${deliveryId}`;
+        const foundTag = `found-${deliveryId}`
+
+        //console.log(`Handling Order Item: ${deliveryId}:${JSON.stringify(foundOrder)}`);
         
         const USD = (value) => currency(value, { symbol: "$", precision: 2 });
 
         const onDeleteOrder = (event)=>{
             const btn = event.currentTarget;
             
-            console.log(`Deleting Order for ${btn.dataset.deliverydate}`);
+            console.log(`Deleting Order for ${btn.dataset.deliverylabel}`);
 
-            currentOrder.deliverables.delete(btn.dataset.deliverydate);
+            currentOrder.orderByDelivery.delete(btn.dataset.deliveryid);
             document.getElementById(newTag).style.display = "block";
             document.getElementById(foundTag).style.display = "none";
 
             if (this.props.onDelete) {
-                this.props.onDelete();
+                this.props.onDelete(event);
             }
         }
 
@@ -40,23 +43,27 @@ export default class OrderItem extends React.Component {
         const foundOrderStyle = (undefined!==foundOrder)? {display: 'block'}:{display: 'none'};
         let orderTotalStr = '';
         if (undefined !== foundOrder) {
-            orderTotalStr = `${label} Cost: ${USD(foundOrder.totalDue).format()} `;
+            orderTotalStr = `${label} Cost: ${USD(foundOrder.amountDue).format()} `;
         }
         
         return(
             <div>
                 <div id={newTag} style={newOrderStyle} >
                     <button className="btn btn-primary" type="button" onClick={this.props.onClick}
-                            data-deliverydate={deliveryDate} >
+                            data-deliverylabel={deliveryLabel}  data-deliveryid={deliveryId}>
                         {label}
                     </button>
                 </div>
                 <div id={foundTag} style={foundOrderStyle}>
                     {orderTotalStr}
-                    <button className="btn btn-outline-danger mx-1 float-right"
-                            data-deliverydate={deliveryDate} onClick={onDeleteOrder}>X</button>
-                    <button className="btn btn-outline-info float-right"
-                            data-deliverydate={deliveryDate} onClick={this.props.onClick}>I</button>
+                    <button className="btn btn-outline-danger mx-1 float-right order-edt-btn"
+                            data-deliverylabel={deliveryLabel} data-deliveryid={deliveryId}
+                            onClick={onDeleteOrder}>X</button>
+                    <button className="btn btn-outline-info float-right order-edt-btn"
+                            data-deliverylabel={deliveryLabel} data-deliveryid={deliveryId}
+                            onClick={this.props.onClick}>
+                        <span>&#9999;</span>
+                    </button>
                 </div>
             </div>
         );

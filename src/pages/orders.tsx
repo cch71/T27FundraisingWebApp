@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import NavBar from "../components/navbar"
 import { navigate } from "gatsby"
-import {orderDb, OrderIf} from "../js/ordersdb"
+import {orderDb, OrderIf, OrderListItem} from "../js/ordersdb"
 import currency from "currency.js"
 
 
@@ -11,6 +11,7 @@ export default function orders() {
     
     const addNewOrder=()=>{
         console.log("Add new order");
+        orderDb.newActiveOrder();
         navigate('/order_step_1/');
     };
 
@@ -21,34 +22,42 @@ export default function orders() {
     // Client-side Runtime Data Fetching
     const [orderList, setOrderList] = useState();
     useEffect(() => {
-        const fieldNames:Array<string> = [
-            "orderId",
-            "firstName",
-            "lastName",
-            "addr1",
-            "addr2",
-            "city",
-            "usStateAbbr",
-            "zip",
-            "totalDue"
-        ];
+        const onDeleteOrder = (event: any)=>{
+            const btn = event.currentTarget;
+            console.log(`Deleting order for ${btn.dataset.orderid}`);
+        };
 
-        //"addr2", ${order.addr2}
-        orderDb.query(fieldNames).then((orders: Array<any>)=>{
+        const onEditOrder = (event: any)=>{
+            const btn = event.currentTarget;
+            const orderId = btn.dataset.orderid;
+            console.log(`Editing order for ${orderId}`);
+            orderDb.setActiveOrder(); // Reset active order to let order edit for set it
+            navigate('/order_step_1/', {state: {editOrderId: orderId}});
+        };
+
+        orderDb.getOrderList().then((orders: Array<OrderListItem<string>>)=>{
             console.log(`Orders Page: ${JSON.stringify(orders)}`);
             const orderElmList = [];
             for (const order of orders) {
+                order.email = order.email?order.email:'';
+                order.addr2 = order.addr2?order.addr2:'';
                 const nameStr = `${order.firstName}, ${order.lastName}`;
-                const addrStr = `${order.addr1} ${order.addr2} ${order.city} ${order.usStateAbbr} ${order.zip}`;
-                const totalDueStr = USD(order.totalDue).format();
+                const contactInfoStr = `${order.addr1} ${order.addr2} ${order.neighborhood} ${order.phone} ${order.email}`;
+                const totalAmountStr = USD(order.amountTotal).format();
                 orderElmList.push(
                     <ul className="list-group list-group-horizontal-lg my-2" key={order.orderId}>
                         <li className="list-group-item order-list-name">{nameStr}</li>
-                        <li className="list-group-item order-list-addr">{addrStr}</li>
-                        <li className="list-group-item order-list-due">{totalDueStr}</li>
+                        <li className="list-group-item order-list-addr">{contactInfoStr}</li>
+                        <li className="list-group-item order-list-due">{totalAmountStr}</li>
                         <li className="list-group-item">
-                            <button type="button" className="btn btn-danger mx-1 float-right">X</button>
-                            <button type="button" className="btn btn-info float-right">I</button>
+                            <button type="button" className="btn btn-outline-danger  mx-1 float-right order-edt-btn"
+                                    data-orderid={order.orderId} onClick={onDeleteOrder}>
+                                X
+                            </button>
+                            <button type="button" className="btn btn-outline-info float-right order-edt-btn"
+                                    data-orderid={order.orderId} onClick={onEditOrder}>
+                                <span>&#9999;</span>
+                            </button>
                         </li>
                     </ul>
                 );
