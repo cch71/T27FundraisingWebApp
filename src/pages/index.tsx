@@ -5,10 +5,28 @@ import { navigate } from "gatsby"
 import {orderDb, SummaryInfo} from "../js/ordersdb"
 import {FundraiserConfig, downloadFundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 import awsConfig from "../config"
+import currency from "currency.js"
+import Chart from 'chart.js'
 
+
+/* function *dynamicColors(): Generator<string> {
+ *      var r = Math.floor(Math.random() * 255);
+ *      * var g = Math.floor(Math.random() * 255);
+ *      * var b = Math.floor(Math.random() * 255);
+ *      * return "rgb(" + r + "," + g + "," + b + ")"; 
+*     for (const c of ['red', 'green', 'blue', 'purple', 'yellow', 'brown', 'orange']) {
+    *         yield c
+    *     }
+* };
+*  */
+
+function dynamicColors(){
+    return ['SaddleBrown', 'DarkOliveGreen', 'Blue', 'Purple', 'SlateGrey', 'Yellow', 'Salmon'];
+};
 
 
 export default function home() {
+    const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
     const [orderSummary, setOrderSummary] = useState();
     useEffect(() => {
@@ -37,13 +55,68 @@ export default function home() {
                 orderDb.getOrderSummary().then((summary: SummaryInfo)=>{
                     if (!summary) { return; }
                     setOrderSummary(
-                        <div>
-                            <div>You have {summary.totalNumOrders()} orders.</div>
-                            <div>You have collected {summary.totalAmountSold()}</div>
-                            <div>Of that {summary.totalDonations()} are donations</div>
-                            <div>{summary.totalProductSold()} is from product</div>
+                        <div className="col-xs-1 d-flex justify-content-center">
+                            <div className="card">
+                                <div className="card-body">
+                                    <h5 className="card-title">Summary for: {summary.userName()}</h5>
+                                    <div>You have {summary.totalNumOrders()} orders 
+                                    and collected {USD(summary.totalAmountSold()).format()}</div>
+                                    <div>Troop has sold {USD(summary.totalTroopSold()).format()}</div>
+                                    <canvas id="yourPercentageChart"></canvas>
+                                    <canvas id="patrolStandingsChart"></canvas>
+                                </div>
+                            </div>
+                            <button type="button"
+                                    className="btn btn-outline-light add-order-btn"
+                                    onClick={addNewOrder}>
+                                +
+                            </button>
                         </div>
                     );
+
+                    //Chart.defaults.global.legend.labels.boxWidth = '10';
+
+                    // Chart Options
+                    const chartOptions = {
+                        responsive: true,
+                        legend: {
+                            position: 'left',
+                        }
+                    };
+                    
+                    // Your Pie Chart
+                    const myStandingChart = new Chart('yourPercentageChart', {
+                        type: 'pie',
+                        data: {
+                            labels: ['You', 'Troop'],
+                            datasets: [{
+                                data:[
+                                    summary.totalAmountSold(),
+                                    summary.totalTroopSold().subtract(summary.totalAmountSold())
+                                ],
+                                backgroundColor: ['Blue', 'DarkOliveGreen']
+                            }]
+                        },
+                        options: chartOptions
+                    });
+
+                    // Patrol Pie Chart
+                    const patrolData = {
+                        labels: [],
+                        datasets: [{
+                            data:[],
+                            backgroundColor: dynamicColors
+                        }]
+                    };
+                    for (const [patrol, amount] of summary.patrolRankings()) {
+                        patrolData.labels.push(patrol);
+                        patrolData.datasets[0].data.push(amount);
+                    }
+                    const patrolPieChart = new Chart('patrolStandingsChart', {
+                        type: 'pie',
+                        data: patrolData,
+                        options: chartOptions
+                    });
                 });
             };
 
@@ -83,19 +156,7 @@ export default function home() {
             </div>
             <div id="readyView" style={{display: 'none'}}>
                 <NavBar/>
-                <div className="col-xs-1 d-flex justify-content-center">
-                    <div className="card">
-                        <div className="card-body">
-                            <h5 className="card-title">Summary Information</h5>
-                            {orderSummary}
-                        </div>
-                    </div>
-                    <button type="button"
-                            className="btn btn-outline-light add-order-btn"
-                            onClick={addNewOrder}>
-                        +
-                    </button>
-                </div>
+                {orderSummary}
             </div>
         </div>
     );

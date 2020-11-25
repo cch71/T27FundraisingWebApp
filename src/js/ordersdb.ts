@@ -100,17 +100,6 @@ interface OrderListItem<T> {
     amountTotal: T;
 }
 
-const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
-
-/////////////////////////////////////////////
-//
-class SummaryInfo {
-    totalAmountSold(): string { return USD(currency(0.0)).format(); }
-    totalProductSold(): string { return USD(currency(0.0)).format(); }
-    totalDonations(): string { return USD(currency(0.0)).format(); }
-    totalNumOrders(): number { return 24; }
-}
-
 // const hashStr = (val: string): string {
 //     let hash = 0, i, chr;
 //     for (let i = 0; i < val.length; i++) {
@@ -120,6 +109,56 @@ class SummaryInfo {
 //     }
 //     return hash;
 // }
+
+const mockSummaryResults = {
+    "totalTroopAmountSold": 25000.75,
+    "patrolRanking": [
+        {
+            "patrol": "Bear",
+            "amountSold": 19000.75,
+        },{
+            "patrol": "Black Dragon",
+            "amountSold": 4000.00
+        },{
+            "patrol": "Apache",
+            "amountSold": 2000.00
+        },{
+            "patrol": "Patrol X",
+            "amountSold": 0.00
+        },{
+            "patrol": "Patrol Y",
+            "amountSold": 0.00
+        },{
+            "patrol": "Patrol Z",
+            "amountSold": 0.00
+        }
+    ],
+    "userStats": {
+        "patrol": "Bear",
+        "name": "Fundraiser Admin",
+        "isAdmin": true,
+        "amountSold": 2000.00,
+        "numOrders": 25
+    }
+};
+
+/////////////////////////////////////////////
+//
+class SummaryInfo {
+    private summaryResp_: any = mockSummaryResults;
+
+    patrol(): string { return this.summaryResp_.userStats.patrol; }
+    userName(): string { return this.summaryResp_.userStats.name; }
+    isAdmin(): boolean { return this.summaryResp_.userStats.isAdmin===true; }
+    totalAmountSold(): currency { return currency(this.summaryResp_.userStats.amountSold); }
+    totalNumOrders(): number { return this.summaryResp_.userStats.numOrders; }
+    totalTroopSold(): currency { return currency(this.summaryResp_.totalTroopAmountSold); }
+    *patrolRankings(): Generator<[string, currency]> {
+        for (const rank of this.summaryResp_.patrolRanking) {
+            yield [rank.patrol, currency(rank.amountSold)];
+        }
+    }
+}
 
 /////////////////////////////////////////////
 //
