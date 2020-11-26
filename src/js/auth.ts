@@ -67,7 +67,7 @@ class CognitoAuth {
     getAuthToken() : Promise<string> {
         return new Promise((resolve, reject) => {
             this.getSession().then(([isValid, session]: [boolean, any])=>{
-                if (session.isValid) {
+                if (isValid && session) {
                     resolve(session.getIdToken().getJwtToken());
                 } else {
                     reject("Invalid Session");
@@ -95,7 +95,12 @@ class CognitoAuth {
     }
 
     signOut() {
-        this.userPool.getCurrentUser().signOut();
+        if (this.userPool) {
+            const curUser = this.currentUser();
+            if (curUser) {
+                curUser.signOut();
+            }
+        }
     }
 
     private normalizeLoginId(loginId: string): string {

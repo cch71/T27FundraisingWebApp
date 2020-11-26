@@ -4,12 +4,15 @@ import auth from "../js/auth"
 import { navigate } from "gatsby"
 
 export default function signon() {
+    //If you got here then lets go ahean and sign out if already signed in.
+    auth.signOut();
+
     const onFormSubmission = (event: any) => {
         const form = event.currentTarget;
 
         const loginId = form[0].value;
         const pw = form[1].value;
-        console.log(`Form submttted uid: pw: ${loginId} ${pw}`)
+        //console.log(`Form submttted uid: ${loginId}`)
 
         event.preventDefault();
         event.stopPropagation();

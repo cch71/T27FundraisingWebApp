@@ -68,6 +68,13 @@ export default function orders() {
             }
 
             setOrderList(orderElmList);
+        }).catch((err: any)=>{
+            if ('Invalid Session'===err) {
+                navigate('/signon/')
+            } else {
+                console.log(`Failed getting order list: ${JSON.stringify(err)}`);
+                throw err;
+            }
         });
     }, [])
 

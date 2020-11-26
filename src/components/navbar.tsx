@@ -1,10 +1,27 @@
-import React from 'react'
-import { Link, /*graphql, StaticQuery*/ } from 'gatsby'
+import React, { useState, useEffect } from 'react'
+import { Link } from 'gatsby'
+import auth from "../js/auth"
 
 const NavBar = () => {
-    const toggleNavBar = () => {
-        setActive(!active)
-    }
+    const [userNav, setUserNav] = useState();
+    useEffect(() => {
+        auth.getSession().then(([isValid, session])=>{
+            if (isValid && session) {
+                setUserNav(
+                    <span className="navbar-nav nav-item dropdown">
+                        <a className="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink"
+                           data-toggle="dropdown" aria-haspopup="false" aria-expanded="false">
+                            {auth.currentUser().getUsername()}
+                        </a>
+                        <div className="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                            <Link className='dropdown-item' replace to='/signon/'>Signout</Link>
+                        </div>
+                    </span>
+                );
+            }
+        });
+    }, []);
+
 
     return (
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
@@ -24,9 +41,10 @@ const NavBar = () => {
                         <Link className='nav-item nav-link' replace to='/orders/'>Orders</Link>
                     </li>
                     <li className="nav-item">
-                        <Link className='nav-item nav-link' replace to='/signon/'>SignOn</Link>
+                        <Link className='nav-item nav-link' replace to='/signon/'>Signout</Link>
                     </li>
                 </ul>
+                {userNav}
             </div>
         </nav>
     );

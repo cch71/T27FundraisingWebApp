@@ -228,7 +228,6 @@ class OrderDb {
             "neighborhood",
             "amountTotal"
         ];
-
         return this.query({fields: fieldNames});
     }
 
@@ -260,6 +259,8 @@ class OrderDb {
                         //console.log(`OrdersDB Query Resp: ${JSON.stringify(ordersReturned)}`);
                         resolve(ordersReturned);
                     }
+                }).catch((err: any)=>{
+                    reject(err);
                 });
 
                 
