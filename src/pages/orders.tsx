@@ -48,7 +48,7 @@ export default function orders() {
                         <li className="list-group-item">
                             <button type="button" className="btn btn-outline-danger  mx-1 float-right order-edt-btn"
                                     data-orderid={order.orderId} onClick={onDeleteOrder}>
-                                X
+                                <span>&#10005;</span>
                             </button>
                             <button type="button" className="btn btn-outline-info float-right order-edt-btn"
                                     data-orderid={order.orderId} onClick={onEditOrder}>

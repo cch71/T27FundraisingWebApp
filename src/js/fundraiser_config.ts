@@ -98,6 +98,10 @@ class FundraiserConfig {
         yield ['donation', 'Donation'];
     }
 
+    numDeliveryDates(): number {
+        return this.loadedFrConfig_.deliveryDates.length;
+    }
+
 }
 
 

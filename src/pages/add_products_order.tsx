@@ -4,25 +4,40 @@ import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 
+const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
 export default (params: any) => {
-    if (undefined === params.location.state) { return(<div/>); } //only used for building 
-    const deliveryDate = params?.location?.state?.deliveryLabel;
-    const deliveryId = params?.location?.state?.deliveryId;
+    if (undefined === params.location.state) { return(<div/>); } //only used for building
+
+    // Could be undefined if this is a new order
+    const currentDeliveryId = params?.location?.state?.deliveryId;
+    
     const currentOrder: Order = orderDb.getActiveOrder();
     if (!currentOrder) {
         navigate('/');
         return(<div/>);
     }
-    const deliveryDateOrder = currentOrder.orderByDelivery.get(deliveryId);
+    
+    const deliveryDateOrder = currentOrder.orderByDelivery.get(currentDeliveryId);
     const fundraiserConfig: FundraiserConfig = getFundraiserConfig();
     if (!fundraiserConfig) {
         alert("Failed to load fundraiser config");
         return(<div/>);
     }
 
-    const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
+    // TODO: probably better way to do this
+    const deliveryDateOpts = []
+    for (const [frDeliveryId, frDeliveryLabel] of fundraiserConfig.validDeliveryDates()) {
+        if ('donation'===frDeliveryId) { continue; }
+        if (frDeliveryId === currentDeliveryId || !currentOrder.orderByDelivery.has(frDeliveryId)) {
+            deliveryDateOpts.push(
+                <option value={frDeliveryId} key={frDeliveryId}>{frDeliveryLabel}</option>
+            );
+        }
+    }
 
+
+            // Controls when the submit button gets enabled
     const doesSubmitGetEnabled = (event: any)=>{
         if (event.currentTarget.value) {
             (document.getElementById('formAddProductsSubmit') as HTMLButtonElement).disabled = false;
@@ -31,15 +46,23 @@ export default (params: any) => {
         }
     };
 
+    // Called to cancel this operation and go back to order screen
     const onCancelItem = ()=>{
         navigate('/order_step_1/');
     }
 
+    // Called when this gets added to the order
     const onFormSubmission = (event: any) => {
         event.preventDefault();
         event.stopPropagation();
         
         let totalDue = currency(0.0);
+        const selectedDeliveryId = (document.getElementById('formSelectDeliveryDate') as HTMLSelectElement).value;
+        console.log(`Saving For Delivery ID: ${selectedDeliveryId}`);
+        if (currentDeliveryId && currentDeliveryId!==selectedDeliveryId) {
+            currentOrder.orderByDelivery.delete(currentDeliveryId);
+        }
+
         const items: Map<string, number> = new Map<string, number>();
         for (const product of fundraiserConfig.products()) {
             const formId = `form${product.id}`;
@@ -49,13 +72,13 @@ export default (params: any) => {
                 totalDue = totalDue.add((product as any).cost.multiply(numOrdered));
             }
         }
-        let mulchOrder = {
+        let productOrder = {
             amountDue: totalDue,
             kind: fundraiserConfig.kind(),
             items: items
         };
-        console.log(`Setting Order: ${deliveryId}`);
-        currentOrder.orderByDelivery.set(deliveryId, (mulchOrder as OrdersForDeliveryDate));
+        console.log(`Setting Order: ${selectedDeliveryId}`);
+        currentOrder.orderByDelivery.set(selectedDeliveryId, (productOrder as OrdersForDeliveryDate));
         
         navigate('/order_step_1/');
     }
@@ -85,9 +108,14 @@ export default (params: any) => {
         <div className="col-xs-1 d-flex justify-content-center">
             <div className="card">
                 <div className="card-body">
-                    <h5 className="card-title">Add {fundraiserConfig.description()} Order for {deliveryDate}</h5>
+                    <h5 className="card-title">Add {fundraiserConfig.description()} Order</h5>
                     <form onSubmit={onFormSubmission}>
-
+                        
+                        <label htmlFor="formSelectDeliveryDate">Select Delivery Date</label>
+                        <select className="custom-select" id="formSelectDeliveryDate" value={currentDeliveryId}>
+                            {deliveryDateOpts}
+                        </select>
+                        
                         {productElms}
 
                         <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>

@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from "react"
 import NavBar from "../components/navbar"
 import {orderDb, Order} from "../js/ordersdb"
-import OrderItem from "../components/order_item" //TODO: Rename DeliveryOrderSummary
+//import OrderItem from "../components/order_item" //TODO: Rename DeliveryOrderSummary
 import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 
 
+const USD = (value) => currency(value, { symbol: "$", precision: 2 });
+
+/* <li className="list-group-item" id={deliveryId} key={deliveryId}>
+ * <OrderItem onClick={onClickHandler} onDelete={recalculateTotal}
+ * deliveryId={deliveryId} deliveryLabel={deliveryLabel} />
+ * </li>
+ *  */
+
 
 const populateForm = (currentOrder: Order): any =>{
-    const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
     const fundraiserConfig: FundraiserConfig = getFundraiserConfig();
     if (!fundraiserConfig) {
@@ -17,6 +24,7 @@ const populateForm = (currentOrder: Order): any =>{
         return(<div/>);
     }
 
+    // Save off current order values
     const saveCurrentOrder = ()=>{
         currentOrder.firstName = (document.getElementById('formFirstName') as HTMLInputElement).value;
         currentOrder.lastName = (document.getElementById('formLastName') as HTMLInputElement).value;
@@ -37,12 +45,14 @@ const populateForm = (currentOrder: Order): any =>{
         console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
     }
 
+    // Handle Form Submission
     const onFormSubmission = (event: any) => {
         event.preventDefault();
         event.stopPropagation();
 
     }
 
+    // Add New Product Order
     const onAddOrder = (event: any)=>{
         event.preventDefault();
         event.stopPropagation();
@@ -50,14 +60,18 @@ const populateForm = (currentOrder: Order): any =>{
         saveCurrentOrder()
 
         const btn = event.currentTarget;
-        console.log(`Add New Fundraising Order for ${btn.dataset.deliveryid}:${btn.dataset.deliverylabel}`);
 
-        navigate('/add_products_order/', {state: {
-            deliveryId: btn.dataset.deliveryid,
-            deliveryLabel: btn.dataset.deliverylabel
-        }});
+        let pageState = {state: {}};
+        if (btn.dataset && btn.dataset.deliveryid) {
+            const deliveryId = btn.dataset.deliveryid;
+            console.log(`Add New Fundraising Order for ${deliveryId}`);
+            pageState['deliveryid'] = deliveryId;
+        }
+
+        navigate('/add_products_order/', pageState);
     };
 
+    // Add Donation to order
     const onAddDonation = (event: any)=>{
         event.preventDefault();
         event.stopPropagation();
@@ -67,6 +81,14 @@ const populateForm = (currentOrder: Order): any =>{
         navigate('/add_donations/');
     };
 
+    // Discard the order and go back to home
+    const onDiscardOrder = ()=>{
+        orderDb.setActiveOrder();
+        navigate('/');
+    };
+    
+
+    // Check for enabling/disabling submit button
     const doesSubmitGetEnabled = (event: any)=>{
         if (event.currentTarget.value) {
             (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = false;
@@ -89,17 +111,84 @@ const populateForm = (currentOrder: Order): any =>{
     }
 
     // Create delivery status buttons
-    const ordersByDeliveryBtns = []
-    for (const [deliveryId, deliveryLabel] of fundraiserConfig.validDeliveryDates()) {
-        const onClickHandler = ("donation" === deliveryId)? onAddDonation : onAddOrder;
-        //console.log(`Adding Order Type for DDay: ${deliveryId}`);
+    const populateOrdersList = (): Array<any> => {
+        const ordersByDeliveryBtns = []
+        for (const [deliveryId, deliveryLabel] of fundraiserConfig.validDeliveryDates()) {
+            const foundOrder = currentOrder.orderByDelivery.get(deliveryId);
+            if (!foundOrder) { continue; }
+
+            const foundTag = `found-${deliveryId}`
+            const orderTotalStr = `${deliveryLabel} Amount: ${USD(foundOrder.amountDue).format()} `;
+
+            // On Delete Order Re-enable button
+            const onDeleteOrder = (event)=>{
+                const deliveryIdToDel = event.currentTarget.dataset.deliveryid;
+                
+                console.log(`Deleting Order for ${deliveryIdToDel}`);
+
+                currentOrder.orderByDelivery.delete(deliveryIdToDel);
+                document.getElementById(foundTag).style.display = "none";
+                if ('donation' === deliveryIdToDel) {
+                    document.getElementById('addDonationBtnLi').style.display = "block";
+                } else {
+                    document.getElementById('addProductBtnLi').style.display = "block";
+                }
+
+                recalculateTotal();
+            }
+
+            //console.log(`Adding Order Type for DDay: ${deliveryId}`);
+            const onClickHandler = ("donation" === deliveryId)? onAddDonation : onAddOrder;
+
+            ordersByDeliveryBtns.push(
+                <li className="list-group-item" id={foundTag} key={foundTag}>
+                    {orderTotalStr}
+                    <button className="btn btn-outline-danger mx-1 float-right order-edt-btn"
+                            data-deliveryid={deliveryId} onClick={onDeleteOrder}>
+                        <span>&#10005;</span>
+                    </button>
+                    <button className="btn btn-outline-info float-right order-edt-btn"
+                            data-deliveryid={deliveryId} onClick={onClickHandler}>
+                        <span>&#9999;</span>
+                    </button>
+                </li>
+            );
+        }
+
+        // Figure out visibility
+        const orderHasDonation = currentOrder.orderByDelivery.has('donation');
+        const numProdOrders = orderHasDonation ?
+                              currentOrder.orderByDelivery.size-1 :
+                              currentOrder.orderByDelivery.size;
+        
+        const addProdDisplay = (0 !== (fundraiserConfig.numDeliveryDates()-numProdOrders)) ?
+                               {display: 'block'}:{display: 'none'};
+        const addDonationDisplay = (!orderHasDonation) ?
+                                   {display: 'block'}:{display: 'none'};
+
+        //Add the Add Product Button
         ordersByDeliveryBtns.push(
-            <li className="list-group-item" id={deliveryId} key={deliveryId}>
-                <OrderItem onClick={onClickHandler} onDelete={recalculateTotal}
-                           deliveryId={deliveryId} deliveryLabel={deliveryLabel} />
+            <li className="list-group-item" id="addProductBtnLi" key="addProductBtnLi" style={addProdDisplay}>
+                Add Product Order
+                <button className="btn btn-outline-info float-right order-edt-btn" onClick={onAddOrder}>
+                    <span>+</span>
+                </button>
             </li>
         );
-    }
+
+        //Add the Add Donation Button
+        ordersByDeliveryBtns.push(
+            <li className="list-group-item" id="addDonationBtnLi" key="addDonationBtnLi" style={addDonationDisplay}>
+                Add Donations
+                <button className="btn btn-outline-info float-right order-edt-btn" onClick={onAddDonation}>
+                    <span>+</span>
+                </button>
+            </li>
+        );
+
+        return ordersByDeliveryBtns;
+    };
+    const ordersByDeliveryBtns = populateOrdersList();
 
     // Neighborhoods list creation
     const hoods=[];
@@ -107,9 +196,10 @@ const populateForm = (currentOrder: Order): any =>{
         hoods.push(<option key={hood}>{hood}</option>);
     }
 
+    
     // Calulate Current amountDue
     let newTotalDue = currency(0.0);
-    for (let deliverable of currentOrder.orderByDelivery.values()) {
+    for (const deliverable of currentOrder.orderByDelivery.values()) {
         console.log(`Found Order To Calc: ${deliverable.amountDue}`);
         newTotalDue = newTotalDue.add(deliverable.amountDue);
     }
@@ -117,7 +207,7 @@ const populateForm = (currentOrder: Order): any =>{
     const amountPaid = USD(currentOrder.checkPaid.add(currentOrder.cashPaid)).format();
     console.log(`Amount Due: ${amountDue}  Paid: ${amountPaid}`);
 
-
+    
     // This is if we support city, state, zip
     /* const stateAbbreviations = [
      *     'AL','AK','AS','AZ','AR','CA','CO','CT','DE','DC','FM','FL','GA',
@@ -251,13 +341,20 @@ const populateForm = (currentOrder: Order): any =>{
             <ul className="list-group">
                 {ordersByDeliveryBtns}
             </ul>
-            
-            <div id="orderAmountPaid">Total Paid: {amountPaid}</div>
-            <div id="orderAmountDue">Total Due: {amountDue}</div>
-            
-            <button type="submit" className="btn btn-primary my-2 float-right" id="formOrderSubmit">
-                Submit
-            </button>
+
+            <div className="pt-3 col-xs-1 d-flex">
+                <div className="col-md-6" id="orderAmountDue">Total Due: {amountDue}</div>
+                <div className="col-md-6" id="orderAmountPaid">Total Paid: {amountPaid}</div>
+            </div>
+
+            <div className="pt-4">
+                <button type="button" className="btn btn-primary" onClick={onDiscardOrder}>
+                    Discard
+                </button>
+                <button type="submit" className="btn btn-primary my-2 float-right" id="formOrderSubmit">
+                    Submit
+                </button>
+            </div>
         </form>
     );
 }
@@ -303,6 +400,27 @@ export default (params: any)=>{
                     </div>
                 </div>
             </div>
+
+            <div className="modal" tabIndex="-1" role="dialog">
+                <div className="modal-dialog" role="document">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">Enter Neighborhood</h5>
+                            <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <p>Modal body text goes here.</p>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-primary">Save changes</button>
+                            <button type="button" className="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
         </div>
     );
 

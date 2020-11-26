@@ -58,7 +58,9 @@ export default class OrderItem extends React.Component {
                     {orderTotalStr}
                     <button className="btn btn-outline-danger mx-1 float-right order-edt-btn"
                             data-deliverylabel={deliveryLabel} data-deliveryid={deliveryId}
-                            onClick={onDeleteOrder}>X</button>
+                            onClick={onDeleteOrder}>
+                        <span>&#10005;</span>
+                    </button>
                     <button className="btn btn-outline-info float-right order-edt-btn"
                             data-deliverylabel={deliveryLabel} data-deliveryid={deliveryId}
                             onClick={this.props.onClick}>
