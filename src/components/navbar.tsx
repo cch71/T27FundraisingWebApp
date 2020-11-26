@@ -29,6 +29,13 @@ const NavBar = () => {
                 <Link className='nav-item nav-link' replace to='/orders/'>Orders</Link>
             </li>
         );
+        baseNavItems.push(
+            <li className="nav-item" key="reportIssue">
+                <a className='nav-item nav-link'
+                   href="https://github.com/cch71/T27FundraisingWebApp/issues">Report Issue</a>
+            </li>
+        );
+        
         setBaseNav(baseNavItems);
 
         
