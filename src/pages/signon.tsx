@@ -2,10 +2,14 @@ import React from "react"
 import NavBar from "../components/navbar"
 import auth from "../js/auth"
 import { navigate } from "gatsby"
+import {orderDb} from "../js/ordersdb"
+
 
 export default function signon() {
     //If you got here then lets go ahean and sign out if already signed in.
     auth.signOut();
+    orderDb.setActiveOrder(); // Reset active order
+
 
     const onFormSubmission = (event: any) => {
         const form = event.currentTarget;

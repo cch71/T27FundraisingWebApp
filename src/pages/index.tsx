@@ -69,7 +69,7 @@ export default function home() {
                                 </div>
                             </div>
                             <button type="button"
-                                    className="btn btn-outline-light add-order-btn"
+                                    className="btn btn-outline-info add-order-btn"
                                     onClick={addNewOrder}>
                                 +
                             </button>
@@ -77,8 +77,7 @@ export default function home() {
                     );
 
 
-                    // GoogleCharts.load("current", {packages:["corechart"]});
-                    // GoogleCharts.setOnLoadCallback(drawChart);
+                    // Draw Charts
                     const drawCharts=()=>{
 
                         const options = { is3D: true };
@@ -115,53 +114,6 @@ export default function home() {
                         
                     };
                     GoogleCharts.load(drawCharts);
-                    
-                    
-                    /* const patrolData = {
-                     *     labels: [],
-                     *     series: []
-                     * };
-                     *           for (const [patrol, amount] of summary.patrolRankings()) {
-                     *               patrolData.labels.push(patrol);
-                     *               patrolData.series.push(amount);
-                     *           }
-                     *           new Chartist.Pie('.patrolStandingsChart', patrolData, {
-                     *               showLabel: false,
-                     *               plugins: [
-                     *                   Chartist.plugins.legend()
-                     *               ]
-                     *           });
-                     */
-
-                    /* Chart Options
-                     * const chartOptions = {
-                     *     responsive: true,
-                     *     legend: {
-                     *         position: 'left',
-                     *     }
-                     * };
-                     * 
-                     * // Your Pie Chart
-                     * const myStandingChart = new Chart('yourPercentageChart', {
-                     *     type: 'pie',
-                     *     data: {
-                     *         labels: ['You', 'Troop'],
-                     *         datasets: [{
-                     *             data:[
-                     *                 summary.totalAmountSold(),
-                     *                 summary.totalTroopSold().subtract(summary.totalAmountSold())
-                     *             ],
-                     *             backgroundColor: ['Blue', 'DarkOliveGreen']
-                     *         }]
-                     *     },
-                     *     options: chartOptions
-                     * });
-
-                     * const patrolPieChart = new Chart('patrolStandingsChart', {
-                     *     type: 'pie',
-                     *     data: patrolData,
-                     *     options: chartOptions
-                     * }); */
                 });
             };
 

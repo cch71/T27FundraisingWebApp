@@ -1,10 +1,37 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'gatsby'
 import auth from "../js/auth"
+import t27patch from "../../static/t27patch.jpg"
+import {orderDb} from "../js/ordersdb"
 
 const NavBar = () => {
+    const [baseNav, setBaseNav] = useState();
     const [userNav, setUserNav] = useState();
+    const [activeOrder, setActiveOrder] = useState();
     useEffect(() => {
+        console.log(`Location: ${window.location.pathname}`)
+        const pathNm = window.location.pathname;
+        const baseNavItems = [];
+        const setIfActive = (srchPath: string)=>{
+            if (pathNm===srchPath || `${pathNm}/`===srchPath) {
+                return('nav-item active');
+            } else {
+                return('nav-item');
+            }
+        };
+        baseNavItems.push(
+            <li className={setIfActive('/')} key="/">
+                <Link className='nav-item nav-link' replace to='/'>Home</Link>
+            </li>
+        );
+        baseNavItems.push(
+            <li className={setIfActive('/orders/')} key="/orders">
+                <Link className='nav-item nav-link' replace to='/orders/'>Orders</Link>
+            </li>
+        );
+        setBaseNav(baseNavItems);
+
+        
         auth.getSession().then(([isValid, session])=>{
             if (isValid && session) {
                 setUserNav(
@@ -19,13 +46,26 @@ const NavBar = () => {
                     </span>
                 );
             }
+
+            if (orderDb.getActiveOrder()) {
+                setActiveOrder(
+                    <li className={setIfActive('/order_step_1/')}>
+                        <Link className='nav-item nav-link' replace to='/order_step_1/'>Active Order</Link>
+                    </li>
+                );
+            }
         });
     }, []);
 
 
     return (
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
-            <a className="navbar-brand" href="#">T27 Fundraiser</a>
+            <a className="navbar-brand" href="#">
+                <span>
+                    <img className="navbar-logo mr-2" src={t27patch} alt="Logo" />
+                    Fundraiser
+                </span>
+            </a>
 
             <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,15 +74,8 @@ const NavBar = () => {
 
             <div className="collapse navbar-collapse" id="navbarNav">
                 <ul className="navbar-nav mr-auto">
-                    <li className="nav-item">
-                        <Link className='nav-item nav-link' replace to='/'>Home</Link>
-                    </li>
-                    <li className="nav-item">
-                        <Link className='nav-item nav-link' replace to='/orders/'>Orders</Link>
-                    </li>
-                    <li className="nav-item">
-                        <Link className='nav-item nav-link' replace to='/signon/'>Signout</Link>
-                    </li>
+                    {baseNav}
+                    {activeOrder}
                 </ul>
                 {userNav}
             </div>

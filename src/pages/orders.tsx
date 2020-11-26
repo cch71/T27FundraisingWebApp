@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import NavBar from "../components/navbar"
 import { navigate } from "gatsby"
-import {orderDb, OrderIf, OrderListItem} from "../js/ordersdb"
+import {orderDb, OrderListItem} from "../js/ordersdb"
 import currency from "currency.js"
 
 
@@ -13,10 +13,6 @@ export default function orders() {
         console.log("Add new order");
         orderDb.newActiveOrder();
         navigate('/order_step_1/');
-    };
-
-    const editOrder=(order: OrderIf)=>{
-        console.log(`Editorder ${order.orderId}`);
     };
 
     // Client-side Runtime Data Fetching
@@ -82,7 +78,7 @@ export default function orders() {
         <div>
             <NavBar/>
             <button type="button"
-                    className="btn btn-outline-light add-order-btn"
+                    className="btn btn-outline-info add-order-btn"
                     onClick={addNewOrder}>
                 +
             </button>
