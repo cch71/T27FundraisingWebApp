@@ -6,7 +6,7 @@ import {orderDb, SummaryInfo} from "../js/ordersdb"
 import {FundraiserConfig, downloadFundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 import awsConfig from "../config"
 import currency from "currency.js"
-import Chart from 'chart.js'
+import {GoogleCharts} from 'google-charts';
 
 
 /* function *dynamicColors(): Generator<string> {
@@ -14,11 +14,11 @@ import Chart from 'chart.js'
  *      * var g = Math.floor(Math.random() * 255);
  *      * var b = Math.floor(Math.random() * 255);
  *      * return "rgb(" + r + "," + g + "," + b + ")"; 
-*     for (const c of ['red', 'green', 'blue', 'purple', 'yellow', 'brown', 'orange']) {
-    *         yield c
-    *     }
-* };
-*  */
+ *     for (const c of ['red', 'green', 'blue', 'purple', 'yellow', 'brown', 'orange']) {
+ *         yield c
+ *     }
+ * };
+ *  */
 
 function dynamicColors(){
     return ['SaddleBrown', 'DarkOliveGreen', 'Blue', 'Purple', 'SlateGrey', 'Yellow', 'Salmon'];
@@ -60,10 +60,12 @@ export default function home() {
                                 <div className="card-body">
                                     <h5 className="card-title">Summary for: {summary.userName()}</h5>
                                     <div>You have {summary.totalNumOrders()} orders 
-                                    and collected {USD(summary.totalAmountSold()).format()}</div>
+                                        and collected {USD(summary.totalAmountSold()).format()}</div>
                                     <div>Troop has sold {USD(summary.totalTroopSold()).format()}</div>
-                                    <canvas id="yourPercentageChart"></canvas>
-                                    <canvas id="patrolStandingsChart"></canvas>
+                                    <div><br/>Your Percentage:</div>
+                                    <div id="myChart"/>
+                                    <div>Sales by Patrol:</div>
+                                    <div id="patrolStandingsChart"/>
                                 </div>
                             </div>
                             <button type="button"
@@ -74,49 +76,92 @@ export default function home() {
                         </div>
                     );
 
-                    //Chart.defaults.global.legend.labels.boxWidth = '10';
 
-                    // Chart Options
-                    const chartOptions = {
-                        responsive: true,
-                        legend: {
-                            position: 'left',
+                    // GoogleCharts.load("current", {packages:["corechart"]});
+                    // GoogleCharts.setOnLoadCallback(drawChart);
+                    const drawCharts=()=>{
+
+                        const options = { is3D: true };
+
+                        var myStandingData = new google.visualization.DataTable(
+                            {
+                                cols: [{id: 'myVal', label: 'Who', type: 'string'},
+                                       {id: 'troopVal', label: 'amount', type: 'number'}],
+                                rows: [{c:[{v: 'Mine'},
+                                           {v: summary.totalAmountSold().value}]},
+                                       {c:[{v: 'Troops'},
+                                           {v: summary.totalTroopSold().subtract(summary.totalAmountSold()).value}]}
+                                ]
+                            }
+                        );
+                            
+                        const myStandingsChart = new GoogleCharts.api.visualization.PieChart(
+                            document.getElementById('myChart'));
+                        myStandingsChart.draw(myStandingData, options);
+
+
+                        const patrolStandingsData = new GoogleCharts.api.visualization.DataTable();
+                            patrolStandingsData.addColumn('string', 'Patrol Sales');
+                        patrolStandingsData.addColumn('number', 'Amount Sold');
+                        
+                        for (const [patrol, amount] of summary.patrolRankings()) {
+                            patrolStandingsData.addRow([patrol, amount.value]);
                         }
-                    };
-                    
-                    // Your Pie Chart
-                    const myStandingChart = new Chart('yourPercentageChart', {
-                        type: 'pie',
-                        data: {
-                            labels: ['You', 'Troop'],
-                            datasets: [{
-                                data:[
-                                    summary.totalAmountSold(),
-                                    summary.totalTroopSold().subtract(summary.totalAmountSold())
-                                ],
-                                backgroundColor: ['Blue', 'DarkOliveGreen']
-                            }]
-                        },
-                        options: chartOptions
-                    });
 
-                    // Patrol Pie Chart
-                    const patrolData = {
-                        labels: [],
-                        datasets: [{
-                            data:[],
-                            backgroundColor: dynamicColors
-                        }]
+                        const patrolStandingsChart = new GoogleCharts.api.visualization.PieChart(
+                            document.getElementById('patrolStandingsChart'));
+                        patrolStandingsChart.draw(patrolStandingsData, options);
+
+                        
                     };
-                    for (const [patrol, amount] of summary.patrolRankings()) {
-                        patrolData.labels.push(patrol);
-                        patrolData.datasets[0].data.push(amount);
-                    }
-                    const patrolPieChart = new Chart('patrolStandingsChart', {
-                        type: 'pie',
-                        data: patrolData,
-                        options: chartOptions
-                    });
+                    GoogleCharts.load(drawCharts);
+                    
+                    
+                    /* const patrolData = {
+                     *     labels: [],
+                     *     series: []
+                     * };
+                     *           for (const [patrol, amount] of summary.patrolRankings()) {
+                     *               patrolData.labels.push(patrol);
+                     *               patrolData.series.push(amount);
+                     *           }
+                     *           new Chartist.Pie('.patrolStandingsChart', patrolData, {
+                     *               showLabel: false,
+                     *               plugins: [
+                     *                   Chartist.plugins.legend()
+                     *               ]
+                     *           });
+                     */
+
+                    /* Chart Options
+                     * const chartOptions = {
+                     *     responsive: true,
+                     *     legend: {
+                     *         position: 'left',
+                     *     }
+                     * };
+                     * 
+                     * // Your Pie Chart
+                     * const myStandingChart = new Chart('yourPercentageChart', {
+                     *     type: 'pie',
+                     *     data: {
+                     *         labels: ['You', 'Troop'],
+                     *         datasets: [{
+                     *             data:[
+                     *                 summary.totalAmountSold(),
+                     *                 summary.totalTroopSold().subtract(summary.totalAmountSold())
+                     *             ],
+                     *             backgroundColor: ['Blue', 'DarkOliveGreen']
+                     *         }]
+                     *     },
+                     *     options: chartOptions
+                     * });
+
+                     * const patrolPieChart = new Chart('patrolStandingsChart', {
+                     *     type: 'pie',
+                     *     data: patrolData,
+                     *     options: chartOptions
+                     * }); */
                 });
             };
 

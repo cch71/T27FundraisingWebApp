@@ -16,7 +16,6 @@
   "dependencies": {
     "amazon-cognito-identity-js": "^4.5.5",
     "bootstrap": "^4.5.3",
-    "chart.js": "^2.9.4",
     "currency.js": "^2.0.3",
     "gatsby": "^2.27.1",
     "gatsby-plugin-manifest": "^2.7.0",
@@ -24,6 +23,7 @@
     "gatsby-plugin-sass": "^2.6.0",
     "gatsby-plugin-sharp": "^2.9.0",
     "gatsby-transformer-sharp": "^2.7.0",
+    "google-charts": "^2.0.0",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "uuid": "^3.4.0"
