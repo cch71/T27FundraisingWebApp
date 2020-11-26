@@ -119,7 +119,7 @@ export default (params: any) => {
                         {productElms}
 
                         <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
-                            Back
+                            Cancel
                         </button>
                         <button type="submit" className="btn btn-primary my-2 float-right" id="formAddProductsSubmit">
                             Add                            
