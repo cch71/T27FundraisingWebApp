@@ -9,13 +9,6 @@ import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
 
-/* <li className="list-group-item" id={deliveryId} key={deliveryId}>
- * <OrderItem onClick={onClickHandler} onDelete={recalculateTotal}
- * deliveryId={deliveryId} deliveryLabel={deliveryLabel} />
- * </li>
- *  */
-
-
 const populateForm = (currentOrder: Order): any =>{
 
     const fundraiserConfig: FundraiserConfig = getFundraiserConfig();
@@ -35,8 +28,9 @@ const populateForm = (currentOrder: Order): any =>{
         /* currentOrder.city = (document.getElementById('formCity') as HTMLInputElement).value;
          * currentOrder.state = (document.getElementById('formState') as HTMLInputElement).value;
          * currentOrder.zip = (document.getElementById('formZip') as HTMLInputElement).value;
-         * currentOrder.specialInstructions =
-         *     (document.getElementById('formSpecialInstructions') as HTMLInputElement).value; */
+        */
+         currentOrder.specialInstructions =
+             (document.getElementById('formSpecialInstructions') as HTMLInputElement).value;
         currentOrder.checkNumbers = (document.getElementById('formCheckNumbers') as HTMLInputElement).value;
         currentOrder.cashPaid =
             currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
@@ -316,6 +310,12 @@ const populateForm = (currentOrder: Order): any =>{
                 </div>
             </div>
 
+            <div className="form-row">
+                <div className="form-group col-md-12">
+                    <label for="formSpecialInstructions">Special Instructions</label>
+                    <textarea className="form-control" id="formSpecialInstructions" rows="2"></textarea>
+                </div>
+            </div>
 
             <div className="form-row">
                 <div className="form-group col-md-4">
@@ -351,7 +351,7 @@ const populateForm = (currentOrder: Order): any =>{
                 <button type="button" className="btn btn-primary" onClick={onDiscardOrder}>
                     Discard
                 </button>
-                <button type="submit" className="btn btn-primary my-2 float-right" id="formOrderSubmit">
+                <button type="submit" className="btn btn-primary float-right" id="formOrderSubmit">
                     Submit
                 </button>
             </div>

@@ -9,7 +9,6 @@ import { v4 as uuidv4 } from 'uuid';
 interface OrdersForDeliveryDate {
     amountDue: currency;
     kind: string;
-    specialInstructions?: string;
     deliveryDateId?: string;
     items?: Map<string, number> //productId, numOrders
 }
@@ -35,6 +34,7 @@ class Order {
     city?: string;
     state?: string;
     zip?: string;
+    specialInstructions?: string;
     neighborhood?: string;
     checkNumbers?: string;
 
