@@ -44,6 +44,20 @@ const populateForm = (currentOrder: Order): any =>{
         event.preventDefault();
         event.stopPropagation();
 
+        console.log(`Submitting Active Order`);
+        saveCurrentOrder();
+        orderDb.submitActiveOrder().then(()=>{
+            navigate('/');
+        }).catch((err:any)=>{
+            if ('Invalid Session'===err) {
+                navigate('/signon/')
+            } else {
+                const errStr = `Failed submitting order: ${JSON.stringify(err)}`;
+                console.log(errStr);
+                alert(errStr);
+                throw err;
+            }
+        });
     }
 
     // Add New Product Order
@@ -51,7 +65,7 @@ const populateForm = (currentOrder: Order): any =>{
         event.preventDefault();
         event.stopPropagation();
 
-        saveCurrentOrder()
+        saveCurrentOrder();
 
         const btn = event.currentTarget;
 
@@ -59,7 +73,7 @@ const populateForm = (currentOrder: Order): any =>{
         if (btn.dataset && btn.dataset.deliveryid) {
             const deliveryId = btn.dataset.deliveryid;
             console.log(`Add New Fundraising Order for ${deliveryId}`);
-            pageState['deliveryid'] = deliveryId;
+            pageState.state['deliveryId'] = deliveryId;
         }
 
         navigate('/add_products_order/', pageState);
@@ -312,7 +326,7 @@ const populateForm = (currentOrder: Order): any =>{
 
             <div className="form-row">
                 <div className="form-group col-md-12">
-                    <label for="formSpecialInstructions">Special Instructions</label>
+                    <label htmlFor="formSpecialInstructions">Special Instructions</label>
                     <textarea className="form-control" id="formSpecialInstructions" rows="2"></textarea>
                 </div>
             </div>
@@ -378,6 +392,15 @@ export default (params: any)=>{
                     } else {
                         alert(`Order: ${dbOrderId} could not be retrieved`);
                         navigate('/orders/');
+                    }
+                }).catch((err: any)=>{
+                    if ('Invalid Session'===err) {
+                        navigate('/signon/');
+                    } else {
+                        const errStr = `Failed retrieving order: ${JSON.stringify(err)}`;
+                        console.log(errStr);
+                        alert(errStr);
+                        throw err;
                     }
                 });
             } else {

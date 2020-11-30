@@ -24,6 +24,7 @@ class Order {
     orderByDelivery: Map<string, OrdersForDeliveryDate>;
 
 
+    doDeleteOrder?: boolean;
     orderOwner?: string;
     firstName?: string;
     lastName?: string;
@@ -165,6 +166,7 @@ class SummaryInfo {
 class OrderDb {
     private readonly fundraiserConfig_: any;
     private currentOrder_?: Order;
+    private submitOrderPromise_?: Promise<void>;
 
     constructor() {}
 
@@ -211,7 +213,110 @@ class OrderDb {
             });
         }); 
     }
+ 
+    /////////////////////////////////////////
+    //
+    deleteOrder(orderId: string): Promise<void> {
+        return new Promise(async (resolve, reject)=>{
+            try {
+                auth.getAuthToken().then(async (authToken: string)=>{
+                    const orderOwner = auth.currentUser().getUsername();
+                    if (!orderOwner || !orderId) {
+                        reject(new Error("Order ID or Login ID is invalid"));
+                        return;
+                    }
+                    const paramStr = JSON.stringify({
+                        doDeleteOrder: true,
+                        orderOwner: orderOwner,
+                        orderId: orderId
+                    });
 
+                    //console.log(`OrderDB Query Parms: ${paramStr}`);
+                    const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
+                        method: 'post',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: authToken
+                        },
+                        body: paramStr
+                    });
+                    
+                    if (!resp.ok) { // if HTTP-status is 200-299
+                        const errRespBody = await resp.text();
+                        const errStr = `Query error: ${resp.status}  ${errRespBody}`;
+                        reject(new Error(errStr));
+                    } else {
+                        resolve();
+                    }
+                }).catch((err: any)=>{
+                    reject(err);
+                });
+
+                
+            } catch(error) {
+                console.error(error);
+                const errStr = `Delete Order error: ${error.message}`;
+                reject(error);
+            }
+        });
+    }
+
+
+    /////////////////////////////////////////
+    //
+    submitActiveOrder(): Promise<void> {
+        if (!this.submitOrderPromise_) {
+            this.submitOrderPromise_ = new Promise(async (resolve, reject)=>{
+                if (!this.currentOrder_) {
+                    this.submitOrderPromise_ = undefined;
+                    reject(new Error("There is no active order"));
+                    return;
+                }
+
+                const handleErr = (err: any)=>{
+                    this.submitOrderPromise_ = undefined;
+                    reject(err);
+                };
+                
+                try {
+                    auth.getAuthToken().then(async (authToken: string)=>{
+
+                        this.currentOrder_['orderOwner'] = auth.currentUser().getUsername();
+                        const paramStr = JSON.stringify(this.currentOrder_);
+                        //console.log(`OrderDB Query Parms: ${paramStr}`);
+                        const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
+                            method: 'post',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Authorization: authToken
+                            },
+                            body: paramStr
+                        });
+                        
+                        if (!resp.ok) { // if HTTP-status is 200-299
+                            const errRespBody = await resp.text();
+                            handleErr(new Error(`Failed upserting order id: ${resp.status} reason: ${errRespBody}`));
+                        } else {
+                            this.submitOrderPromise_ = undefined;
+                            // Order Submited so reset active order
+                            this.setActiveOrder();
+                            resolve();
+                        }
+                    }).catch((err: any)=>{
+                        handleErr(err);
+                    });
+
+                    
+                } catch(err) {
+                    const errStr = `Failed req upserting order err: ${err.message}`; 
+                    handleErr(err);
+                }
+            });
+        }
+
+        return this.submitOrderPromise_;
+
+    }
     
     /////////////////////////////////////////
     //
@@ -252,8 +357,8 @@ class OrderDb {
                     
                     if (!resp.ok) { // if HTTP-status is 200-299
                         const errRespBody = await resp.text();
-                        alert(`HTTP Resp Error: ${resp.status}  ${errRespBody}`);
-                        reject(null);
+                        const errStr = `Query error: ${resp.status}  ${errRespBody}`;
+                        reject(new Error(errStr));
                     } else {
                         const ordersReturned: any = await resp.json();
                         //console.log(`OrdersDB Query Resp: ${JSON.stringify(ordersReturned)}`);
@@ -266,8 +371,8 @@ class OrderDb {
                 
             } catch(error) {
                 console.error(error);
-                alert("HTTP-Error: " + error);
-                reject(null);
+                const errStr = `Query req error: ${error.message}`;
+                reject(error);
             }
         });
     }

@@ -16,71 +16,114 @@ export default function orders() {
         navigate('/order_step_1/');
     };
 
-    const onDeleteOrder = (event: any)=>{
-        const btn = event.currentTarget;
-        console.log(`Deleting order for ${btn.dataset.orderid}`);
-        jQuery('#confirmDeleteOrderInput').val('');
-        jQuery('#deleteBtn')
-            .prop("disabled",true)
-            .click(
-                (event: any)=>{
-                    console.log(`Delete confirmed for: ${btn.dataset.orderid}`);
-                    jQuery('#deleteOrderDlg').modal('hide')
-                }
-            );
-        jQuery('#deleteOrderDlg').modal()
-    };
-
-    const onEditOrder = (event: any)=>{
-        const btn = event.currentTarget;
-        const orderId = btn.dataset.orderid;
-        console.log(`Editing order for ${orderId}`);
-        orderDb.setActiveOrder(); // Reset active order to let order edit for set it
-        navigate('/order_step_1/', {state: {editOrderId: orderId}});
-    };
-
     // Client-side Runtime Data Fetching
-    const [orderList, setOrderList] = useState();
     useEffect(() => {
 
         orderDb.getOrderList().then((orders: Array<OrderListItem<string>>)=>{
             console.log(`Orders Page: ${JSON.stringify(orders)}`);
-            const orderElmList = [];
+            const orderDataSet = [];
             for (const order of orders) {
                 order.email = order.email?order.email:'';
                 order.addr2 = order.addr2?order.addr2:'';
                 const nameStr = `${order.firstName}, ${order.lastName}`;
-                const contactInfoStr = `${order.addr1} ${order.addr2} ${order.neighborhood} ${order.phone} ${order.email}`;
+                const addrStr = `${order.addr1} ${order.addr2}`
                 const totalAmountStr = USD(order.amountTotal).format();
-                orderElmList.push(
-                    <ul className="list-group list-group-horizontal-lg my-2" key={order.orderId}>
-                        <li className="list-group-item order-list-name">{nameStr}</li>
-                        <li className="list-group-item order-list-addr">{contactInfoStr}</li>
-                        <li className="list-group-item order-list-due">{totalAmountStr}</li>
-                        <li className="list-group-item">
-                            <button type="button" className="btn btn-outline-danger  mx-1 float-right order-edt-btn"
-                                    data-orderid={order.orderId}  onClick={onDeleteOrder}>
-                                <span>&#10005;</span>
-                            </button>
-                            <button type="button" className="btn btn-outline-info float-right order-edt-btn"
-                                    data-orderid={order.orderId} onClick={onEditOrder}>
-                                <span>&#9999;</span>
-                            </button>
-                        </li>
-                    </ul>
-                );
+                orderDataSet.push([order.orderId, nameStr, addrStr, order.neighborhood,
+                                   order.phone, order.email, totalAmountStr, null]);
             }
+
+            if (jQuery.fn.dataTable.isDataTable( '#orderListTable')) {
+                jQuery('#orderListTable').DataTable().destroy();
+            }
+
+            const buttonDef =
+                `<div>` +
+                `<button type="button" class="btn btn-outline-info mr-1 order-edt-btn"><span>&#9999;</span></button>` +
+                `<button type="button" class="btn btn-outline-danger order-edt-btn"><span>&#10005;</span></button>` +
+                `</div>`;
+
+            const table = jQuery('#orderListTable').DataTable({
+                data: orderDataSet,
+                paging: false,
+                bInfo : false,
+                columns: [
+                    {
+                        title: "OrderID",
+                        visible: false
+                    },
+                    {
+                        title: "Name",
+                        className: "all"
+                    },
+                    { title: "Address" },
+                    { title: "Neighborhood" },
+                    { title: "Phone" },
+                    { title: "Email" },
+                    { title: "Amount" },
+                    {
+                        title: "Actions",
+                        data: null,
+                        "orderable": false,
+                        "defaultContent": buttonDef,
+                        className: "all"
+                    },
+                ]
+            });
+
+            // Handle on Edit Scenario
+            jQuery('#orderListTable').find('.btn-outline-info').on('click', (event: any)=>{
+                const parentTr = jQuery(event.currentTarget).parents('tr');
+                const row = table.row(parentTr);
+                const orderId = row.data()[0];
+
+                console.log(`Editing order for ${orderId}`);
+                orderDb.setActiveOrder(); // Reset active order to let order edit for set it
+                navigate('/order_step_1/', {state: {editOrderId: orderId}});
+            });
+
+            // Handle On Delete Scenario
+            jQuery('#orderListTable').find('.btn-outline-danger').on('click', (event: any)=>{
+                const parentTr = jQuery(event.currentTarget).parents('tr');
+                const row = table.row(parentTr);
+                const orderId = row.data()[0];
+
+                console.log(`Deleting order for ${orderId}`);
+                jQuery('#confirmDeleteOrderInput').val('');
+                parentTr.find('button').attr("disabled", true);
+                
+                jQuery('#deleteDlgBtn')
+                    .prop("disabled",true)
+                    .off('click')
+                    .click(
+                        (event: any)=>{
+                            console.log(`Delete confirmed for: ${orderId}`);
+                            jQuery('#deleteOrderDlg').modal('hide')
+                            orderDb.deleteOrder(orderId).then(()=>{
+                                row.remove().draw();
+                            }).catch((err: any)=>{
+                                alert(`Failed to delete order: ${orderId}: ${err.message}`);
+                                parentTr.find('button').attr("disabled", false);
+                            });
+                        }
+                    );
+                jQuery('#deleteOrderDlg').off('hidden.bs.modal').on('hidden.bs.modal', ()=> {
+                    parentTr.find('button').attr("disabled", false);
+                })
+                jQuery('#deleteOrderDlg').modal()
+            } );
+            
             const spinnerElm = document.getElementById('orderLoadingSpinner');
             if (spinnerElm) {
                 spinnerElm.className = "d-none";
             }
 
-            setOrderList(orderElmList);
         }).catch((err: any)=>{
             if ('Invalid Session'===err) {
                 navigate('/signon/')
             } else {
-                console.log(`Failed getting order list: ${JSON.stringify(err)}`);
+                const errStr = `Failed creating order list: ${JSON.stringify(err)}`;
+                console.log(errStr);
+                alert(errStr);
                 throw err;
             }
         });
@@ -89,9 +132,9 @@ export default function orders() {
     // Check for enabling/disabling Delete From Button
     const doesDeleteBtnGetEnabled = (event: any)=>{
         if ('delete'===event.currentTarget.value) {
-            (document.getElementById('deleteBtn') as HTMLButtonElement).disabled = false;
+            (document.getElementById('deleteDlgBtn') as HTMLButtonElement).disabled = false;
         } else {
-            (document.getElementById('deleteBtn') as HTMLButtonElement).disabled = true;
+            (document.getElementById('deleteDlgBtn') as HTMLButtonElement).disabled = true;
         }
     };
 
@@ -105,10 +148,12 @@ export default function orders() {
                 +
             </button>
             <div className="col-xs-1 d-flex justify-content-center">
-                <div className="card">
+                <div className="card" style={{width: '80rem'}} >
                     <div className="card-body">
                         <h5 className="card-title" id="orderCardTitle">Orders</h5>
-                        {orderList}
+                        <table id="orderListTable"
+                               className="display responsive nowrap table table-striped table-bordered table-hover"
+                               style={{width:"100%"}}/>
                         <div className="spinner-border" role="status" id="orderLoadingSpinner">
                             <span className="sr-only">Loading...</span>
                         </div>
@@ -130,7 +175,7 @@ export default function orders() {
                         </div>
                         <div className="modal-body">
                             <input type="text" className="form-control" id="confirmDeleteOrderInput"
-                                   placeholder="type delete to confirm"
+                                   placeholder="type delete to confirm"  autoComplete="off"
                                    onInput={doesDeleteBtnGetEnabled} aria-describedby="confirmDeleteOrderHelp" />
                             <small id="confirmDeleteOrderHelp" className="form-text text-muted">
                                 Enter "delete" to confirm order deletion.
@@ -138,7 +183,7 @@ export default function orders() {
 
                         </div>
                         <div className="modal-footer">
-                            <button type="button" disabled className="btn btn-primary" id="deleteBtn">
+                            <button type="button" disabled className="btn btn-primary" id="deleteDlgBtn">
                                 Delete Order
                             </button>
                             <button type="button" className="btn btn-secondary" data-dismiss="modal">Cancel</button>

@@ -11,6 +11,7 @@ export default (params: any) => {
 
     // Could be undefined if this is a new order
     const currentDeliveryId = params?.location?.state?.deliveryId;
+    console.log(`Current Delivery ID: ${currentDeliveryId}`);
     
     const currentOrder: Order = orderDb.getActiveOrder();
     if (!currentOrder) {
@@ -112,7 +113,7 @@ export default (params: any) => {
                     <form onSubmit={onFormSubmission}>
                         
                         <label htmlFor="formSelectDeliveryDate">Select Delivery Date</label>
-                        <select className="custom-select" id="formSelectDeliveryDate" value={currentDeliveryId}>
+                        <select className="custom-select" id="formSelectDeliveryDate" defaultValue={currentDeliveryId}>
                             {deliveryDateOpts}
                         </select>
                         
