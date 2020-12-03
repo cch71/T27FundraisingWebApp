@@ -70,17 +70,31 @@ export default (params: any) => {
             const numOrdered = parseInt((document.getElementById(formId) as HTMLInputElement).value);
             if (0 < numOrdered) {
                 items.set(product.id, numOrdered);
-                totalDue = totalDue.add((product as any).cost.multiply(numOrdered));
+                let rate = currency(product.unitPrice);
+                // Handle Price product price breaks if any
+                for (const priceBreak of product.priceBreaks) {
+                    const unitsNeeded = priceBreak.gt;
+                    if (numOrdered > unitsNeeded) {
+                        rate = currency(priceBreak.unitPrice);
+                        console.log(`Ordered: ${numOrdered}  UN: ${unitsNeeded} Rate: ${rate}`);
+                    }
+                }
+                totalDue = totalDue.add(rate.multiply(numOrdered));
             }
         }
-        let productOrder = {
-            amountDue: totalDue,
-            kind: fundraiserConfig.kind(),
-            items: items
-        };
-        console.log(`Setting Order: ${selectedDeliveryId}`);
-        currentOrder.orderByDelivery.set(selectedDeliveryId, (productOrder as OrdersForDeliveryDate));
+
+        if (0.0===totalDue.value) {
+            currentOrder.orderByDelivery.delete(selectedDeliveryId);
+        } else {
         
+            let productOrder = {
+                amountDue: totalDue,
+                kind: fundraiserConfig.kind(),
+                items: items
+            };
+            console.log(`Setting Order: ${selectedDeliveryId}`);
+            currentOrder.orderByDelivery.set(selectedDeliveryId, (productOrder as OrdersForDeliveryDate));
+        }
         navigate('/order_step_1/');
     }
 
@@ -94,15 +108,23 @@ export default (params: any) => {
                 numOrdered = deliveryDateOrder.items.get(prod.id);
             }
         }
+
+        let productLabel = `${prod.label} Price: ${USD(prod.unitPrice).format()}`;
+        for (const priceBreak of prod.priceBreaks) {
+            const unitsNeeded = priceBreak.gt;
+            const unitPrice = USD(currency(priceBreak.unitPrice)).format();
+            productLabel += ` [>${unitsNeeded}=${unitPrice}] `;
+        }
+        
         productElms.push(
             <div className="form-group row col-sm-12" key={`${formId}RowId`}>
-                <label htmlFor={formId}>{prod.costDescription}: {USD(prod.cost).format()}</label>
+                <label htmlFor={formId}>{productLabel}</label>
                 <input type="number" className="form-control" id={formId}
                        defaultValue={numOrdered}
-                       placeholder={prod.label}/>
+                       placeholder={0}/>
             </div>
         );
-
+        
     };
 
     return (
@@ -112,20 +134,22 @@ export default (params: any) => {
                     <h5 className="card-title">Add {fundraiserConfig.description()} Order</h5>
                     <form onSubmit={onFormSubmission}>
                         
-                        <label htmlFor="formSelectDeliveryDate">Select Delivery Date</label>
-                        <select className="custom-select" id="formSelectDeliveryDate" defaultValue={currentDeliveryId}>
-                            {deliveryDateOpts}
-                        </select>
-                        
+                        <div className="form-group row col-sm-12">
+                            <label htmlFor="formSelectDeliveryDate">Select Delivery Date</label>
+                            <select className="custom-select" id="formSelectDeliveryDate" defaultValue={currentDeliveryId}>
+                                {deliveryDateOpts}
+                            </select>
+                        </div>
+                            
                         {productElms}
-
+                        
                         <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
                             Cancel
                         </button>
                         <button type="submit" className="btn btn-primary my-2 float-right" id="formAddProductsSubmit">
                             Add                            
                         </button>
-
+                        
                     </form>
                 </div>
             </div>

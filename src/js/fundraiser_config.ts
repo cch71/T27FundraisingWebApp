@@ -1,11 +1,16 @@
-import currency from "currency.js"
 import awsConfig from "../config"
 
-interface Product<T> {
-    id: string,
-    label: string,
-    costDescription: string,
-    cost: T,
+
+interface PriceBreak {
+    gt: number;
+    unitPrice: number;
+}
+
+interface Product {
+    id: string;
+    label: string;
+    unitPrice: number;
+    priceBreaks?: Array<PriceBreak>;
 }
 
 interface DeliveryDate {
@@ -17,7 +22,7 @@ interface DeliveryDate {
 interface FundraiserConfigBase<T> {
     kind: string;
     description: string;
-    products: Array<Product<T>>;
+    products: Array<Product>;
     neighborhoods: Array<string>;
     deliveryDates: Array<DeliveryDate>;
 }
@@ -71,18 +76,13 @@ class FundraiserConfig {
     
     /////////////////////////////////////////
     //)/*: Generator<>*/
-    *products(): Generator<Product<currency>> {
+    *products(): Generator<Product> {
         const oldProds = this.loadedFrConfig_.products;
-        for (let x=0; x<oldProds.length; x++) {
-            const oldProd = oldProds[x];
-            const newProd: Product<currency> = {
-                id: oldProd.id,
-                cost: currency(oldProd.cost),
-                label: oldProd.label,
-                costDescription: oldProd.costDescription
-            };
-            console.log(`Generating: ${JSON.stringify(newProd)}`);
-            yield newProd;
+        for (const product of this.loadedFrConfig_.products) {
+            if (!product.hasOwnProperty('priceBreaks')) {
+                product['priceBreaks'] = [];
+            }
+            yield product;
         }
     }
 
