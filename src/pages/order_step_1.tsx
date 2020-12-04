@@ -9,6 +9,7 @@ import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
 
+
 const populateForm = (currentOrder: Order): any =>{
 
     const fundraiserConfig: FundraiserConfig = getFundraiserConfig();
@@ -19,11 +20,15 @@ const populateForm = (currentOrder: Order): any =>{
 
     // Save off current order values
     const saveCurrentOrder = ()=>{
+        //Required
         currentOrder.firstName = (document.getElementById('formFirstName') as HTMLInputElement).value;
         currentOrder.lastName = (document.getElementById('formLastName') as HTMLInputElement).value;
-        currentOrder.email = (document.getElementById('formEmail') as HTMLInputElement).value;
         currentOrder.phone = (document.getElementById('formPhone') as HTMLInputElement).value;
         currentOrder.addr1 = (document.getElementById('formAddr1') as HTMLInputElement).value;
+        currentOrder.neighborhood = (document.getElementById('formNeighborhood') as HTMLSelectElement).value;
+        
+
+        currentOrder.email = (document.getElementById('formEmail') as HTMLInputElement).value;
         currentOrder.addr2 = (document.getElementById('formAddr2') as HTMLInputElement).value;
         /* currentOrder.city = (document.getElementById('formCity') as HTMLInputElement).value;
          * currentOrder.state = (document.getElementById('formState') as HTMLInputElement).value;
@@ -38,7 +43,7 @@ const populateForm = (currentOrder: Order): any =>{
             currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
         console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
     }
-
+    
     // Handle Form Submission
     const onFormSubmission = (event: any) => {
         event.preventDefault();
@@ -94,19 +99,30 @@ const populateForm = (currentOrder: Order): any =>{
         orderDb.setActiveOrder();
         navigate('/');
     };
-    
 
     // Check for enabling/disabling submit button
-    const doesSubmitGetEnabled = (event: any)=>{
-        if (event.currentTarget.value) {
+    const doesSubmitGetEnabled = (/*event: any*/)=>{
+        const amountDue = currency(document.getElementById('orderAmountDue').innerText);
+        const amountPaid = currency(document.getElementById('orderAmountPaid').innerText);
+        console.log(`AD: ${amountDue.value} AP: ${amountPaid.value}`);
+        if ( (document.getElementById('formFirstName') as HTMLInputElement).value &&
+             (document.getElementById('formLastName') as HTMLInputElement).value &&
+             (document.getElementById('formPhone') as HTMLInputElement).value &&
+             (document.getElementById('formAddr1') as HTMLInputElement).value &&
+             (document.getElementById('formNeighborhood') as HTMLSelectElement).value &&
+             (0!==currentOrder.orderByDelivery.size) &&
+             (amountDue.value===amountPaid.value))
+        {
             (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = false;
+            return false;
         } else {
             (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = true;
+            return true;
         }
     };
-
+    
     // Recalculate Total due dynamically based on changes to order status
-    const recalculateTotal = ()=> {
+    const recalculateTotalDue = ()=> {
         let totalDue = currency(0.0);
         for (let deliverable of currentOrder.orderByDelivery.values()) {
             console.log(`Found Order: ${deliverable.amountDue}`);
@@ -114,10 +130,23 @@ const populateForm = (currentOrder: Order): any =>{
         }
         const totElm = document.getElementById('orderAmountDue');
         if (null!==totElm) {
-            totElm.innerText = `Total Due: ${USD(totalDue).format()}`;
+            totElm.innerText = `${USD(totalDue).format()}`;
         }
     }
 
+    const recalculateTotalPaid = ()=> {
+        const cash = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
+        const checks = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
+        
+        
+        const totElm = document.getElementById('orderAmountPaid');
+        if (null!==totElm) {
+            totElm.innerText = `${USD(cash.add(checks)).format()}`;
+            doesSubmitGetEnabled();
+        }
+
+    }
+    
     // Create delivery status buttons
     const populateOrdersList = (): Array<any> => {
         const ordersByDeliveryBtns = []
@@ -142,7 +171,7 @@ const populateForm = (currentOrder: Order): any =>{
                     document.getElementById('addProductBtnLi').style.display = "block";
                 }
 
-                recalculateTotal();
+                recalculateTotalDue();
             }
 
             //console.log(`Adding Order Type for DDay: ${deliveryId}`);
@@ -211,9 +240,18 @@ const populateForm = (currentOrder: Order): any =>{
         console.log(`Found Order To Calc: ${deliverable.amountDue}`);
         newTotalDue = newTotalDue.add(deliverable.amountDue);
     }
-    const amountDue = USD(newTotalDue).format();
-    const amountPaid = USD(currentOrder.checkPaid.add(currentOrder.cashPaid)).format();
-    console.log(`Amount Due: ${amountDue}  Paid: ${amountPaid}`);
+    const amountDueStr = USD(newTotalDue).format();
+    const amountPaid = currentOrder.checkPaid.add(currentOrder.cashPaid);
+    const amountPaidStr = USD(amountPaid).format();
+    console.log(`Amount Due: ${amountDueStr}  Paid: ${amountPaidStr}`);
+
+    const areRequiredCurOrderValuesAlreadyPopulated = (
+        currentOrder.firstName &&
+        currentOrder.lastName &&
+        currentOrder.phone &&
+        currentOrder.addr1 &&
+        currentOrder.neighborhood &&
+        (newTotalDue.value === amountPaid.value));
 
     
     // This is if we support city, state, zip
@@ -259,17 +297,16 @@ const populateForm = (currentOrder: Order): any =>{
             <div className="form-row">
                 <div className="form-group col-md-6">
                     <label htmlFor="formFirstName">First Name</label>
-                    <input className="form-control" type="text" id="formFirstName"
+                    <input className="form-control" type="text" autoComplete="fr-new-cust-info"
+                           id="formFirstName" placeholder="First Name" defaultValue={currentOrder.firstName}
                            required
-                           placeholder="First Name"
-                           defaultValue={currentOrder.firstName}
                            onInput={doesSubmitGetEnabled}
                            aria-describedby="formFirstNameHelp" />
                     <small id="formFirstNameHelp" className="form-text text-muted">*required</small>
                 </div>
                 <div className="form-group col-md-6">
                     <label htmlFor="formLastName">Last Name</label>
-                    <input className="form-control" type="text" id="formLastName"
+                    <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formLastName"
                            required
                            placeholder="Last Name"
                            defaultValue={currentOrder.lastName}
@@ -282,7 +319,7 @@ const populateForm = (currentOrder: Order): any =>{
             <div className="form-row">
                 <div className="form-group col-md-6">
                     <label htmlFor="formAddr1">Phone</label>
-                    <input className="form-control" type="text" id="formAddr1"
+                    <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formAddr1"
                            required
                            placeholder="Address 1"
                            defaultValue={currentOrder.addr1}
@@ -292,7 +329,7 @@ const populateForm = (currentOrder: Order): any =>{
                 </div>
                 <div className="form-group col-md-6">
                     <label htmlFor="formAddr2">Address 2</label>
-                    <input className="form-control" type="text" id="formAddr2"
+                    <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formAddr2"
                            placeholder="Address 2"
                            defaultValue={currentOrder.addr2}/>
                 </div>
@@ -308,7 +345,7 @@ const populateForm = (currentOrder: Order): any =>{
                 </div>
                 <div className="form-group col-md-4">
                     <label htmlFor="formPhone">Phone</label>
-                    <input className="form-control" type="text" id="formPhone"
+                    <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formPhone"
                            required
                            placeholder="Phone"
                            defaultValue={currentOrder.phone}
@@ -318,7 +355,7 @@ const populateForm = (currentOrder: Order): any =>{
                 </div>
                 <div className="form-group col-md-4">
                     <label htmlFor="formEmail">Email</label>
-                    <input className="form-control" type="text" id="formEmail"
+                    <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formEmail"
                            placeholder="Email"
                            defaultValue={currentOrder.email}/>
                 </div>
@@ -334,19 +371,21 @@ const populateForm = (currentOrder: Order): any =>{
             <div className="form-row">
                 <div className="form-group col-md-4">
                     <label htmlFor="formCashPaid">Total Cash Amount</label>
-                    <input className="form-control" type="text"
+                    <input className="form-control" type="text"  autoComplete="fr-new-cust-info"
                            id="formCashPaid" placeholder="Total Cash Amount"
+                           onInput={recalculateTotalPaid}
                            defaultValue={currentOrder.cashPaid.toString()}/>
                 </div>
                 <div className="form-group col-md-4">
                     <label htmlFor="formCheckPaid">Total Check Amount</label>
-                    <input className="form-control" type="text"
+                    <input className="form-control" type="text" autoComplete="fr-new-cust-info"
                            id="formCheckPaid" placeholder="Total Check Amount"
+                           onInput={recalculateTotalPaid}
                            defaultValue={currentOrder.checkPaid.toString()}/>
                 </div>
                 <div className="form-group col-md-4">
                     <label htmlFor="formCheckNumbers">Enter Check Numbers</label>
-                    <input className="form-control" type="text"
+                    <input className="form-control" type="text" autoComplete="fr-new-cust-info"
                            id="formCheckNumbers" placeholder="Enter Check #s"
                            defaultValue={currentOrder.checkNumbers}/>
                 </div>
@@ -356,19 +395,25 @@ const populateForm = (currentOrder: Order): any =>{
                 {ordersByDeliveryBtns}
             </ul>
 
-            <div className="pt-3 col-xs-1 d-flex">
-                <div className="col-md-6" id="orderAmountDue">Total Due: {amountDue}</div>
-                <div className="col-md-6" id="orderAmountPaid">Total Paid: {amountPaid}</div>
+            <div className="form-row">
+                <span className="form-group col-md-6">
+                    Total Due: <div id="orderAmountDue" style={{display: "inline"}}>{amountDueStr}</div>
+                </span>
+                <span className="form-group col-md-6" aria-describedby="orderAmountPaidHelp">
+                    Total Paid: <div id="orderAmountPaid" style={{display: "inline"}}>{amountPaidStr}</div>
+                    <small id="orderAmountPaidHelp" className="form-text text-muted">*Must match total due</small>
+                </span>
             </div>
-
+            
             <div className="pt-4">
                 <button type="button" className="btn btn-primary" onClick={onDiscardOrder}>
                     Discard
                 </button>
-                <button type="submit" className="btn btn-primary float-right" id="formOrderSubmit">
+                <button type="submit" className="btn btn-primary float-right" id="formOrderSubmit" disabled={!areRequiredCurOrderValuesAlreadyPopulated}>
                     Submit
                 </button>
             </div>
+
         </form>
     );
 }
@@ -404,7 +449,7 @@ export default (params: any)=>{
                     }
                 });
             } else {
-                alert("Failed to retrieve active order");
+                //alert("Failed to retrieve active order");
                 navigate('/');
             }
         } else {

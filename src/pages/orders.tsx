@@ -175,7 +175,7 @@ export default function orders() {
                         </div>
                         <div className="modal-body">
                             <input type="text" className="form-control" id="confirmDeleteOrderInput"
-                                   placeholder="type delete to confirm"  autoComplete="off"
+                                   placeholder="type delete to confirm"  autoComplete="fr-new-cust-info"
                                    onInput={doesDeleteBtnGetEnabled} aria-describedby="confirmDeleteOrderHelp" />
                             <small id="confirmDeleteOrderHelp" className="form-text text-muted">
                                 Enter "delete" to confirm order deletion.

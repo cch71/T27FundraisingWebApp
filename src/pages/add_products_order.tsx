@@ -120,7 +120,7 @@ export default (params: any) => {
             <div className="form-group row col-sm-12" key={`${formId}RowId`}>
                 <label htmlFor={formId}>{productLabel}</label>
                 <input type="number" className="form-control" id={formId}
-                       defaultValue={numOrdered}
+                       defaultValue={numOrdered} autoComplete="off"
                        placeholder={0}/>
             </div>
         );
