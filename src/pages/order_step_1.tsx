@@ -387,17 +387,27 @@ const populateForm = (currentOrder: Order): any =>{
             <div className="form-row">
                 <div className="form-group col-md-4">
                     <label htmlFor="formCashPaid">Total Cash Amount</label>
-                    <input className="form-control" type="text"  autoComplete="fr-new-cust-info"
-                           id="formCashPaid" placeholder="Total Cash Amount"
-                           onInput={recalculateTotalPaid}
-                           defaultValue={currentOrder.cashPaid.toString()}/>
+                    <div className="input-group mb-3">
+                        <div className="input-group-prepend">
+                            <span className="input-group-text">$</span>
+                        </div>
+                        <input className="form-control" type="text"  autoComplete="fr-new-cust-info"
+                               id="formCashPaid" placeholder="Total Cash Amount"
+                               onInput={recalculateTotalPaid}
+                               defaultValue={currentOrder.cashPaid.toString()}/>
+                    </div>
                 </div>
                 <div className="form-group col-md-4">
                     <label htmlFor="formCheckPaid">Total Check Amount</label>
-                    <input className="form-control" type="text" autoComplete="fr-new-cust-info"
-                           id="formCheckPaid" placeholder="Total Check Amount"
-                           onInput={recalculateTotalPaid}
-                           defaultValue={currentOrder.checkPaid.toString()}/>
+                    <div className="input-group mb-3">
+                        <div className="input-group-prepend">
+                            <span className="input-group-text">$</span>
+                        </div>
+                        <input className="form-control" type="text" autoComplete="fr-new-cust-info"
+                               id="formCheckPaid" placeholder="Total Check Amount"
+                               onInput={recalculateTotalPaid}
+                               defaultValue={currentOrder.checkPaid.toString()}/>
+                    </div>
                 </div>
                 <div className="form-group col-md-4">
                     <label htmlFor="formCheckNumbers">Enter Check Numbers</label>

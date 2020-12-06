@@ -134,7 +134,7 @@ const mockSummaryResults = {
     ],
     "userStats": {
         "patrol": "Bear",
-        "name": "Fundraiser Admin",
+        "name": "Scout One",
         "isAdmin": true,
         "amountSold": 2000.00,
         "numOrders": 25

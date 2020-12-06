@@ -42,10 +42,10 @@ export default function addDonation() {
         navigate('/order_step_1/');
     }
 
-    let donationAmt = currency(0.0);
+    let donationAmt = undefined;
     let currentDonation = currentOrder.orderByDelivery['donation'];
     if (undefined!==currentDonation) {
-        donationAmt=currentDonation.amountDue;
+        donationAmt=currency(currentDonation.amountDue).toString();
     }
 
     return (
@@ -57,18 +57,22 @@ export default function addDonation() {
 
                         <div className="form-group row col-sm-12">
                             <label htmlFor="formDonationAmount">Donation</label>
-                            <input type="number" className="form-control" id="formDonationAmount"
-                                   defaultValue={donationAmt.toString()}
-                                   placeholder="Enter Donation Amount"
-                                   onInput={doesSubmitGetEnabled}/>
+                            <div className="input-group mb-3">
+                                <div className="input-group-prepend">
+                                    <span className="input-group-text">$</span>
+                                </div>
+                                <input type="number" className="form-control" id="formDonationAmount"
+                                       defaultValue={donationAmt}
+                                       placeholder="0.00"
+                                       onInput={doesSubmitGetEnabled}/>
+                            </div>
                         </div>
-
 
                         <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
                             Cancel
                         </button>
                         <button type="submit" className="btn btn-primary my-2 float-right"
-                                disabled={0.0===donationAmt.value} id="formDonationSubmit">
+                                disabled={undefined===donationAmt} id="formDonationSubmit">
                             Add                            
                         </button>
                     </form>
