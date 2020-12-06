@@ -305,7 +305,10 @@ const populateForm = (currentOrder: Order): any =>{
      *         </Form.Row>
      *     );
      * ); */
-    
+
+    const moniedDefaultValue = (fld: currency)=>{
+        return (0.00===fld.value) ? undefined : fld.toString();
+    };
 
     return(
         <form onSubmit={onFormSubmission}>
@@ -394,7 +397,8 @@ const populateForm = (currentOrder: Order): any =>{
                         <input className="form-control" type="text"  autoComplete="fr-new-cust-info"
                                id="formCashPaid" placeholder="Total Cash Amount"
                                onInput={recalculateTotalPaid}
-                               defaultValue={currentOrder.cashPaid.toString()}/>
+                               placeholder="0.00"
+                               defaultValue={moniedDefaultValue(currentOrder.cashPaid)}/>
                     </div>
                 </div>
                 <div className="form-group col-md-4">
@@ -406,7 +410,8 @@ const populateForm = (currentOrder: Order): any =>{
                         <input className="form-control" type="text" autoComplete="fr-new-cust-info"
                                id="formCheckPaid" placeholder="Total Check Amount"
                                onInput={recalculateTotalPaid}
-                               defaultValue={currentOrder.checkPaid.toString()}/>
+                               placeholder="0.00"
+                               defaultValue={moniedDefaultValue(currentOrder.checkPaid)}/>
                     </div>
                 </div>
                 <div className="form-group col-md-4">
