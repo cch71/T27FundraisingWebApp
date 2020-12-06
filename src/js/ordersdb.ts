@@ -10,7 +10,7 @@ interface OrdersForDeliveryDate {
     amountDue: currency;
     kind: string;
     deliveryDateId?: string;
-    items?: Map<string, number> //productId, numOrders
+    items?: Record<string, number> //productId, numOrders
 }
 
 /////////////////////////////////////////////
@@ -21,7 +21,7 @@ class Order {
     cashPaid: currency;
     checkPaid: currency;
     amountTotal: currency;
-    orderByDelivery: Map<string, OrdersForDeliveryDate>;
+    orderByDelivery: Record<string, OrdersForDeliveryDate>;
 
 
     doDeleteOrder?: boolean;
@@ -45,7 +45,7 @@ class Order {
             this.cashPaid = currency(0.0);
             this.checkPaid = currency(0.0);
             this.amountTotal = currency(0.0);
-            this.orderByDelivery = new Map<string, OrdersForDeliveryDate>();
+            this.orderByDelivery = {};
         } else {
             //console.log(`OrdersDB New order from: ${JSON.stringify(order)}`);
 
@@ -56,7 +56,7 @@ class Order {
                 {
                     this[key] = currency(order[key]);
                 } else if ('orderByDelivery' === key) {
-                    this[key] = new Map<string, OrdersForDeliveryDate>();
+                    this[key] = {};
                     Object.keys(order[key]).forEach((mapKey: string)=>{
                         const deliveryOrder: any = {};
                         //console.log(`!!!! ${mapKey}: ${JSON.stringify(order[key][mapKey])}`);
@@ -65,13 +65,11 @@ class Order {
                             //console.log(`!!!!!!!! ${orderKey}: ${JSON.stringify(deliveryVal)}`);
                             if ('amountDue' === orderKey) {
                                 deliveryOrder[orderKey] = currency(deliveryVal);
-                            } else if ('items' === orderKey) {
-                                deliveryOrder[orderKey] = new Map<string, number>(Object.entries(deliveryVal));
                             } else {
                                 deliveryOrder[orderKey] = deliveryVal;
                             }
                         });
-                        this[key].set(mapKey, deliveryOrder);
+                        this[key][mapKey]=deliveryOrder;
                     });
                 } else {
                     this[key] = order[key];
@@ -154,6 +152,25 @@ class SummaryInfo {
     totalAmountSold(): currency { return currency(this.summaryResp_.userStats.amountSold); }
     totalNumOrders(): number { return this.summaryResp_.userStats.numOrders; }
     totalTroopSold(): currency { return currency(this.summaryResp_.totalTroopAmountSold); }
+    *topSellers(): Generator<[number, string, string]> {
+        yield [1, 'Bobby', '$1000.24'];
+        yield [2, 'Ray', '$900.24'];
+        yield [3, 'Jones', '$800.24'];
+        yield [4, 'Zach', '$700.24'];
+        yield [5, 'McKay', '$600.24'];
+        yield [6, 'Spock', '$500.24'];
+        yield [7, 'Sisko', '$400.24'];
+        yield [8, 'Janeway', '$300.24'];
+        yield [9, 'Sheridan', '$200.24'];
+        yield [10, 'Kirk', '$100.24'];
+    }
+
+    *frSpecificSummaryReport(): Generator<string> {
+        // if fundraiser is mulch
+        yield `Bags sold: 1000`;
+        yield `Spreading jobs sold: 100`;
+    }
+
     *patrolRankings(): Generator<[string, currency]> {
         for (const rank of this.summaryResp_.patrolRanking) {
             yield [rank.patrol, currency(rank.amountSold)];
@@ -283,7 +300,7 @@ class OrderDb {
 
                         this.currentOrder_['orderOwner'] = auth.currentUser().getUsername();
                         const paramStr = JSON.stringify(this.currentOrder_);
-                        //console.log(`OrderDB Query Parms: ${paramStr}`);
+                        //console.log(`Updating Order: ${paramStr}`);
                         const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
                             method: 'post',
                             headers: {

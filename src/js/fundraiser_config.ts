@@ -19,7 +19,7 @@ interface DeliveryDate {
     disabledDate: string;
 }
 
-interface FundraiserConfigBase<T> {
+interface FundraiserConfigBase {
     kind: string;
     description: string;
     products: Array<Product>;
@@ -30,12 +30,12 @@ interface FundraiserConfigBase<T> {
 /////////////////////////////////////////
 //
 class FundraiserConfig {
-    private readonly loadedFrConfig_: FundraiserConfigBase<number>;
+    private readonly loadedFrConfig_: FundraiserConfigBase;
 
     /////////////////////////////////////////
     //
-    constructor(dlFrConfig: FundraiserConfigBase<number>|null) {
-        const getConfig = (): FundraiserConfigBase<number> => {
+    constructor(dlFrConfig: FundraiserConfigBase|null) {
+        const getConfig = (): FundraiserConfigBase => {
             if (null === dlFrConfig) {
                 if (typeof window === 'undefined')  {
                     return({
@@ -127,7 +127,7 @@ function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig |
                 alert("HTTP Resp Error: " + resp.status);
                 reject(null);
             } else {
-                const loadedFrConfig: FundraiserConfigBase<number> = await resp.json();
+                const loadedFrConfig: FundraiserConfigBase = await resp.json();
                 console.log(`Fundraiser Config: ${JSON.stringify(loadedFrConfig)}`);
 
                 window.sessionStorage.setItem('frConfig', JSON.stringify(loadedFrConfig));

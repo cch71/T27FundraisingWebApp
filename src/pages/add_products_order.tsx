@@ -19,7 +19,7 @@ export default (params: any) => {
         return(<div/>);
     }
     
-    const deliveryDateOrder = currentOrder.orderByDelivery.get(currentDeliveryId);
+    const deliveryDateOrder = currentOrder.orderByDelivery[currentDeliveryId];
     const fundraiserConfig: FundraiserConfig = getFundraiserConfig();
     if (!fundraiserConfig) {
         alert("Failed to load fundraiser config");
@@ -30,7 +30,7 @@ export default (params: any) => {
     const deliveryDateOpts = []
     for (const [frDeliveryId, frDeliveryLabel] of fundraiserConfig.validDeliveryDates()) {
         if ('donation'===frDeliveryId) { continue; }
-        if (frDeliveryId === currentDeliveryId || !currentOrder.orderByDelivery.has(frDeliveryId)) {
+        if (frDeliveryId === currentDeliveryId || !currentOrder.orderByDelivery.hasOwnProperty(frDeliveryId)) {
             deliveryDateOpts.push(
                 <option value={frDeliveryId} key={frDeliveryId}>{frDeliveryLabel}</option>
             );
@@ -61,15 +61,15 @@ export default (params: any) => {
         const selectedDeliveryId = (document.getElementById('formSelectDeliveryDate') as HTMLSelectElement).value;
         console.log(`Saving For Delivery ID: ${selectedDeliveryId}`);
         if (currentDeliveryId && currentDeliveryId!==selectedDeliveryId) {
-            currentOrder.orderByDelivery.delete(currentDeliveryId);
+            delete currentOrder.orderByDelivery[currentDeliveryId];
         }
 
-        const items: Map<string, number> = new Map<string, number>();
+        const items: Record<string, number> = {};
         for (const product of fundraiserConfig.products()) {
             const formId = `form${product.id}`;
             const numOrdered = parseInt((document.getElementById(formId) as HTMLInputElement).value);
             if (0 < numOrdered) {
-                items.set(product.id, numOrdered);
+                items[product.id] = numOrdered;
                 let rate = currency(product.unitPrice);
                 // Handle Price product price breaks if any
                 for (const priceBreak of product.priceBreaks) {
@@ -84,7 +84,7 @@ export default (params: any) => {
         }
 
         if (0.0===totalDue.value) {
-            currentOrder.orderByDelivery.delete(selectedDeliveryId);
+            delete currentOrder.orderByDelivery[selectedDeliveryId];
         } else {
         
             let productOrder = {
@@ -93,7 +93,7 @@ export default (params: any) => {
                 items: items
             };
             console.log(`Setting Order: ${selectedDeliveryId}`);
-            currentOrder.orderByDelivery.set(selectedDeliveryId, (productOrder as OrdersForDeliveryDate));
+            currentOrder.orderByDelivery[selectedDeliveryId] = (productOrder as OrdersForDeliveryDate);
         }
         navigate('/order_step_1/');
     }
@@ -105,7 +105,7 @@ export default (params: any) => {
         let numOrdered = undefined;
         if (undefined !== deliveryDateOrder) {
             if (deliveryDateOrder.items) {
-                numOrdered = deliveryDateOrder.items.get(prod.id);
+                numOrdered = deliveryDateOrder.items[prod.id];
             }
         }
 

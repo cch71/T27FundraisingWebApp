@@ -41,6 +41,7 @@ const populateForm = (currentOrder: Order): any =>{
             currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
         currentOrder.checkPaid =
             currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
+        currentOrder.amountTotal = currentOrder.cashPaid.add(currentOrder.checkPaid);
         console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
     }
     
@@ -49,20 +50,24 @@ const populateForm = (currentOrder: Order): any =>{
         event.preventDefault();
         event.stopPropagation();
 
-        console.log(`Submitting Active Order`);
+        //console.log(`Submitting Active Order`);
         saveCurrentOrder();
-        orderDb.submitActiveOrder().then(()=>{
-            navigate('/');
-        }).catch((err:any)=>{
-            if ('Invalid Session'===err) {
-                navigate('/signon/')
-            } else {
-                const errStr = `Failed submitting order: ${JSON.stringify(err)}`;
-                console.log(errStr);
-                alert(errStr);
-                throw err;
-            }
-        });
+        if (doesSubmitGetEnabled()) {
+            orderDb.submitActiveOrder().then(()=>{
+                navigate('/');
+            }).catch((err:any)=>{
+                if ('Invalid Session'===err) {
+                    navigate('/signon/')
+                } else {
+                    const errStr = `Failed submitting order: ${JSON.stringify(err)}`;
+                    console.log(errStr);
+                    alert(errStr);
+                    throw err;
+                }
+            });
+        } else {
+            console.error(`Form submitted but shouldn't have been`);
+        }
     }
 
     // Add New Product Order
@@ -104,27 +109,33 @@ const populateForm = (currentOrder: Order): any =>{
     const doesSubmitGetEnabled = (/*event: any*/)=>{
         const amountDue = currency(document.getElementById('orderAmountDue').innerText);
         const amountPaid = currency(document.getElementById('orderAmountPaid').innerText);
-        console.log(`AD: ${amountDue.value} AP: ${amountPaid.value}`);
+        let isCheckNumGood = true;
+        if (0.0!==currency((document.getElementById('formCheckPaid') as HTMLInputElement).value).value) {
+            isCheckNumGood = (0!==(document.getElementById('formCheckNumbers') as HTMLInputElement).value.length);
+        }
+        //console.log(`AD: ${amountDue.value} AP: ${amountPaid.value}`);
         if ( (document.getElementById('formFirstName') as HTMLInputElement).value &&
              (document.getElementById('formLastName') as HTMLInputElement).value &&
              (document.getElementById('formPhone') as HTMLInputElement).value &&
              (document.getElementById('formAddr1') as HTMLInputElement).value &&
              (document.getElementById('formNeighborhood') as HTMLSelectElement).value &&
-             (0!==currentOrder.orderByDelivery.size) &&
-             (amountDue.value===amountPaid.value))
+             (0!==Object.keys(currentOrder.orderByDelivery).length) &&
+             (amountDue.value===amountPaid.value) &&
+             isCheckNumGood
+        )
         {
             (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = false;
-            return false;
+            return true;
         } else {
             (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = true;
-            return true;
+            return false;
         }
     };
     
     // Recalculate Total due dynamically based on changes to order status
     const recalculateTotalDue = ()=> {
         let totalDue = currency(0.0);
-        for (let deliverable of currentOrder.orderByDelivery.values()) {
+        for (let deliverable of Object.values(currentOrder.orderByDelivery)) {
             console.log(`Found Order: ${deliverable.amountDue}`);
             totalDue = totalDue.add(deliverable.amountDue);
         }
@@ -151,7 +162,7 @@ const populateForm = (currentOrder: Order): any =>{
     const populateOrdersList = (): Array<any> => {
         const ordersByDeliveryBtns = []
         for (const [deliveryId, deliveryLabel] of fundraiserConfig.validDeliveryDates()) {
-            const foundOrder = currentOrder.orderByDelivery.get(deliveryId);
+            const foundOrder = currentOrder.orderByDelivery[deliveryId];
             if (!foundOrder) { continue; }
 
             const foundTag = `found-${deliveryId}`
@@ -159,11 +170,14 @@ const populateForm = (currentOrder: Order): any =>{
 
             // On Delete Order Re-enable button
             const onDeleteOrder = (event)=>{
+                event.preventDefault();
+                event.stopPropagation();
+
                 const deliveryIdToDel = event.currentTarget.dataset.deliveryid;
                 
                 console.log(`Deleting Order for ${deliveryIdToDel}`);
 
-                currentOrder.orderByDelivery.delete(deliveryIdToDel);
+                delete currentOrder.orderByDelivery[deliveryIdToDel];
                 document.getElementById(foundTag).style.display = "none";
                 if ('donation' === deliveryIdToDel) {
                     document.getElementById('addDonationBtnLi').style.display = "block";
@@ -172,6 +186,7 @@ const populateForm = (currentOrder: Order): any =>{
                 }
 
                 recalculateTotalDue();
+                doesSubmitGetEnabled();
             }
 
             //console.log(`Adding Order Type for DDay: ${deliveryId}`);
@@ -193,15 +208,16 @@ const populateForm = (currentOrder: Order): any =>{
         }
 
         // Figure out visibility
-        const orderHasDonation = currentOrder.orderByDelivery.has('donation');
-        const numProdOrders = orderHasDonation ?
-                              currentOrder.orderByDelivery.size-1 :
-                              currentOrder.orderByDelivery.size;
+        const orderHasDonation = currentOrder.orderByDelivery.hasOwnProperty('donation');
+        let numProdOrders = Object.keys(currentOrder.orderByDelivery).length
+        if (orderHasDonation) {
+            numProdOrders = numProdOrders - 1;
+        }
+        const addDonationDisplay = (!orderHasDonation) ?
+                                   {display: 'block'}:{display: 'none'};
         
         const addProdDisplay = (0 !== (fundraiserConfig.numDeliveryDates()-numProdOrders)) ?
                                {display: 'block'}:{display: 'none'};
-        const addDonationDisplay = (!orderHasDonation) ?
-                                   {display: 'block'}:{display: 'none'};
 
         //Add the Add Product Button
         ordersByDeliveryBtns.push(
@@ -236,14 +252,14 @@ const populateForm = (currentOrder: Order): any =>{
     
     // Calulate Current amountDue
     let newTotalDue = currency(0.0);
-    for (const deliverable of currentOrder.orderByDelivery.values()) {
-        console.log(`Found Order To Calc: ${deliverable.amountDue}`);
+    for (let deliverable of Object.values(currentOrder.orderByDelivery)) {
+        //console.log(`Found Order To Calc: ${deliverable.amountDue}`);
         newTotalDue = newTotalDue.add(deliverable.amountDue);
     }
     const amountDueStr = USD(newTotalDue).format();
     const amountPaid = currentOrder.checkPaid.add(currentOrder.cashPaid);
     const amountPaidStr = USD(amountPaid).format();
-    console.log(`Amount Due: ${amountDueStr}  Paid: ${amountPaidStr}`);
+    //console.log(`Amount Due: ${amountDueStr}  Paid: ${amountPaidStr}`);
 
     const areRequiredCurOrderValuesAlreadyPopulated = (
         currentOrder.firstName &&
@@ -387,6 +403,7 @@ const populateForm = (currentOrder: Order): any =>{
                     <label htmlFor="formCheckNumbers">Enter Check Numbers</label>
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info"
                            id="formCheckNumbers" placeholder="Enter Check #s"
+                           onInput={doesSubmitGetEnabled}
                            defaultValue={currentOrder.checkNumbers}/>
                 </div>
             </div>

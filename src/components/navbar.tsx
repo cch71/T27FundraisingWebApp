@@ -57,7 +57,7 @@ const NavBar = () => {
             if (orderDb.getActiveOrder()) {
                 setActiveOrder(
                     <li className={setIfActive('/order_step_1/')}>
-                        <Link className='nav-item nav-link' replace to='/order_step_1/'>Active Order</Link>
+                        <Link className='nav-item nav-link' replace to='/order_step_1/'>Open Order</Link>
                     </li>
                 );
             }

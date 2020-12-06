@@ -27,18 +27,23 @@ export default function addDonation() {
         event.preventDefault();
         event.stopPropagation();
 
-        const donationOrder: DeliverableOrderIf = {
-            amountDue: currency((document.getElementById('formDonationAmount') as HTMLInputElement).value),
-            kind: 'donation'
-        };
+        const amountDue = currency((document.getElementById('formDonationAmount') as HTMLInputElement).value);
 
-        currentOrder.orderByDelivery.set('donation', donationOrder);
+        if (amountDue) {
+            const donationOrder: DeliverableOrderIf = {
+                amountDue: amountDue,
+                kind: 'donation'
+            };
+            currentOrder.orderByDelivery['donation'] = donationOrder;
+        } else {
+            delete currentOrder.orderByDelivery['donation'];
+        }
 
         navigate('/order_step_1/');
     }
 
     let donationAmt = currency(0.0);
-    let currentDonation = currentOrder.orderByDelivery.get('donation');
+    let currentDonation = currentOrder.orderByDelivery['donation'];
     if (undefined!==currentDonation) {
         donationAmt=currentDonation.amountDue;
     }

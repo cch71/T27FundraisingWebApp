@@ -41,7 +41,7 @@ export default function home() {
 
             const authToken = session.getIdToken().getJwtToken();
             
-            const enableReady = ()=>{
+            const enableReady = (frConfig: FundraiserConfig | null)=>{
                 const readyViewElm = document.getElementById('readyView');
                 if (readyViewElm) {
                     readyViewElm.style.display = "block";
@@ -54,17 +54,53 @@ export default function home() {
                 const summaryArr=[];
                 orderDb.getOrderSummary().then((summary: SummaryInfo)=>{
                     if (!summary) { return; }
+
+                    const topSellers = [];
+                    for (const [ranking, seller, amt] of summary.topSellers()) {
+                        topSellers.push(
+                            <tr key={ranking}>
+                                <td className="py-1">{ranking}</td>
+                                <td className="py-1">{seller}</td>
+                                <td className="py-1">{amt}</td>
+                            </tr>
+                        );
+                    }
+
+                    let statIndex=0;
+                    const summaryStats = [];
+                    summaryStats.push(
+                        <li key={++statIndex} className="list-group-item border-0 py-1">
+                            You have {summary.totalNumOrders()} orders 
+                            and collected {USD(summary.totalAmountSold()).format()}
+                        </li>
+                    );
+
+                    for (const stat of summary.frSpecificSummaryReport()) {
+                        summaryStats.push(
+                            <li key={++statIndex} className="list-group-item border-0 py-1">
+                                {stat}
+                            </li>
+                        );
+                    }
+                    summaryStats.push(
+                        <li key={++statIndex} className="list-group-item border-0 py-1">
+                            Troop has sold {USD(summary.totalTroopSold()).format()}
+                        </li>
+                    );
+                    
+                    
                     setOrderSummary(
                         <div className="col-xs-1 d-flex justify-content-center">
                             <div className="card">
                                 <div className="card-body">
-                                    <h5 className="card-title">Summary for: {summary.userName()}</h5>
-                                    <div>You have {summary.totalNumOrders()} orders 
-                                        and collected {USD(summary.totalAmountSold()).format()}</div>
-                                    <div>Troop has sold {USD(summary.totalTroopSold()).format()}</div>
-                                    <div><br/>Your Percentage:</div>
-                                    <div id="myChart"/>
-                                    <div>Sales by Patrol:</div>
+                                    <h5 className="card-title">{frConfig.description()} Fundraiser</h5>
+                                    <h6>Summary for: {summary.userName()}</h6>
+                                    <ul className="list-group list-group-flush">{summaryStats}</ul>
+                                    
+                                    <h6 className="my-2">Top Sellers:</h6>
+                                    <table className="table table-bordered"><tbody>{topSellers}</tbody></table>
+
+                                    <h6>Sales by Patrol:</h6>
                                     <div id="patrolStandingsChart"/>
                                 </div>
                             </div>
@@ -81,24 +117,7 @@ export default function home() {
                     const drawCharts=()=>{
 
                         const options = { is3D: true };
-
-                        var myStandingData = new google.visualization.DataTable(
-                            {
-                                cols: [{id: 'myVal', label: 'Who', type: 'string'},
-                                       {id: 'troopVal', label: 'amount', type: 'number'}],
-                                rows: [{c:[{v: 'Mine'},
-                                           {v: summary.totalAmountSold().value}]},
-                                       {c:[{v: 'Troops'},
-                                           {v: summary.totalTroopSold().subtract(summary.totalAmountSold()).value}]}
-                                ]
-                            }
-                        );
                             
-                        const myStandingsChart = new GoogleCharts.api.visualization.PieChart(
-                            document.getElementById('myChart'));
-                        myStandingsChart.draw(myStandingData, options);
-
-
                         const patrolStandingsData = new GoogleCharts.api.visualization.DataTable();
                             patrolStandingsData.addColumn('string', 'Patrol Sales');
                         patrolStandingsData.addColumn('number', 'Amount Sold');
@@ -119,15 +138,15 @@ export default function home() {
 
 
             try {
-                getFundraiserConfig();
-                enableReady();                
+                const frConfig = getFundraiserConfig();
+                enableReady(frConfig);                
             } catch(err: any) {
                 try {
                     downloadFundraiserConfig(authToken).then((loadedConfig: FundraiserConfig | null)=>{
                         if (null===loadedConfig) {
                             alert("Failed to load session fundraising config");
                         }
-                        enableReady();
+                        enableReady(loadedConfig);
                     });
                 } catch(err: any) {
                     alert("Failed: " + err);
