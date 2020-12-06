@@ -5,12 +5,13 @@ import {orderDb, Order} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
+import jQuery from 'jquery';
 
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
 
 
-const populateForm = (currentOrder: Order): any =>{
+const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
     const fundraiserConfig: FundraiserConfig = getFundraiserConfig();
     if (!fundraiserConfig) {
@@ -244,12 +245,39 @@ const populateForm = (currentOrder: Order): any =>{
     const ordersByDeliveryBtns = populateOrdersList();
 
     // Neighborhoods list creation
+    let isUsingCustomNeighborhood = false;
     const hoods=[];
-    for (let hood of fundraiserConfig.neighborhoods()) {
-        hoods.push(<option key={hood}>{hood}</option>);
-    }
+    for (const hood of fundraiserConfig.neighborhoods()) {
+        if (currentOrder.neighborhood && hood !== currentOrder.neighborhood) {
+            isUsingCustomNeighborhood=true;
+        }
 
-    
+        hoods.push(<a className="dropdown-item" href="#" key={hood}>{hood}</a>);
+    }
+    for (const hood of fundraiserConfig.customNeighborhoods()) {
+        hoods.push(
+            <a className="dropdown-item" href="#" key={hood} id={`custom-${hood}`}>
+                {hood}
+            </a>);
+    }
+    const currentNeighborhood = (currentOrder.neighborhood) ?
+                                currentOrder.neighborhood :
+                                fundraiserConfig.neighborhoods()[0];
+    // Called when neighborhood change
+    const onNeighborhoodChange = (event: any)=>{
+        const curVal = event.target.innerText;
+        if (!curVal) { return; }
+        const elmId = event.target.id;
+        console.log(`Event: ${curVal} id: ${elmId}`);
+        if (elmId.startsWith('custom')) {
+            jQuery('#formNeighborhood').val(`${curVal}: `); 
+            jQuery('#formNeighborhood').attr("readonly", false);
+        } else {
+            jQuery('#formNeighborhood').val(curVal); 
+            jQuery('#formNeighborhood').attr("readonly", true); 
+        }
+    };
+        
     // Calulate Current amountDue
     let newTotalDue = currency(0.0);
     for (let deliverable of Object.values(currentOrder.orderByDelivery)) {
@@ -269,7 +297,7 @@ const populateForm = (currentOrder: Order): any =>{
         currentOrder.neighborhood &&
         (newTotalDue.value === amountPaid.value));
 
-    
+
     // This is if we support city, state, zip
     /* const stateAbbreviations = [
      *     'AL','AK','AS','AZ','AR','CA','CO','CT','DE','DC','FM','FL','GA',
@@ -310,7 +338,7 @@ const populateForm = (currentOrder: Order): any =>{
         return (0.00===fld.value) ? undefined : fld.toString();
     };
 
-    return(
+    setFormFields(
         <form onSubmit={onFormSubmission}>
             
             <div className="form-row">
@@ -355,14 +383,26 @@ const populateForm = (currentOrder: Order): any =>{
             </div>
 
             <div className="form-row">
-                <div className="form-group col-md-4">
+                <div className="form-group col-md-6">
                     <label htmlFor="formNeighborhood">Neighborhood</label>
-                    <select className="form-control" id="formNeighborhood" aria-describedby="formNeighborhoodHelp">
-                        {hoods}
-                    </select>
+                    <div className="input-group" aria-describedby="formNeighborhoodHelp">
+                        <input type="text" className="form-control" id="formNeighborhood"
+                               defaultValue={currentNeighborhood} readOnly={!isUsingCustomNeighborhood}/>
+                        <div className="input-group-append">
+                            <div className="dropdown"  id="neighborhoodDropDown" onClick={onNeighborhoodChange}>
+                                <button className="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown"
+                                        aria-haspopup="true" aria-expanded="false">
+                                    <span className="sr-only"></span>
+                                </button>
+                                <div className="dropdown-menu">
+                                    {hoods}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <small id="formNeighborhoodHelp" className="form-text text-muted">*required</small>
                 </div>
-                <div className="form-group col-md-4">
+                <div className="form-group col-md-3">
                     <label htmlFor="formPhone">Phone</label>
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formPhone"
                            required
@@ -372,7 +412,7 @@ const populateForm = (currentOrder: Order): any =>{
                            aria-describedby="formPhoneHelp" />
                     <small id="formPhoneHelp" className="form-text text-muted">*required</small>
                 </div>
-                <div className="form-group col-md-4">
+                <div className="form-group col-md-3">
                     <label htmlFor="formEmail">Email</label>
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formEmail"
                            placeholder="Email"
@@ -465,7 +505,7 @@ export default (params: any)=>{
                     console.log(`Returned Order: ${JSON.stringify(order)}`);
                     if (order) {
                         orderDb.setActiveOrder(order);
-                        setFormFields(populateForm(order));
+                        populateForm(order, setFormFields);
                     } else {
                         alert(`Order: ${dbOrderId} could not be retrieved`);
                         navigate('/orders/');
@@ -485,7 +525,7 @@ export default (params: any)=>{
                 navigate('/');
             }
         } else {
-            setFormFields(populateForm(order));
+            populateForm(order, setFormFields);
         }
     }, [])    
 
