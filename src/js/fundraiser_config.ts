@@ -73,13 +73,6 @@ class FundraiserConfig {
     /////////////////////////////////////////
     //
     neighborhoods(): Array<string> { return this.loadedFrConfig_.neighborhoods; }
-
-    /////////////////////////////////////////
-    //
-    customNeighborhoods(): Array<string> {
-        if (!this.loadedFrConfig_.customNeighborhoods) { return []; }
-        return this.loadedFrConfig_.customNeighborhoods;
-    }
     
     /////////////////////////////////////////
     //)/*: Generator<>*/

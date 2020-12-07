@@ -5,7 +5,6 @@ import {orderDb, Order} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
-import jQuery from 'jquery';
 
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
@@ -248,35 +247,15 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     let isUsingCustomNeighborhood = false;
     const hoods=[];
     for (const hood of fundraiserConfig.neighborhoods()) {
-        if (currentOrder.neighborhood && hood !== currentOrder.neighborhood) {
+        if (currentOrder.neighborhood && (hood !== currentOrder.neighborhood)) {
             isUsingCustomNeighborhood=true;
         }
 
-        hoods.push(<a className="dropdown-item" href="#" key={hood}>{hood}</a>);
-    }
-    for (const hood of fundraiserConfig.customNeighborhoods()) {
-        hoods.push(
-            <a className="dropdown-item" href="#" key={hood} id={`custom-${hood}`}>
-                {hood}
-            </a>);
+        hoods.push(<option key={hood}>{hood}</option>);
     }
     const currentNeighborhood = (currentOrder.neighborhood) ?
                                 currentOrder.neighborhood :
                                 fundraiserConfig.neighborhoods()[0];
-    // Called when neighborhood change
-    const onNeighborhoodChange = (event: any)=>{
-        const curVal = event.target.innerText;
-        if (!curVal) { return; }
-        const elmId = event.target.id;
-        console.log(`Event: ${curVal} id: ${elmId}`);
-        if (elmId.startsWith('custom')) {
-            jQuery('#formNeighborhood').val(`${curVal}: `); 
-            jQuery('#formNeighborhood').attr("readonly", false);
-        } else {
-            jQuery('#formNeighborhood').val(curVal); 
-            jQuery('#formNeighborhood').attr("readonly", true); 
-        }
-    };
         
     // Calulate Current amountDue
     let newTotalDue = currency(0.0);
@@ -383,26 +362,15 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
             </div>
 
             <div className="form-row">
-                <div className="form-group col-md-6">
+                <div className="form-group col-md-4">
                     <label htmlFor="formNeighborhood">Neighborhood</label>
-                    <div className="input-group" aria-describedby="formNeighborhoodHelp">
-                        <input type="text" className="form-control" id="formNeighborhood"
-                               defaultValue={currentNeighborhood} readOnly={!isUsingCustomNeighborhood}/>
-                        <div className="input-group-append">
-                            <div className="dropdown"  id="neighborhoodDropDown" onClick={onNeighborhoodChange}>
-                                <button className="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown"
-                                        aria-haspopup="true" aria-expanded="false">
-                                    <span className="sr-only"></span>
-                                </button>
-                                <div className="dropdown-menu">
-                                    {hoods}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <select className="form-control" id="formNeighborhood"
+                            aria-describedby="formNeighborhoodHelp" defaultValue={currentNeighborhood}>
+                        {hoods}
+                    </select>
                     <small id="formNeighborhoodHelp" className="form-text text-muted">*required</small>
                 </div>
-                <div className="form-group col-md-3">
+                <div className="form-group col-md-4">
                     <label htmlFor="formPhone">Phone</label>
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formPhone"
                            required
@@ -412,7 +380,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                            aria-describedby="formPhoneHelp" />
                     <small id="formPhoneHelp" className="form-text text-muted">*required</small>
                 </div>
-                <div className="form-group col-md-3">
+                <div className="form-group col-md-4">
                     <label htmlFor="formEmail">Email</label>
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formEmail"
                            placeholder="Email"
@@ -479,7 +447,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
             
             <div className="pt-4">
                 <button type="button" className="btn btn-primary" onClick={onDiscardOrder}>
-                    Discard
+                    Cancel
                 </button>
                 <button type="submit" className="btn btn-primary float-right" id="formOrderSubmit" disabled={!areRequiredCurOrderValuesAlreadyPopulated}>
                     Submit
