@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react"
+import { Router, Link } from '@reach/router';
 import NavBar from "../components/navbar"
 import {orderDb, Order} from "../js/ordersdb"
 //import OrderItem from "../components/order_item" //TODO: Rename DeliveryOrderSummary
@@ -8,6 +9,16 @@ import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
+
+const AddProduct = React.lazy(() => import('./add_donations'));
+const AddDonation = React.lazy(() => import('./add_products_order'));
+const SignOn = React.lazy(() => import('./signon'));
+
+const LazyComponent = ({ Component, ...props }) => (
+    <React.Suspense fallback={'<p>Loading...</p>'}>
+        <Component {...props} />
+    </React.Suspense>
+);
 
 
 const populateForm = (currentOrder: Order, setFormFields: any): any =>{
@@ -508,8 +519,13 @@ export default (params: any)=>{
                     </div>
                 </div>
             </div>
+
+            <Router>
+                <LazyComponent Component={AddProduct} path="/add_products_order/" />
+                <LazyComponent Component={AddDonation} path="/add_donations/" />
+                <LazyComponent Component={SignOn} path="/signon/" />
+            </Router>
         </div>
     );
-
-
 }
+

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react"
+import { Router, Link } from '@reach/router';
 import NavBar from "../components/navbar"
 import auth from "../js/auth"
 import { navigate } from "gatsby"
@@ -7,6 +8,15 @@ import {FundraiserConfig, downloadFundraiserConfig, getFundraiserConfig} from ".
 import awsConfig from "../config"
 import currency from "currency.js"
 import {GoogleCharts} from 'google-charts';
+
+const NewOrder = React.lazy(() => import('./order_step_1'));
+const SignOn = React.lazy(() => import('./signon'));
+
+const LazyComponent = ({ Component, ...props }) => (
+    <React.Suspense fallback={'<p>Loading...</p>'}>
+        <Component {...props} />
+    </React.Suspense>
+);
 
 
 /* function *dynamicColors(): Generator<string> {
@@ -25,7 +35,7 @@ function dynamicColors(){
 };
 
 
-export default function home() {
+const Home = ()=>{
     const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
     const [orderSummary, setOrderSummary] = useState();
@@ -177,3 +187,18 @@ export default function home() {
         </div>
     );
 }
+
+
+const IndexPage = ()=>{
+    return(
+        <Router>
+            <Home path="/" />
+            <LazyComponent Component={NewOrder} path="/order_step_1/" />
+            <LazyComponent Component={SignOn} path="/signon/" />
+        </Router>
+    );
+};
+
+
+
+export default IndexPage;
