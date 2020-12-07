@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'gatsby'
 import auth from "../js/auth"
-import t27patch from "../../static/t27patch.jpg"
+import t27patch from "../../static/t27patch.png"
 import {orderDb} from "../js/ordersdb"
 
 const NavBar = () => {

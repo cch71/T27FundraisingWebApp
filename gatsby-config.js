@@ -21,7 +21,7 @@ module.exports = {
                 background_color: `#f7f0eb`,
                 theme_color: `#a2466c`,
                 display: `minimal-ui`,
-                icon: `static/favicon.ico`,
+                icon: `static/t27patch.png`,
             },
         },
         `gatsby-plugin-sharp`,
