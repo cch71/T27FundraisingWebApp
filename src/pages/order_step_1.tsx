@@ -37,7 +37,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         currentOrder.phone = (document.getElementById('formPhone') as HTMLInputElement).value;
         currentOrder.addr1 = (document.getElementById('formAddr1') as HTMLInputElement).value;
         currentOrder.neighborhood = (document.getElementById('formNeighborhood') as HTMLSelectElement).value;
-        
+
 
         currentOrder.email = (document.getElementById('formEmail') as HTMLInputElement).value;
         currentOrder.addr2 = (document.getElementById('formAddr2') as HTMLInputElement).value;
@@ -55,7 +55,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         currentOrder.amountTotal = currentOrder.cashPaid.add(currentOrder.checkPaid);
         console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
     }
-    
+
     // Handle Form Submission
     const onFormSubmission = (event: any) => {
         event.preventDefault();
@@ -142,7 +142,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
             return false;
         }
     };
-    
+
     // Recalculate Total due dynamically based on changes to order status
     const recalculateTotalDue = ()=> {
         let totalDue = currency(0.0);
@@ -159,8 +159,8 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     const recalculateTotalPaid = ()=> {
         const cash = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
         const checks = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
-        
-        
+
+
         const totElm = document.getElementById('orderAmountPaid');
         if (null!==totElm) {
             totElm.innerText = `${USD(cash.add(checks)).format()}`;
@@ -168,7 +168,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         }
 
     }
-    
+
     // Create delivery status buttons
     const populateOrdersList = (): Array<any> => {
         const ordersByDeliveryBtns = []
@@ -185,7 +185,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 event.stopPropagation();
 
                 const deliveryIdToDel = event.currentTarget.dataset.deliveryid;
-                
+
                 console.log(`Deleting Order for ${deliveryIdToDel}`);
 
                 delete currentOrder.orderByDelivery[deliveryIdToDel];
@@ -226,7 +226,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         }
         const addDonationDisplay = (!orderHasDonation) ?
                                    {display: 'block'}:{display: 'none'};
-        
+
         const addProdDisplay = (0 !== (fundraiserConfig.numDeliveryDates()-numProdOrders)) ?
                                {display: 'block'}:{display: 'none'};
 
@@ -267,7 +267,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     const currentNeighborhood = (currentOrder.neighborhood) ?
                                 currentOrder.neighborhood :
                                 fundraiserConfig.neighborhoods()[0];
-        
+
     // Calulate Current amountDue
     let newTotalDue = currency(0.0);
     for (let deliverable of Object.values(currentOrder.orderByDelivery)) {
@@ -330,7 +330,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
     setFormFields(
         <form onSubmit={onFormSubmission}>
-            
+
             <div className="form-row">
                 <div className="form-group col-md-6">
                     <label htmlFor="formFirstName">First Name</label>
@@ -355,7 +355,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
             <div className="form-row">
                 <div className="form-group col-md-6">
-                    <label htmlFor="formAddr1">Phone</label>
+                    <label htmlFor="formAddr1">Address 1</label>
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formAddr1"
                            required
                            placeholder="Address 1"
@@ -406,6 +406,10 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 </div>
             </div>
 
+            <ul className="list-group">
+                {ordersByDeliveryBtns}
+            </ul>
+
             <div className="form-row">
                 <div className="form-group col-md-4">
                     <label htmlFor="formCashPaid">Total Cash Amount</label>
@@ -442,10 +446,6 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 </div>
             </div>
 
-            <ul className="list-group">
-                {ordersByDeliveryBtns}
-            </ul>
-
             <div className="form-row">
                 <span className="form-group col-md-6">
                     Total Due: <div id="orderAmountDue" style={{display: "inline"}}>{amountDueStr}</div>
@@ -455,7 +455,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                     <small id="orderAmountPaidHelp" className="form-text text-muted">*Must match total due</small>
                 </span>
             </div>
-            
+
             <div className="pt-4">
                 <button type="button" className="btn btn-primary" onClick={onDiscardOrder}>
                     Cancel
@@ -506,7 +506,7 @@ export default (params: any)=>{
         } else {
             populateForm(order, setFormFields);
         }
-    }, [])    
+    }, [])
 
     return (
         <div>
@@ -528,4 +528,3 @@ export default (params: any)=>{
         </div>
     );
 }
-
