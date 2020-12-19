@@ -49,6 +49,8 @@ const Home = ()=>{
             }
             console.log(`Active User: ${auth.currentUserEmail()}`);
 
+            auth.getAuthToken().then(_=>{});
+
             const authToken = session.getIdToken().getJwtToken();
 
             const enableReady = (frConfig: FundraiserConfig | null)=>{
@@ -174,7 +176,6 @@ const Home = ()=>{
 
     const onTestAuth = ()=>{
         auth.getAuthToken().then((authToken: any)=>{
-
 
             //https://t27fundraiser.s3.amazonaws.com/T27FundraiserConfig.json
 

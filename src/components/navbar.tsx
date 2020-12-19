@@ -30,28 +30,31 @@ const NavBar = () => {
             </li>
         );
         baseNavItems.push(
-            <li className="nav-item" key="reportIssue">
+            <li key="AppHelp">
                 <a className='nav-item nav-link'
-                   href="https://github.com/cch71/T27FundraisingWebApp/issues">Report Issue</a>
+                   href='https://cch71.github.io/T27FundraisingWebApp/' target="_blank">Help</a>
             </li>
         );
         
         setBaseNav(baseNavItems);
 
         
-        auth.getSession().then(([isValid, session])=>{
-            if (isValid && session) {
-                setUserNav(
-                    <span className="navbar-nav nav-item dropdown">
-                        <a className="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink"
-                           data-toggle="dropdown" aria-haspopup="false" aria-expanded="false">
-                            {auth.currentUser().getUsername()}
-                        </a>
-                        <div className="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                            <Link className='dropdown-item' replace to='/signon/'>Signout</Link>
-                        </div>
-                    </span>
-                );
+        auth.getUserIdAndGroups().then(([userName, userGroups])=>{
+            setUserNav(
+                <span className="navbar-nav nav-item dropdown">
+                    <a className="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink"
+                       data-toggle="dropdown" aria-haspopup="false" aria-expanded="false">
+                        {userName}
+                    </a>
+                    <div className="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <Link className='dropdown-item' replace to='/signon/'>Signout</Link>
+                        <a className='dropdown-item'
+                           href="https://github.com/cch71/T27FundraisingWebApp/issues">Report Issue</a>
+                    </div>
+                </span>
+            );
+            if (userGroups.includes("FrAdmins")) {
+                console.log("This user is an admin");
             }
 
             if (orderDb.getActiveOrder()) {
@@ -70,7 +73,6 @@ const NavBar = () => {
             <a className="navbar-brand" href="#">
                 <span>
                     <img className="navbar-logo mr-2" src={t27patch} alt="Logo" />
-                    Fundraiser
                 </span>
             </a>
 

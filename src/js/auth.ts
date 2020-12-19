@@ -68,9 +68,26 @@ class CognitoAuth {
         return new Promise((resolve, reject) => {
             this.getSession().then(([isValid, session]: [boolean, any])=>{
                 if (isValid && session) {
-                    resolve(session.getIdToken().getJwtToken());
+                    const idToken = session.getIdToken();
+                    const payload = idToken.decodePayload()
+                    //console.log(`CU: ${JSON.stringify(payload, null, '\t')}`)
+                    resolve(idToken.getJwtToken());
                 } else {
-                    reject("Invalid Session");
+                    reject(new Error("Invalid Session"));
+                }
+            });
+        });
+    }
+
+    getUserIdAndGroups() : Promise<[string, string]> {
+        return new Promise((resolve, reject) => {
+            this.getSession().then(([isValid, session]: [boolean, any])=>{
+                if (isValid && session) {
+                    const cognitoUser = this.userPool.getCurrentUser().getUsername();
+                    const idPayload = session.getIdToken().decodePayload();
+                    resolve([cognitoUser, idPayload['cognito:groups']])
+                } else {
+                    reject(new Error("Invalid Session"));
                 }
             });
         });
@@ -106,6 +123,7 @@ class CognitoAuth {
     private normalizeLoginId(loginId: string): string {
         return loginId.replace('@', '-at-');
     }
+    
     
     signIn(loginId: string, pw: string, onSuccess: any, onFailure: any) {
         const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
