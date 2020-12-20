@@ -3,6 +3,7 @@ import {orderDb, Order, OrdersForDeliveryDate} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
+import {onNonNumsKeyPress} from "../js/utils"
 
 const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
@@ -119,7 +120,8 @@ export default (params: any) => {
         productElms.push(
             <div className="form-group row col-sm-12" key={`${formId}RowId`}>
                 <label htmlFor={formId}>{productLabel}</label>
-                <input type="number" className="form-control" id={formId}
+                <input type="number" min="0" className="form-control" id={formId}
+                       onKeyPress={onNonNumsKeyPress}
                        defaultValue={numOrdered} autoComplete="off"
                        placeholder={0}/>
             </div>

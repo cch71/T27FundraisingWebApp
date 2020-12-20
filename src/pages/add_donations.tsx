@@ -2,6 +2,7 @@ import React, { useState, useEffect }from "react"
 import {orderDb, Order, OrdersForDeliveryDate} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
+import {onCurrencyFieldKeyPress} from "../js/utils"
 
 
 export default function addDonation() {
@@ -14,6 +15,10 @@ export default function addDonation() {
             navigate('/');
         }
         const doesSubmitGetEnabled = (event: any)=>{
+
+            const amt = currency(Math.abs((document.getElementById('formDonationAmount') as HTMLInputElement).value));
+            (document.getElementById('formDonationAmount') as HTMLInputElement).value = amt.value;
+            
             if (event.currentTarget.value) {
                 (document.getElementById('formDonationSubmit') as HTMLButtonElement).disabled = false;
             } else {
@@ -59,10 +64,10 @@ export default function addDonation() {
                         <div className="input-group-prepend">
                             <span className="input-group-text">$</span>
                         </div>
-                        <input type="number" className="form-control" id="formDonationAmount"
+                        <input type="number" min="0" className="form-control" id="formDonationAmount"
                                defaultValue={donationAmt}
                                placeholder="0.00"
-                               onInput={doesSubmitGetEnabled}/>
+                               onInput={doesSubmitGetEnabled} onKeyPress={onCurrencyFieldKeyPress}/>
                     </div>
                 </div>
 

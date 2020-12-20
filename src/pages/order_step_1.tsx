@@ -6,7 +6,7 @@ import {orderDb, Order} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
-
+import {onCurrencyFieldKeyPress, onCheckNumsKeyPress} from "../js/utils"
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
 
@@ -120,9 +120,12 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     const doesSubmitGetEnabled = (/*event: any*/)=>{
         const amountDue = currency(document.getElementById('orderAmountDue').innerText);
         const amountPaid = currency(document.getElementById('orderAmountPaid').innerText);
+
         let isCheckNumGood = true;
-        if (0.0!==currency((document.getElementById('formCheckPaid') as HTMLInputElement).value).value) {
-            isCheckNumGood = (0!==(document.getElementById('formCheckNumbers') as HTMLInputElement).value.length);
+        const checksPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
+        const checksNums = (document.getElementById('formCheckNumbers') as HTMLInputElement).value;
+        if (0.0!==checksPaid.value) {
+            isCheckNumGood = (0!==checksNums.length);
         }
         //console.log(`AD: ${amountDue.value} AP: ${amountPaid.value}`);
         if ( (document.getElementById('formFirstName') as HTMLInputElement).value &&
@@ -143,6 +146,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         }
     };
 
+    
     // Recalculate Total due dynamically based on changes to order status
     const recalculateTotalDue = ()=> {
         let totalDue = currency(0.0);
@@ -157,9 +161,11 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     }
 
     const recalculateTotalPaid = ()=> {
-        const cash = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
-        const checks = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
+        const cash = currency(Math.abs((document.getElementById('formCashPaid') as HTMLInputElement).value));
+        const checks = currency(Math.abs((document.getElementById('formCheckPaid') as HTMLInputElement).value));
 
+        (document.getElementById('formCashPaid') as HTMLInputElement).value = cash.value;
+        (document.getElementById('formCheckPaid') as HTMLInputElement).value = checks.value;
 
         const totElm = document.getElementById('orderAmountPaid');
         if (null!==totElm) {
@@ -417,9 +423,9 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                         <div className="input-group-prepend">
                             <span className="input-group-text">$</span>
                         </div>
-                        <input className="form-control" type="text"  autoComplete="fr-new-cust-info"
+                        <input className="form-control" type="number" min="0" autoComplete="fr-new-cust-info"
                                id="formCashPaid" placeholder="Total Cash Amount"
-                               onInput={recalculateTotalPaid}
+                               onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
                                placeholder="0.00"
                                defaultValue={moniedDefaultValue(currentOrder.cashPaid)}/>
                     </div>
@@ -430,18 +436,18 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                         <div className="input-group-prepend">
                             <span className="input-group-text">$</span>
                         </div>
-                        <input className="form-control" type="text" autoComplete="fr-new-cust-info"
+                        <input className="form-control" type="number" min="0" autoComplete="fr-new-cust-info"
                                id="formCheckPaid" placeholder="Total Check Amount"
-                               onInput={recalculateTotalPaid}
+                               onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
                                placeholder="0.00"
                                defaultValue={moniedDefaultValue(currentOrder.checkPaid)}/>
                     </div>
                 </div>
                 <div className="form-group col-md-4">
                     <label htmlFor="formCheckNumbers">Enter Check Numbers</label>
-                    <input className="form-control" type="text" autoComplete="fr-new-cust-info"
+                    <input className="form-control" autoComplete="fr-new-cust-info"
                            id="formCheckNumbers" placeholder="Enter Check #s"
-                           onInput={doesSubmitGetEnabled}
+                           onInput={doesSubmitGetEnabled} onKeyPress={onCheckNumsKeyPress}
                            defaultValue={currentOrder.checkNumbers}/>
                 </div>
             </div>
@@ -460,7 +466,8 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 <button type="button" className="btn btn-primary" onClick={onDiscardOrder}>
                     Cancel
                 </button>
-                <button type="submit" className="btn btn-primary float-right" id="formOrderSubmit" disabled={!areRequiredCurOrderValuesAlreadyPopulated}>
+                <button type="submit" className="btn btn-primary float-right"
+                        id="formOrderSubmit" disabled={!areRequiredCurOrderValuesAlreadyPopulated}>
                     Submit
                 </button>
             </div>
