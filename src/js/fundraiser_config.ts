@@ -31,6 +31,7 @@ interface FundraiserConfigBase {
 //
 class FundraiserConfig {
     private readonly loadedFrConfig_: FundraiserConfigBase;
+	private deliveryMap_: Record<string, string>|null = null;
 
     /////////////////////////////////////////
     //
@@ -73,8 +74,8 @@ class FundraiserConfig {
     /////////////////////////////////////////
     //
     neighborhoods(): Array<string> { return this.loadedFrConfig_.neighborhoods; }
-    
-    /////////////////////////////////////////
+
+	/////////////////////////////////////////
     //)/*: Generator<>*/
     *products(): Generator<Product> {
         const oldProds = this.loadedFrConfig_.products;
@@ -86,11 +87,11 @@ class FundraiserConfig {
         }
     }
 
-    
+
     /////////////////////////////////////////
     // return [id, date]
     *validDeliveryDates(): IterableIterator<[string,string]> {
-        
+
         for (let deliveryDate of this.loadedFrConfig_.deliveryDates) {
             //if delivery date < disabledDate
             yield [deliveryDate.id, deliveryDate.date];
@@ -98,6 +99,20 @@ class FundraiserConfig {
         yield ['donation', 'Donation'];
     }
 
+    /////////////////////////////////////////
+    //
+    deliveryDateFromId(id: string): string {
+		if(null===this.deliveryMap_) {
+			this.deliveryMap_ = {};
+			for (const deliveryDate of this.loadedFrConfig_.deliveryDates) {
+				this.deliveryMap_[deliveryDate.id] = deliveryDate.date;
+			}
+		}
+		return this.deliveryMap_[id];
+	}
+
+    /////////////////////////////////////////
+    //
     numDeliveryDates(): number {
         return this.loadedFrConfig_.deliveryDates.length;
     }

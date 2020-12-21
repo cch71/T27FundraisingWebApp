@@ -4,12 +4,12 @@ import { navigate } from "gatsby"
 import {orderDb, OrderListItem} from "../js/ordersdb"
 import currency from "currency.js"
 import jQuery from 'jquery';
-
+import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 
 
 export default function orders() {
     const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
-    
+
     const addNewOrder=()=>{
         console.log("Add new order");
         orderDb.newActiveOrder();
@@ -18,18 +18,30 @@ export default function orders() {
 
     // Client-side Runtime Data Fetching
     useEffect(() => {
+		const frConfig = getFundraiserConfig();
 
-        orderDb.getOrderList().then((orders: Array<OrderListItem<string>>)=>{
+		// Build query fields
+		const fieldNames = ["orderId", "firstName", "lastName"];
+		if ('mulch' === frConfig.kind()) {
+			fieldNames.push("deliveryId");
+			fieldNames.push("products.spreading");
+		}
+
+        orderDb.query({fields: fieldNames}).then((orders: Array<OrderListItem<string>>)=>{
             console.log(`Orders Page: ${JSON.stringify(orders)}`);
+
+			// Fill out rows of data
             const orderDataSet = [];
             for (const order of orders) {
-                order.email = order.email?order.email:'';
-                order.addr2 = order.addr2?order.addr2:'';
                 const nameStr = `${order.firstName}, ${order.lastName}`;
-                const addrStr = `${order.addr1} ${order.addr2}`
-                const totalAmountStr = USD(order.amountTotal).format();
-                orderDataSet.push([order.orderId, nameStr, addrStr, order.neighborhood,
-                                   order.phone, order.email, totalAmountStr, null]);
+
+				const orderDataItem = [order.orderId, nameStr];
+				if ('mulch' === frConfig.kind()) {
+					orderDataItem.push(frConfig.deliveryDateFromId(order.deliveryId));
+					orderDataItem.push((order.products?.spreading?"Yes":"No"));
+				}
+				orderDataItem.push(null);
+                orderDataSet.push(orderDataItem);
             }
 
             if (jQuery.fn.dataTable.isDataTable( '#orderListTable')) {
@@ -42,32 +54,35 @@ export default function orders() {
                 `<button type="button" class="btn btn-outline-danger order-edt-btn"><span>&#10005;</span></button>` +
                 `</div>`;
 
+			const tableColumns = [
+                {
+                    title: "OrderID",
+                    visible: false
+                },
+                {
+                    title: "Name",
+                    className: "all"
+                }
+            ];
+
+			if ('mulch' === frConfig.kind()) {
+				tableColumns.push({ title: "Delivery Date" });
+				tableColumns.push({ title: "Spreading" });
+			}
+
+			tableColumns.push({
+                title: "Actions",
+                data: null,
+                "orderable": false,
+                "defaultContent": buttonDef,
+                className: "all"
+            });
+
             const table = jQuery('#orderListTable').DataTable({
                 data: orderDataSet,
                 paging: false,
                 bInfo : false,
-                columns: [
-                    {
-                        title: "OrderID",
-                        visible: false
-                    },
-                    {
-                        title: "Name",
-                        className: "all"
-                    },
-                    { title: "Address" },
-                    { title: "Neighborhood" },
-                    { title: "Phone" },
-                    { title: "Email" },
-                    { title: "Amount" },
-                    {
-                        title: "Actions",
-                        data: null,
-                        "orderable": false,
-                        "defaultContent": buttonDef,
-                        className: "all"
-                    },
-                ]
+                columns: tableColumns
             });
 
             // Handle on Edit Scenario
@@ -90,7 +105,7 @@ export default function orders() {
                 console.log(`Deleting order for ${orderId}`);
                 jQuery('#confirmDeleteOrderInput').val('');
                 parentTr.find('button').attr("disabled", true);
-                
+
                 jQuery('#deleteDlgBtn')
                     .prop("disabled",true)
                     .off('click')
@@ -111,7 +126,7 @@ export default function orders() {
                 })
                 jQuery('#deleteOrderDlg').modal()
             } );
-            
+
             const spinnerElm = document.getElementById('orderLoadingSpinner');
             if (spinnerElm) {
                 spinnerElm.className = "d-none";
@@ -138,7 +153,7 @@ export default function orders() {
         }
     };
 
-    
+
     return (
         <div>
             <NavBar/>
@@ -191,7 +206,7 @@ export default function orders() {
                     </div>
                 </div>
             </div>
-            
+
         </div>
     );
 }

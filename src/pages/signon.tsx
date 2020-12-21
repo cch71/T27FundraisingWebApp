@@ -23,7 +23,7 @@ export default function signon() {
 
         const onSuccess=(autoInfo: any)=>{
             console.log(autoInfo);
-            navigate('/', {replace: true});
+            navigate('/'/*, {replace: true} see if disabling fixes spinning menu*/);
         };
         const onFailure=()=>{
             console.error("authenticaiton Error");

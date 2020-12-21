@@ -35,10 +35,10 @@ const NavBar = () => {
                    href='https://cch71.github.io/T27FundraisingWebApp/' target="_blank">Help</a>
             </li>
         );
-        
+
         setBaseNav(baseNavItems);
 
-        
+
         auth.getUserIdAndGroups().then(([userName, userGroups])=>{
             setUserNav(
                 <span className="navbar-nav nav-item dropdown">
@@ -53,7 +53,7 @@ const NavBar = () => {
                     </div>
                 </span>
             );
-            if (userGroups.includes("FrAdmins")) {
+            if (userGroups && userGroups.includes("FrAdmins")) {
                 console.log("This user is an admin");
             }
 

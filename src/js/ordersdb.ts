@@ -18,10 +18,7 @@ interface OrdersForDeliveryDate {
 class Order {
     // Always should have some initialization
     readonly orderId: string;
-    cashPaid: currency;
-    checkPaid: currency;
-    amountTotal: currency;
-    orderByDelivery: Record<string, OrdersForDeliveryDate>;
+    totalAmt: currency;
 
 
     doDeleteOrder?: boolean;
@@ -37,50 +34,31 @@ class Order {
     zip?: string;
     specialInstructions?: string;
     neighborhood?: string;
-    checkNumbers?: string;
+    products?: Record<string, number>;
+	donaition?: currency;
+    cashPaid?: currency;
+    checkPaid?: currency;
+    checkNums?: string;
 
     constructor(order?: any) {
         if (!order) {
             this.orderId = uuidv4();
-            this.cashPaid = currency(0.0);
-            this.checkPaid = currency(0.0);
-            this.amountTotal = currency(0.0);
-            this.orderByDelivery = {};
+            this.totalAmt = currency(0.0);
         } else {
             //console.log(`OrdersDB New order from: ${JSON.stringify(order)}`);
 
             Object.keys(order).forEach((key: string, _: number)=>{
                 if ('cashPaid' === key ||
                     'checkPaid' === key ||
-                    'amountTotal' === key)
+                    'donation' === key ||
+                    'productsCost' === key ||
+                    'totalAmt' === key)
                 {
                     this[key] = currency(order[key]);
-                } else if ('orderByDelivery' === key) {
-                    this[key] = {};
-                    Object.keys(order[key]).forEach((mapKey: string)=>{
-                        const deliveryOrder: any = {};
-                        //console.log(`!!!! ${mapKey}: ${JSON.stringify(order[key][mapKey])}`);
-                        Object.keys(order[key][mapKey]).forEach((orderKey: string)=>{
-                            const deliveryVal = order[key][mapKey][orderKey];
-                            //console.log(`!!!!!!!! ${orderKey}: ${JSON.stringify(deliveryVal)}`);
-                            if ('amountDue' === orderKey) {
-                                deliveryOrder[orderKey] = currency(deliveryVal);
-                            } else {
-                                deliveryOrder[orderKey] = deliveryVal;
-                            }
-                        });
-                        this[key][mapKey]=deliveryOrder;
-                    });
                 } else {
                     this[key] = order[key];
                 }
             });
-            if (!order.hasOwnProperty('cashPaid')) {
-                this['cashPaid'] = currency(0.0);
-            }
-            if (!order.hasOwnProperty('checkPaid')) {
-                this['checkPaid'] = currency(0.0);
-            }
         }
     }
 }
@@ -228,9 +206,9 @@ class OrderDb {
                     resolve();
                 }
             });
-        }); 
+        });
     }
- 
+
     /////////////////////////////////////////
     //
     deleteOrder(orderId: string): Promise<void> {
@@ -257,7 +235,7 @@ class OrderDb {
                         },
                         body: paramStr
                     });
-                    
+
                     if (!resp.ok) { // if HTTP-status is 200-299
                         const errRespBody = await resp.text();
                         const errStr = `Query error: ${resp.status}  ${errRespBody}`;
@@ -269,7 +247,7 @@ class OrderDb {
                     reject(err);
                 });
 
-                
+
             } catch(error) {
                 console.error(error);
                 const errStr = `Delete Order error: ${error.message}`;
@@ -294,7 +272,7 @@ class OrderDb {
                     this.submitOrderPromise_ = undefined;
                     reject(err);
                 };
-                
+
                 try {
                     auth.getAuthToken().then(async (authToken: string)=>{
 
@@ -309,7 +287,7 @@ class OrderDb {
                             },
                             body: paramStr
                         });
-                        
+
                         if (!resp.ok) { // if HTTP-status is 200-299
                             const errRespBody = await resp.text();
                             handleErr(new Error(`Failed upserting order id: ${resp.status} reason: ${errRespBody}`));
@@ -323,9 +301,9 @@ class OrderDb {
                         handleErr(err);
                     });
 
-                    
+
                 } catch(err) {
-                    const errStr = `Failed req upserting order err: ${err.message}`; 
+                    const errStr = `Failed req upserting order err: ${err.message}`;
                     handleErr(err);
                 }
             });
@@ -333,24 +311,6 @@ class OrderDb {
 
         return this.submitOrderPromise_;
 
-    }
-    
-    /////////////////////////////////////////
-    //
-    getOrderList(): Promise<Array<OrderListItem<string>>> {
-
-        const fieldNames:Array<string> = [
-            "orderId",
-            "firstName",
-            "lastName",
-            "addr1",
-            "addr2",
-            "phone",
-            "email",
-            "neighborhood",
-            "amountTotal"
-        ];
-        return this.query({fields: fieldNames});
     }
 
     /////////////////////////////////////////
@@ -371,7 +331,7 @@ class OrderDb {
                         },
                         body: paramStr
                     });
-                    
+
                     if (!resp.ok) { // if HTTP-status is 200-299
                         const errRespBody = await resp.text();
                         const errStr = `Query error: ${resp.status}  ${errRespBody}`;
@@ -385,7 +345,7 @@ class OrderDb {
                     reject(err);
                 });
 
-                
+
             } catch(error) {
                 console.error(error);
                 const errStr = `Query req error: ${error.message}`;
