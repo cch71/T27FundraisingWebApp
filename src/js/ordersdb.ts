@@ -4,14 +4,6 @@ import awsConfig from "../config"
 import auth from "../js/auth"
 import { v4 as uuidv4 } from 'uuid';
 
-/////////////////////////////////////////////
-//
-interface OrdersForDeliveryDate {
-    amountDue: currency;
-    kind: string;
-    deliveryDateId?: string;
-    items?: Record<string, number> //productId, numOrders
-}
 
 /////////////////////////////////////////////
 //
@@ -357,4 +349,4 @@ class OrderDb {
 
 const orderDb = new OrderDb()
 
-export {orderDb, Order, OrdersForDeliveryDate, OrderListItem, SummaryInfo};
+export {orderDb, Order, OrderListItem, SummaryInfo};

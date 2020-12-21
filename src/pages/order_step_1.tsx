@@ -148,8 +148,8 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
 	const calcCurrentOrderCost=()=>{
 		let totalCost = currency(0.0);
-		if (currentOrder.donation) { totalCost.add(currentOrder.donation); }
-		if (currentOrder.productsCost) { totalCost.add(currentOrder.productsCost); }
+		if (currentOrder.donation) { totalCost = totalCost.add(currentOrder.donation); }
+		if (currentOrder.productsCost) { totalCost = totalCost.add(currentOrder.productsCost); }
 		return totalCost;
 	};
 
@@ -157,7 +157,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     const recalculateTotalDue = ()=> {
         const totalDue = calcCurrentOrderCost();
         const totElm = document.getElementById('orderAmountDue');
-        if (null!==totElm) {
+        if (totElm) {
             totElm.innerText = `${USD(totalDue).format()}`;
         }
     }
@@ -189,33 +189,39 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 		//  Create the ADD buttons and based on existing order deside visibility
         // Figure out visibility
 
-        // On Delete Order Re-enable button
-        const onDeleteOrder = (event)=>{
-            event.preventDefault();
-            event.stopPropagation();
-
-            const deliveryIdToDel = event.currentTarget.dataset.deliveryid;
-
-            console.log(`Deleting Order for ${deliveryIdToDel}`);
-
-            delete currentOrder.orderByDelivery[deliveryIdToDel];
-            document.getElementById(foundTag).style.display = "none";
-            if ('donation' === deliveryIdToDel) {
-                document.getElementById('addDonationBtnLi').style.display = "block";
-            } else {
-                document.getElementById('addProductBtnLi').style.display = "block";
-            }
-
-            recalculateTotalDue();
-            doesSubmitGetEnabled();
-        }
-
 		const addExistingOrderButton = (deliveryId: string, deliveryLabel: string, productsCost: currency)=>{
             //console.log(`Adding Order Type for DDay: ${deliveryId}`);
 			const foundTag = `found-${deliveryId}`
             const orderTotalStr = `${deliveryLabel} Amount: ${USD(productsCost).format()} `;
 
             const onClickHandler = ("donation" === deliveryId)? onAddDonation : onAddOrder;
+
+			// On Delete Order Re-enable button
+			const onDeleteOrder = (event)=>{
+				event.preventDefault();
+				event.stopPropagation();
+
+				const deliveryIdToDel = event.currentTarget.dataset.deliveryid;
+
+				console.log(`Deleting Order for ${deliveryIdToDel}`);
+				if ('donation' === deliveryIdToDel) {
+					delete currentOrder.donation;
+				} else {
+					delete currentOrder.products;
+					delete currentOrder.productsCost;
+					delete currentOrder.deliveryId;
+				}
+
+				document.getElementById(foundTag).style.display = "none";
+				if ('donation' === deliveryIdToDel) {
+					document.getElementById('addDonationBtnLi').style.display = "block";
+				} else {
+					document.getElementById('addProductBtnLi').style.display = "block";
+				}
+
+				recalculateTotalDue();
+				doesSubmitGetEnabled();
+			}
 
             ordersByDeliveryBtns.push(
                 <li className="list-group-item" id={foundTag} key={foundTag}>

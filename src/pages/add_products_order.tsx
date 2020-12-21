@@ -1,5 +1,5 @@
 import React from "react"
-import {orderDb, Order, OrdersForDeliveryDate} from "../js/ordersdb"
+import {orderDb, Order} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
@@ -13,14 +13,14 @@ export default (params: any) => {
     // Could be undefined if this is a new order
     const currentDeliveryId = params?.location?.state?.deliveryId;
     console.log(`Current Delivery ID: ${currentDeliveryId}`);
-    
+
     const currentOrder: Order = orderDb.getActiveOrder();
     if (!currentOrder) {
         navigate('/');
         return(<div/>);
     }
-    
-    const deliveryDateOrder = currentOrder.orderByDelivery[currentDeliveryId];
+
+    const deliveryDateOrder = currentOrder.deliveryId;
     const fundraiserConfig: FundraiserConfig = getFundraiserConfig();
     if (!fundraiserConfig) {
         alert("Failed to load fundraiser config");
@@ -31,11 +31,9 @@ export default (params: any) => {
     const deliveryDateOpts = []
     for (const [frDeliveryId, frDeliveryLabel] of fundraiserConfig.validDeliveryDates()) {
         if ('donation'===frDeliveryId) { continue; }
-        if (frDeliveryId === currentDeliveryId || !currentOrder.orderByDelivery.hasOwnProperty(frDeliveryId)) {
-            deliveryDateOpts.push(
-                <option value={frDeliveryId} key={frDeliveryId}>{frDeliveryLabel}</option>
-            );
-        }
+        deliveryDateOpts.push(
+            <option value={frDeliveryId} key={frDeliveryId}>{frDeliveryLabel}</option>
+        );
     }
 
 
@@ -57,13 +55,10 @@ export default (params: any) => {
     const onFormSubmission = (event: any) => {
         event.preventDefault();
         event.stopPropagation();
-        
+
         let totalDue = currency(0.0);
         const selectedDeliveryId = (document.getElementById('formSelectDeliveryDate') as HTMLSelectElement).value;
         console.log(`Saving For Delivery ID: ${selectedDeliveryId}`);
-        if (currentDeliveryId && currentDeliveryId!==selectedDeliveryId) {
-            delete currentOrder.orderByDelivery[currentDeliveryId];
-        }
 
         const items: Record<string, number> = {};
         for (const product of fundraiserConfig.products()) {
@@ -84,17 +79,15 @@ export default (params: any) => {
             }
         }
 
-        if (0.0===totalDue.value) {
-            delete currentOrder.orderByDelivery[selectedDeliveryId];
+        if ('0.00' === totalDue.toString()) {
+            delete currentOrder.deliveryId;
+            delete currentOrder.products;
+            delete currentOrder.productsCost;
         } else {
-        
-            let productOrder = {
-                amountDue: totalDue,
-                kind: fundraiserConfig.kind(),
-                items: items
-            };
             console.log(`Setting Order: ${selectedDeliveryId}`);
-            currentOrder.orderByDelivery[selectedDeliveryId] = (productOrder as OrdersForDeliveryDate);
+            currentOrder['deliveryId'] = selectedDeliveryId;
+            currentOrder['products'] = items;
+            currentOrder['productsCost'] = totalDue;
         }
         navigate('/order_step_1/');
     }
@@ -104,10 +97,8 @@ export default (params: any) => {
         console.log(`Handling Product: ${JSON.stringify(prod)}`);
         const formId = `form${prod.id}`;
         let numOrdered = undefined;
-        if (undefined !== deliveryDateOrder) {
-            if (deliveryDateOrder.items) {
-                numOrdered = deliveryDateOrder.items[prod.id];
-            }
+        if (undefined !== deliveryDateOrder && currentOrder.products) {
+            numOrdered = currentOrder.products[prod.id];
         }
 
         let productLabel = `${prod.label} Price: ${USD(prod.unitPrice).format()}`;
@@ -116,7 +107,7 @@ export default (params: any) => {
             const unitPrice = USD(currency(priceBreak.unitPrice)).format();
             productLabel += ` [>${unitsNeeded}=${unitPrice}] `;
         }
-        
+
         productElms.push(
             <div className="form-group row col-sm-12" key={`${formId}RowId`}>
                 <label htmlFor={formId}>{productLabel}</label>
@@ -126,7 +117,7 @@ export default (params: any) => {
                        placeholder={0}/>
             </div>
         );
-        
+
     };
 
     return (
@@ -135,23 +126,23 @@ export default (params: any) => {
                 <div className="card-body">
                     <h5 className="card-title">Add {fundraiserConfig.description()} Order</h5>
                     <form onSubmit={onFormSubmission}>
-                        
+
                         <div className="form-group row col-sm-12">
                             <label htmlFor="formSelectDeliveryDate">Select Delivery Date</label>
                             <select className="custom-select" id="formSelectDeliveryDate" defaultValue={currentDeliveryId}>
                                 {deliveryDateOpts}
                             </select>
                         </div>
-                            
+
                         {productElms}
-                        
+
                         <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
                             Cancel
                         </button>
                         <button type="submit" className="btn btn-primary my-2 float-right" id="formAddProductsSubmit">
-                            Add                            
+                            Add
                         </button>
-                        
+
                     </form>
                 </div>
             </div>
