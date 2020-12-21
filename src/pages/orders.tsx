@@ -50,7 +50,7 @@ export default function orders() {
 
             const buttonDef =
                 `<div>` +
-                `<button type="button" class="btn btn-outline-info mr-1 order-edt-btn"><span>&#9999;</span></button>` +
+                `<button type="button" class="btn btn-outline-info me-1 order-edt-btn"><span>&#9999;</span></button>` +
                 `<button type="button" class="btn btn-outline-danger order-edt-btn"><span>&#10005;</span></button>` +
                 `</div>`;
 
@@ -170,7 +170,7 @@ export default function orders() {
                                className="display responsive nowrap table table-striped table-bordered table-hover"
                                style={{width:"100%"}}/>
                         <div className="spinner-border" role="status" id="orderLoadingSpinner">
-                            <span className="sr-only">Loading...</span>
+                            <span className="visually-hidden">Loading...</span>
                         </div>
                     </div>
                 </div>

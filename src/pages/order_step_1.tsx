@@ -45,15 +45,14 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
          * currentOrder.state = (document.getElementById('formState') as HTMLInputElement).value;
          * currentOrder.zip = (document.getElementById('formZip') as HTMLInputElement).value;
         */
-         currentOrder.specialInstructions =
-             (document.getElementById('formSpecialInstructions') as HTMLInputElement).value;
+        currentOrder.specialInstructions =
+            (document.getElementById('formSpecialInstructions') as HTMLInputElement).value;
         currentOrder.checkNumbers = (document.getElementById('formCheckNumbers') as HTMLInputElement).value;
-		const cashPaid = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
-		if (0<cashPaid) { currentOrder.cashPaid = cashPaid; }
-        const checkPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
-		if (0<checkPaid) { currentOrder.checkPaid = checkPaid; }
-		currentOrder.totalAmt = cashPaid.add(checkPaid);
-        console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
+		currentOrder.cashPaid = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
+        currentOrder.checkPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
+		currentOrder.doCollectMoneyLater  = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
+		currentOrder.totalAmt = currency(currentOrder.donation).add(currency(currentOrder.productsCost));
+		console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
     }
 
     // Handle Form Submission
@@ -128,14 +127,19 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
             isCheckNumGood = (0!==checksNums.length);
         }
         //console.log(`AD: ${amountDue.value} AP: ${amountPaid.value}`);
+
+
+		const isCollectLaterChecked = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
+		const isPaidCompletely = (amountDue.value===amountPaid.value) && isCheckNumGood;
+		const isCollected = isCollectLaterChecked || isPaidCompletely;
+
         if ( (document.getElementById('formFirstName') as HTMLInputElement).value &&
              (document.getElementById('formLastName') as HTMLInputElement).value &&
              (document.getElementById('formPhone') as HTMLInputElement).value &&
              (document.getElementById('formAddr1') as HTMLInputElement).value &&
              (document.getElementById('formNeighborhood') as HTMLSelectElement).value &&
              (currentOrder.products || currentOrder.donation) &&
-             (amountDue.value===amountPaid.value) &&
-             isCheckNumGood
+             isCollected
         )
         {
             (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = false;
@@ -226,11 +230,11 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
             ordersByDeliveryBtns.push(
                 <li className="list-group-item" id={foundTag} key={foundTag}>
                     {orderTotalStr}
-                    <button className="btn btn-outline-danger mx-1 float-right order-edt-btn"
+                    <button className="btn btn-outline-danger mx-1 float-end order-edt-btn"
                             data-deliveryid={deliveryId} onClick={onDeleteOrder}>
                         <span>&#10005;</span>
                     </button>
-                    <button className="btn btn-outline-info float-right order-edt-btn"
+                    <button className="btn btn-outline-info float-end order-edt-btn"
                             data-deliveryid={deliveryId} onClick={onClickHandler}>
                         <span>&#9999;</span>
                     </button>
@@ -249,7 +253,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         ordersByDeliveryBtns.push(
             <li className="list-group-item" id="addProductBtnLi" key="addProductBtnLi" style={addProductStyle}>
                 Add Product Order
-                <button className="btn btn-outline-info float-right order-edt-btn" onClick={onAddOrder}>
+                <button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddOrder}>
                     <span>+</span>
                 </button>
             </li>
@@ -265,7 +269,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         ordersByDeliveryBtns.push(
             <li className="list-group-item" id="addDonationBtnLi" key="addDonationBtnLi" style={addDonationStyle}>
                 Add Donations
-                <button className="btn btn-outline-info float-right order-edt-btn" onClick={onAddDonation}>
+                <button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddDonation}>
                     <span>+</span>
                 </button>
             </li>
@@ -294,54 +298,57 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     const amountDueStr = USD(newTotalDue).format();
     const amountPaid = currency(currentOrder.checkPaid).add(currentOrder.cashPaid);
     const amountPaidStr = USD(amountPaid).format();
-    //console.log(`Amount Due: ${amountDueStr}  Paid: ${amountPaidStr}`);
-
+	const isCollectedOk = (newTotalDue.value === amountPaid.value) || currentOrder.doCollectMoneyLater;
+	const isChecksPaidOk = (0<currentOrder.checkPaid) ? (undefined!==currentOrder.checkNumbers) : true;
+    console.log(`Amount Due: ${amountDueStr}  Paid: ${amountPaidStr} ${currentOrder.doCollectMoneyLater}`);
+    console.log(`Collected ${isCollectedOk}  ChecksPaid: ${isChecksPaidOk}`);
     const areRequiredCurOrderValuesAlreadyPopulated = (
         currentOrder.firstName &&
         currentOrder.lastName &&
         currentOrder.phone &&
         currentOrder.addr1 &&
         currentOrder.neighborhood &&
-        (newTotalDue.value === amountPaid.value));
+		isChecksPaidOk &&
+        isCollectedOk);
 
 
-    // This is if we support city, state, zip
-    /* const stateAbbreviations = [
-     *     'AL','AK','AS','AZ','AR','CA','CO','CT','DE','DC','FM','FL','GA',
-     *     'GU','HI','ID','IL','IN','IA','KS','KY','LA','ME','MH','MD','MA',
-     *     'MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND',
-     *     'MP','OH','OK','OR','PW','PA','PR','RI','SC','SD','TN','TX','UT',
-     *     'VT','VI','VA','WA','WV','WI','WY'
-     * ];
+	// This is if we support city, state, zip
+	/* const stateAbbreviations = [
+	 *     'AL','AK','AS','AZ','AR','CA','CO','CT','DE','DC','FM','FL','GA',
+	 *     'GU','HI','ID','IL','IN','IA','KS','KY','LA','ME','MH','MD','MA',
+	 *     'MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND',
+	 *     'MP','OH','OK','OR','PW','PA','PR','RI','SC','SD','TN','TX','UT',
+	 *     'VT','VI','VA','WA','WV','WI','WY'
+	 * ];
 
-     * const states=[];
-     * for (let st of stateAbbreviations) {
-     *     states.push(<option key={st}>{st}</option>);
-     * } */
-    /* const wreathInfo = ()=>(
-     *     return(
-     *         <Form.Row>
-     *             <Form.Group as={Col} md="7" controlId="formCity">
-     *                 <Form.Label>City</Form.Label>
-     *                 <Form.Control required type="text" placeholder="City" defaultValue={currentOrder.city} />
-     *             </Form.Group>
+	 * const states=[];
+	 * for (let st of stateAbbreviations) {
+	 *     states.push(<option key={st}>{st}</option>);
+	 * } */
+	/* const wreathInfo = ()=>(
+	 *     return(
+	 *         <Form.Row>
+	 *             <Form.Group as={Col} md="7" controlId="formCity">
+	 *                 <Form.Label>City</Form.Label>
+	 *                 <Form.Control required type="text" placeholder="City" defaultValue={currentOrder.city} />
+	 *             </Form.Group>
 
-     *             <Form.Group as={Col} md="2" controlId="formState">
-     *                 <Form.Label>State</Form.Label>
-     *                 <Form.Control as="select" defaultValue='TX'>
-     *                     {states}
-     *                 </Form.Control>
-     *             </Form.Group>
+	 *             <Form.Group as={Col} md="2" controlId="formState">
+	 *                 <Form.Label>State</Form.Label>
+	 *                 <Form.Control as="select" defaultValue='TX'>
+	 *                     {states}
+	 *                 </Form.Control>
+	 *             </Form.Group>
 
-     *             <Form.Group as={Col} md="3" controlId="formZip">
-     *                 <Form.Label>Zip</Form.Label>
-     *                 <Form.Control type="text" placeholder="Zip" defaultValue={currentOrder.zip} />
-     *             </Form.Group>
-     *         </Form.Row>
-     *     );
-     * ); */
+	 *             <Form.Group as={Col} md="3" controlId="formZip">
+	 *                 <Form.Label>Zip</Form.Label>
+	 *                 <Form.Control type="text" placeholder="Zip" defaultValue={currentOrder.zip} />
+	 *             </Form.Group>
+	 *         </Form.Row>
+	 *     );
+	 * ); */
 
-    const moniedDefaultValue = (formFld: currency|undefined)=>{
+	const moniedDefaultValue = (formFld: currency|undefined)=>{
 		const fld = currency(formFld);
         return (0.00===fld.value) ? undefined : fld.toString();
     };
@@ -349,113 +356,103 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     setFormFields(
         <form onSubmit={onFormSubmission}>
 
-            <div className="form-row">
-                <div className="form-group col-md-6">
-                    <label htmlFor="formFirstName">First Name</label>
-                    <input className="form-control" type="text" autoComplete="fr-new-cust-info"
-                           id="formFirstName" placeholder="First Name" defaultValue={currentOrder.firstName}
-                           required
-                           onInput={doesSubmitGetEnabled}
-                           aria-describedby="formFirstNameHelp" />
-                    <small id="formFirstNameHelp" className="form-text text-muted">*required</small>
+            <div className="row mb-2 g-2">
+                <div className="form-floating col-md-6">
+                    <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formFirstName"
+                           placeholder="First Name" required
+                           defaultValue={currentOrder.firstName} onInput={doesSubmitGetEnabled}/>
+                    <label htmlFor="formFirstName">First Name<small className="form-text text-muted ps-1">*required</small></label>
                 </div>
-                <div className="form-group col-md-6">
-                    <label htmlFor="formLastName">Last Name</label>
+                <div className="form-floating col-md-6">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formLastName"
-                           required
-                           placeholder="Last Name"
-                           defaultValue={currentOrder.lastName}
-                           onInput={doesSubmitGetEnabled}
-                           aria-describedby="formLastNameHelp" />
-                    <small id="formLastNameHelp" className="form-text text-muted">*required</small>
+                           placeholder="Last Name" required
+                           defaultValue={currentOrder.lastName} onInput={doesSubmitGetEnabled} />
+                    <label htmlFor="formLastName">Last Name<small className="form-text text-muted ps-1">*required</small></label>
                 </div>
             </div>
 
-            <div className="form-row">
-                <div className="form-group col-md-6">
-                    <label htmlFor="formAddr1">Address 1</label>
+            <div className="row mb-2 g-2">
+                <div className="form-floating col-md-6">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formAddr1"
-                           required
-                           placeholder="Address 1"
-                           defaultValue={currentOrder.addr1}
-                           onInput={doesSubmitGetEnabled}
-                           aria-describedby="formAddr1Help" />
-                    <small id="formAddr1Help" className="form-text text-muted">*required</small>
+                           placeholder="Address 1" required
+                           defaultValue={currentOrder.addr1} onInput={doesSubmitGetEnabled} />
+                    <label htmlFor="formAddr1">Address 1<small className="form-text text-muted ps-1">*required</small></label>
                 </div>
-                <div className="form-group col-md-6">
-                    <label htmlFor="formAddr2">Address 2</label>
+                <div className="form-floating col-md-6">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formAddr2"
                            placeholder="Address 2"
                            defaultValue={currentOrder.addr2}/>
+                    <label htmlFor="formAddr2">Address 2</label>
                 </div>
             </div>
 
-            <div className="form-row">
-                <div className="form-group col-md-4">
-                    <label htmlFor="formNeighborhood">Neighborhood</label>
-                    <select className="form-control" id="formNeighborhood"
-                            aria-describedby="formNeighborhoodHelp" defaultValue={currentNeighborhood}>
+            <div className="row mb-2 g-2">
+                <div className="form-floating col-md-4">
+                    <select className="form-control" id="formNeighborhood" defaultValue={currentNeighborhood}>
                         {hoods}
                     </select>
-                    <small id="formNeighborhoodHelp" className="form-text text-muted">*required</small>
+                    <label htmlFor="formNeighborhood">Neighborhood<small className="form-text text-muted ps-1">*required</small></label>
+
                 </div>
-                <div className="form-group col-md-4">
-                    <label htmlFor="formPhone">Phone</label>
+                <div className="form-floating col-md-4">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formPhone"
-                           required
-                           placeholder="Phone"
-                           defaultValue={currentOrder.phone}
-                           onInput={doesSubmitGetEnabled}
-                           aria-describedby="formPhoneHelp" />
-                    <small id="formPhoneHelp" className="form-text text-muted">*required</small>
+                           placeholder="Phone" required
+                           defaultValue={currentOrder.phone} onInput={doesSubmitGetEnabled} />
+                    <label htmlFor="formPhone">Phone<small className="form-text text-muted ps-1">*required</small></label>
                 </div>
-                <div className="form-group col-md-4">
-                    <label htmlFor="formEmail">Email</label>
+                <div className="form-floating col-md-4">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formEmail"
                            placeholder="Email"
                            defaultValue={currentOrder.email}/>
+                    <label htmlFor="formEmail">Email</label>
                 </div>
             </div>
 
-            <div className="form-row">
-                <div className="form-group col-md-12">
-                    <label htmlFor="formSpecialInstructions">Special Instructions</label>
+            <div className="row mb-2 g-2">
+                <div className="form-floating col-md-12">
                     <textarea className="form-control" id="formSpecialInstructions" rows="2"></textarea>
+                    <label htmlFor="formSpecialInstructions">Special Instructions</label>
                 </div>
             </div>
 
-            <ul className="list-group">
+            <ul className="list-group mb-2 g-2">
                 {ordersByDeliveryBtns}
             </ul>
 
-            <div className="form-row">
-                <div className="form-group col-md-4">
+            <div className="row mb-2">
+				<div className="col-md-2">
+					<label className="form-check-label" htmlFor="formCollectLater">Collect Later</label>
+					<div className="form-check form-switch">
+						<input className="form-check-input" type="checkbox" id="formCollectLater"
+							   defaultChecked={currentOrder.doCollectMoneyLater} onInput={doesSubmitGetEnabled} />
+
+					</div>
+                </div>
+				<div className="col-md-3">
                     <label htmlFor="formCashPaid">Total Cash Amount</label>
-                    <div className="input-group mb-3">
+                    <div className="input-group">
                         <div className="input-group-prepend">
                             <span className="input-group-text">$</span>
                         </div>
                         <input className="form-control" type="number" min="0" step="any" autoComplete="fr-new-cust-info"
-                               id="formCashPaid" placeholder="Total Cash Amount"
+                               id="formCashPaid" placeholder="0.00"
                                onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
-                               placeholder="0.00"
                                defaultValue={moniedDefaultValue(currentOrder.cashPaid)}/>
                     </div>
                 </div>
-                <div className="form-group col-md-4">
-                    <label htmlFor="formCheckPaid">Total Check Amount</label>
-                    <div className="input-group mb-3">
+                <div className="col-md-3">
+					<label htmlFor="formCheckPaid">Total Check Amount</label>
+                    <div className="input-group">
                         <div className="input-group-prepend">
                             <span className="input-group-text">$</span>
                         </div>
                         <input className="form-control" type="number" min="0" step="any" autoComplete="fr-new-cust-info"
-                               id="formCheckPaid" placeholder="Total Check Amount"
+                               id="formCheckPaid" placeholder="0.00"
                                onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
-                               placeholder="0.00"
                                defaultValue={moniedDefaultValue(currentOrder.checkPaid)}/>
                     </div>
                 </div>
-                <div className="form-group col-md-4">
+                <div className="col-md-4">
                     <label htmlFor="formCheckNumbers">Enter Check Numbers</label>
                     <input className="form-control" autoComplete="fr-new-cust-info"
                            id="formCheckNumbers" placeholder="Enter Check #s"
@@ -464,11 +461,11 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 </div>
             </div>
 
-            <div className="form-row">
-                <span className="form-group col-md-6">
+            <div className="row mb-2 g-2">
+                <span className="col-md-6">
                     Total Due: <div id="orderAmountDue" style={{display: "inline"}}>{amountDueStr}</div>
                 </span>
-                <span className="form-group col-md-6" aria-describedby="orderAmountPaidHelp">
+                <span className="col-md-6 g2" aria-describedby="orderAmountPaidHelp">
                     Total Paid: <div id="orderAmountPaid" style={{display: "inline"}}>{amountPaidStr}</div>
                     <small id="orderAmountPaidHelp" className="form-text text-muted">*Must match total due</small>
                 </span>
@@ -478,7 +475,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 <button type="button" className="btn btn-primary" onClick={onDiscardOrder}>
                     Cancel
                 </button>
-                <button type="submit" className="btn btn-primary float-right"
+                <button type="submit" className="btn btn-primary float-end"
                         id="formOrderSubmit" disabled={!areRequiredCurOrderValuesAlreadyPopulated}>
                     Submit
                 </button>
@@ -486,6 +483,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
         </form>
     );
+
 }
 
 

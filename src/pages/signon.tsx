@@ -42,15 +42,15 @@ export default function signon() {
                 <div className="card-body">
                     <h5 className="card-title">Sign On</h5>
                     <form onSubmit={onFormSubmission}>
-                        <div className="form-group">
+                        <div className="row mb-3">
                             <label htmlFor="formLoginId">Login ID</label>
                             <input type="text" className="form-control" id="formLoginId" defaultValue={loginId}
                                    aria-describedby="loginIdHelp" placeholder="Enter Login ID" />
                             <small id="loginIdHelp" className="form-text text-muted">
-                                If you don't know what yours is check with TODO: Email
+                                For questions contact the Fundraising Coordinator
                             </small>
                         </div>
-                        <div className="form-group">
+                        <div className="row mb-3">
                             <label htmlFor="formPassword">Password</label>
                             <input type="password" className="form-control" id="formPassword" placeholder="Password" />
                         </div>

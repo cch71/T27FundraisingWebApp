@@ -56,7 +56,7 @@ export default function addDonation() {
         setFormFields(
             <form onSubmit={onFormSubmission}>
 
-                <div className="form-group row col-sm-12">
+                <div className="row col-sm-12">
                     <label htmlFor="formDonationAmount">Donation</label>
                     <div className="input-group mb-3">
                         <div className="input-group-prepend">
@@ -72,7 +72,7 @@ export default function addDonation() {
                 <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
                     Cancel
                 </button>
-                <button type="submit" className="btn btn-primary my-2 float-right"
+                <button type="submit" className="btn btn-primary my-2 float-end"
                         disabled={undefined===donationAmt} id="formDonationSubmit">
                     Add
                 </button>

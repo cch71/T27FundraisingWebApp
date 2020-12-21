@@ -43,10 +43,10 @@ const NavBar = () => {
             setUserNav(
                 <span className="navbar-nav nav-item dropdown">
                     <a className="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink"
-                       data-toggle="dropdown" aria-haspopup="false" aria-expanded="false">
+                       data-bs-toggle="dropdown" aria-haspopup="false" aria-expanded="false">
                         {userName}
                     </a>
-                    <div className="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                    <div className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
                         <Link className='dropdown-item' replace to='/signon/'>Signout</Link>
                         <a className='dropdown-item'
                            href="https://github.com/cch71/T27FundraisingWebApp/issues">Report Issue</a>
@@ -72,7 +72,7 @@ const NavBar = () => {
         <nav className="navbar navbar-expand-sm navbar-light bg-light">
             <a className="navbar-brand" href="#">
                 <span>
-                    <img className="navbar-logo mr-2" src={t27patch} alt="Logo" />
+                    <img className="navbar-logo me-2" src={t27patch} alt="Logo" />
                 </span>
             </a>
 
@@ -82,7 +82,7 @@ const NavBar = () => {
             </button>
 
             <div className="collapse navbar-collapse" id="navbarNav">
-                <ul className="navbar-nav mr-auto">
+                <ul className="navbar-nav me-auto">
                     {baseNav}
                     {activeOrder}
                 </ul>

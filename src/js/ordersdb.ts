@@ -31,6 +31,7 @@ class Order {
     cashPaid?: currency;
     checkPaid?: currency;
     checkNums?: string;
+	doCollectMoneyLater?: boolean;
 
     constructor(order?: any) {
         if (!order) {

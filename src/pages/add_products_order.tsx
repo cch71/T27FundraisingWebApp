@@ -109,7 +109,7 @@ export default (params: any) => {
         }
 
         productElms.push(
-            <div className="form-group row col-sm-12" key={`${formId}RowId`}>
+            <div className="row mb-2 col-sm-12" key={`${formId}RowId`}>
                 <label htmlFor={formId}>{productLabel}</label>
                 <input type="number" min="0" className="form-control" id={formId}
                        onKeyPress={onNonNumsKeyPress}
@@ -127,7 +127,7 @@ export default (params: any) => {
                     <h5 className="card-title">Add {fundraiserConfig.description()} Order</h5>
                     <form onSubmit={onFormSubmission}>
 
-                        <div className="form-group row col-sm-12">
+                        <div className="row mb-3 col-sm-12">
                             <label htmlFor="formSelectDeliveryDate">Select Delivery Date</label>
                             <select className="custom-select" id="formSelectDeliveryDate" defaultValue={currentDeliveryId}>
                                 {deliveryDateOpts}
@@ -139,7 +139,7 @@ export default (params: any) => {
                         <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn btn-primary my-2 float-right" id="formAddProductsSubmit">
+                        <button type="submit" className="btn btn-primary my-2 float-end" id="formAddProductsSubmit">
                             Add
                         </button>
 
