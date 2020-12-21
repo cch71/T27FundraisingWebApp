@@ -6,7 +6,7 @@ import {orderDb, Order} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
-import {onCurrencyFieldKeyPress, onCheckNumsKeyPress} from "../js/utils"
+import {onCurrencyFieldKeyPress, onCheckNumsKeyPress, moneyFloor} from "../js/utils"
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
 
@@ -23,8 +23,8 @@ const LazyComponent = ({ Component, ...props }) => (
 
 const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
-    const fundraiserConfig: FundraiserConfig = getFundraiserConfig();
-    if (!fundraiserConfig) {
+    const frConfig: FundraiserConfig = getFundraiserConfig();
+    if (!frConfig) {
         alert("Failed to load fundraiser config");
         return(<div/>);
     }
@@ -48,11 +48,11 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
          currentOrder.specialInstructions =
              (document.getElementById('formSpecialInstructions') as HTMLInputElement).value;
         currentOrder.checkNumbers = (document.getElementById('formCheckNumbers') as HTMLInputElement).value;
-        currentOrder.cashPaid =
-            currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
-        currentOrder.checkPaid =
-            currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
-        currentOrder.amountTotal = currentOrder.cashPaid.add(currentOrder.checkPaid);
+		const cashPaid = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
+		if (0<cashPaid) { currentOrder.cashPaid = cashPaid; }
+        const checkPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
+		if (0<checkPaid) { currentOrder.checkPaid = checkPaid; }
+		currentOrder.totalAmt = cashPaid.add(checkPaid);
         console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
     }
 
@@ -133,7 +133,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
              (document.getElementById('formPhone') as HTMLInputElement).value &&
              (document.getElementById('formAddr1') as HTMLInputElement).value &&
              (document.getElementById('formNeighborhood') as HTMLSelectElement).value &&
-             (0!==Object.keys(currentOrder.orderByDelivery).length) &&
+             (currentOrder.products || currentOrder.donation) &&
              (amountDue.value===amountPaid.value) &&
              isCheckNumGood
         )
@@ -146,14 +146,16 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         }
     };
 
-    
+	const calcCurrentOrderCost=()=>{
+		let totalCost = currency(0.0);
+		if (currentOrder.donation) { totalCost.add(currentOrder.donation); }
+		if (currentOrder.productsCost) { totalCost.add(currentOrder.productsCost); }
+		return totalCost;
+	};
+
     // Recalculate Total due dynamically based on changes to order status
     const recalculateTotalDue = ()=> {
-        let totalDue = currency(0.0);
-        for (let deliverable of Object.values(currentOrder.orderByDelivery)) {
-            console.log(`Found Order: ${deliverable.amountDue}`);
-            totalDue = totalDue.add(deliverable.amountDue);
-        }
+        const totalDue = calcCurrentOrderCost();
         const totElm = document.getElementById('orderAmountDue');
         if (null!==totElm) {
             totElm.innerText = `${USD(totalDue).format()}`;
@@ -161,13 +163,17 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     }
 
     const recalculateTotalPaid = ()=> {
-        const cash = currency(Math.abs((document.getElementById('formCashPaid') as HTMLInputElement).value));
-        const checks = currency(Math.abs((document.getElementById('formCheckPaid') as HTMLInputElement).value));
+        const [cash, isCashChanged] = moneyFloor((document.getElementById('formCashPaid') as HTMLInputElement).value);
+        const [checks, isChecksChanged] = moneyFloor((document.getElementById('formCheckPaid') as HTMLInputElement).value);
 
-        (document.getElementById('formCashPaid') as HTMLInputElement).value = cash.value;
-        (document.getElementById('formCheckPaid') as HTMLInputElement).value = checks.value;
+		if (isCashChanged) {
+			(document.getElementById('formCashPaid') as HTMLInputElement).value = cash.toString();
+		}
+		if (isChecksChanged) {
+			(document.getElementById('formCheckPaid') as HTMLInputElement).value = checks.toString();
+		}
 
-        const totElm = document.getElementById('orderAmountPaid');
+		const totElm = document.getElementById('orderAmountPaid');
         if (null!==totElm) {
             totElm.innerText = `${USD(cash.add(checks)).format()}`;
             doesSubmitGetEnabled();
@@ -177,36 +183,38 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
     // Create delivery status buttons
     const populateOrdersList = (): Array<any> => {
+
         const ordersByDeliveryBtns = []
-        for (const [deliveryId, deliveryLabel] of fundraiserConfig.validDeliveryDates()) {
-            const foundOrder = currentOrder.orderByDelivery[deliveryId];
-            if (!foundOrder) { continue; }
 
-            const foundTag = `found-${deliveryId}`
-            const orderTotalStr = `${deliveryLabel} Amount: ${USD(foundOrder.amountDue).format()} `;
+		//  Create the ADD buttons and based on existing order deside visibility
+        // Figure out visibility
 
-            // On Delete Order Re-enable button
-            const onDeleteOrder = (event)=>{
-                event.preventDefault();
-                event.stopPropagation();
+        // On Delete Order Re-enable button
+        const onDeleteOrder = (event)=>{
+            event.preventDefault();
+            event.stopPropagation();
 
-                const deliveryIdToDel = event.currentTarget.dataset.deliveryid;
+            const deliveryIdToDel = event.currentTarget.dataset.deliveryid;
 
-                console.log(`Deleting Order for ${deliveryIdToDel}`);
+            console.log(`Deleting Order for ${deliveryIdToDel}`);
 
-                delete currentOrder.orderByDelivery[deliveryIdToDel];
-                document.getElementById(foundTag).style.display = "none";
-                if ('donation' === deliveryIdToDel) {
-                    document.getElementById('addDonationBtnLi').style.display = "block";
-                } else {
-                    document.getElementById('addProductBtnLi').style.display = "block";
-                }
-
-                recalculateTotalDue();
-                doesSubmitGetEnabled();
+            delete currentOrder.orderByDelivery[deliveryIdToDel];
+            document.getElementById(foundTag).style.display = "none";
+            if ('donation' === deliveryIdToDel) {
+                document.getElementById('addDonationBtnLi').style.display = "block";
+            } else {
+                document.getElementById('addProductBtnLi').style.display = "block";
             }
 
+            recalculateTotalDue();
+            doesSubmitGetEnabled();
+        }
+
+		const addExistingOrderButton = (deliveryId: string, deliveryLabel: string, productsCost: currency)=>{
             //console.log(`Adding Order Type for DDay: ${deliveryId}`);
+			const foundTag = `found-${deliveryId}`
+            const orderTotalStr = `${deliveryLabel} Amount: ${USD(productsCost).format()} `;
+
             const onClickHandler = ("donation" === deliveryId)? onAddDonation : onAddOrder;
 
             ordersByDeliveryBtns.push(
@@ -222,23 +230,18 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                     </button>
                 </li>
             );
-        }
-
-        // Figure out visibility
-        const orderHasDonation = currentOrder.orderByDelivery.hasOwnProperty('donation');
-        let numProdOrders = Object.keys(currentOrder.orderByDelivery).length
-        if (orderHasDonation) {
-            numProdOrders = numProdOrders - 1;
-        }
-        const addDonationDisplay = (!orderHasDonation) ?
-                                   {display: 'block'}:{display: 'none'};
-
-        const addProdDisplay = (0 !== (fundraiserConfig.numDeliveryDates()-numProdOrders)) ?
-                               {display: 'block'}:{display: 'none'};
+		};
 
         //Add the Add Product Button
+		let addProductStyle = {display: 'block'};
+		if(currentOrder.hasOwnProperty('productsCost')) {
+			addProductStyle = {display: 'none'};
+			addExistingOrderButton('product',
+								   frConfig.deliveryDateFromId(currentOrder.deliveryId),
+								   currentOrder.productsCost);
+		}
         ordersByDeliveryBtns.push(
-            <li className="list-group-item" id="addProductBtnLi" key="addProductBtnLi" style={addProdDisplay}>
+            <li className="list-group-item" id="addProductBtnLi" key="addProductBtnLi" style={addProductStyle}>
                 Add Product Order
                 <button className="btn btn-outline-info float-right order-edt-btn" onClick={onAddOrder}>
                     <span>+</span>
@@ -247,8 +250,14 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         );
 
         //Add the Add Donation Button
+		let addDonationStyle = {display: 'block'};
+		if(currentOrder.hasOwnProperty('donation')) {
+			addDonationStyle = {display: 'none'};
+			addExistingOrderButton('donation', 'Donation', currentOrder.donation);
+
+		}
         ordersByDeliveryBtns.push(
-            <li className="list-group-item" id="addDonationBtnLi" key="addDonationBtnLi" style={addDonationDisplay}>
+            <li className="list-group-item" id="addDonationBtnLi" key="addDonationBtnLi" style={addDonationStyle}>
                 Add Donations
                 <button className="btn btn-outline-info float-right order-edt-btn" onClick={onAddDonation}>
                     <span>+</span>
@@ -263,7 +272,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     // Neighborhoods list creation
     let isUsingCustomNeighborhood = false;
     const hoods=[];
-    for (const hood of fundraiserConfig.neighborhoods()) {
+    for (const hood of frConfig.neighborhoods()) {
         if (currentOrder.neighborhood && (hood !== currentOrder.neighborhood)) {
             isUsingCustomNeighborhood=true;
         }
@@ -272,16 +281,12 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     }
     const currentNeighborhood = (currentOrder.neighborhood) ?
                                 currentOrder.neighborhood :
-                                fundraiserConfig.neighborhoods()[0];
+                                frConfig.neighborhoods()[0];
 
     // Calulate Current amountDue
-    let newTotalDue = currency(0.0);
-    for (let deliverable of Object.values(currentOrder.orderByDelivery)) {
-        //console.log(`Found Order To Calc: ${deliverable.amountDue}`);
-        newTotalDue = newTotalDue.add(deliverable.amountDue);
-    }
+	const newTotalDue = calcCurrentOrderCost();
     const amountDueStr = USD(newTotalDue).format();
-    const amountPaid = currentOrder.checkPaid.add(currentOrder.cashPaid);
+    const amountPaid = currency(currentOrder.checkPaid).add(currentOrder.cashPaid);
     const amountPaidStr = USD(amountPaid).format();
     //console.log(`Amount Due: ${amountDueStr}  Paid: ${amountPaidStr}`);
 
@@ -330,7 +335,8 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
      *     );
      * ); */
 
-    const moniedDefaultValue = (fld: currency)=>{
+    const moniedDefaultValue = (formFld: currency|undefined)=>{
+		const fld = currency(formFld);
         return (0.00===fld.value) ? undefined : fld.toString();
     };
 
@@ -423,7 +429,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                         <div className="input-group-prepend">
                             <span className="input-group-text">$</span>
                         </div>
-                        <input className="form-control" type="number" min="0" autoComplete="fr-new-cust-info"
+                        <input className="form-control" type="number" min="0" step="any" autoComplete="fr-new-cust-info"
                                id="formCashPaid" placeholder="Total Cash Amount"
                                onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
                                placeholder="0.00"
@@ -436,7 +442,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                         <div className="input-group-prepend">
                             <span className="input-group-text">$</span>
                         </div>
-                        <input className="form-control" type="number" min="0" autoComplete="fr-new-cust-info"
+                        <input className="form-control" type="number" min="0" step="any" autoComplete="fr-new-cust-info"
                                id="formCheckPaid" placeholder="Total Check Amount"
                                onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
                                placeholder="0.00"

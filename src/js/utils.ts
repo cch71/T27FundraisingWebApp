@@ -37,6 +37,20 @@ const onCheckNumsKeyPress = (evt: any)=>{
     return onCurrencyFieldKeyPress(evt);
 };
 
+const moneyFloor = (value: string)=>{
+	let isChanged = false;
+	if (!value) { return [currency(0), isChanged]; }
+	let comps = value.split(".");
+	if (1<comps.length && 2<comps[1].length) {
+		comps[1]=comps[1].slice(0,2);
+		isChanged = true;
+	}
+	comps = comps.join('.');
+	//console.log(`${value}    ${comps}`);
+	const amt = currency(Math.abs(parseFloat(comps)));
+	//console.log(`${value}, ${amt.toString()}`);
+	isChanged = isChanged || parseFloat(value)!==amt.value;
+	return [amt, isChanged];
+};
 
-
-export {onCurrencyFieldKeyPress, onCheckNumsKeyPress, onNonNumsKeyPress}
+export {onCurrencyFieldKeyPress, onCheckNumsKeyPress, onNonNumsKeyPress, moneyFloor}

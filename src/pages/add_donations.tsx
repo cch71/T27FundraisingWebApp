@@ -2,7 +2,7 @@ import React, { useState, useEffect }from "react"
 import {orderDb, Order, OrdersForDeliveryDate} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
-import {onCurrencyFieldKeyPress} from "../js/utils"
+import {onCurrencyFieldKeyPress, moneyFloor} from "../js/utils"
 
 
 export default function addDonation() {
@@ -16,9 +16,12 @@ export default function addDonation() {
         }
         const doesSubmitGetEnabled = (event: any)=>{
 
-            const amt = currency(Math.abs((document.getElementById('formDonationAmount') as HTMLInputElement).value));
-            (document.getElementById('formDonationAmount') as HTMLInputElement).value = amt.value;
-            
+			const origAmt = (document.getElementById('formDonationAmount') as HTMLInputElement).value;
+			const [amt, isChanged] = moneyFloor(origAmt);
+			if (isChanged) {
+				(document.getElementById('formDonationAmount') as HTMLInputElement).value = amt.toString();
+			}
+
             if (event.currentTarget.value) {
                 (document.getElementById('formDonationSubmit') as HTMLButtonElement).disabled = false;
             } else {
@@ -37,22 +40,17 @@ export default function addDonation() {
             const amountDue = currency((document.getElementById('formDonationAmount') as HTMLInputElement).value);
 
             if (amountDue) {
-                const donationOrder: DeliverableOrderIf = {
-                    amountDue: amountDue,
-                    kind: 'donation'
-                };
-                currentOrder.orderByDelivery['donation'] = donationOrder;
+                currentOrder['donation'] = amountDue;
             } else {
-                delete currentOrder.orderByDelivery['donation'];
+                delete currentOrder['donation'];
             }
 
             navigate('/order_step_1/');
         }
 
         let donationAmt = undefined;
-        let currentDonation = currentOrder.orderByDelivery['donation'];
-        if (undefined!==currentDonation) {
-            donationAmt=currency(currentDonation.amountDue).toString();
+        if (undefined!==currentOrder['donation']) {
+            donationAmt=currency(currentOrder['donation']).toString();
         }
 
         setFormFields(
@@ -64,7 +62,7 @@ export default function addDonation() {
                         <div className="input-group-prepend">
                             <span className="input-group-text">$</span>
                         </div>
-                        <input type="number" min="0" className="form-control" id="formDonationAmount"
+                        <input type="number" min="0" step="any" className="form-control" id="formDonationAmount"
                                defaultValue={donationAmt}
                                placeholder="0.00"
                                onInput={doesSubmitGetEnabled} onKeyPress={onCurrencyFieldKeyPress}/>
@@ -76,7 +74,7 @@ export default function addDonation() {
                 </button>
                 <button type="submit" className="btn btn-primary my-2 float-right"
                         disabled={undefined===donationAmt} id="formDonationSubmit">
-                    Add                            
+                    Add
                 </button>
             </form>
         );
@@ -93,5 +91,5 @@ export default function addDonation() {
             </div>
         </div>
     );
-    
+
 }
