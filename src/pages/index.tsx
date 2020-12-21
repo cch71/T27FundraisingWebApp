@@ -30,13 +30,15 @@ const LazyComponent = ({ Component, ...props }) => (
  * };
  *  */
 
-function dynamicColors(){
-    return ['SaddleBrown', 'DarkOliveGreen', 'Blue', 'Purple', 'SlateGrey', 'Yellow', 'Salmon'];
-};
+/* function dynamicColors(){
+ *     return ['SaddleBrown', 'DarkOliveGreen', 'Blue', 'Purple', 'SlateGrey', 'Yellow', 'Salmon'];
+ * };
+ *  */
+
+const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
 
 const Home = ()=>{
-    const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
     const [orderSummary, setOrderSummary] = useState();
     useEffect(() => {
@@ -164,7 +166,12 @@ const Home = ()=>{
                     alert("Failed: " + err);
                 }
             }
-        });
+        }).catch((err)=>{
+			if ('Invalid Session'===err.message) {
+                navigate('/signon/');
+                return;
+			}
+		});
     }, []);
 
 

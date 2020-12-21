@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react"
-import NavBar from "../components/navbar"
-import { navigate } from "gatsby"
-import {orderDb, OrderListItem} from "../js/ordersdb"
-import currency from "currency.js"
+import React, { useState, useEffect } from "react";
+import NavBar from "../components/navbar";
+import { navigate } from "gatsby";
+import {orderDb, OrderListItem} from "../js/ordersdb";
+import currency from "currency.js";
 import jQuery from 'jquery';
-import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
+import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config";
+import * as bootstrap from "bootstrap";
 
 
 export default function orders() {
@@ -37,7 +38,11 @@ export default function orders() {
 
 				const orderDataItem = [order.orderId, nameStr];
 				if ('mulch' === frConfig.kind()) {
-					orderDataItem.push(frConfig.deliveryDateFromId(order.deliveryId));
+					if (order.deliveryId) {
+						orderDataItem.push(frConfig.deliveryDateFromId(order.deliveryId));
+					} else {
+						orderDataItem.push('');
+					}
 					orderDataItem.push((order.products?.spreading?"Yes":"No"));
 				}
 				orderDataItem.push(null);
@@ -106,13 +111,20 @@ export default function orders() {
                 jQuery('#confirmDeleteOrderInput').val('');
                 parentTr.find('button').attr("disabled", true);
 
+				const dlgElm = document.getElementById('deleteOrderDlg');
+				const delOrderDlg = new bootstrap.Modal(dlgElm, {
+					backdrop: true,
+					keyboard: true,
+					focus: true
+				});
+
                 jQuery('#deleteDlgBtn')
                     .prop("disabled",true)
                     .off('click')
                     .click(
                         (event: any)=>{
                             console.log(`Delete confirmed for: ${orderId}`);
-                            jQuery('#deleteOrderDlg').modal('hide')
+                            delOrderDlg.hide();
                             orderDb.deleteOrder(orderId).then(()=>{
                                 row.remove().draw();
                             }).catch((err: any)=>{
@@ -121,10 +133,14 @@ export default function orders() {
                             });
                         }
                     );
-                jQuery('#deleteOrderDlg').off('hidden.bs.modal').on('hidden.bs.modal', ()=> {
-                    parentTr.find('button').attr("disabled", false);
-                })
-                jQuery('#deleteOrderDlg').modal()
+
+				const dlgHandler = (event)=>{
+					parentTr.find('button').attr("disabled", false);
+					dlgElm.removeEventListener('hidden.bs.modal', dlgHandler);
+				};
+				dlgElm.addEventListener('hidden.bs.modal', dlgHandler);
+
+				delOrderDlg.show();
             } );
 
             const spinnerElm = document.getElementById('orderLoadingSpinner');
@@ -184,7 +200,7 @@ export default function orders() {
                             <h5 className="modal-title" id="deleteOrderDlgLongTitle">
                                 Confirm Order Deletion
                             </h5>
-                            <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+                            <button type="button" className="close" data-bs-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
@@ -201,7 +217,7 @@ export default function orders() {
                             <button type="button" disabled className="btn btn-primary" id="deleteDlgBtn">
                                 Delete Order
                             </button>
-                            <button type="button" className="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         </div>
                     </div>
                 </div>

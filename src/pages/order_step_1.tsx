@@ -60,6 +60,11 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         event.preventDefault();
         event.stopPropagation();
 
+        (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = true;
+        (document.getElementById('formOrderSubmitSpinner') as HTMLButtonElement).style.display = "inline-block";
+        (document.getElementById('formOrderCancel') as HTMLButtonElement).disabled = true;
+
+
         //console.log(`Submitting Active Order`);
         saveCurrentOrder();
         if (doesSubmitGetEnabled()) {
@@ -472,11 +477,13 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
             </div>
 
             <div className="pt-4">
-                <button type="button" className="btn btn-primary" onClick={onDiscardOrder}>
+                <button type="button" className="btn btn-primary" id="formOrderCancel" onClick={onDiscardOrder}>
                     Cancel
                 </button>
                 <button type="submit" className="btn btn-primary float-end"
                         id="formOrderSubmit" disabled={!areRequiredCurOrderValuesAlreadyPopulated}>
+					<span className="spinner-border spinner-border-sm me-1" role="status"
+						  aria-hidden="true" id="formOrderSubmitSpinner" style={{display: "none"}} />
                     Submit
                 </button>
             </div>

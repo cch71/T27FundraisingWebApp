@@ -139,10 +139,9 @@ export default (params: any) => {
                         <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn btn-primary my-2 float-end" id="formAddProductsSubmit">
+                        <button type="submit" className="btn btn-primary my-2 float-end">
                             Add
                         </button>
-
                     </form>
                 </div>
             </div>
