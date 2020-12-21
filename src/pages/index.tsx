@@ -253,7 +253,7 @@ const Home = ()=>{
         <div>
             <div id="notReadyView" className='col-xs-1 d-flex justify-content-center' >
                 <div className="spinner-border" role="status">
-                    <span className="sr-only">Loading...</span>
+                    <span className="visually-hidden">Loading...</span>
                 </div>
             </div>
             <div id="readyView" style={{display: 'none'}}>
