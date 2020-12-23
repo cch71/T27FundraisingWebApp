@@ -7,6 +7,10 @@ import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 import {onCurrencyFieldKeyPress, onCheckNumsKeyPress, moneyFloor} from "../js/utils"
+import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
+const trashImg = bootstrapIconSprite + "#trash";
+const pencilImg = bootstrapIconSprite + "#pencil";
+
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
 
@@ -237,11 +241,19 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                     {orderTotalStr}
                     <button className="btn btn-outline-danger mx-1 float-end order-edt-btn"
                             data-deliveryid={deliveryId} onClick={onDeleteOrder}>
-                        <span>&#10005;</span>
+                        <span>
+							<svg className="bi" fill="currentColor">
+								<use xlinkHref={trashImg}/>
+							</svg>
+						</span>
                     </button>
                     <button className="btn btn-outline-info float-end order-edt-btn"
                             data-deliveryid={deliveryId} onClick={onClickHandler}>
-                        <span>&#9999;</span>
+						<span>
+							<svg className="bi" fill="currentColor">
+								<use xlinkHref={pencilImg}/>
+							</svg>
+						</span>
                     </button>
                 </li>
             );

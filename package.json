@@ -16,6 +16,7 @@
   "dependencies": {
     "amazon-cognito-identity-js": "^4.5.5",
     "bootstrap": "^5.0.0-beta1",
+    "bootstrap-icons": "^1.2.1",
     "currency.js": "^2.0.3",
     "datatables.net": "^1.10.22",
     "datatables.net-bs4": "^1.10.22",

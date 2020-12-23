@@ -2,6 +2,7 @@
 @import "~bootstrap/scss/bootstrap";
 @import "~datatables.net-bs4/css/dataTables.bootstrap4.min.css";
 @import "~datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css";
+@import "~bootstrap-icons/font/bootstrap-icons.css";
 
 /* Global styling for this template */
 html {
@@ -34,6 +35,34 @@ html {
       position: fixed;
       bottom: 15px;
       right: 15px;
+	  width: 2.5rem;
+	  height: 2.5rem;
+	  padding: 0;
+	  margin: 0;
+	  color: black;
+	  box-shadow: 0 0 0 0 rgba(olive, .5);
+	  -webkit-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+	  -moz-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+	  -ms-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+	  animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+
+	  svg {
+		  width: 100%;
+		  height: 100%;
+	  }
+
+	  &:hover {
+		  -webkit-animation: none;
+		  -moz-animation: none;
+		  -ms-animation: none;
+		  animation: none;
+	  }
+
+	  @-webkit-keyframes pulse {to {box-shadow: 0 0 0 15px rgba(232, 76, 61, 0);}}
+	  @-moz-keyframes pulse {to {box-shadow: 0 0 0 15px rgba(232, 76, 61, 0);}}
+	  @-ms-keyframes pulse {to {box-shadow: 0 0 0 15px rgba(232, 76, 61, 0);}}
+	  @keyframes pulse {to {box-shadow: 0 0 0 15px rgba(232, 76, 61, 0);}}
+
   }
 
   .order-list-name {

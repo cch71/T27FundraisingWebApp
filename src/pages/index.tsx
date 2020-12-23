@@ -8,6 +8,9 @@ import {FundraiserConfig, downloadFundraiserConfig, getFundraiserConfig} from ".
 import awsConfig from "../config"
 import currency from "currency.js"
 import {GoogleCharts} from 'google-charts';
+import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
+
+const addOrderImg = bootstrapIconSprite + "#plus-square-fill"
 
 const NewOrder = React.lazy(() => import('./order_step_1'));
 const SignOn = React.lazy(() => import('./signon'));
@@ -121,26 +124,28 @@ const Home = ()=>{
                         <div className="col-xs-1 d-flex justify-content-center">
                             <div className="card">
                                 <div className="card-body">
-                                    <h5 className="card-title">{frConfig.description()} Fundraiser</h5>
-                                    <h6>Summary for: {frConfig.getUserNameFromId(auth.getCurrentUserId())}</h6>
-                                    <ul className="list-group list-group-flush">
+									<h5 className="card-title">{frConfig.description()} Fundraiser</h5>
+									<h6>Summary for: {frConfig.getUserNameFromId(auth.getCurrentUserId())}</h6>
+									<ul className="list-group list-group-flush">
 										{summaryStats}
 									</ul>
 
-                                    <h6 className="my-2">Top Sellers:</h6>
-                                    <table className="table table-bordered"><tbody>
+									<h6 className="my-2">Top Sellers:</h6>
+									<table className="table table-bordered"><tbody>
 										{topSellers}
 									</tbody></table>
 
-                                    <h6>Sales by Patrol:</h6>
-                                    <div id="patrolStandingsChart"/>
+									<h6>Sales by Patrol:</h6>
+									<div id="patrolStandingsChart"/>
                                 </div>
                             </div>
                             <button type="button"
-                                    className="btn btn-outline-info add-order-btn"
+                                    className="btn btn-outline-primary add-order-btn"
                                     onClick={addNewOrder}>
-                                +
-                            </button>
+								<svg className="bi" fill="currentColor">
+									<use xlinkHref={addOrderImg}/>
+								</svg>
+							</button>
                         </div>
                     );
 

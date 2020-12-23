@@ -5,7 +5,11 @@ import {orderDb, OrderListItem} from "../js/ordersdb";
 import currency from "currency.js";
 import jQuery from 'jquery';
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config";
-//import * as bootstrap from "bootstrap";
+import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
+
+const addOrderImg = bootstrapIconSprite + "#plus-square-fill";
+const trashImg = bootstrapIconSprite + "#trash";
+const pencilImg = bootstrapIconSprite + "#pencil";
 
 
 export default function orders() {
@@ -55,8 +59,10 @@ export default function orders() {
 
             const buttonDef =
                 `<div>` +
-                `<button type="button" class="btn btn-outline-info me-1 order-edt-btn"><span>&#9999;</span></button>` +
-                `<button type="button" class="btn btn-outline-danger order-edt-btn"><span>&#10005;</span></button>` +
+                `<button type="button" class="btn btn-outline-info me-1 order-edt-btn">` +
+				`<span><svg class="bi" fill="currentColor"><use xlink:href=${pencilImg}/></svg></span></button>` +
+                `<button type="button" class="btn btn-outline-danger order-edt-btn">` +
+				`<span><svg class="bi" fill="currentColor"><use xlink:href=${trashImg}/></svg></span></button>` +
                 `</div>`;
 
 			const tableColumns = [
@@ -174,9 +180,11 @@ export default function orders() {
         <div>
             <NavBar/>
             <button type="button"
-                    className="btn btn-outline-info add-order-btn"
+                    className="btn btn-outline-primary add-order-btn"
                     onClick={addNewOrder}>
-                +
+				<svg className="bi" fill="currentColor">
+					<use xlinkHref={addOrderImg}/>
+				</svg>
             </button>
             <div className="col-xs-1 d-flex justify-content-center">
                 <div className="card" style={{width: '80rem'}} >
