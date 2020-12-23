@@ -70,6 +70,7 @@ interface OrderListItem<T> {
     amountTotal: T;
 }
 
+
 // const hashStr = (val: string): string {
 //     let hash = 0, i, chr;
 //     for (let i = 0; i < val.length; i++) {
@@ -80,71 +81,58 @@ interface OrderListItem<T> {
 //     return hash;
 // }
 
-const mockSummaryResults = {
-    "totalTroopAmountSold": 25000.75,
-    "patrolRanking": [
-        {
-            "patrol": "Bear",
-            "amountSold": 19000.75,
-        },{
-            "patrol": "Black Dragon",
-            "amountSold": 4000.00
-        },{
-            "patrol": "Apache",
-            "amountSold": 2000.00
-        },{
-            "patrol": "Patrol X",
-            "amountSold": 0.00
-        },{
-            "patrol": "Patrol Y",
-            "amountSold": 0.00
-        },{
-            "patrol": "Patrol Z",
-            "amountSold": 0.00
-        }
-    ],
-    "userStats": {
-        "patrol": "Bear",
-        "name": "Scout One",
-        "isAdmin": true,
-        "amountSold": 2000.00,
-        "numOrders": 25
-    }
-};
+/////////////////////////////////////////////
+//
+interface LeaderBoardUserSummary {
+	amountSold: number;
+	orderOwner: string;
+	fullName: string;
+	donation?: number;
+	spreading?: number;
+	bags?: number;
+}
 
 /////////////////////////////////////////////
 //
-class SummaryInfo {
-    private summaryResp_: any = mockSummaryResults;
+class LeaderBoardSummaryInfo {
+    constructor(private summaryResp_: any, private userId_: string)
+	{}
 
-    patrol(): string { return this.summaryResp_.userStats.patrol; }
-    userName(): string { return this.summaryResp_.userStats.name; }
-    isAdmin(): boolean { return this.summaryResp_.userStats.isAdmin===true; }
-    totalAmountSold(): currency { return currency(this.summaryResp_.userStats.amountSold); }
-    totalNumOrders(): number { return this.summaryResp_.userStats.numOrders; }
-    totalTroopSold(): currency { return currency(this.summaryResp_.totalTroopAmountSold); }
+	userId(): string { return this.userId_; }
+    troopAmountSold(): currency {
+		return currency(this.summaryResp_.troop?.amountSold);
+	}
+    userSummary(): LeaderBoardUserSummary {
+		for (const user_summary of this.summaryResp_.users) {
+			if (this.userId() === user_summary.orderOwner) {
+				user_summary.amountSold = currency(user_summary.amountSold);
+				if (user_summary.donation) {
+					user_summary.donation = currency(user_summary.donation);
+				}
+				return user_summary;
+			}
+		}
+		const defaultVal = {
+			amountSold: currency(0),
+			orderOwner: "",
+			fullName: "",
+			donation: currency(0),
+		};
+
+		defaultVal['bags'] = 0;
+		defaultVal['spreading'] = 0;
+		return defaultVal;
+	}
     *topSellers(): Generator<[number, string, string]> {
-        yield [1, 'Bobby', '$1000.24'];
-        yield [2, 'Ray', '$900.24'];
-        yield [3, 'Jones', '$800.24'];
-        yield [4, 'Zach', '$700.24'];
-        yield [5, 'McKay', '$600.24'];
-        yield [6, 'Spock', '$500.24'];
-        yield [7, 'Sisko', '$400.24'];
-        yield [8, 'Janeway', '$300.24'];
-        yield [9, 'Sheridan', '$200.24'];
-        yield [10, 'Kirk', '$100.24'];
-    }
-
-    *frSpecificSummaryReport(): Generator<string> {
-        // if fundraiser is mulch
-        yield `Bags sold: 1000`;
-        yield `Spreading jobs sold: 100`;
+		const users = this.summaryResp_.users;
+		for (let idx=0; idx < users.length; ++idx) {
+			yield [idx+1, users[idx].fullName, currency(users[idx].amountSold)]
+		}
     }
 
     *patrolRankings(): Generator<[string, currency]> {
-        for (const rank of this.summaryResp_.patrolRanking) {
-            yield [rank.patrol, currency(rank.amountSold)];
+        for (const patrol of Object.getOwnPropertyNames(this.summaryResp_.patrols)) {
+            yield [patrol, currency(this.summaryResp_.patrols[patrol].amountSold)];
         }
     }
 }
@@ -180,10 +168,40 @@ class OrderDb {
     /////////////////////////////////////////
     //
     // Todo need to define summary type
-    getOrderSummary(): Promise<SummaryInfo>  {
-        return new Promise((resolve)=>{
-            resolve(new SummaryInfo());
-        });
+    getOrderSummary(): Promise<LeaderBoardSummaryInfo>  {
+		return new Promise(async (resolve, reject)=>{
+			try {
+				const userId = auth.currentUser().getUsername();
+				const authToken = await auth.getAuthToken();
+
+				//console.log(`OrderDB Query Parms: ${paramStr}`);
+				const resp = await fetch(awsConfig.api.invokeUrl + '/leaderboard', {
+					method: 'post',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: authToken
+					}
+				});
+
+				if (!resp.ok) { // if HTTP-status is 200-299
+					const errRespBody = await resp.text();
+					throw new Error(`LeaderBoard Req error: ${resp.status}  ${errRespBody}`);
+				} else {
+					const summaryInfo = await resp.json();
+					//console.log(`SummaryInfo: ${JSON.stringify(summaryInfo, null, '\t')}`)
+					resolve(new LeaderBoardSummaryInfo(summaryInfo, userId));
+				}
+
+			} catch(error) {
+				console.error(error);
+				const leaderboardDefault = {
+					'patrols': {},
+					'troop': {},
+					'users': []
+				};
+				resolve(new LeaderBoardSummaryInfo(leaderboardDefault, userId));
+			}
+		});
     }
 
     /////////////////////////////////////////
@@ -350,4 +368,4 @@ class OrderDb {
 
 const orderDb = new OrderDb()
 
-export {orderDb, Order, OrderListItem, SummaryInfo};
+export {orderDb, Order, OrderListItem, LeaderBoardSummaryInfo};

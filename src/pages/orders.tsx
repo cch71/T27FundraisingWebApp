@@ -5,7 +5,7 @@ import {orderDb, OrderListItem} from "../js/ordersdb";
 import currency from "currency.js";
 import jQuery from 'jquery';
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config";
-import * as bootstrap from "bootstrap";
+//import * as bootstrap from "bootstrap";
 
 
 export default function orders() {
@@ -112,7 +112,7 @@ export default function orders() {
                 parentTr.find('button').attr("disabled", true);
 
 				const dlgElm = document.getElementById('deleteOrderDlg');
-				const delOrderDlg = new bootstrap.Modal(dlgElm, {
+				const delOrderDlg = new Modal(dlgElm, {
 					backdrop: true,
 					keyboard: true,
 					focus: true

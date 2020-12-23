@@ -3,7 +3,7 @@ import { Router, Link } from '@reach/router';
 import NavBar from "../components/navbar"
 import auth from "../js/auth"
 import { navigate } from "gatsby"
-import {orderDb, SummaryInfo} from "../js/ordersdb"
+import {orderDb, LeaderBoardSummaryInfo} from "../js/ordersdb"
 import {FundraiserConfig, downloadFundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
 import awsConfig from "../config"
 import currency from "currency.js"
@@ -49,7 +49,7 @@ const Home = ()=>{
                 navigate('/signon/');
                 return;
             }
-            console.log(`Active User: ${auth.currentUserEmail()}`);
+            console.log(`Active User: ${auth.getCurrentUserId()}`);
 
             auth.getAuthToken().then(_=>{});
 
@@ -66,7 +66,7 @@ const Home = ()=>{
                     notReadyViewElm.className = "d-none";
                 }
                 const summaryArr=[];
-                orderDb.getOrderSummary().then((summary: SummaryInfo)=>{
+                orderDb.getOrderSummary().then((summary: LeaderBoardSummaryInfo)=>{
                     if (!summary) { return; }
 
                     const topSellers = [];
@@ -75,44 +75,62 @@ const Home = ()=>{
                             <tr key={ranking}>
                                 <td className="py-1">{ranking}</td>
                                 <td className="py-1">{seller}</td>
-                                <td className="py-1">{amt}</td>
+                                <td className="py-1">{USD(amt).format()}</td>
                             </tr>
                         );
                     }
-
+					//console.log("TopSeller ${JSON.stringify(topSellers)}")
                     let statIndex=0;
                     const summaryStats = [];
+					const userSummary = summary.userSummary();
                     summaryStats.push(
                         <li key={++statIndex} className="list-group-item border-0 py-1">
-                            You have {summary.totalNumOrders()} orders
-                            and collected {USD(summary.totalAmountSold()).format()}
+                            You have collected {USD(userSummary.amountSold).format()} in sales
+                        </li>
+                    );
+					if ('mulch' === frConfig.kind()) {
+						summaryStats.push(
+							<li key={++statIndex} className="list-group-item border-0 py-1">
+								You have sold {userSummary.bags} bags of mulch
+							</li>
+						);
+						summaryStats.push(
+							<li key={++statIndex} className="list-group-item border-0 py-1">
+								You have sold {userSummary.spreading} spreading jobs
+							</li>
+						);
+					}
+
+					if (0.0 < userSummary.donation.value) {
+						summaryStats.push(
+							<li key={++statIndex} className="list-group-item border-0 py-1">
+								You have collected {USD(userSummary.donation).format()} in donations
+							</li>
+						);
+					}
+
+                    summaryStats.push(
+                        <li key={++statIndex} className="list-group-item border-0 py-1">
+                            Troop has sold {USD(summary.troopAmountSold()).format()}
                         </li>
                     );
 
-                    for (const stat of summary.frSpecificSummaryReport()) {
-                        summaryStats.push(
-                            <li key={++statIndex} className="list-group-item border-0 py-1">
-                                {stat}
-                            </li>
-                        );
-                    }
-                    summaryStats.push(
-                        <li key={++statIndex} className="list-group-item border-0 py-1">
-                            Troop has sold {USD(summary.totalTroopSold()).format()}
-                        </li>
-                    );
-
+					//console.log("Summary ${JSON.stringify(summaryStats)}")
 
                     setOrderSummary(
                         <div className="col-xs-1 d-flex justify-content-center">
                             <div className="card">
                                 <div className="card-body">
                                     <h5 className="card-title">{frConfig.description()} Fundraiser</h5>
-                                    <h6>Summary for: {summary.userName()}</h6>
-                                    <ul className="list-group list-group-flush">{summaryStats}</ul>
+                                    <h6>Summary for: {frConfig.getUserNameFromId(auth.getCurrentUserId())}</h6>
+                                    <ul className="list-group list-group-flush">
+										{summaryStats}
+									</ul>
 
                                     <h6 className="my-2">Top Sellers:</h6>
-                                    <table className="table table-bordered"><tbody>{topSellers}</tbody></table>
+                                    <table className="table table-bordered"><tbody>
+										{topSellers}
+									</tbody></table>
 
                                     <h6>Sales by Patrol:</h6>
                                     <div id="patrolStandingsChart"/>

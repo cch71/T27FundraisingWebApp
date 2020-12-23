@@ -42,11 +42,11 @@ const NavBar = () => {
         auth.getUserIdAndGroups().then(([userName, userGroups])=>{
             setUserNav(
                 <span className="navbar-nav nav-item dropdown">
-                    <a className="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink"
-                       data-bs-toggle="dropdown" aria-haspopup="false" aria-expanded="false">
+                    <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown"
+                       data-bs-toggle="dropdown" aria-expanded="false" role="button">
                         {userName}
                     </a>
-                    <div className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
+                    <div className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         <Link className='dropdown-item' replace to='/signon/'>Signout</Link>
                         <a className='dropdown-item'
                            href="https://github.com/cch71/T27FundraisingWebApp/issues">Report Issue</a>

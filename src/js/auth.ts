@@ -60,7 +60,7 @@ class CognitoAuth {
         return this.userPool.getCurrentUser();
     }
 
-    currentUserEmail(): string {
+    getCurrentUserId(): string {
         return this.currentUser().getUsername().replace('-at-', '@')
     }
 
@@ -92,11 +92,11 @@ class CognitoAuth {
             });
         });
     }
-    
+
     getSession(): Promise<any> {
         return new Promise((resolve) => {
             const cognitoUser = this.userPool.getCurrentUser();
- 
+
             if (cognitoUser != null) {
                 cognitoUser.getSession((err: any, session: any)=>{
                     if (err) {
@@ -123,8 +123,8 @@ class CognitoAuth {
     private normalizeLoginId(loginId: string): string {
         return loginId.replace('@', '-at-');
     }
-    
-    
+
+
     signIn(loginId: string, pw: string, onSuccess: any, onFailure: any) {
         const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
             Username: this.normalizeLoginId(loginId),
@@ -137,7 +137,7 @@ class CognitoAuth {
             onFailure: onFailure
         });
     }
-    
+
     // verify(loginId: string, code: string, onSuccess: any, onFailure: any) {
     //     createCognitoUser(loginId).confirmRegistration(
     //         code,
@@ -157,7 +157,7 @@ class CognitoAuth {
             Pool: this.userPool
         });
     }
-    
+
 }
 
 const auth = new CognitoAuth();

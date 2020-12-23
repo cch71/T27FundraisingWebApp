@@ -31,13 +31,14 @@ interface FundraiserConfigBase {
 //
 class FundraiserConfig {
     private readonly loadedFrConfig_: FundraiserConfigBase;
+    private readonly loadedPatrolMap_: any;
 	private deliveryMap_: Record<string, string>|null = null;
 
     /////////////////////////////////////////
     //
-    constructor(dlFrConfig: FundraiserConfigBase|null) {
+    constructor(dlFrConfig: FundraiserConfigBase|undefined, dlPatrolMap: any|undefined) {
         const getConfig = (): FundraiserConfigBase => {
-            if (null === dlFrConfig) {
+            if (!dlFrConfig) {
                 if (typeof window === 'undefined')  {
                     return({
                         kind: '',
@@ -49,18 +50,35 @@ class FundraiserConfig {
                 } // should only hit while building
                 let sessionFrConfig = window.sessionStorage.getItem('frConfig');
                 if (sessionFrConfig) {
-                    //console.error('Loading from session');
+                    console.log('Loading frConfig from session');
                     return JSON.parse(sessionFrConfig);
                 } else {
                     console.error("Failed to load Session Fr Config");
-                    throw ("Failed to load Session Fundraiser Config");
+                    throw new Error("Failed to load Session Fundraiser Config");
                 }
             } else {
                 return dlFrConfig;
             }
         };
 
+		const getPatrolMap = ():any => {
+			if (!dlPatrolMap) {
+				if (typeof window === 'undefined')  { return {}; }
+                let sessionPatrolMap = window.sessionStorage.getItem('patrolMap');
+                if (sessionPatrolMap) {
+                    console.log('Loading patrolMap from session');
+                    return JSON.parse(sessionPatrolMap);
+                } else {
+                    console.error("Failed to load Session Patrol Map");
+                    throw new Error("Failed to load Session Fundraiser Patrol Map");
+                }
+			} else {
+				return dlPatrolMap;
+			}
+		};
+
         this.loadedFrConfig_ = getConfig();
+		this.loadedPatrolMap_ = getPatrolMap();
     }
 
     /////////////////////////////////////////
@@ -74,6 +92,17 @@ class FundraiserConfig {
     /////////////////////////////////////////
     //
     neighborhoods(): Array<string> { return this.loadedFrConfig_.neighborhoods; }
+
+	/////////////////////////////////////////
+    //
+    getUserNameFromId(uid: string): string {
+		for (const [patrolName, names] of  Object.entries(this.loadedPatrolMap_)) {
+			if (names.hasOwnProperty(uid)) {
+				return names[uid]['name']
+			}
+		}
+		return "Unknown";
+	}
 
 	/////////////////////////////////////////
     //)/*: Generator<>*/
@@ -129,24 +158,40 @@ let frConfig: FundraiserConfig|null = null;
 function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig | null> {
     return new Promise(async (resolve, reject)=>{
         try {
-            const resp = await fetch(awsConfig.api.invokeUrl + '/getconfig', {
+			console.log("Downloading Fundraiser Configs");
+            const getConfigPromise = fetch(awsConfig.api.invokeUrl + '/getconfig', {
                 method: 'post',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: authToken
-                },
-                body: JSON.stringify({})
+                }
             });
 
-            if (!resp.ok) { // if HTTP-status is 200-299
-                alert("HTTP Resp Error: " + resp.status);
+            const patrolMapPromise = fetch(awsConfig.api.invokeUrl + '/patrolmap', {
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: authToken
+                }
+            });
+
+			const [frConfigResp, patrolMapResp] = await Promise.all([getConfigPromise, patrolMapPromise]);
+
+            if (!frConfigResp.ok) { // if HTTP-status is 200-299
+                alert("HTTP Fundraiser Config Resp Error: " + frConfigResp.status);
+                reject(null);
+			} else if(!patrolMapResp.ok) {
+                alert("HTTP Fundraiser PatrolMap Resp Error: " + patrolMapResp.status);
                 reject(null);
             } else {
-                const loadedFrConfig: FundraiserConfigBase = await resp.json();
+                const loadedFrConfig: FundraiserConfigBase = await frConfigResp.json();
                 console.log(`Fundraiser Config: ${JSON.stringify(loadedFrConfig)}`);
+				const loadedPatrolMap: any = await patrolMapResp.json();
+                //console.log(`Patrol Map: ${JSON.stringify(loadedPatrolMap)}`);
 
                 window.sessionStorage.setItem('frConfig', JSON.stringify(loadedFrConfig));
-                frConfig = new FundraiserConfig(loadedFrConfig);
+                window.sessionStorage.setItem('patrolMap', JSON.stringify(loadedPatrolMap));
+                frConfig = new FundraiserConfig(loadedFrConfig, loadedPatrolMap);
                 resolve(frConfig);
             }
         } catch(error) {
@@ -161,7 +206,8 @@ function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig |
 //
 function getFundraiserConfig(): FundraiserConfig {
     if (null===frConfig) {
-        return new FundraiserConfig(null);
+		console.log("Loading Default Config");
+        return new FundraiserConfig();
     }
     return frConfig;
 }
