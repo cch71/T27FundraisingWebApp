@@ -26,7 +26,7 @@ const NavBar = () => {
         );
         baseNavItems.push(
             <li className={setIfActive('/orders/')} key="/orders">
-                <Link className='nav-item nav-link' replace to='/orders/'>Orders</Link>
+                <Link className='nav-item nav-link' replace to='/orders/'>Reports</Link>
             </li>
         );
         baseNavItems.push(

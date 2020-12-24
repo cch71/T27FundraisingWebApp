@@ -12,7 +12,7 @@ class Order {
     readonly orderId: string;
     totalAmt: currency;
 
-
+	isValidated?: boolean;
     doDeleteOrder?: boolean;
     orderOwner?: string;
     firstName?: string;
@@ -27,7 +27,7 @@ class Order {
     specialInstructions?: string;
     neighborhood?: string;
     products?: Record<string, number>;
-	donaition?: currency;
+	donation?: currency;
     cashPaid?: currency;
     checkPaid?: currency;
     checkNums?: string;
