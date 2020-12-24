@@ -21,148 +21,160 @@ let reportSettingsDlg = undefined;
 
 ////////////////////////////////////////////////////////////////////
 //
-const genOrdersView = (frConfig: FundraiserConfig)=>{
-	// Build query fields
-	const fieldNames = ["orderId", "firstName", "lastName"];
-	if ('mulch' === frConfig.kind()) {
-		fieldNames.push("deliveryId");
-		fieldNames.push("products.spreading");
-	}
+class ReportViews {
+	private _currentView: string = "";
 
-    orderDb.query({fields: fieldNames}).then((orders: Array<OrderListItem<string>>)=>{
-        console.log(`Orders Page: ${JSON.stringify(orders)}`);
+	showDefault(frConfig: FundraiserConfig, userId: string|undefined) {
+		if ('DEFAULT' === this._currentView) { return; }
+		this.currentView = 'DEFAULT';
 
-		// Fill out rows of data
-        const orderDataSet = [];
-        for (const order of orders) {
-            const nameStr = `${order.firstName}, ${order.lastName}`;
-
-			const orderDataItem = [order.orderId, nameStr];
-			if ('mulch' === frConfig.kind()) {
-				if (order.deliveryId) {
-					orderDataItem.push(frConfig.deliveryDateFromId(order.deliveryId));
-				} else {
-					orderDataItem.push('');
-				}
-				orderDataItem.push((order.products?.spreading?"Yes":"No"));
-			}
-			orderDataItem.push(null);
-            orderDataSet.push(orderDataItem);
-        }
-
-        if (jQuery.fn.dataTable.isDataTable( '#orderListTable')) {
-            jQuery('#orderListTable').DataTable().destroy();
-        }
-
-        const buttonDef =
-            `<div>` +
-            `<button type="button" class="btn btn-outline-info me-1 order-edt-btn">` +
-			`<span><svg class="bi" fill="currentColor"><use xlink:href=${pencilImg}/></svg></span></button>` +
-            `<button type="button" class="btn btn-outline-danger order-edt-btn">` +
-			`<span><svg class="bi" fill="currentColor"><use xlink:href=${trashImg}/></svg></span></button>` +
-            `</div>`;
-
-		const tableColumns = [
-            {
-                title: "OrderID",
-                visible: false
-            },
-            {
-                title: "Name",
-                className: "all"
-            }
-        ];
-
+		// Build query fields
+		const fieldNames = ["orderId", "firstName", "lastName"];
 		if ('mulch' === frConfig.kind()) {
-			tableColumns.push({ title: "Delivery Date" });
-			tableColumns.push({ title: "Spreading" });
+			fieldNames.push("deliveryId");
+			fieldNames.push("products.spreading");
 		}
 
-		tableColumns.push({
-            title: "Actions",
-            data: null,
-            "orderable": false,
-            "defaultContent": buttonDef,
-            className: "all"
-        });
+		orderDb.query({fields: fieldNames}).then((orders: Array<OrderListItem<string>>)=>{
+			console.log(`Orders Page: ${JSON.stringify(orders)}`);
 
-        const table = jQuery('#orderListTable').DataTable({
-            data: orderDataSet,
-            paging: false,
-            bInfo : false,
-            columns: tableColumns
-        });
+			// Fill out rows of data
+			const orderDataSet = [];
+			for (const order of orders) {
+				const nameStr = `${order.firstName}, ${order.lastName}`;
 
-        // Handle on Edit Scenario
-        jQuery('#orderListTable').find('.btn-outline-info').on('click', (event: any)=>{
-            const parentTr = jQuery(event.currentTarget).parents('tr');
-            const row = table.row(parentTr);
-            const orderId = row.data()[0];
+				const orderDataItem = [order.orderId, nameStr];
+				if ('mulch' === frConfig.kind()) {
+					if (order.deliveryId) {
+						orderDataItem.push(frConfig.deliveryDateFromId(order.deliveryId));
+					} else {
+						orderDataItem.push('');
+					}
+					orderDataItem.push((order.products?.spreading?"Yes":"No"));
+				}
+				orderDataItem.push(null);
+				orderDataSet.push(orderDataItem);
+			}
 
-            console.log(`Editing order for ${orderId}`);
-            orderDb.setActiveOrder(); // Reset active order to let order edit for set it
-            navigate('/order_step_1/', {state: {editOrderId: orderId}});
-        });
+			if (jQuery.fn.dataTable.isDataTable( '#orderListTable')) {
+				jQuery('#orderListTable').DataTable().destroy();
+			}
 
-        // Handle On Delete Scenario
-        jQuery('#orderListTable').find('.btn-outline-danger').on('click', (event: any)=>{
-            const parentTr = jQuery(event.currentTarget).parents('tr');
-            const row = table.row(parentTr);
-            const orderId = row.data()[0];
+			const buttonDef =
+				`<div>` +
+				`<button type="button" class="btn btn-outline-info me-1 order-edt-btn">` +
+				`<span><svg class="bi" fill="currentColor"><use xlink:href=${pencilImg}/></svg></span></button>` +
+				`<button type="button" class="btn btn-outline-danger order-edt-btn">` +
+				`<span><svg class="bi" fill="currentColor"><use xlink:href=${trashImg}/></svg></span></button>` +
+				`</div>`;
 
-            console.log(`Deleting order for ${orderId}`);
-            jQuery('#confirmDeleteOrderInput').val('');
-            parentTr.find('button').attr("disabled", true);
+			const tableColumns = [
+				{
+					title: "OrderID",
+					visible: false
+				},
+				{
+					title: "Name",
+					className: "all"
+				}
+			];
 
-			const dlgElm = document.getElementById('deleteOrderDlg');
-			const delOrderDlg = new Modal(dlgElm, {
-				backdrop: true,
-				keyboard: true,
-				focus: true
+			if ('mulch' === frConfig.kind()) {
+				tableColumns.push({ title: "Delivery Date" });
+				tableColumns.push({ title: "Spreading" });
+			}
+
+			tableColumns.push({
+				title: "Actions",
+				data: null,
+				"orderable": false,
+				"defaultContent": buttonDef,
+				className: "all"
 			});
 
-            jQuery('#deleteDlgBtn')
-                .prop("disabled",true)
-                .off('click')
-                .click(
-                    (event: any)=>{
-                        console.log(`Delete confirmed for: ${orderId}`);
-                        delOrderDlg.hide();
-                        orderDb.deleteOrder(orderId).then(()=>{
-                            row.remove().draw();
-                        }).catch((err: any)=>{
-                            alert(`Failed to delete order: ${orderId}: ${err.message}`);
-                            parentTr.find('button').attr("disabled", false);
-                        });
-                    }
-                );
+			const table = jQuery('#orderListTable').DataTable({
+				data: orderDataSet,
+				paging: false,
+				bInfo : false,
+				columns: tableColumns
+			});
 
-			const dlgHandler = (event)=>{
-				parentTr.find('button').attr("disabled", false);
-				dlgElm.removeEventListener('hidden.bs.modal', dlgHandler);
-			};
-			dlgElm.addEventListener('hidden.bs.modal', dlgHandler);
+			// Handle on Edit Scenario
+			jQuery('#orderListTable').find('.btn-outline-info').on('click', (event: any)=>{
+				const parentTr = jQuery(event.currentTarget).parents('tr');
+				const row = table.row(parentTr);
+				const orderId = row.data()[0];
 
-			delOrderDlg.show();
-        } );
+				console.log(`Editing order for ${orderId}`);
+				orderDb.setActiveOrder(); // Reset active order to let order edit for set it
+				navigate('/order_step_1/', {state: {editOrderId: orderId}});
+			});
 
-        const spinnerElm = document.getElementById('orderLoadingSpinner');
-        if (spinnerElm) {
-            spinnerElm.className = "d-none";
-        }
+			// Handle On Delete Scenario
+			jQuery('#orderListTable').find('.btn-outline-danger').on('click', (event: any)=>{
+				const parentTr = jQuery(event.currentTarget).parents('tr');
+				const row = table.row(parentTr);
+				const orderId = row.data()[0];
 
-    }).catch((err: any)=>{
-        if ('Invalid Session'===err) {
-            navigate('/signon/')
-        } else {
-            const errStr = `Failed creating order list: ${JSON.stringify(err)}`;
-            console.log(errStr);
-            alert(errStr);
-            throw err;
-        }
-    });
-};
+				console.log(`Deleting order for ${orderId}`);
+				jQuery('#confirmDeleteOrderInput').val('');
+				parentTr.find('button').attr("disabled", true);
 
+				const dlgElm = document.getElementById('deleteOrderDlg');
+				const delOrderDlg = new Modal(dlgElm, {
+					backdrop: true,
+					keyboard: true,
+					focus: true
+				});
+
+				jQuery('#deleteDlgBtn')
+					.prop("disabled",true)
+					.off('click')
+					.click(
+						(event: any)=>{
+							console.log(`Delete confirmed for: ${orderId}`);
+							delOrderDlg.hide();
+							orderDb.deleteOrder(orderId).then(()=>{
+								row.remove().draw();
+							}).catch((err: any)=>{
+								alert(`Failed to delete order: ${orderId}: ${err.message}`);
+								parentTr.find('button').attr("disabled", false);
+							});
+						}
+					);
+
+				const dlgHandler = (event)=>{
+					parentTr.find('button').attr("disabled", false);
+					dlgElm.removeEventListener('hidden.bs.modal', dlgHandler);
+				};
+				dlgElm.addEventListener('hidden.bs.modal', dlgHandler);
+
+				delOrderDlg.show();
+			} );
+
+			const spinnerElm = document.getElementById('orderLoadingSpinner');
+			if (spinnerElm) {
+				spinnerElm.className = "d-none";
+			}
+
+		}).catch((err: any)=>{
+			if ('Invalid Session'===err) {
+				navigate('/signon/')
+			} else {
+				const errStr = `Failed creating order list: ${JSON.stringify(err)}`;
+				console.log(errStr);
+				alert(errStr);
+				throw err;
+			}
+		});
+	}
+	showFull(frConfig: FundraiserConfig, userId: string|undefined) {
+		console.log(`Showing Full`);
+	}
+
+}
+
+const reportViews: ReportViews = new ReportViews();
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -208,6 +220,63 @@ const genDeleteDlg = ()=>{
             </div>
         </div>
 	);
+};
+
+////////////////////////////////////////////////////////////////////
+//
+const showTheSelectedView = (frConfig: FundraiserConfig, isAdmin: boolean) => {
+
+	const showView = ()=>{
+		const userSelElm = document.getElementById(`${dlgIdRoot}UserSelection`);
+		const viewSelElm = document.getElementById(`${dlgIdRoot}ViewSelection`);
+
+		//Update the selected view label
+		const selectedUser = userSelElm.options[userSelElm.selectedIndex].text;
+		const selectedView = viewSelElm.options[viewSelElm.selectedIndex].text;
+		const rvLabel = document.getElementById("reportViewLabel");
+		console.log(`${selectedView}(${selectedUser})`);
+		rvLabel.innerText = `${selectedView}(${selectedUser})`;
+
+		const userIdOverride = (isAdmin?userSelElm.options[userSelElm.selectedIndex].value:undefined);
+
+		reportViews[`show${selectedView}`](frConfig, userIdOverride);
+	};
+
+	// Check to see if initialized
+	if (!document.getElementById(`${dlgIdRoot}UserSelection`)) {
+		const genOption = (label, val)=>{
+			const option = document.createElement("option");
+			option.text = label;
+			if (val) {
+				option.value = val;
+			}
+			return option;
+		};
+
+		auth.getUserIdAndGroups().then(([_, userGroups])=>{
+			const userSelElm = document.getElementById(`${dlgIdRoot}UserSelection`);
+			const viewSelElm = document.getElementById(`${dlgIdRoot}ViewSelection`);
+			if (userGroups && userGroups.includes("FrAdmins")) {
+				console.log("This user is an admin");
+				document.getElementById(`${dlgIdRoot}UserSelectionCol`).style.display = "inline-block";
+			} else {
+				const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
+				document.getElementById(`${dlgIdRoot}UserSelectionCol`).style.display = "none";
+
+				userSelElm.add(genOption(fullName, auth.getCurrentUserId()));
+				userSelElm.selectedIndex = 0;
+
+				viewSelElm.add(genOption('Default'));
+				viewSelElm.add(genOption('Full'));
+				viewSelElm.selectedIndex = 0;
+			}
+
+			showView();
+		});
+	} else {
+		showView();
+	}
+
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -270,33 +339,6 @@ const genCardBody = (frConfig: FundraiserConfig)=>{
 			console.log("Settings Clicked");
 
 			if (!reportSettingsDlg) {
-				const genOption = (label, val)=>{
-					const option = document.createElement("option");
-					option.text = label;
-					if (val) {
-						option.value = val;
-					}
-					return option;
-				};
-
-				const userSelElm = document.getElementById(`${dlgIdRoot}UserSelection`);
-				const viewSelElm = document.getElementById(`${dlgIdRoot}ViewSelection`);
-
-				if (userGroups && userGroups.includes("FrAdmins")) {
-					console.log("This user is an admin");
-					document.getElementById(`${dlgIdRoot}UserSelectionCol`).style.display = "inline-block";
-				} else {
-					document.getElementById(`${dlgIdRoot}UserSelectionCol`).style.display = "none";
-
-					userSelElm.add(genOption(fullName, auth.getCurrentUserId()));
-					userSelElm.selectedIndex = 0;
-
-					viewSelElm.add(genOption('Default'));
-					viewSelElm.add(genOption('Full'));
-					viewSelElm.selectedIndex = 0;
-				}
-
-
 				const dlgElm = document.getElementById(dlgIdRoot);
 				reportSettingsDlg = new bs.Modal(dlgElm, {
 					backdrop: true,
@@ -304,18 +346,9 @@ const genCardBody = (frConfig: FundraiserConfig)=>{
 					focus: true
 				});
 
-
-
 				document.getElementById(dlgIdRoot+"OnSave").onclick = (event)=>{
-					//dlgElm.removeEventListener('hidden.bs.modal', dlgHandler);
-					console.log("Vew Change Dlg Hidden");
-					const selectedUser = userSelElm.options[userSelElm.selectedIndex].text;
-					const selectedView = viewSelElm.options[viewSelElm.selectedIndex].text;
-					const rvLabel = document.getElementById("reportViewLabel");
-					console.log(`${selectedView}(${selectedUser})`);
-					rvLabel.innerText = `${selectedView}(${selectedUser})`;
-				};
-				//dlgElm.addEventListener('hidden.bs.modal', dlgHandler);
+					showTheSelectedView(frConfig);
+				}
 			}
 
 			reportSettingsDlg.show();
@@ -345,6 +378,7 @@ const genCardBody = (frConfig: FundraiserConfig)=>{
 	);
 };
 
+
 ////////////////////////////////////////////////////////////////////
 //
 export default function orders() {
@@ -364,7 +398,7 @@ export default function orders() {
 		setCardBody(genCardBody(frConfig));
 		setDeleteDlg(genDeleteDlg());
 		setReportSettingsDlg(genReportSettingsDlg());
-		genOrdersView(frConfig);
+		showTheSelectedView(frConfig);
     }, []);
 
 
