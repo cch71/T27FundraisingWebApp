@@ -64,7 +64,7 @@ html {
 	  @keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
   }
 
-  .reports-view-btn {
+  .reports-view-setting-btn {
 	  padding: 3px;
 	  margin: 0px;
 	  width: 2.0rem;
@@ -90,8 +90,15 @@ html {
   }
 
   .order-edt-btn {
-      width: 40px;
-      heigth: 40px;
+	  padding: 0;
+	  margin: 0;
+	  width: 2.5rem;
+	  height: 2.5rem;
       border-radius: 25%;
+
+	  svg {
+		  width: 70%;
+		  height: 70%;
+	  }
   }
 }
