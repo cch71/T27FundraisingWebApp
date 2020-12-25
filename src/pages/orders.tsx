@@ -41,7 +41,7 @@ class ReportViews {
 			}
 
 			console.log(`Current View: ${this.currentView_} New View: ${view}`);
-			this.currentView_ = 'Default';
+			this.currentView_ = view;
 
 			if(typeof this[`show${view}`] === 'function') {
 				this[`show${view}`](frConfig, userId);
@@ -282,7 +282,7 @@ class ReportViews {
 		let tableColumns = [
 			{ title: "OrderId", visible: false },
 			{ title: "OrderOwnerId", visible: false },
-			{ title: "Name" },
+			{ title: "Name"},
 			{ title: "Phone" },
 			{ title: "Email" },
 			{ title: "Address 1" },
@@ -463,7 +463,7 @@ const showTheSelectedView = (frConfig: FundraiserConfig, isAdmin: boolean) => {
 
 				viewSelElm.add(genOption('Default'));
 				viewSelElm.add(genOption('Full'));
-				viewSelElm.selectedIndex = 1;
+				viewSelElm.selectedIndex = 0;
 			}
 
 			showView();
@@ -561,28 +561,34 @@ const genCardBody = (frConfig: FundraiserConfig)=>{
 
 
 	return(
-        <div className="card-body" style={{padding: 0}}>
-            <h5 className="card-title ps-2" id="orderCardTitle">
-				Reports View: <div style={{display: "inline"}} id="reportViewLabel">Default({fullName})</div>
-				<button type="button" className="btn reports-view-setting-btn" onClick={onVewSettingsClick}>
-					<svg className="bi" fill="currentColor">
-						<use xlinkHref={reportSettingsImg}/>
-					</svg>
-				</button>
-				<button type="button" className="btn reports-view-setting-btn float-end" onClick={onDownloadReportClick}>
-					<svg className="bi" fill="currentColor">
-						<use xlinkHref={exportImg}/>
-					</svg>
-				</button>
+      <div className="card-body" id="cardReportBody">
+          <h5 className="card-title ps-2" id="orderCardTitle">
+				      Reports View: <div style={{display: "inline"}} id="reportViewLabel">Default({fullName})</div>
+				      <button type="button" className="btn reports-view-setting-btn" onClick={onVewSettingsClick}>
+					        <svg className="bi" fill="currentColor">
+						          <use xlinkHref={reportSettingsImg}/>
+					        </svg>
+				      </button>
+				      <button type="button" className="btn reports-view-setting-btn float-end" onClick={onDownloadReportClick}>
+					        <svg className="bi" fill="currentColor">
+						          <use xlinkHref={exportImg}/>
+					        </svg>
+				      </button>
 
-			</h5>
-            <table id="orderListTable"
-                   className="display responsive nowrap table table-hover"
-                   style={{width:"100%"}}/>
-            <div className="spinner-border" role="status" id="orderLoadingSpinner">
-                <span className="visually-hidden">Loading...</span>
-            </div>
-        </div>
+			    </h5>
+
+
+
+          <table id="orderListTable"
+                 className="display responsive nowrap collapsed" role="grid" style={{width:"100%"}}/>
+
+
+
+
+          <div className="spinner-border" role="status" id="orderLoadingSpinner">
+              <span className="visually-hidden">Loading...</span>
+          </div>
+      </div>
 	);
 };
 
@@ -625,7 +631,7 @@ export default function orders() {
             </button>
 
             <div className="col-xs-1 d-flex justify-content-center">
-                <div className="card" >
+                <div className="card" style={{width: "100%"}}>
 					{cardBody}
                 </div>
             </div>
