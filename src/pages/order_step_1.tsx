@@ -10,6 +10,7 @@ import {onCurrencyFieldKeyPress, onCheckNumsKeyPress, moneyFloor} from "../js/ut
 import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
 const trashImg = bootstrapIconSprite + "#trash";
 const pencilImg = bootstrapIconSprite + "#pencil";
+//const addToOrderImg = bootstrapIconSprite + "#plus-square";
 
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
@@ -51,7 +52,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         */
         currentOrder.specialInstructions =
             (document.getElementById('formSpecialInstructions') as HTMLInputElement).value;
-        currentOrder.checkNumbers = (document.getElementById('formCheckNumbers') as HTMLInputElement).value;
+        currentOrder.checkNums = (document.getElementById('formCheckNumbers') as HTMLInputElement).value;
 		currentOrder.cashPaid = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
         currentOrder.checkPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
 		currentOrder.doCollectMoneyLater  = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
@@ -241,19 +242,15 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                     {orderTotalStr}
                     <button className="btn btn-outline-danger mx-1 float-end order-edt-btn"
                             data-deliveryid={deliveryId} onClick={onDeleteOrder}>
-                        <span>
-							<svg className="bi" fill="currentColor">
-								<use xlinkHref={trashImg}/>
-							</svg>
-						</span>
+						<svg className="bi" fill="currentColor">
+							<use xlinkHref={trashImg}/>
+						</svg>
                     </button>
                     <button className="btn btn-outline-info float-end order-edt-btn"
                             data-deliveryid={deliveryId} onClick={onClickHandler}>
-						<span>
-							<svg className="bi" fill="currentColor">
-								<use xlinkHref={pencilImg}/>
-							</svg>
-						</span>
+						<svg className="bi" fill="currentColor">
+							<use xlinkHref={pencilImg}/>
+						</svg>
                     </button>
                 </li>
             );
@@ -271,7 +268,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
             <li className="list-group-item" id="addProductBtnLi" key="addProductBtnLi" style={addProductStyle}>
                 Add Product Order
                 <button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddOrder}>
-                    <span>+</span>
+					+
                 </button>
             </li>
         );
@@ -287,7 +284,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
             <li className="list-group-item" id="addDonationBtnLi" key="addDonationBtnLi" style={addDonationStyle}>
                 Add Donations
                 <button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddDonation}>
-                    <span>+</span>
+					+
                 </button>
             </li>
         );
@@ -316,7 +313,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     const amountPaid = currency(currentOrder.checkPaid).add(currentOrder.cashPaid);
     const amountPaidStr = USD(amountPaid).format();
 	const isCollectedOk = (newTotalDue.value === amountPaid.value) || currentOrder.doCollectMoneyLater;
-	const isChecksPaidOk = (0<currentOrder.checkPaid) ? (undefined!==currentOrder.checkNumbers) : true;
+	const isChecksPaidOk = (0<currentOrder.checkPaid) ? (undefined!==currentOrder.checkNums) : true;
     console.log(`Amount Due: ${amountDueStr}  Paid: ${amountPaidStr} ${currentOrder.doCollectMoneyLater}`);
     console.log(`Collected ${isCollectedOk}  ChecksPaid: ${isChecksPaidOk}`);
     const areRequiredCurOrderValuesAlreadyPopulated = (
@@ -474,7 +471,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                     <input className="form-control" autoComplete="fr-new-cust-info"
                            id="formCheckNumbers" placeholder="Enter Check #s"
                            onInput={doesSubmitGetEnabled} onKeyPress={onCheckNumsKeyPress}
-                           defaultValue={currentOrder.checkNumbers}/>
+                           defaultValue={currentOrder.checkNums}/>
                 </div>
             </div>
 

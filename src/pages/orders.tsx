@@ -22,11 +22,129 @@ let reportSettingsDlg = undefined;
 ////////////////////////////////////////////////////////////////////
 //
 class ReportViews {
-	private _currentView: string = "";
+	private currentView_: string = "";
+	private currentDataTable_: any = undefined;
+	private currentQueryResults_: Array<OrderListItem<string>> = undefined;
 
-	showDefault(frConfig: FundraiserConfig, userId: string|undefined) {
-		if ('DEFAULT' === this._currentView) { return; }
-		this.currentView = 'DEFAULT';
+	////////////////////////////////////////////////////////////////////
+	//
+	show(view: string, frConfig: FundraiserConfig, userId: string|undefined) {
+		const asyncShow = async () => {
+			if (jQuery.fn.dataTable.isDataTable( '#orderListTable')) {
+				if (view === this.currentView_) { return; }
+
+				jQuery('#orderListTable').DataTable().clear();
+				jQuery('#orderListTable').DataTable().destroy();
+				jQuery('#orderListTable').empty();
+				delete this.currentDataTable_;
+				delete this.currentQueryResults_;
+			}
+
+			console.log(`Current View: ${this.currentView_} New View: ${view}`);
+			this.currentView_ = 'Default';
+
+			if(typeof this[`show${view}`] === 'function') {
+				this[`show${view}`](frConfig, userId);
+			} else {
+				throw new Error(`Report View Type: ${view} not found`);
+			}
+
+			const spinnerElm = document.getElementById('orderLoadingSpinner');
+			if (spinnerElm) {
+				spinnerElm.className = "d-none";
+			}
+		}
+
+		asyncShow()
+			.then(()=>{})
+			.catch((err: any)=>{
+				if ('Invalid Session'===err) {
+					navigate('/signon/')
+				} else {
+					const errStr = `Failed creating order list: ${JSON.stringify(err)}`;
+					console.log(errStr);
+					alert(errStr);
+					throw err;
+				}
+			});
+	}
+
+
+	////////////////////////////////////////////////////////////////////
+	//
+	private getActionButtons(order: any) {
+		return(
+			`<div>` +
+			`<button type="button" class="btn btn-outline-info me-1 order-edt-btn">` +
+			`<svg class="bi" fill="currentColor"><use xlink:href="${pencilImg}" /></svg></button>` +
+			`<button type="button" class="btn btn-outline-danger order-edt-btn">` +
+			`<svg class="bi" fill="currentColor"><use xlink:href="${trashImg}" /></svg></button>` +
+			`</div>`
+		);
+	}
+
+	////////////////////////////////////////////////////////////////////
+	//
+	private registerActionButtonHandlers() {
+		// Handle on Edit Scenario
+		jQuery('#orderListTable').find('.btn-outline-info').on('click', (event: any)=>{
+			const parentTr = jQuery(event.currentTarget).parents('tr');
+			const row = this.currentDataTable_.row(parentTr);
+			const orderId = row.data()[0];
+
+			console.log(`Editing order for ${orderId}`);
+			orderDb.setActiveOrder(); // Reset active order to let order edit for set it
+			navigate('/order_step_1/', {state: {editOrderId: orderId}});
+		});
+
+		// Handle On Delete Scenario
+		jQuery('#orderListTable').find('.btn-outline-danger').on('click', (event: any)=>{
+			const parentTr = jQuery(event.currentTarget).parents('tr');
+			const row = this.currentDataTable_.row(parentTr);
+			const orderId = row.data()[0];
+
+			console.log(`Deleting order for ${orderId}`);
+			jQuery('#confirmDeleteOrderInput').val('');
+			parentTr.find('button').attr("disabled", true);
+
+			const dlgElm = document.getElementById('deleteOrderDlg');
+			const delOrderDlg = new bs.Modal(dlgElm, {
+				backdrop: true,
+				keyboard: true,
+				focus: true
+			});
+
+			jQuery('#deleteDlgBtn')
+				.prop("disabled",true)
+				.off('click')
+				.click(
+					(event: any)=>{
+						console.log(`Delete confirmed for: ${orderId}`);
+						delOrderDlg.hide();
+						orderDb.deleteOrder(orderId).then(()=>{
+							row.remove().draw();
+						}).catch((err: any)=>{
+							alert(`Failed to delete order: ${orderId}: ${err.message}`);
+							parentTr.find('button').attr("disabled", false);
+						});
+					}
+				);
+
+			const dlgHandler = (event)=>{
+				parentTr.find('button').attr("disabled", false);
+				dlgElm.removeEventListener('hidden.bs.modal', dlgHandler);
+			};
+			dlgElm.addEventListener('hidden.bs.modal', dlgHandler);
+
+			delOrderDlg.show();
+		});
+	}
+
+	////////////////////////////////////////////////////////////////////
+	//
+	private async showDefault(frConfig: FundraiserConfig, userId: string|undefined) {
+
+		if (!userId) { userId = auth.getCurrentUserId(); }
 
 		// Build query fields
 		const fieldNames = ["orderId", "firstName", "lastName"];
@@ -35,141 +153,218 @@ class ReportViews {
 			fieldNames.push("products.spreading");
 		}
 
-		orderDb.query({fields: fieldNames}).then((orders: Array<OrderListItem<string>>)=>{
-			console.log(`Orders Page: ${JSON.stringify(orders)}`);
+		if ('any'===userId) {
+			fieldNames.push("orderOwner");
+		}
 
-			// Fill out rows of data
-			const orderDataSet = [];
-			for (const order of orders) {
-				const nameStr = `${order.firstName}, ${order.lastName}`;
 
-				const orderDataItem = [order.orderId, nameStr];
-				if ('mulch' === frConfig.kind()) {
-					if (order.deliveryId) {
-						orderDataItem.push(frConfig.deliveryDateFromId(order.deliveryId));
-					} else {
-						orderDataItem.push('');
-					}
-					orderDataItem.push((order.products?.spreading?"Yes":"No"));
+		this.currentQueryResults_ = await orderDb.query({fields: fieldNames, orderOwner: userId});
+		const orders = this.currentQueryResults_;
+		console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
+
+		// Fill out rows of data
+		const orderDataSet = [];
+		for (const order of orders) {
+			const nameStr = `${order.firstName}, ${order.lastName}`;
+			const ownerId = ('any'===userId)?order.orderOwner:userId;
+			const orderDataItem = [order.orderId, ownerId, nameStr];
+			if ('mulch' === frConfig.kind()) {
+				if (order.deliveryId) {
+					orderDataItem.push(frConfig.deliveryDateFromId(order.deliveryId));
+				} else {
+					orderDataItem.push('');
 				}
-				orderDataItem.push(null);
-				orderDataSet.push(orderDataItem);
+				orderDataItem.push((order.products?.spreading?"Yes":"No"));
 			}
+			orderDataItem.push(this.getActionButtons(order));
+			orderDataSet.push(orderDataItem);
+		}
 
-			if (jQuery.fn.dataTable.isDataTable( '#orderListTable')) {
-				jQuery('#orderListTable').DataTable().destroy();
+
+		const tableColumns = [
+			{
+				title: "OrderId",
+				visible: false
+			},
+			{
+				title: "OrderOwnerId",
+				visible: false
+			},
+			{
+				title: "Name",
+				className: "all"
 			}
+		];
 
-			const buttonDef =
-				`<div>` +
-				`<button type="button" class="btn btn-outline-info me-1 order-edt-btn">` +
-				`<span><svg class="bi" fill="currentColor"><use xlink:href=${pencilImg}/></svg></span></button>` +
-				`<button type="button" class="btn btn-outline-danger order-edt-btn">` +
-				`<span><svg class="bi" fill="currentColor"><use xlink:href=${trashImg}/></svg></span></button>` +
-				`</div>`;
+		if ('mulch' === frConfig.kind()) {
+			tableColumns.push({ title: "Delivery Date" });
+			tableColumns.push({ title: "Spreading" });
+		}
 
-			const tableColumns = [
-				{
-					title: "OrderID",
-					visible: false
-				},
-				{
-					title: "Name",
-					className: "all"
+		tableColumns.push({
+			title: "Actions",
+			"orderable": false,
+			className: "all"
+		});
+
+		this.currentDataTable_ = jQuery('#orderListTable').DataTable({
+			data: orderDataSet,
+			paging: false,
+			bInfo : false,
+			columns: tableColumns
+		});
+
+		this.registerActionButtonHandlers();
+	}
+
+	////////////////////////////////////////////////////////////////////
+	//
+	private async showFull(frConfig: FundraiserConfig, userId: string|undefined) {
+
+		if (!userId) { userId = auth.getCurrentUserId(); }
+
+		this.currentQueryResults_ = await orderDb.query();
+		const orders = this.currentQueryResults_;
+
+		console.log(`Full Orders Page: ${JSON.stringify(orders)}`);
+
+		const getVal = (fld: any|undefined, dflt: any|undefined)=>{
+			if (undefined===fld) {
+				if (undefined===dflt) {
+					return '';
+				} else {
+					return `${dflt}`;
 				}
+			} else {
+				return `${fld}`;
+			}
+		};
+
+		// Fill out rows of data
+		const orderDataSet = [];
+		for (const order of orders) {
+			const nameStr = `${order.firstName}, ${order.lastName}`;
+
+			let orderDataItem = [
+				order.orderId,
+				order.orderOwner,
+				nameStr,
+				order.phone,
+				getVal(order.email),
+				order.addr1,
+				getVal(order.addr2),
+				(order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'')
 			];
 
 			if ('mulch' === frConfig.kind()) {
-				tableColumns.push({ title: "Delivery Date" });
-				tableColumns.push({ title: "Spreading" });
-			}
-
-			tableColumns.push({
-				title: "Actions",
-				data: null,
-				"orderable": false,
-				"defaultContent": buttonDef,
-				className: "all"
-			});
-
-			const table = jQuery('#orderListTable').DataTable({
-				data: orderDataSet,
-				paging: false,
-				bInfo : false,
-				columns: tableColumns
-			});
-
-			// Handle on Edit Scenario
-			jQuery('#orderListTable').find('.btn-outline-info').on('click', (event: any)=>{
-				const parentTr = jQuery(event.currentTarget).parents('tr');
-				const row = table.row(parentTr);
-				const orderId = row.data()[0];
-
-				console.log(`Editing order for ${orderId}`);
-				orderDb.setActiveOrder(); // Reset active order to let order edit for set it
-				navigate('/order_step_1/', {state: {editOrderId: orderId}});
-			});
-
-			// Handle On Delete Scenario
-			jQuery('#orderListTable').find('.btn-outline-danger').on('click', (event: any)=>{
-				const parentTr = jQuery(event.currentTarget).parents('tr');
-				const row = table.row(parentTr);
-				const orderId = row.data()[0];
-
-				console.log(`Deleting order for ${orderId}`);
-				jQuery('#confirmDeleteOrderInput').val('');
-				parentTr.find('button').attr("disabled", true);
-
-				const dlgElm = document.getElementById('deleteOrderDlg');
-				const delOrderDlg = new Modal(dlgElm, {
-					backdrop: true,
-					keyboard: true,
-					focus: true
-				});
-
-				jQuery('#deleteDlgBtn')
-					.prop("disabled",true)
-					.off('click')
-					.click(
-						(event: any)=>{
-							console.log(`Delete confirmed for: ${orderId}`);
-							delOrderDlg.hide();
-							orderDb.deleteOrder(orderId).then(()=>{
-								row.remove().draw();
-							}).catch((err: any)=>{
-								alert(`Failed to delete order: ${orderId}: ${err.message}`);
-								parentTr.find('button').attr("disabled", false);
-							});
-						}
-					);
-
-				const dlgHandler = (event)=>{
-					parentTr.find('button').attr("disabled", false);
-					dlgElm.removeEventListener('hidden.bs.modal', dlgHandler);
-				};
-				dlgElm.addEventListener('hidden.bs.modal', dlgHandler);
-
-				delOrderDlg.show();
-			} );
-
-			const spinnerElm = document.getElementById('orderLoadingSpinner');
-			if (spinnerElm) {
-				spinnerElm.className = "d-none";
-			}
-
-		}).catch((err: any)=>{
-			if ('Invalid Session'===err) {
-				navigate('/signon/')
+				orderDataItem.push(order.neighborhood);
+				orderDataItem.push(getVal(order.products?.spreading, 0));
+				orderDataItem.push(getVal(order.products?.bags, 0));
 			} else {
-				const errStr = `Failed creating order list: ${JSON.stringify(err)}`;
-				console.log(errStr);
-				alert(errStr);
-				throw err;
+				//TODO:  Add Products stuff like city, state, zip
 			}
+
+			orderDataItem = orderDataItem.concat([
+				getVal(order.specialInstructions),
+				USD(order.donation).format(),
+				USD(order.cashPaid).format(),
+				USD(order.checkPaid).format(),
+				getVal(order.checkNums),
+				USD(order.totalAmt).format(),
+				(order.isValidated?"True":"False")
+			]);
+
+			orderDataItem.push(this.getActionButtons(order));
+			orderDataSet.push(orderDataItem);
+		}
+
+
+		let tableColumns = [
+			{ title: "OrderId", visible: false },
+			{ title: "OrderOwnerId", visible: false },
+			{ title: "Name" },
+			{ title: "Phone" },
+			{ title: "Email" },
+			{ title: "Address 1" },
+			{ title: "Address 2" },
+			{ title: "Delivery Date" }
+		];
+
+		if ('mulch' === frConfig.kind()) {
+			tableColumns.push({ title: "Neighborhood" });
+			tableColumns.push({ title: "Spreading" });
+			tableColumns.push({ title: "Bags" });
+		}
+
+		tableColumns = tableColumns.concat([
+			{ title: "Special Instructions" },
+			{ title: "Donations" },
+			{ title: "Cash" },
+			{ title: "Check" },
+			{ title: "Check Numbers" },
+			{ title: "Total Amount" },
+			{ title: "IsValidated" },
+
+		]);
+
+		tableColumns.push({
+			title: "Actions",
+			"orderable": false,
+			className: "all"
 		});
+
+		this.currentDataTable_ = jQuery('#orderListTable').DataTable({
+			data: orderDataSet,
+			paging: false,
+			bInfo : false,
+			columns: tableColumns
+		});
+
+		this.registerActionButtonHandlers();
 	}
-	showFull(frConfig: FundraiserConfig, userId: string|undefined) {
-		console.log(`Showing Full`);
+
+	////////////////////////////////////////////////////////////////////
+	//
+	genCsvFromCurrent() {
+		if (!this.currentDataTable_) { throw new Error("Table isn't found"); }
+		let csvFileData = [];
+
+		const headerElm = this.currentDataTable_.table().header();
+		let csvRow = []
+		for (const th of jQuery(headerElm).find(`th`)) {
+			if ('Actions'===th.innerText) { continue; }
+			console.log();
+			csvRow.push(th.innerText);
+		};
+		csvRow = ['OrderId', 'OrderOwner'].concat(csvRow);
+		csvFileData.push(csvRow.join('|'));
+
+		const data = this.currentDataTable_.data().toArray();
+
+		data.forEach((row, _)=>{
+			csvRow = [];
+			row.forEach((column, _)=>{
+				csvRow.push(column);
+			});
+			csvRow.splice(-1,1);
+			csvFileData.push(csvRow.join('|'));
+		});
+
+		//console.log(`${JSON.stringify(csvFileData, null, '\t')}`);
+
+
+		/* const flattened = Object.assign(
+		   {},
+		   ...function _flatten(o) {
+		   return [].concat(...Object.keys(o)
+		   .map(k =>
+		   typeof o[k] === 'object' ?
+		   _flatten(o[k]) :
+		   ({[k]: o[k]})
+		   ));
+		   }(this.currentQueryResults_)); */
+		//console.log(`${JSON.stringify(flattened, null, '\t')}`);
+		return csvFileData;
 	}
 
 }
@@ -239,7 +434,7 @@ const showTheSelectedView = (frConfig: FundraiserConfig, isAdmin: boolean) => {
 
 		const userIdOverride = (isAdmin?userSelElm.options[userSelElm.selectedIndex].value:undefined);
 
-		reportViews[`show${selectedView}`](frConfig, userIdOverride);
+		reportViews.show(selectedView, frConfig, userIdOverride);
 	};
 
 	// Check to see if initialized
@@ -268,7 +463,7 @@ const showTheSelectedView = (frConfig: FundraiserConfig, isAdmin: boolean) => {
 
 				viewSelElm.add(genOption('Default'));
 				viewSelElm.add(genOption('Full'));
-				viewSelElm.selectedIndex = 0;
+				viewSelElm.selectedIndex = 1;
 			}
 
 			showView();
@@ -338,38 +533,51 @@ const genCardBody = (frConfig: FundraiserConfig)=>{
 		auth.getUserIdAndGroups().then(([_, userGroups])=>{
 			console.log("Settings Clicked");
 
-			if (!reportSettingsDlg) {
-				const dlgElm = document.getElementById(dlgIdRoot);
-				reportSettingsDlg = new bs.Modal(dlgElm, {
-					backdrop: true,
-					keyboard: true,
-					focus: true
-				});
+			const dlgElm = document.getElementById(dlgIdRoot);
+			reportSettingsDlg = new bs.Modal(dlgElm, {
+				backdrop: true,
+				keyboard: true,
+				focus: true
+			});
 
-				document.getElementById(dlgIdRoot+"OnSave").onclick = (event)=>{
-					showTheSelectedView(frConfig);
-				}
+			document.getElementById(dlgIdRoot+"OnSave").onclick = (event)=>{
+				console.log("Clicked");
+				showTheSelectedView(frConfig);
 			}
 
 			reportSettingsDlg.show();
-
-
 		});
 	};
 
+
+	const onDownloadReportClick = ()=>{
+		const csvData = reportViews.genCsvFromCurrent().join('\n');
+		const hiddenElement = document.createElement('a');
+		hiddenElement.href = 'data:text/plain;charset=utf-8,' + encodeURI(csvData);
+		hiddenElement.target = '_blank';
+		hiddenElement.download = 'FundraisingReport.text';
+		hiddenElement.click();
+	};
+
+
 	return(
-        <div className="card-body">
-            <h5 className="card-title" id="orderCardTitle">
+        <div className="card-body" style={{padding: 0}}>
+            <h5 className="card-title ps-2" id="orderCardTitle">
 				Reports View: <div style={{display: "inline"}} id="reportViewLabel">Default({fullName})</div>
-				<button type="button" className="btn reports-view-btn" onClick={onVewSettingsClick}>
+				<button type="button" className="btn reports-view-setting-btn" onClick={onVewSettingsClick}>
 					<svg className="bi" fill="currentColor">
 						<use xlinkHref={reportSettingsImg}/>
+					</svg>
+				</button>
+				<button type="button" className="btn reports-view-setting-btn float-end" onClick={onDownloadReportClick}>
+					<svg className="bi" fill="currentColor">
+						<use xlinkHref={exportImg}/>
 					</svg>
 				</button>
 
 			</h5>
             <table id="orderListTable"
-                   className="display responsive nowrap table table-striped table-bordered table-hover"
+                   className="display responsive nowrap table table-hover"
                    style={{width:"100%"}}/>
             <div className="spinner-border" role="status" id="orderLoadingSpinner">
                 <span className="visually-hidden">Loading...</span>
@@ -398,7 +606,9 @@ export default function orders() {
 		setCardBody(genCardBody(frConfig));
 		setDeleteDlg(genDeleteDlg());
 		setReportSettingsDlg(genReportSettingsDlg());
+
 		showTheSelectedView(frConfig);
+
     }, []);
 
 
@@ -415,7 +625,7 @@ export default function orders() {
             </button>
 
             <div className="col-xs-1 d-flex justify-content-center">
-                <div className="card" style={{width: '80rem'}} >
+                <div className="card" >
 					{cardBody}
                 </div>
             </div>

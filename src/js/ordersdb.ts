@@ -86,7 +86,6 @@ interface OrderListItem<T> {
 interface LeaderBoardUserSummary {
 	amountSold: number;
 	orderOwner: string;
-	fullName: string;
 	donation?: number;
 	spreading?: number;
 	bags?: number;
@@ -115,7 +114,6 @@ class LeaderBoardSummaryInfo {
 		const defaultVal = {
 			amountSold: currency(0),
 			orderOwner: "",
-			fullName: "",
 			donation: currency(0),
 		};
 
@@ -125,8 +123,9 @@ class LeaderBoardSummaryInfo {
 	}
     *topSellers(): Generator<[number, string, string]> {
 		const users = this.summaryResp_.users;
+		//console.log(`Sum Resp: ${JSON.stringify(this.summaryResp_, null, '\t')}`);
 		for (let idx=0; idx < users.length; ++idx) {
-			yield [idx+1, users[idx].fullName, currency(users[idx].amountSold)]
+			yield [idx+1, users[idx].orderOwner, currency(users[idx].amountSold)]
 		}
     }
 
@@ -326,37 +325,35 @@ class OrderDb {
 
     /////////////////////////////////////////
     //
-    query(params: any): Promise<Array<any>> {
+    query(params: any|undefined): Promise<Array<any>> {
         return new Promise(async (resolve, reject)=>{
             try {
-                auth.getAuthToken().then(async (authToken: string)=>{
+				if (!params) { params = {}; }
+                const authToken = await auth.getAuthToken()
 
-                    params['orderOwner'] = auth.currentUser().getUsername();
-                    const paramStr = JSON.stringify(params);
-                    //console.log(`OrderDB Query Parms: ${paramStr}`);
-                    const resp = await fetch(awsConfig.api.invokeUrl + '/queryorders', {
-                        method: 'post',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: authToken
-                        },
-                        body: paramStr
-                    });
-
-                    if (!resp.ok) { // if HTTP-status is 200-299
-                        const errRespBody = await resp.text();
-                        const errStr = `Query error: ${resp.status}  ${errRespBody}`;
-                        reject(new Error(errStr));
-                    } else {
-                        const ordersReturned: any = await resp.json();
-                        //console.log(`OrdersDB Query Resp: ${JSON.stringify(ordersReturned)}`);
-                        resolve(ordersReturned);
-                    }
-                }).catch((err: any)=>{
-                    reject(err);
+				if (!params.hasOwnProperty('orderOwner')) {
+					params['orderOwner'] = auth.currentUser().getUsername();
+				}
+                const paramStr = JSON.stringify(params);
+                //console.log(`OrderDB Query Parms: ${paramStr}`);
+                const resp = await fetch(awsConfig.api.invokeUrl + '/queryorders', {
+                    method: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: authToken
+                    },
+                    body: paramStr
                 });
 
-
+                if (!resp.ok) { // if HTTP-status is 200-299
+                    const errRespBody = await resp.text();
+                    const errStr = `Query error: ${resp.status}  ${errRespBody}`;
+                    reject(new Error(errStr));
+                } else {
+                    const ordersReturned: any = await resp.json();
+                    //console.log(`OrdersDB Query Resp: ${JSON.stringify(ordersReturned)}`);
+                    resolve(ordersReturned);
+                }
             } catch(error) {
                 console.error(error);
                 const errStr = `Query req error: ${error.message}`;

@@ -72,7 +72,7 @@ const NavBar = () => {
         <nav className="navbar navbar-expand-sm navbar-light bg-light">
             <a className="navbar-brand" href="#">
                 <span>
-                    <img className="navbar-logo me-2" src={t27patch} alt="Logo" />
+                    <img className="navbar-logo ms-2" src={t27patch} alt="Logo" />
                 </span>
             </a>
 

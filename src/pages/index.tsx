@@ -77,10 +77,10 @@ const Home = ()=>{
                         topSellers.push(
                             <tr key={ranking}>
                                 <td className="py-1">{ranking}</td>
-                                <td className="py-1">{seller}</td>
+                                <td className="py-1">{frConfig.getUserNameFromId(seller)}</td>
                                 <td className="py-1">{USD(amt).format()}</td>
                             </tr>
-                        );
+								);
                     }
 					//console.log("TopSeller ${JSON.stringify(topSellers)}")
                     let statIndex=0;
