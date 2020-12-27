@@ -19,13 +19,16 @@ const AddProduct = React.lazy(() => import('./add_donations'));
 const AddDonation = React.lazy(() => import('./add_products_order'));
 const SignOn = React.lazy(() => import('./signon'));
 
+////////////////////////////////////////////////////////
+//
 const LazyComponent = ({ Component, ...props }) => (
     <React.Suspense fallback={'<p>Loading...</p>'}>
         <Component {...props} />
     </React.Suspense>
 );
 
-
+////////////////////////////////////////////////////////
+//
 const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
     const frConfig: FundraiserConfig = getFundraiserConfig();
@@ -34,6 +37,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         return(<div/>);
     }
 
+    ////////////////////////////////////////////////////////
     // Save off current order values
     const saveCurrentOrder = ()=>{
         //Required
@@ -49,17 +53,18 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         /* currentOrder.city = (document.getElementById('formCity') as HTMLInputElement).value;
          * currentOrder.state = (document.getElementById('formState') as HTMLInputElement).value;
          * currentOrder.zip = (document.getElementById('formZip') as HTMLInputElement).value;
-        */
+         */
         currentOrder.specialInstructions =
             (document.getElementById('formSpecialInstructions') as HTMLInputElement).value;
         currentOrder.checkNums = (document.getElementById('formCheckNumbers') as HTMLInputElement).value;
-		currentOrder.cashPaid = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
+        currentOrder.cashPaid = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
         currentOrder.checkPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
-		currentOrder.doCollectMoneyLater  = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
-		currentOrder.totalAmt = currency(currentOrder.donation).add(currency(currentOrder.productsCost));
-		console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
+        currentOrder.doCollectMoneyLater  = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
+        currentOrder.totalAmt = currency(currentOrder.donation).add(currency(currentOrder.productsCost));
+        console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
     }
 
+    ////////////////////////////////////////////////////////
     // Handle Form Submission
     const onFormSubmission = (event: any) => {
         event.preventDefault();
@@ -72,22 +77,87 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
         //console.log(`Submitting Active Order`);
         saveCurrentOrder();
-        if (doesSubmitGetEnabled()) {
-            orderDb.submitActiveOrder().then(()=>{
-                navigate('/');
-            }).catch((err:any)=>{
-                if ('Invalid Session'===err) {
-                    navigate('/signon/')
+
+        // Validate Form
+        //  Goes through required fields and verifies that they are valid
+        const validatePayment = async ()=>{
+            const amountDue = currency(document.getElementById('orderAmountDue').innerText);
+            const amountPaid = currency(document.getElementById('orderAmountPaid').innerText);
+            const checksPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
+            const checkNumField = document.getElementById('formCheckNumbers') as HTMLInputElement;
+            const checkNumFieldVal = checkNumField.value;
+            const isCheckNumGood = (0.0<checksPaid.value)?(0<checkNumFieldVal.length):true;
+            const isCollectLaterChecked = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
+            const isPaidChecked = amountDue.value===amountPaid.value;
+
+            //console.log(`AD: ${amountDue.value} AP: ${amountPaid.value}`);
+
+            if ((isPaidChecked || isCollectLaterChecked) && isCheckNumGood) {
+                document.getElementById('totalsFormRow').classList.remove('is-invalid');
+                checkNumField.classList.remove('is-invalid');
+                return true;
+            }
+
+            document.getElementById('totalsFormRow').classList.add('is-invalid');
+            if (!isCheckNumGood) { checkNumFields.classList.add('is-invalid'); }
+            return false;
+        };
+
+        const validateRequiredFormFields = async ()=>{
+            let isValid = true;
+            const formElms = document.querySelectorAll('[required]');
+            Array.prototype.slice.call(formElms).forEach((aform) => {
+                if (!aform.checkValidity()) {
+                    aform.classList.add('is-invalid');
+                    isValid = false;
                 } else {
-                    const errStr = `Failed submitting order: ${JSON.stringify(err)}`;
-                    console.log(errStr);
-                    alert(errStr);
-                    throw err;
+                    aform.classList.remove('is-invalid');
                 }
             });
-        } else {
-            console.error(`Form submitted but shouldn't have been`);
-        }
+
+            return isValid;
+        };
+
+
+        const validateProducts = async ()=>{
+            if (currentOrder.products || currentOrder.donation) {
+                document.getElementById('productList').classList.remove('is-invalid');
+                return true;
+            }
+
+            document.getElementById('productList').classList.add('is-invalid');
+            return false;
+
+        };
+
+        const reenableSubmitButton = ()=>{
+            (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = false;
+            (document.getElementById('formOrderSubmitSpinner') as HTMLButtonElement).style.display = "none";
+            (document.getElementById('formOrderCancel') as HTMLButtonElement).disabled = false;
+
+        };
+
+        Promise.all([validatePayment(), validateRequiredFormFields(), validateProducts()])
+               .then((results)=>{
+                   if (results[0] && results[1] && results[2]) {
+                       // If we got here they we are good to submit form
+                       orderDb.submitActiveOrder().then(()=>{
+                           navigate('/');
+                       }).catch((err:any)=>{
+                           if ('Invalid Session'===err) {
+                               navigate('/signon/')
+                           } else {
+                               reenableSubmitButton();
+                               const errStr = `Failed submitting order: ${JSON.stringify(err)}`;
+                               console.log(errStr);
+                               alert(errStr);
+                               throw err;
+                           }
+                       });
+                   } else {
+                       reenableSubmitButton();
+                   }
+               });
     }
 
     // Add New Product Order
@@ -109,6 +179,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         navigate('/add_products_order/', pageState);
     };
 
+    ////////////////////////////////////////////////////////
     // Add Donation to order
     const onAddDonation = (event: any)=>{
         event.preventDefault();
@@ -119,54 +190,27 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         navigate('/add_donations/');
     };
 
+    ////////////////////////////////////////////////////////
     // Discard the order and go back to home
     const onDiscardOrder = ()=>{
         orderDb.setActiveOrder();
         navigate('/');
     };
 
+    ////////////////////////////////////////////////////////
     // Check for enabling/disabling submit button
-    const doesSubmitGetEnabled = (/*event: any*/)=>{
-        const amountDue = currency(document.getElementById('orderAmountDue').innerText);
-        const amountPaid = currency(document.getElementById('orderAmountPaid').innerText);
+    const doesSubmitGetEnabled = (/*event: any*/)=>{};
 
-        let isCheckNumGood = true;
-        const checksPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
-        const checksNums = (document.getElementById('formCheckNumbers') as HTMLInputElement).value;
-        if (0.0!==checksPaid.value) {
-            isCheckNumGood = (0!==checksNums.length);
-        }
-        //console.log(`AD: ${amountDue.value} AP: ${amountPaid.value}`);
-
-
-		const isCollectLaterChecked = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
-		const isPaidCompletely = (amountDue.value===amountPaid.value) && isCheckNumGood;
-		const isCollected = isCollectLaterChecked || isPaidCompletely;
-
-        if ( (document.getElementById('formFirstName') as HTMLInputElement).value &&
-             (document.getElementById('formLastName') as HTMLInputElement).value &&
-             (document.getElementById('formPhone') as HTMLInputElement).value &&
-             (document.getElementById('formAddr1') as HTMLInputElement).value &&
-             (document.getElementById('formNeighborhood') as HTMLSelectElement).value &&
-             (currentOrder.products || currentOrder.donation) &&
-             isCollected
-        )
-        {
-            (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = false;
-            return true;
-        } else {
-            (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = true;
-            return false;
-        }
+    ////////////////////////////////////////////////////////
+    //
+    const calcCurrentOrderCost=()=>{
+        let totalCost = currency(0.0);
+        if (currentOrder.donation) { totalCost = totalCost.add(currentOrder.donation); }
+        if (currentOrder.productsCost) { totalCost = totalCost.add(currentOrder.productsCost); }
+        return totalCost;
     };
 
-	const calcCurrentOrderCost=()=>{
-		let totalCost = currency(0.0);
-		if (currentOrder.donation) { totalCost = totalCost.add(currentOrder.donation); }
-		if (currentOrder.productsCost) { totalCost = totalCost.add(currentOrder.productsCost); }
-		return totalCost;
-	};
-
+    ////////////////////////////////////////////////////////
     // Recalculate Total due dynamically based on changes to order status
     const recalculateTotalDue = ()=> {
         const totalDue = calcCurrentOrderCost();
@@ -176,115 +220,117 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         }
     }
 
+    ////////////////////////////////////////////////////////
+    //
     const recalculateTotalPaid = ()=> {
         const [cash, isCashChanged] = moneyFloor((document.getElementById('formCashPaid') as HTMLInputElement).value);
         const [checks, isChecksChanged] = moneyFloor((document.getElementById('formCheckPaid') as HTMLInputElement).value);
 
-		if (isCashChanged) {
-			(document.getElementById('formCashPaid') as HTMLInputElement).value = cash.toString();
-		}
-		if (isChecksChanged) {
-			(document.getElementById('formCheckPaid') as HTMLInputElement).value = checks.toString();
-		}
+        if (isCashChanged) {
+            (document.getElementById('formCashPaid') as HTMLInputElement).value = cash.toString();
+        }
+        if (isChecksChanged) {
+            (document.getElementById('formCheckPaid') as HTMLInputElement).value = checks.toString();
+        }
 
-		const totElm = document.getElementById('orderAmountPaid');
+        const totElm = document.getElementById('orderAmountPaid');
         if (null!==totElm) {
             totElm.innerText = `${USD(cash.add(checks)).format()}`;
-            doesSubmitGetEnabled();
+            //doesSubmitGetEnabled();
         }
 
     }
 
+    ////////////////////////////////////////////////////////
     // Create delivery status buttons
     const populateOrdersList = (): Array<any> => {
 
         const ordersByDeliveryBtns = []
 
-		//  Create the ADD buttons and based on existing order deside visibility
+        //  Create the ADD buttons and based on existing order deside visibility
         // Figure out visibility
-
-		const addExistingOrderButton = (deliveryId: string, deliveryLabel: string, productsCost: currency)=>{
+        const addExistingOrderButton = (deliveryId: string, deliveryLabel: string, productsCost: currency)=>{
             //console.log(`Adding Order Type for DDay: ${deliveryId}`);
-			const foundTag = `found-${deliveryId}`
+            const foundTag = `found-${deliveryId}`
             const orderTotalStr = `${deliveryLabel} Amount: ${USD(productsCost).format()} `;
 
             const onClickHandler = ("donation" === deliveryId)? onAddDonation : onAddOrder;
+            ////////////////////////////////////////////////////////
+            // On Delete Order Re-enable button
+            const onDeleteOrder = (event)=>{
+                event.preventDefault();
+                event.stopPropagation();
 
-			// On Delete Order Re-enable button
-			const onDeleteOrder = (event)=>{
-				event.preventDefault();
-				event.stopPropagation();
+                const deliveryIdToDel = event.currentTarget.dataset.deliveryid;
 
-				const deliveryIdToDel = event.currentTarget.dataset.deliveryid;
+                console.log(`Deleting Order for ${deliveryIdToDel}`);
+                if ('donation' === deliveryIdToDel) {
+                    delete currentOrder.donation;
+                } else {
+                    delete currentOrder.products;
+                    delete currentOrder.productsCost;
+                    delete currentOrder.deliveryId;
+                }
 
-				console.log(`Deleting Order for ${deliveryIdToDel}`);
-				if ('donation' === deliveryIdToDel) {
-					delete currentOrder.donation;
-				} else {
-					delete currentOrder.products;
-					delete currentOrder.productsCost;
-					delete currentOrder.deliveryId;
-				}
+                document.getElementById(foundTag).style.display = "none";
+                if ('donation' === deliveryIdToDel) {
+                    document.getElementById('addDonationBtnLi').style.display = "block";
+                } else {
+                    document.getElementById('addProductBtnLi').style.display = "block";
+                }
 
-				document.getElementById(foundTag).style.display = "none";
-				if ('donation' === deliveryIdToDel) {
-					document.getElementById('addDonationBtnLi').style.display = "block";
-				} else {
-					document.getElementById('addProductBtnLi').style.display = "block";
-				}
-
-				recalculateTotalDue();
-				doesSubmitGetEnabled();
-			}
+                recalculateTotalDue();
+                //doesSubmitGetEnabled();
+            }
 
             ordersByDeliveryBtns.push(
                 <li className="list-group-item" id={foundTag} key={foundTag}>
                     {orderTotalStr}
                     <button className="btn btn-outline-danger mx-1 float-end order-edt-btn"
                             data-deliveryid={deliveryId} onClick={onDeleteOrder}>
-						<svg className="bi" fill="currentColor">
-							<use xlinkHref={trashImg}/>
-						</svg>
+                        <svg className="bi" fill="currentColor">
+                            <use xlinkHref={trashImg}/>
+                        </svg>
                     </button>
                     <button className="btn btn-outline-info float-end order-edt-btn"
                             data-deliveryid={deliveryId} onClick={onClickHandler}>
-						<svg className="bi" fill="currentColor">
-							<use xlinkHref={pencilImg}/>
-						</svg>
+                        <svg className="bi" fill="currentColor">
+                            <use xlinkHref={pencilImg}/>
+                        </svg>
                     </button>
                 </li>
             );
-		};
+        };
 
         //Add the Add Product Button
-		let addProductStyle = {display: 'block'};
-		if(currentOrder.hasOwnProperty('productsCost')) {
-			addProductStyle = {display: 'none'};
-			addExistingOrderButton('product',
-								   frConfig.deliveryDateFromId(currentOrder.deliveryId),
-								   currentOrder.productsCost);
-		}
+        let addProductStyle = {display: 'block'};
+        if(currentOrder.hasOwnProperty('productsCost')) {
+            addProductStyle = {display: 'none'};
+            addExistingOrderButton('product',
+                                   frConfig.deliveryDateFromId(currentOrder.deliveryId),
+                                   currentOrder.productsCost);
+        }
         ordersByDeliveryBtns.push(
             <li className="list-group-item" id="addProductBtnLi" key="addProductBtnLi" style={addProductStyle}>
                 Add Product Order
                 <button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddOrder}>
-					+
+                    +
                 </button>
             </li>
         );
 
         //Add the Add Donation Button
-		let addDonationStyle = {display: 'block'};
-		if(currentOrder.hasOwnProperty('donation')) {
-			addDonationStyle = {display: 'none'};
-			addExistingOrderButton('donation', 'Donation', currentOrder.donation);
+        let addDonationStyle = {display: 'block'};
+        if(currentOrder.hasOwnProperty('donation')) {
+            addDonationStyle = {display: 'none'};
+            addExistingOrderButton('donation', 'Donation', currentOrder.donation);
 
-		}
+        }
         ordersByDeliveryBtns.push(
             <li className="list-group-item" id="addDonationBtnLi" key="addDonationBtnLi" style={addDonationStyle}>
                 Add Donations
                 <button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddDonation}>
-					+
+                    +
                 </button>
             </li>
         );
@@ -308,67 +354,16 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                                 frConfig.neighborhoods()[0];
 
     // Calulate Current amountDue
-	const newTotalDue = calcCurrentOrderCost();
-    const amountDueStr = USD(newTotalDue).format();
-    const amountPaid = currency(currentOrder.checkPaid).add(currentOrder.cashPaid);
-    const amountPaidStr = USD(amountPaid).format();
-	const isCollectedOk = (newTotalDue.value === amountPaid.value) || currentOrder.doCollectMoneyLater;
-	const isChecksPaidOk = (0<currentOrder.checkPaid) ? (undefined!==currentOrder.checkNums) : true;
-    console.log(`Amount Due: ${amountDueStr}  Paid: ${amountPaidStr} ${currentOrder.doCollectMoneyLater}`);
-    console.log(`Collected ${isCollectedOk}  ChecksPaid: ${isChecksPaidOk}`);
-    const areRequiredCurOrderValuesAlreadyPopulated = (
-        currentOrder.firstName &&
-        currentOrder.lastName &&
-        currentOrder.phone &&
-        currentOrder.addr1 &&
-        currentOrder.neighborhood &&
-		isChecksPaidOk &&
-        isCollectedOk);
+    const amountDueStr = USD(calcCurrentOrderCost()).format();
+    const amountPaidStr = USD(currency(currentOrder.checkPaid).add(currentOrder.cashPaid)).format();
 
-
-	// This is if we support city, state, zip
-	/* const stateAbbreviations = [
-	 *     'AL','AK','AS','AZ','AR','CA','CO','CT','DE','DC','FM','FL','GA',
-	 *     'GU','HI','ID','IL','IN','IA','KS','KY','LA','ME','MH','MD','MA',
-	 *     'MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND',
-	 *     'MP','OH','OK','OR','PW','PA','PR','RI','SC','SD','TN','TX','UT',
-	 *     'VT','VI','VA','WA','WV','WI','WY'
-	 * ];
-
-	 * const states=[];
-	 * for (let st of stateAbbreviations) {
-	 *     states.push(<option key={st}>{st}</option>);
-	 * } */
-	/* const wreathInfo = ()=>(
-	 *     return(
-	 *         <Form.Row>
-	 *             <Form.Group as={Col} md="7" controlId="formCity">
-	 *                 <Form.Label>City</Form.Label>
-	 *                 <Form.Control required type="text" placeholder="City" defaultValue={currentOrder.city} />
-	 *             </Form.Group>
-
-	 *             <Form.Group as={Col} md="2" controlId="formState">
-	 *                 <Form.Label>State</Form.Label>
-	 *                 <Form.Control as="select" defaultValue='TX'>
-	 *                     {states}
-	 *                 </Form.Control>
-	 *             </Form.Group>
-
-	 *             <Form.Group as={Col} md="3" controlId="formZip">
-	 *                 <Form.Label>Zip</Form.Label>
-	 *                 <Form.Control type="text" placeholder="Zip" defaultValue={currentOrder.zip} />
-	 *             </Form.Group>
-	 *         </Form.Row>
-	 *     );
-	 * ); */
-
-	const moniedDefaultValue = (formFld: currency|undefined)=>{
-		const fld = currency(formFld);
+    const moniedDefaultValue = (formFld: currency|undefined)=>{
+        const fld = currency(formFld);
         return (0.00===fld.value) ? undefined : fld.toString();
     };
 
     setFormFields(
-        <form onSubmit={onFormSubmission}>
+        <form className="needs-validation" noValidate onSubmit={onFormSubmission}>
 
             <div className="row mb-2 g-2">
                 <div className="form-floating col-md-6">
@@ -429,70 +424,83 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 </div>
             </div>
 
-            <ul className="list-group mb-2 g-2">
-                {ordersByDeliveryBtns}
-            </ul>
-
-            <div className="row mb-2">
-				<div className="col-md-2">
-					<label className="form-check-label" htmlFor="formCollectLater">Collect Later</label>
-					<div className="form-check form-switch">
-						<input className="form-check-input" type="checkbox" id="formCollectLater"
-							   defaultChecked={currentOrder.doCollectMoneyLater} onInput={doesSubmitGetEnabled} />
-
-					</div>
+            <div className="row mb-2 my-2 g-2" style={{display: "contents", border: "0"}}>
+                <div className="form-control" id="productList">
+                    <ul className="list-group">
+                        {ordersByDeliveryBtns}
+                    </ul>
                 </div>
-				<div className="col-md-3">
-                    <label htmlFor="formCashPaid">Total Cash Amount</label>
-                    <div className="input-group">
-                        <div className="input-group-prepend">
-                            <span className="input-group-text">$</span>
-                        </div>
-                        <input className="form-control" type="number" min="0" step="any" autoComplete="fr-new-cust-info"
-                               id="formCashPaid" placeholder="0.00"
-                               onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
-                               defaultValue={moniedDefaultValue(currentOrder.cashPaid)}/>
-                    </div>
-                </div>
-                <div className="col-md-3">
-					<label htmlFor="formCheckPaid">Total Check Amount</label>
-                    <div className="input-group">
-                        <div className="input-group-prepend">
-                            <span className="input-group-text">$</span>
-                        </div>
-                        <input className="form-control" type="number" min="0" step="any" autoComplete="fr-new-cust-info"
-                               id="formCheckPaid" placeholder="0.00"
-                               onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
-                               defaultValue={moniedDefaultValue(currentOrder.checkPaid)}/>
-                    </div>
-                </div>
-                <div className="col-md-4">
-                    <label htmlFor="formCheckNumbers">Enter Check Numbers</label>
-                    <input className="form-control" autoComplete="fr-new-cust-info"
-                           id="formCheckNumbers" placeholder="Enter Check #s"
-                           onInput={doesSubmitGetEnabled} onKeyPress={onCheckNumsKeyPress}
-                           defaultValue={currentOrder.checkNums}/>
+                <div className="invalid-feedback">
+                    *Either a donation or a product order is required
                 </div>
             </div>
 
-            <div className="row mb-2 g-2">
-                <span className="col-md-6">
-                    Total Due: <div id="orderAmountDue" style={{display: "inline"}}>{amountDueStr}</div>
-                </span>
-                <span className="col-md-6 g2" aria-describedby="orderAmountPaidHelp">
-                    Total Paid: <div id="orderAmountPaid" style={{display: "inline"}}>{amountPaidStr}</div>
-                    <small id="orderAmountPaidHelp" className="form-text text-muted">*Must match total due</small>
-                </span>
+            <div className="mb-2 my-2 g-2 form-control" style={{display: "flex"}} id="totalsFormRow">
+                <div className="row">
+                    <div className="col-md-2">
+                        <label className="form-check-label" htmlFor="formCollectLater">Collect Later</label>
+                        <div className="form-check form-switch">
+                            <input className="form-check-input" type="checkbox" id="formCollectLater"
+                                   defaultChecked={currentOrder.doCollectMoneyLater} onInput={doesSubmitGetEnabled} />
+
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <label htmlFor="formCashPaid">Total Cash Amount</label>
+                        <div className="input-group">
+                            <div className="input-group-prepend">
+                                <span className="input-group-text">$</span>
+                            </div>
+                            <input className="form-control" type="number" min="0" step="any" autoComplete="fr-new-cust-info"
+                                   id="formCashPaid" placeholder="0.00"
+                                   onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
+                                   defaultValue={moniedDefaultValue(currentOrder.cashPaid)}/>
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <label htmlFor="formCheckPaid">Total Check Amount</label>
+                        <div className="input-group">
+                            <div className="input-group-prepend">
+                                <span className="input-group-text">$</span>
+                            </div>
+                            <input className="form-control" type="number" min="0" step="any" autoComplete="fr-new-cust-info"
+                                   id="formCheckPaid" placeholder="0.00"
+                                   onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
+                                   defaultValue={moniedDefaultValue(currentOrder.checkPaid)}/>
+                        </div>
+                    </div>
+                    <div className="col-md-4">
+                        <label htmlFor="formCheckNumbers">Enter Check Numbers</label>
+                        <input className="form-control" autoComplete="fr-new-cust-info"
+                               id="formCheckNumbers" placeholder="Enter Check #s"
+                               onInput={doesSubmitGetEnabled} onKeyPress={onCheckNumsKeyPress}
+                               defaultValue={currentOrder.checkNums}/>
+                    </div>
+
+
+                    <div className="row mb-2 my-2 g-2">
+                        <span className="col-md-6">
+                            Total Due: <div id="orderAmountDue" style={{display: "inline"}}>{amountDueStr}</div>
+                        </span>
+                        <span className="col-md-6 g-2" aria-describedby="orderAmountPaidHelp">
+                            Total Paid: <div id="orderAmountPaid" style={{display: "inline"}}>{amountPaidStr}</div>
+                        </span>
+                    </div>
+                </div>
             </div>
+            <div className="invalid-feedback">
+                *Must match total due
+            </div>
+
 
             <div className="pt-4">
                 <button type="button" className="btn btn-primary" id="formOrderCancel" onClick={onDiscardOrder}>
                     Cancel
                 </button>
                 <button type="submit" className="btn btn-primary float-end"
-                        id="formOrderSubmit" disabled={!areRequiredCurOrderValuesAlreadyPopulated}>
-					<span className="spinner-border spinner-border-sm me-1" role="status"
-						  aria-hidden="true" id="formOrderSubmitSpinner" style={{display: "none"}} />
+                        id="formOrderSubmit">
+                    <span className="spinner-border spinner-border-sm me-1" role="status"
+                          aria-hidden="true" id="formOrderSubmitSpinner" style={{display: "none"}} />
                     Submit
                 </button>
             </div>
@@ -544,7 +552,7 @@ export default (params: any)=>{
     return (
         <div>
             <NavBar/>
-            <div className="col-xs-1 d-flex justify-content-center">
+            <div className="col-xs-1 justify-content-center">
                 <div className="card">
                     <div className="card-body">
                         <h5 className="card-title">Customer Information</h5>

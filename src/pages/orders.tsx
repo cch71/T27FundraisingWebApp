@@ -608,12 +608,12 @@ export default function orders() {
 	const [deleteDlg, setDeleteDlg] = useState();
 	const [settingsDlg, setReportSettingsDlg] = useState();
     useEffect(() => {
-		const frConfig = getFundraiserConfig();
-		setCardBody(genCardBody(frConfig));
-		setDeleteDlg(genDeleteDlg());
-		setReportSettingsDlg(genReportSettingsDlg());
+		    const frConfig = getFundraiserConfig();
+		    setCardBody(genCardBody(frConfig));
+		    setDeleteDlg(genDeleteDlg());
+		    setReportSettingsDlg(genReportSettingsDlg());
 
-		showTheSelectedView(frConfig);
+		    showTheSelectedView(frConfig);
 
     }, []);
 

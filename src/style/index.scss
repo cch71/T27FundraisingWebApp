@@ -61,6 +61,17 @@ html {
       }
   }
 
+
+  #productList {
+      padding: 0;
+      border-style: hidden;
+  }
+
+  #productList.is-invalid {
+      padding-right: 2rem;
+      border-style: solid;
+  }
+  
   #cardReportBoday {
 	  padding: 0;
   }
