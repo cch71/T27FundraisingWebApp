@@ -12,7 +12,8 @@ class Order {
     readonly orderId: string;
     totalAmt: currency;
 
-	isValidated?: boolean;
+    isReadOnly?: boolean;
+    isValidated?: boolean;
     doDeleteOrder?: boolean;
     orderOwner?: string;
     firstName?: string;
@@ -27,11 +28,11 @@ class Order {
     specialInstructions?: string;
     neighborhood?: string;
     products?: Record<string, number>;
-	donation?: currency;
+    donation?: currency;
     cashPaid?: currency;
     checkPaid?: currency;
     checkNums?: string;
-	doCollectMoneyLater?: boolean;
+    doCollectMoneyLater?: boolean;
 
     constructor(order?: any) {
         if (!order) {
@@ -84,49 +85,49 @@ interface OrderListItem<T> {
 /////////////////////////////////////////////
 //
 interface LeaderBoardUserSummary {
-	amountSold: number;
-	orderOwner: string;
-	donation?: number;
-	spreading?: number;
-	bags?: number;
+    amountSold: number;
+    orderOwner: string;
+    donation?: number;
+    spreading?: number;
+    bags?: number;
 }
 
 /////////////////////////////////////////////
 //
 class LeaderBoardSummaryInfo {
     constructor(private summaryResp_: any, private userId_: string)
-	{}
+    {}
 
-	userId(): string { return this.userId_; }
+    userId(): string { return this.userId_; }
     troopAmountSold(): currency {
-		return currency(this.summaryResp_.troop?.amountSold);
-	}
+        return currency(this.summaryResp_.troop?.amountSold);
+    }
     userSummary(): LeaderBoardUserSummary {
-		for (const user_summary of this.summaryResp_.users) {
-			if (this.userId() === user_summary.orderOwner) {
-				user_summary.amountSold = currency(user_summary.amountSold);
-				if (user_summary.donation) {
-					user_summary.donation = currency(user_summary.donation);
-				}
-				return user_summary;
-			}
-		}
-		const defaultVal = {
-			amountSold: currency(0),
-			orderOwner: "",
-			donation: currency(0),
-		};
+        for (const user_summary of this.summaryResp_.users) {
+            if (this.userId() === user_summary.orderOwner) {
+                user_summary.amountSold = currency(user_summary.amountSold);
+                if (user_summary.donation) {
+                    user_summary.donation = currency(user_summary.donation);
+                }
+                return user_summary;
+            }
+        }
+        const defaultVal = {
+            amountSold: currency(0),
+            orderOwner: "",
+            donation: currency(0),
+        };
 
-		defaultVal['bags'] = 0;
-		defaultVal['spreading'] = 0;
-		return defaultVal;
-	}
+        defaultVal['bags'] = 0;
+        defaultVal['spreading'] = 0;
+        return defaultVal;
+    }
     *topSellers(): Generator<[number, string, string]> {
-		const users = this.summaryResp_.users;
-		//console.log(`Sum Resp: ${JSON.stringify(this.summaryResp_, null, '\t')}`);
-		for (let idx=0; idx < users.length; ++idx) {
-			yield [idx+1, users[idx].orderOwner, currency(users[idx].amountSold)]
-		}
+        const users = this.summaryResp_.users;
+        //console.log(`Sum Resp: ${JSON.stringify(this.summaryResp_, null, '\t')}`);
+        for (let idx=0; idx < users.length; ++idx) {
+            yield [idx+1, users[idx].orderOwner, currency(users[idx].amountSold)]
+        }
     }
 
     *patrolRankings(): Generator<[string, currency]> {
@@ -147,8 +148,11 @@ class OrderDb {
 
     /////////////////////////////////////////
     //
-    setActiveOrder(order?: Order) {
+    setActiveOrder(order?: Order, isReadOnly?: boolean) {
         this.currentOrder_ = order;
+        if (order) {
+            this.currentOrder_.isReadOnly = isReadOnly;
+        }
     }
 
     /////////////////////////////////////////
@@ -168,39 +172,39 @@ class OrderDb {
     //
     // Todo need to define summary type
     getOrderSummary(): Promise<LeaderBoardSummaryInfo>  {
-		return new Promise(async (resolve, reject)=>{
-			try {
-				const userId = auth.currentUser().getUsername();
-				const authToken = await auth.getAuthToken();
+        return new Promise(async (resolve, reject)=>{
+            try {
+                const userId = auth.currentUser().getUsername();
+                const authToken = await auth.getAuthToken();
 
-				//console.log(`OrderDB Query Parms: ${paramStr}`);
-				const resp = await fetch(awsConfig.api.invokeUrl + '/leaderboard', {
-					method: 'post',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: authToken
-					}
-				});
+                //console.log(`OrderDB Query Parms: ${paramStr}`);
+                const resp = await fetch(awsConfig.api.invokeUrl + '/leaderboard', {
+                    method: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: authToken
+                    }
+                });
 
-				if (!resp.ok) { // if HTTP-status is 200-299
-					const errRespBody = await resp.text();
-					throw new Error(`LeaderBoard Req error: ${resp.status}  ${errRespBody}`);
-				} else {
-					const summaryInfo = await resp.json();
-					//console.log(`SummaryInfo: ${JSON.stringify(summaryInfo, null, '\t')}`)
-					resolve(new LeaderBoardSummaryInfo(summaryInfo, userId));
-				}
+                if (!resp.ok) { // if HTTP-status is 200-299
+                    const errRespBody = await resp.text();
+                    throw new Error(`LeaderBoard Req error: ${resp.status}  ${errRespBody}`);
+                } else {
+                    const summaryInfo = await resp.json();
+                    //console.log(`SummaryInfo: ${JSON.stringify(summaryInfo, null, '\t')}`)
+                    resolve(new LeaderBoardSummaryInfo(summaryInfo, userId));
+                }
 
-			} catch(error) {
-				console.error(error);
-				const leaderboardDefault = {
-					'patrols': {},
-					'troop': {},
-					'users': []
-				};
-				resolve(new LeaderBoardSummaryInfo(leaderboardDefault, userId));
-			}
-		});
+            } catch(error) {
+                console.error(error);
+                const leaderboardDefault = {
+                    'patrols': {},
+                    'troop': {},
+                    'users': []
+                };
+                resolve(new LeaderBoardSummaryInfo(leaderboardDefault, userId));
+            }
+        });
     }
 
     /////////////////////////////////////////
@@ -328,12 +332,12 @@ class OrderDb {
     query(params: any|undefined): Promise<Array<any>> {
         return new Promise(async (resolve, reject)=>{
             try {
-				if (!params) { params = {}; }
+                if (!params) { params = {}; }
                 const authToken = await auth.getAuthToken()
 
-				if (!params.hasOwnProperty('orderOwner')) {
-					params['orderOwner'] = auth.currentUser().getUsername();
-				}
+                if (!params.hasOwnProperty('orderOwner')) {
+                    params['orderOwner'] = auth.currentUser().getUsername();
+                }
                 const paramStr = JSON.stringify(params);
                 //console.log(`OrderDB Query Parms: ${paramStr}`);
                 const resp = await fetch(awsConfig.api.invokeUrl + '/queryorders', {

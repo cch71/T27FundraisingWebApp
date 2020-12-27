@@ -10,6 +10,8 @@ import {onCurrencyFieldKeyPress, onCheckNumsKeyPress, moneyFloor} from "../js/ut
 import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
 const trashImg = bootstrapIconSprite + "#trash";
 const pencilImg = bootstrapIconSprite + "#pencil";
+const eyeImg = bootstrapIconSprite + "#eye";
+
 //const addToOrderImg = bootstrapIconSprite + "#plus-square";
 
 
@@ -198,10 +200,6 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     };
 
     ////////////////////////////////////////////////////////
-    // Check for enabling/disabling submit button
-    const doesSubmitGetEnabled = (/*event: any*/)=>{};
-
-    ////////////////////////////////////////////////////////
     //
     const calcCurrentOrderCost=()=>{
         let totalCost = currency(0.0);
@@ -236,7 +234,6 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         const totElm = document.getElementById('orderAmountPaid');
         if (null!==totElm) {
             totElm.innerText = `${USD(cash.add(checks)).format()}`;
-            //doesSubmitGetEnabled();
         }
 
     }
@@ -280,26 +277,33 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 }
 
                 recalculateTotalDue();
-                //doesSubmitGetEnabled();
             }
 
-            ordersByDeliveryBtns.push(
-                <li className="list-group-item" id={foundTag} key={foundTag}>
-                    {orderTotalStr}
-                    <button className="btn btn-outline-danger mx-1 float-end order-edt-btn"
-                            data-deliveryid={deliveryId} onClick={onDeleteOrder}>
-                        <svg className="bi" fill="currentColor">
-                            <use xlinkHref={trashImg}/>
-                        </svg>
-                    </button>
-                    <button className="btn btn-outline-info float-end order-edt-btn"
-                            data-deliveryid={deliveryId} onClick={onClickHandler}>
-                        <svg className="bi" fill="currentColor">
-                            <use xlinkHref={pencilImg}/>
-                        </svg>
-                    </button>
-                </li>
-            );
+            if (currentOrder.isReadOnly) {
+                ordersByDeliveryBtns.push(
+                    <li className="list-group-item" id={foundTag} key={foundTag}>
+                        {orderTotalStr}
+                        <button className="btn btn-outline-info float-end order-edt-btn"
+                                data-deliveryid={deliveryId} onClick={onClickHandler}>
+                            <svg className="bi" fill="currentColor"><use xlinkHref={eyeImg}/></svg>
+                        </button>
+                    </li>
+                );
+            } else {
+                ordersByDeliveryBtns.push(
+                    <li className="list-group-item" id={foundTag} key={foundTag}>
+                        {orderTotalStr}
+                        <button className="btn btn-outline-danger mx-1 float-end order-del-btn"
+                                data-deliveryid={deliveryId} onClick={onDeleteOrder}>
+                            <svg className="bi" fill="currentColor"><use xlinkHref={trashImg}/></svg>
+                        </button>
+                        <button className="btn btn-outline-info float-end order-edt-btn"
+                                data-deliveryid={deliveryId} onClick={onClickHandler}>
+                            <svg className="bi" fill="currentColor"><use xlinkHref={pencilImg}/></svg>
+                        </button>
+                    </li>
+                );
+            }
         };
 
         //Add the Add Product Button
@@ -369,13 +373,13 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 <div className="form-floating col-md-6">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formFirstName"
                            placeholder="First Name" required
-                           defaultValue={currentOrder.firstName} onInput={doesSubmitGetEnabled}/>
+                           defaultValue={currentOrder.firstName} />
                     <label htmlFor="formFirstName">First Name<small className="form-text text-muted ps-1">*required</small></label>
                 </div>
                 <div className="form-floating col-md-6">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formLastName"
                            placeholder="Last Name" required
-                           defaultValue={currentOrder.lastName} onInput={doesSubmitGetEnabled} />
+                           defaultValue={currentOrder.lastName}  />
                     <label htmlFor="formLastName">Last Name<small className="form-text text-muted ps-1">*required</small></label>
                 </div>
             </div>
@@ -384,7 +388,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 <div className="form-floating col-md-6">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formAddr1"
                            placeholder="Address 1" required
-                           defaultValue={currentOrder.addr1} onInput={doesSubmitGetEnabled} />
+                           defaultValue={currentOrder.addr1}  />
                     <label htmlFor="formAddr1">Address 1<small className="form-text text-muted ps-1">*required</small></label>
                 </div>
                 <div className="form-floating col-md-6">
@@ -406,7 +410,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 <div className="form-floating col-md-4">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formPhone"
                            placeholder="Phone" required
-                           defaultValue={currentOrder.phone} onInput={doesSubmitGetEnabled} />
+                           defaultValue={currentOrder.phone}  />
                     <label htmlFor="formPhone">Phone<small className="form-text text-muted ps-1">*required</small></label>
                 </div>
                 <div className="form-floating col-md-4">
@@ -441,7 +445,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                         <label className="form-check-label" htmlFor="formCollectLater">Collect Later</label>
                         <div className="form-check form-switch">
                             <input className="form-check-input" type="checkbox" id="formCollectLater"
-                                   defaultChecked={currentOrder.doCollectMoneyLater} onInput={doesSubmitGetEnabled} />
+                                   defaultChecked={currentOrder.doCollectMoneyLater}  />
 
                         </div>
                     </div>
@@ -473,7 +477,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                         <label htmlFor="formCheckNumbers">Enter Check Numbers</label>
                         <input className="form-control" autoComplete="fr-new-cust-info"
                                id="formCheckNumbers" placeholder="Enter Check #s"
-                               onInput={doesSubmitGetEnabled} onKeyPress={onCheckNumsKeyPress}
+                                onKeyPress={onCheckNumsKeyPress}
                                defaultValue={currentOrder.checkNums}/>
                     </div>
 
@@ -514,6 +518,13 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
 export default (params: any)=>{
 
+    const setFormReadOnly = ()=>{
+        const submitBtn = (document.getElementById('formOrderSubmit') as HTMLButtonElement);
+        if (submitBtn) {
+            submitBtn.classList.add('invisible');
+        }
+    };
+    
     // Calculate Initial total due and amount paid from orders at page load time
     const [formFields, setFormFields] = useState();
     useEffect(() => {
@@ -521,11 +532,14 @@ export default (params: any)=>{
         if (undefined===order) {
             const dbOrderId = params?.location?.state?.editOrderId;
             if (dbOrderId) {
+                const isReadOnly = params?.location?.state?.isOrderReadOnly;
+
                 orderDb.getOrderFromId(dbOrderId).then((order: Order|undefined)=>{
                     console.log(`Returned Order: ${JSON.stringify(order)}`);
                     if (order) {
-                        orderDb.setActiveOrder(order);
+                        orderDb.setActiveOrder(order, isReadOnly);
                         populateForm(order, setFormFields);
+                        if (order.isReadOnly) { setFormReadOnly(); }
                     } else {
                         alert(`Order: ${dbOrderId} could not be retrieved`);
                         navigate('/orders/');
@@ -546,7 +560,12 @@ export default (params: any)=>{
             }
         } else {
             populateForm(order, setFormFields);
+            setTimeout(()=>{
+                if (order.isReadOnly) { setFormReadOnly(); }
+            }, 10);
         }
+
+        
     }, [])
 
     return (

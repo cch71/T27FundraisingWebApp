@@ -32,11 +32,11 @@ interface FundraiserConfigBase {
 class FundraiserConfig {
     private readonly loadedFrConfig_: FundraiserConfigBase;
     private readonly loadedPatrolMap_: any;
-	private deliveryMap_: Record<string, string>|null = null;
+    private deliveryMap_: Record<string, string>|null = null;
 
     /////////////////////////////////////////
     //
-    constructor(dlFrConfig: FundraiserConfigBase|undefined, dlPatrolMap: any|undefined) {
+    constructor(dlFrConfig?: FundraiserConfigBase, dlPatrolMap?: any) {
         const getConfig = (): FundraiserConfigBase => {
             if (!dlFrConfig) {
                 if (typeof window === 'undefined')  {
@@ -61,9 +61,9 @@ class FundraiserConfig {
             }
         };
 
-		const getPatrolMap = ():any => {
-			if (!dlPatrolMap) {
-				if (typeof window === 'undefined')  { return {}; }
+        const getPatrolMap = ():any => {
+            if (!dlPatrolMap) {
+                if (typeof window === 'undefined')  { return {}; }
                 let sessionPatrolMap = window.sessionStorage.getItem('patrolMap');
                 if (sessionPatrolMap) {
                     console.log('Loading patrolMap from session');
@@ -72,13 +72,13 @@ class FundraiserConfig {
                     console.error("Failed to load Session Patrol Map");
                     throw new Error("Failed to load Session Fundraiser Patrol Map");
                 }
-			} else {
-				return dlPatrolMap;
-			}
-		};
+            } else {
+                return dlPatrolMap;
+            }
+        };
 
         this.loadedFrConfig_ = getConfig();
-		this.loadedPatrolMap_ = getPatrolMap();
+        this.loadedPatrolMap_ = getPatrolMap();
     }
 
     /////////////////////////////////////////
@@ -93,18 +93,18 @@ class FundraiserConfig {
     //
     neighborhoods(): Array<string> { return this.loadedFrConfig_.neighborhoods; }
 
-	/////////////////////////////////////////
+    /////////////////////////////////////////
     //
     getUserNameFromId(uid: string): string {
-		for (const [patrolName, names] of  Object.entries(this.loadedPatrolMap_)) {
-			if (names.hasOwnProperty(uid)) {
-				return names[uid]['name']
-			}
-		}
-		return "Unknown";
-	}
+        for (const [patrolName, names] of  Object.entries(this.loadedPatrolMap_)) {
+            if (names.hasOwnProperty(uid)) {
+                return names[uid]['name']
+            }
+        }
+        return "Unknown";
+    }
 
-	/////////////////////////////////////////
+    /////////////////////////////////////////
     //)/*: Generator<>*/
     *products(): Generator<Product> {
         const oldProds = this.loadedFrConfig_.products;
@@ -116,11 +116,44 @@ class FundraiserConfig {
         }
     }
 
+    /////////////////////////////////////////
+    //
+    private loadDeliveryMap() {
+        if(null===this.deliveryMap_) {
+            this.deliveryMap_ = {};
+            for (const deliveryDate of this.loadedFrConfig_.deliveryDates) {
+                this.deliveryMap_[deliveryDate.id] = deliveryDate.date;
+            }
+        }
+    }
+    
+    /////////////////////////////////////////
+    //
+    isEditableDeliveryDate(id?: string): boolean {
+        if (!id) { return true; }
+        this.loadDeliveryMap();
+        const deliveryEntry = this.deliveryMap_[id];
+        try {
+            const deliveryDate = Date.parse(deliveryEntry.date);
+            const nowDate = Date.now();
+            if (nowDate >= deliveryDate) { return false; }                
 
+            if (deliveryEntry.disabledDate) {
+                const disabledDate = Date.parse(deliveryEntry.disabledDate);
+                if (nowDate >= disabledDate) {
+                    return false;
+                }
+            }
+            
+        }catch(err) {
+            console.error(`Failed handling valid delivery date ${err}`);
+        }
+        return true;
+    }
+    
     /////////////////////////////////////////
     // return [id, date]
     *validDeliveryDates(): IterableIterator<[string,string]> {
-
         for (let deliveryDate of this.loadedFrConfig_.deliveryDates) {
             //if delivery date < disabledDate
             yield [deliveryDate.id, deliveryDate.date];
@@ -131,14 +164,9 @@ class FundraiserConfig {
     /////////////////////////////////////////
     //
     deliveryDateFromId(id: string): string {
-		if(null===this.deliveryMap_) {
-			this.deliveryMap_ = {};
-			for (const deliveryDate of this.loadedFrConfig_.deliveryDates) {
-				this.deliveryMap_[deliveryDate.id] = deliveryDate.date;
-			}
-		}
-		return this.deliveryMap_[id];
-	}
+        this.loadDeliveryMap();
+        return this.deliveryMap_[id];
+    }
 
     /////////////////////////////////////////
     //
@@ -158,7 +186,7 @@ let frConfig: FundraiserConfig|null = null;
 function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig | null> {
     return new Promise(async (resolve, reject)=>{
         try {
-			console.log("Downloading Fundraiser Configs");
+            console.log("Downloading Fundraiser Configs");
             const getConfigPromise = fetch(awsConfig.api.invokeUrl + '/getconfig', {
                 method: 'post',
                 headers: {
@@ -175,18 +203,18 @@ function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig |
                 }
             });
 
-			const [frConfigResp, patrolMapResp] = await Promise.all([getConfigPromise, patrolMapPromise]);
+            const [frConfigResp, patrolMapResp] = await Promise.all([getConfigPromise, patrolMapPromise]);
 
             if (!frConfigResp.ok) { // if HTTP-status is 200-299
                 alert("HTTP Fundraiser Config Resp Error: " + frConfigResp.status);
                 reject(null);
-			} else if(!patrolMapResp.ok) {
+            } else if(!patrolMapResp.ok) {
                 alert("HTTP Fundraiser PatrolMap Resp Error: " + patrolMapResp.status);
                 reject(null);
             } else {
                 const loadedFrConfig: FundraiserConfigBase = await frConfigResp.json();
                 console.log(`Fundraiser Config: ${JSON.stringify(loadedFrConfig)}`);
-				const loadedPatrolMap: any = await patrolMapResp.json();
+                const loadedPatrolMap: any = await patrolMapResp.json();
                 //console.log(`Patrol Map: ${JSON.stringify(loadedPatrolMap)}`);
 
                 window.sessionStorage.setItem('frConfig', JSON.stringify(loadedFrConfig));
@@ -206,7 +234,7 @@ function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig |
 //
 function getFundraiserConfig(): FundraiserConfig {
     if (null===frConfig) {
-		console.log("Loading Default Config");
+        console.log("Loading Default Config");
         return new FundraiserConfig();
     }
     return frConfig;

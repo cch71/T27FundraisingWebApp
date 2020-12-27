@@ -73,6 +73,7 @@ export default function addDonation() {
                     Cancel
                 </button>
                 <button type="submit" className="btn btn-primary my-2 float-end"
+                        style={{display: ((currentOrder.isReadOnly)?"none":"block")}}
                         disabled={undefined===donationAmt} id="formDonationSubmit">
                     Add
                 </button>

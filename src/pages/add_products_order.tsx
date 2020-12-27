@@ -139,7 +139,9 @@ export default (params: any) => {
                         <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn btn-primary my-2 float-end">
+                        <button type="submit" className="btn btn-primary my-2 float-end"
+                                style={{display: ((currentOrder.isReadOnly)?"none":"block")}}
+                        >
                             Add
                         </button>
                     </form>
