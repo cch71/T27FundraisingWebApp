@@ -117,10 +117,14 @@ class ReportViews {
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const orderId = row.data()[0];
+            const orderOwner = row.data()[1];
 
             console.log(`Editing order for ${orderId}`);
             orderDb.setActiveOrder(); // Reset active order to let order edit for set it
-            navigate('/order_step_1/', {state: {editOrderId: orderId}});
+            navigate('/order_step_1/', {state: {
+                editOrderId: orderId,
+                editOrderOwner: orderOwner
+            }});
         });
 
         // Handle on View Scenario

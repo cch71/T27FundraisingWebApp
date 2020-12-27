@@ -530,10 +530,11 @@ export default (params: any)=>{
         const order = orderDb.getActiveOrder();
         if (undefined===order) {
             const dbOrderId = params?.location?.state?.editOrderId;
+            const dbOrderOwner = params?.location?.state?.editOrderOwner;
             if (dbOrderId) {
                 const isReadOnly = params?.location?.state?.isOrderReadOnly;
 
-                orderDb.getOrderFromId(dbOrderId).then((order: Order|undefined)=>{
+                orderDb.getOrderFromId(dbOrderId, dbOrderOwner).then((order?: Order)=>{
                     console.log(`Returned Order: ${JSON.stringify(order)}`);
                     if (order) {
                         orderDb.setActiveOrder(order, isReadOnly);

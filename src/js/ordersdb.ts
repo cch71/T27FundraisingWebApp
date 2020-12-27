@@ -209,9 +209,11 @@ class OrderDb {
 
     /////////////////////////////////////////
     //
-    getOrderFromId(orderId: string): Promise<Order|undefined> {
+    getOrderFromId(orderId: string, orderOwner?: string): Promise<Order|undefined> {
         return new Promise((resolve)=>{
-            this.query({orderId: orderId}).then((orders: Array<any>)=>{
+            let params = { orderId: orderId };
+            if (orderOwner) { params['orderOwner'] = orderOwner}
+            this.query(params).then((orders: Array<any>)=>{
                 if (orders.length) {
                     const order = orders[0];
                     //console.log(`OrdersDB OrderFromId Found: ${JSON.stringify(order)}`);
@@ -290,7 +292,10 @@ class OrderDb {
                 try {
                     auth.getAuthToken().then(async (authToken: string)=>{
 
-                        this.currentOrder_['orderOwner'] = auth.currentUser().getUsername();
+                        if (!this.currentOrder_.orderOwner) {
+                            this.currentOrder_['orderOwner'] = auth.currentUser().getUsername();
+                        }
+
                         const paramStr = JSON.stringify(this.currentOrder_);
                         //console.log(`Updating Order: ${paramStr}`);
                         const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
