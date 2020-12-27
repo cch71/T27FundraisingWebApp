@@ -14,9 +14,11 @@ const pencilImg = bootstrapIconSprite + "#pencil";
 const eyeImg = bootstrapIconSprite + "#eye";
 const exportImg = bootstrapIconSprite + "#cloud-download";
 const reportSettingsImg = bootstrapIconSprite + "#gear";
+const spreadImg = bootstrapIconSprite + "#layout-wtf";
 
 const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
-const dlgIdRoot = 'reportViewSettingsDlg';
+const rprtStngDlgRt = 'reportViewSettingsDlg';
+const spreadingDlgRt = 'spreadingDlg';
 let reportSettingsDlg = undefined;
 
 
@@ -78,23 +80,29 @@ class ReportViews {
     ////////////////////////////////////////////////////////////////////
     //
     private getActionButtons(order: any, frConfig: FundraiserConfig) {
+        
+        let htmlStr = `<div style="float: right">`;
+
+        if (('mulch' === frConfig.kind()) && order.products?.spreading) {
+            htmlStr +=
+                `<button type="button" class="btn btn-outline-info me-1 order-spread-btn">` +
+                `<svg class="bi" fill="currentColor"><use xlink:href="${spreadImg}" /></svg></button>`;
+        }
+        
         if (frConfig.isEditableDeliveryDate(order.deliveryId)) {
-            return(
-                `<div>` +
+            htmlStr +=
                 `<button type="button" class="btn btn-outline-info me-1 order-edt-btn">` +
                 `<svg class="bi" fill="currentColor"><use xlink:href="${pencilImg}" /></svg></button>` +
                 `<button type="button" class="btn btn-outline-danger order-del-btn">` +
-                `<svg class="bi" fill="currentColor"><use xlink:href="${trashImg}" /></svg></button>` +
-                `</div>`
-            );
+                `<svg class="bi" fill="currentColor"><use xlink:href="${trashImg}" /></svg></button>`;
+        } else {
+            htmlStr +=
+                `<button type="button" class="btn btn-outline-info me-1 order-view-btn">` +
+                `<svg class="bi" fill="currentColor"><use xlink:href="${eyeImg}" /></svg></button>`;
         }
 
-        return(
-            `<div>` +
-            `<button type="button" class="btn btn-outline-info me-1 order-view-btn">` +
-            `<svg class="bi" fill="currentColor"><use xlink:href="${eyeImg}" /></svg></button>` +
-            `</div>`
-        );
+        htmlStr += `</div>`;
+        return htmlStr;
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -120,6 +128,21 @@ class ReportViews {
             console.log(`View order for ${orderId}`);
             orderDb.setActiveOrder(); // Reset active order to let order edit for set it
             navigate('/order_step_1/', {state: {editOrderId: orderId, isOrderReadOnly: true}});
+        });
+
+        // Handle on View Scenario
+        jQuery('#orderListTable').find('.order-spread-btn').on('click', (event: any)=>{
+            const parentTr = jQuery(event.currentTarget).parents('tr');
+            const row = this.currentDataTable_.row(parentTr);
+            const orderId = row.data()[0];
+            console.log(`Spreading Dlg order for ${orderId}`);
+            const dlgElm = document.getElementById(spreadingDlgRt);
+            const spreadOrderDlg = new bs.Modal(dlgElm, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            spreadOrderDlg.show();
         });
 
         // Handle On Delete Scenario
@@ -198,7 +221,7 @@ class ReportViews {
             orderDataItem.push(deliveryDate);
 
             if ('mulch' === frConfig.kind()) {
-                orderDataItem.push((order.products?.spreading?"Yes":"No"));
+                orderDataItem.push((order.products?.spreading?order.products.spreading:''));
             }
 
             orderDataItem.push(this.getActionButtons(order, frConfig));
@@ -439,7 +462,8 @@ const genDeleteDlg = ()=>{
                         <button type="button" disabled className="btn btn-primary" id="deleteDlgBtn">
                             Delete Order
                         </button>
-                        <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" className="btn btn-secondary"
+                                data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -447,13 +471,14 @@ const genDeleteDlg = ()=>{
     );
 };
 
+
 ////////////////////////////////////////////////////////////////////
 //
 const showTheSelectedView = (frConfig: FundraiserConfig, isAdmin: boolean) => {
 
     const showView = ()=>{
-        const userSelElm = document.getElementById(`${dlgIdRoot}UserSelection`);
-        const viewSelElm = document.getElementById(`${dlgIdRoot}ViewSelection`);
+        const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
+        const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
 
         //Update the selected view label
         const selectedUser = userSelElm.options[userSelElm.selectedIndex].text;
@@ -468,7 +493,7 @@ const showTheSelectedView = (frConfig: FundraiserConfig, isAdmin: boolean) => {
     };
 
     // Check to see if initialized
-    if (!document.getElementById(`${dlgIdRoot}UserSelection`)) {
+    if (!document.getElementById(`${rprtStngDlgRt}UserSelection`)) {
         const genOption = (label, val)=>{
             const option = document.createElement("option");
             option.text = label;
@@ -479,14 +504,14 @@ const showTheSelectedView = (frConfig: FundraiserConfig, isAdmin: boolean) => {
         };
 
         auth.getUserIdAndGroups().then(([_, userGroups])=>{
-            const userSelElm = document.getElementById(`${dlgIdRoot}UserSelection`);
-            const viewSelElm = document.getElementById(`${dlgIdRoot}ViewSelection`);
+            const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
+            const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
             if (userGroups && userGroups.includes("FrAdmins")) {
                 console.log("This user is an admin");
-                document.getElementById(`${dlgIdRoot}UserSelectionCol`).style.display = "inline-block";
+                document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "inline-block";
             } else {
                 const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
-                document.getElementById(`${dlgIdRoot}UserSelectionCol`).style.display = "none";
+                document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "none";
 
                 userSelElm.add(genOption(fullName, auth.getCurrentUserId()));
                 userSelElm.selectedIndex = 0;
@@ -508,12 +533,12 @@ const showTheSelectedView = (frConfig: FundraiserConfig, isAdmin: boolean) => {
 //
 const genReportSettingsDlg = ()=>{
     return(
-        <div className="modal fade" id={dlgIdRoot}
-             tabIndex="-1" role="dialog" aria-labelledby={dlgIdRoot + "Title"} aria-hidden="true">
+        <div className="modal fade" id={rprtStngDlgRt}
+             tabIndex="-1" role="dialog" aria-labelledby={rprtStngDlgRt + "Title"} aria-hidden="true">
             <div className="modal-dialog modal-dialog-centered" role="document">
                 <div className="modal-content">
                     <div className="modal-header">
-                        <h5 className="modal-title" id={dlgIdRoot + "LongTitle"}>
+                        <h5 className="modal-title" id={rprtStngDlgRt + "LongTitle"}>
                             Switch report view settings
                         </h5>
                         <button type="button" className="close" data-bs-dismiss="modal" aria-label="Close">
@@ -525,16 +550,16 @@ const genReportSettingsDlg = ()=>{
                             <div className="row">
                                 <div className="col-sm">
                                     <div className="form-floating">
-                                        <select className="form-control" id={dlgIdRoot+"ViewSelection"}/>
-                                        <label htmlFor={dlgIdRoot+"ViewSelection"}>
+                                        <select className="form-control" id={rprtStngDlgRt+"ViewSelection"}/>
+                                        <label htmlFor={rprtStngDlgRt+"ViewSelection"}>
                                             Select Report View
                                         </label>
                                     </div>
                                 </div>
-                                <div className="col-sm" id={dlgIdRoot+"UserSelectionCol"}>
+                                <div className="col-sm" id={rprtStngDlgRt+"UserSelectionCol"}>
                                     <div className="form-floating">
-                                        <select className="form-control" id={dlgIdRoot+"UserSelection"}/>
-                                        <label htmlFor={dlgIdRoot+"UserSelection"}>
+                                        <select className="form-control" id={rprtStngDlgRt+"UserSelection"}/>
+                                        <label htmlFor={rprtStngDlgRt+"UserSelection"}>
                                             Select User
                                         </label>
                                     </div>
@@ -544,7 +569,7 @@ const genReportSettingsDlg = ()=>{
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-primary"
-                                data-bs-dismiss="modal" id={dlgIdRoot + "OnSave"}>
+                                data-bs-dismiss="modal" id={rprtStngDlgRt + "OnSave"}>
                             Save
                         </button>
                         <button type="button" className="btn btn-secondary"
@@ -558,21 +583,66 @@ const genReportSettingsDlg = ()=>{
 
 ////////////////////////////////////////////////////////////////////
 //
-const genCardBody = (frConfig: FundraiserConfig)=>{
-    const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
+const genSpreadingDlg = () => {
+    return(
+        <div className="modal fade" id={spreadingDlgRt}
+             tabIndex="-1" role="dialog" aria-labelledby={spreadingDlgRt + "Title"} aria-hidden="true">
+            <div className="modal-dialog modal-dialog-centered" role="document">
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h5 className="modal-title" id={spreadingDlgRt + "LongTitle"}>
+                            Spreading Completion
+                        </h5>
+                        <button type="button" className="close" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <div className="container-sm">
+                            <div className="row">
+                                <div className="col-sm">
+                                    <div className="form-floating">
+                                        <div className="form-check form-switch">
+                                            <input className="form-check-input" type="checkbox" id="isSpreadCheck" />
+                                            <label className="form-check-label"
+                                                   for="isSpreadCheck">Spreading Complete</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-primary"
+                                data-bs-dismiss="modal" id={spreadingDlgRt + "OnSave"}>
+                            Save
+                        </button>
+                        <button type="button" className="btn btn-secondary"
+                                data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+////////////////////////////////////////////////////////////////////
+//
+const genCardBody = (frConfig: FundraiserConfig) => {
+    const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId());
 
     const onVewSettingsClick = ()=>{
         auth.getUserIdAndGroups().then(([_, userGroups])=>{
             console.log("Settings Clicked");
 
-            const dlgElm = document.getElementById(dlgIdRoot);
+            const dlgElm = document.getElementById(rprtStngDlgRt);
             reportSettingsDlg = new bs.Modal(dlgElm, {
                 backdrop: true,
                 keyboard: true,
                 focus: true
             });
 
-            document.getElementById(dlgIdRoot+"OnSave").onclick = (event)=>{
+            document.getElementById(rprtStngDlgRt+"OnSave").onclick = (event)=>{
                 console.log("Clicked");
                 showTheSelectedView(frConfig);
             }
@@ -638,11 +708,13 @@ export default function orders() {
     // Client-side Runtime Data Fetching
     const [cardBody, setCardBody] = useState();
     const [deleteDlg, setDeleteDlg] = useState();
+    const [spreadDlg, setSpreadDlg] = useState();
     const [settingsDlg, setReportSettingsDlg] = useState();
     useEffect(() => {
         const frConfig = getFundraiserConfig();
         setCardBody(genCardBody(frConfig));
         setDeleteDlg(genDeleteDlg());
+        setSpreadDlg(genSpreadingDlg());
         setReportSettingsDlg(genReportSettingsDlg());
 
         showTheSelectedView(frConfig);
@@ -670,6 +742,7 @@ export default function orders() {
 
             {deleteDlg}
             {settingsDlg}
+            {spreadDlg}
 
         </div>
     );

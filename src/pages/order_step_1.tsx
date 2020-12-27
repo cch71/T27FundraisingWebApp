@@ -446,7 +446,6 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                         <div className="form-check form-switch">
                             <input className="form-check-input" type="checkbox" id="formCollectLater"
                                    defaultChecked={currentOrder.doCollectMoneyLater}  />
-
                         </div>
                     </div>
                     <div className="col-md-3">
