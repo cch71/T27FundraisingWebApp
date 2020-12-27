@@ -26,6 +26,7 @@ let reportSettingsDlg = undefined;
 //
 class ReportViews {
     private currentView_: string = "";
+    private currentUserId_: string = "";
     private currentDataTable_: any = undefined;
     private currentQueryResults_: Array<OrderListItem<string>> = undefined;
 
@@ -35,10 +36,11 @@ class ReportViews {
 
     ////////////////////////////////////////////////////////////////////
     //
-    show(view: string, frConfig: FundraiserConfig, userId: string|undefined) {
+    showView(view: string, frConfig: FundraiserConfig, userId?: string) {
         const asyncShow = async () => {
+            
             if (jQuery.fn.dataTable.isDataTable( '#orderListTable')) {
-                if (view === this.currentView_) { return; }
+                if (view === this.currentView_ && userId === this.currentUserId_) { return; }
 
                 jQuery('#orderListTable').DataTable().clear();
                 jQuery('#orderListTable').DataTable().destroy();
@@ -48,7 +50,9 @@ class ReportViews {
             }
 
             console.log(`Current View: ${this.currentView_} New View: ${view}`);
+            console.log(`Current User: ${this.currentUserId_} New User: ${userId}`);
             this.currentView_ = view;
+            this.currentUserId_ = userId;
 
             if(typeof this[`show${view}`] === 'function') {
                 this[`show${view}`](frConfig, userId);
@@ -190,10 +194,10 @@ class ReportViews {
 
     ////////////////////////////////////////////////////////////////////
     //
-    private async showDefault(frConfig: FundraiserConfig, userId: string|undefined) {
+    private async showDefault(frConfig: FundraiserConfig, userId?: string) {
 
-        if (!userId) { userId = auth.getCurrentUserId(); }
-
+        const currentUserId =  auth.getCurrentUserId();
+        if (!userId) { userId = currentUserId; }
         // Build query fields
         const fieldNames = ["orderId", "firstName", "lastName"];
         fieldNames.push("deliveryId");
@@ -235,8 +239,12 @@ class ReportViews {
                 visible: false
             },
             {
-                title: "OrderOwnerId",
-                visible: false
+                title: "Order Owner",
+                visible: ('any'!==userId || userId !== currentUserId),
+                render: (data)=>{
+                    //console.log(`Data: JSON.stringify(data)`);
+                    return frConfig.getUserNameFromId(data);
+                }
             },
             {
                 title: "Name",
@@ -269,16 +277,17 @@ class ReportViews {
 
     ////////////////////////////////////////////////////////////////////
     //
-    private async showFull(frConfig: FundraiserConfig, userId: string|undefined) {
+    private async showFull(frConfig: FundraiserConfig, userId?: string) {
 
-        if (!userId) { userId = auth.getCurrentUserId(); }
+        const currentUserId =  auth.getCurrentUserId();
+        if (!userId) { userId = currentUserId; }
 
         this.currentQueryResults_ = await orderDb.query();
         const orders = this.currentQueryResults_;
 
         console.log(`Full Orders Page: ${JSON.stringify(orders)}`);
 
-        const getVal = (fld: any|undefined, dflt: any|undefined)=>{
+        const getVal = (fld?: any, dflt?: any)=>{
             if (undefined===fld) {
                 if (undefined===dflt) {
                     return '';
@@ -334,7 +343,10 @@ class ReportViews {
 
         let tableColumns = [
             { title: "OrderId", visible: false },
-            { title: "OrderOwnerId", visible: false },
+            {
+                title: "Order Owner",
+                visible: ('any'!==userId || userId !== currentUserId)
+            },
             { title: "Name"},
             { title: "Phone" },
             { title: "Email" },
@@ -404,19 +416,6 @@ class ReportViews {
         });
 
         //console.log(`${JSON.stringify(csvFileData, null, '\t')}`);
-
-
-        /* const flattened = Object.assign(
-           {},
-           ...function _flatten(o) {
-           return [].concat(...Object.keys(o)
-           .map(k =>
-           typeof o[k] === 'object' ?
-           _flatten(o[k]) :
-           ({[k]: o[k]})
-           ));
-           }(this.currentQueryResults_)); */
-        //console.log(`${JSON.stringify(flattened, null, '\t')}`);
         return csvFileData;
     }
 
@@ -487,32 +486,38 @@ const showTheSelectedView = (frConfig: FundraiserConfig, isAdmin: boolean) => {
         console.log(`${selectedView}(${selectedUser})`);
         rvLabel.innerText = `${selectedView}(${selectedUser})`;
 
-        const userIdOverride = (isAdmin?userSelElm.options[userSelElm.selectedIndex].value:undefined);
-
-        reportViews.show(selectedView, frConfig, userIdOverride);
+        const userIdOverride = userSelElm.options[userSelElm.selectedIndex].value;
+        reportViews.showView(selectedView, frConfig, userIdOverride);
     };
 
-    // Check to see if initialized
+    // Check to see if Report Views User view has been initialized
     if (!document.getElementById(`${rprtStngDlgRt}UserSelection`)) {
         const genOption = (label, val)=>{
             const option = document.createElement("option");
             option.text = label;
-            if (val) {
-                option.value = val;
-            }
+            if (val) { option.value = val; }
             return option;
         };
 
         auth.getUserIdAndGroups().then(([_, userGroups])=>{
             const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
             const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
-            if (userGroups && userGroups.includes("FrAdmins")) {
-                console.log("This user is an admin");
-                document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "inline-block";
-            } else {
-                const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
-                document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "none";
 
+            const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
+
+            if (userGroups && userGroups.includes("FrAdmins")) {
+                for (const userInfo of frConfig.users()) {
+                    userSelElm.add(genOption(userInfo[1], userInfo[0]));
+                }
+                userSelElm.add(genOption('All', 'any'));
+                userSelElm.value = auth.getCurrentUserId();
+                document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "inline-block";
+
+                viewSelElm.add(genOption('Default'));
+                viewSelElm.add(genOption('Full'));
+                viewSelElm.selectedIndex = 0;
+            } else {
+                document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "none";
                 userSelElm.add(genOption(fullName, auth.getCurrentUserId()));
                 userSelElm.selectedIndex = 0;
 
@@ -558,7 +563,7 @@ const genReportSettingsDlg = ()=>{
                                 </div>
                                 <div className="col-sm" id={rprtStngDlgRt+"UserSelectionCol"}>
                                     <div className="form-floating">
-                                        <select className="form-control" id={rprtStngDlgRt+"UserSelection"}/>
+                                        <select className="form-control" id={rprtStngDlgRt+"UserSelection"} />
                                         <label htmlFor={rprtStngDlgRt+"UserSelection"}>
                                             Select User
                                         </label>
@@ -605,7 +610,7 @@ const genSpreadingDlg = () => {
                                         <div className="form-check form-switch">
                                             <input className="form-check-input" type="checkbox" id="isSpreadCheck" />
                                             <label className="form-check-label"
-                                                   for="isSpreadCheck">Spreading Complete</label>
+                                                   htmlFor="isSpreadCheck">Spreading Complete</label>
                                         </div>
                                     </div>
                                 </div>
@@ -633,8 +638,6 @@ const genCardBody = (frConfig: FundraiserConfig) => {
 
     const onVewSettingsClick = ()=>{
         auth.getUserIdAndGroups().then(([_, userGroups])=>{
-            console.log("Settings Clicked");
-
             const dlgElm = document.getElementById(rprtStngDlgRt);
             reportSettingsDlg = new bs.Modal(dlgElm, {
                 backdrop: true,
@@ -643,7 +646,6 @@ const genCardBody = (frConfig: FundraiserConfig) => {
             });
 
             document.getElementById(rprtStngDlgRt+"OnSave").onclick = (event)=>{
-                console.log("Clicked");
                 showTheSelectedView(frConfig);
             }
 

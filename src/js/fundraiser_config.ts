@@ -96,12 +96,24 @@ class FundraiserConfig {
     /////////////////////////////////////////
     //
     getUserNameFromId(uid: string): string {
+        if ('fradmin' === uid) { return "Fundraiser Admin"; } //immutable admin id
         for (const [patrolName, names] of  Object.entries(this.loadedPatrolMap_)) {
             if (names.hasOwnProperty(uid)) {
                 return names[uid]['name']
             }
         }
         return "Unknown";
+    }
+
+    /////////////////////////////////////////
+    //
+    *users(): Generator<[string, string]> {
+        for (const namesObj of  Object.values(this.loadedPatrolMap_)) {
+            for (const uid of  Object.keys(namesObj)) {
+                yield [uid, namesObj[uid]['name']];
+            }
+        }
+        yield ['fradmin', "Fundraiser Admin"]; //immutable admin id
     }
 
     /////////////////////////////////////////
