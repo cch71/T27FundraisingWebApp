@@ -196,7 +196,6 @@ class ReportViews {
             delOrderDlg.show();
         });
     }
-
     ////////////////////////////////////////////////////////////////////
     //
     private async showDefault(frConfig: FundraiserConfig, userId?: string) {
@@ -282,6 +281,83 @@ class ReportViews {
 
     ////////////////////////////////////////////////////////////////////
     //
+    private async showVerifyOrders(frConfig: FundraiserConfig, userId?: string) {
+
+        const currentUserId =  auth.getCurrentUserId();
+        if (!userId) { userId = currentUserId; }
+        // Build query fields
+        const fieldNames = ["orderId", "firstName", "lastName", "deliveryId",
+                            "totalAmt", "cashPaid", "checkPaid", "checkNums", "isVerified"];
+
+        
+        if ('any'===userId) {
+            fieldNames.push("orderOwner");
+        }
+
+
+        this.currentQueryResults_ = await orderDb.query({fields: fieldNames, orderOwner: userId});
+        const orders = this.currentQueryResults_;
+        console.log(`Verify Orders Page: ${JSON.stringify(orders)}`);
+
+        const htmlValidateSwitch = 
+            `<div class="form-check form-switch">` +
+            `<input class="form-check-input" type="checkbox" />` +
+            `</div>`;
+
+        // Fill out rows of data
+        const orderDataSet = [];
+        for (const order of orders) {
+            const nameStr = `${order.firstName}, ${order.lastName}`;
+            const ownerId = ('any'===userId)?order.orderOwner:userId;
+            //only reason to not have a delivery date is if it is a donation
+            const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
+            const orderDataItem = [order.orderId, ownerId, nameStr, deliveryDate, order.totalAmt,
+                                   order.cashPaid?order.cashPaid:0,
+                                   order.checkPaid?order.checkPaid:0,
+                                   order.checkNums?order.checkNums:'',
+                                   htmlValidateSwitch, this.getActionButtons(order, frConfig)];
+            orderDataSet.push(orderDataItem);
+        }
+
+        const tableColumns = [
+            { title: "OrderId", visible: false },
+            {
+                title: "Order Owner",
+                visible: ('any'!==userId || userId !== currentUserId),
+                render: (data)=>{
+                    //console.log(`Data: JSON.stringify(data)`);
+                    return frConfig.getUserNameFromId(data);
+                }
+            },
+            { title: "Name", className: "all" },
+            { title: "Delivery Date" },
+            { title: "Total Amt", render: (data)=>{ return USD(data).format(); } },
+            { title: "Cash Paid", render: (data)=>{ return USD(data).format(); } },
+            { title: "Checks Paid", render: (data)=>{ return USD(data).format(); } },
+            { title: "Checks", render: (data)=>{ return(null!==data ? data : ''); } },
+            {
+                title: "Verify",
+                className: "all"
+            },
+            {
+                title: "Actions",
+                "orderable": false,
+                className: "all"
+            }
+        ];
+
+        this.currentDataTable_ = jQuery('#orderListTable').DataTable({
+            data: orderDataSet,
+            paging: false,
+            bInfo : false,
+            columns: tableColumns
+        });
+
+        this.registerActionButtonHandlers();
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    //
     private async showFull(frConfig: FundraiserConfig, userId?: string) {
 
         const currentUserId =  auth.getCurrentUserId();
@@ -338,7 +414,7 @@ class ReportViews {
                 USD(order.checkPaid).format(),
                 getVal(order.checkNums),
                 USD(order.totalAmt).format(),
-                (order.isValidated?"True":"False")
+                (order.isVerified?"True":"False")
             ]);
 
             orderDataItem.push(this.getActionButtons(order, frConfig));
@@ -486,13 +562,13 @@ const showTheSelectedView = (frConfig: FundraiserConfig) => {
 
         //Update the selected view label
         const selectedUser = userSelElm.options[userSelElm.selectedIndex].text;
-        const selectedView = viewSelElm.options[viewSelElm.selectedIndex].text;
+        const selectedViewOpt = viewSelElm.options[viewSelElm.selectedIndex];
         const rvLabel = document.getElementById("reportViewLabel");
-        console.log(`${selectedView}(${selectedUser})`);
-        rvLabel.innerText = `${selectedView}(${selectedUser})`;
+        console.log(`${selectedViewOpt.text}(${selectedUser})`);
+        rvLabel.innerText = `${selectedViewOpt.text}(${selectedUser})`;
 
         const userIdOverride = userSelElm.options[userSelElm.selectedIndex].value;
-        reportViews.showView(selectedView, frConfig, userIdOverride);
+        reportViews.showView(selectedViewOpt.value, frConfig, userIdOverride);
     };
 
     // Check to see if Report Views User view has been initialized
@@ -500,7 +576,7 @@ const showTheSelectedView = (frConfig: FundraiserConfig) => {
         const genOption = (label, val)=>{
             const option = document.createElement("option");
             option.text = label;
-            if (val) { option.value = val; }
+            option.value = val ? val : label;
             return option;
         };
 
@@ -520,6 +596,7 @@ const showTheSelectedView = (frConfig: FundraiserConfig) => {
 
                 viewSelElm.add(genOption('Default'));
                 viewSelElm.add(genOption('Full'));
+                viewSelElm.add(genOption('Verify Orders', 'VerifyOrders'));
                 viewSelElm.selectedIndex = 0;
             } else {
                 document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "none";

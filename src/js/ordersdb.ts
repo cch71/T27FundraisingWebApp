@@ -19,7 +19,7 @@ class Order {
     readonly orderId: string;
     totalAmt: currency;
     
-    isValidated?: boolean;
+    isVerified?: boolean;
     doDeleteOrder?: boolean;
     orderOwner?: string;
     firstName?: string;

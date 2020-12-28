@@ -33,6 +33,7 @@ class FundraiserConfig {
     private readonly loadedFrConfig_: FundraiserConfigBase;
     private readonly loadedPatrolMap_: any;
     private deliveryMap_: Record<string, string>|null = null;
+    private usersMap_?: [[string, string]]|undefined;
 
     /////////////////////////////////////////
     //
@@ -108,10 +109,19 @@ class FundraiserConfig {
     /////////////////////////////////////////
     //
     *users(): Generator<[string, string]> {
-        for (const namesObj of  Object.values(this.loadedPatrolMap_)) {
-            for (const uid of  Object.keys(namesObj)) {
-                yield [uid, namesObj[uid]['name']];
+        if (!this.usersMap_) {
+            this.userMap_ = [];
+            for (const namesObj of  Object.values(this.loadedPatrolMap_)) {
+                for (const uid of  Object.keys(namesObj)) {
+                    this.userMap_.push([uid, namesObj[uid]['name']]);
+                }
             }
+            this.userMap_.sort((a, b) => {
+                return a[0] > b[0] ? 1 : a[0] < b[0] ? -1 : 0;
+            });
+        }
+        for (const userInfo of this.userMap_) {
+            yield userInfo;
         }
         yield ['fradmin', "Fundraiser Admin"]; //immutable admin id
     }
