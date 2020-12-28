@@ -4,6 +4,13 @@ import awsConfig from "../config"
 import auth from "../js/auth"
 import { v4 as uuidv4 } from 'uuid';
 
+/////////////////////////////////////////////
+//
+class OrderMetaFields{
+    isLoadedFromDb?: boolean;
+    isReadOnly?: boolean;
+    origOrderOwner?: string;
+}
 
 /////////////////////////////////////////////
 //
@@ -11,8 +18,7 @@ class Order {
     // Always should have some initialization
     readonly orderId: string;
     totalAmt: currency;
-
-    isReadOnly?: boolean;
+    
     isValidated?: boolean;
     doDeleteOrder?: boolean;
     orderOwner?: string;
@@ -34,6 +40,8 @@ class Order {
     checkNums?: string;
     doCollectMoneyLater?: boolean;
 
+    meta: OrderMetaFields|undefined = new OrderMetaFields();
+
     constructor(order?: any) {
         if (!order) {
             this.orderId = uuidv4();
@@ -53,7 +61,19 @@ class Order {
                     this[key] = order[key];
                 }
             });
+
+            this.meta.origOrderOwner = order.orderOwner;
         }
+    }
+
+    serializeForSubmission(): string {
+        // Make a copy to for submission since if it fails we may still need meta
+        const submissionOrder = JSON.parse(JSON.stringify(this));
+        if (!submissionOrder.orderOwner) {
+            submissionOrder['orderOwner'] = auth.currentUser().getUsername();
+        }
+        delete submissionOrder['meta'];
+        return JSON.stringify(submissionOrder);
     }
 }
 
@@ -151,7 +171,8 @@ class OrderDb {
     setActiveOrder(order?: Order, isReadOnly?: boolean) {
         this.currentOrder_ = order;
         if (order) {
-            this.currentOrder_.isReadOnly = isReadOnly;
+            this.currentOrder_.meta.isLoadedFromDb = true;
+            this.currentOrder_.meta.isReadOnly = isReadOnly;
         }
     }
 
@@ -227,43 +248,33 @@ class OrderDb {
 
     /////////////////////////////////////////
     //
-    deleteOrder(orderId: string): Promise<void> {
+    deleteOrder(orderId: string, orderOwner: string): Promise<void> {
         return new Promise(async (resolve, reject)=>{
             try {
-                auth.getAuthToken().then(async (authToken: string)=>{
-                    const orderOwner = auth.currentUser().getUsername();
-                    if (!orderOwner || !orderId) {
-                        reject(new Error("Order ID or Login ID is invalid"));
-                        return;
-                    }
-                    const paramStr = JSON.stringify({
-                        doDeleteOrder: true,
-                        orderOwner: orderOwner,
-                        orderId: orderId
-                    });
-
-                    //console.log(`OrderDB Query Parms: ${paramStr}`);
-                    const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
-                        method: 'post',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: authToken
-                        },
-                        body: paramStr
-                    });
-
-                    if (!resp.ok) { // if HTTP-status is 200-299
-                        const errRespBody = await resp.text();
-                        const errStr = `Query error: ${resp.status}  ${errRespBody}`;
-                        reject(new Error(errStr));
-                    } else {
-                        resolve();
-                    }
-                }).catch((err: any)=>{
-                    reject(err);
+                const authToken = await auth.getAuthToken();
+                const paramStr = JSON.stringify({
+                    doDeleteOrder: true,
+                    orderOwner: orderOwner,
+                    orderId: orderId
                 });
 
+                //console.log(`OrderDB Query Parms: ${paramStr}`);
+                const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
+                    method: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: authToken
+                    },
+                    body: paramStr
+                });
 
+                if (!resp.ok) { // if HTTP-status is 200-299
+                    const errRespBody = await resp.text();
+                    const errStr = `Query error: ${resp.status}  ${errRespBody}`;
+                    reject(new Error(errStr));
+                } else {
+                    resolve();
+                }
             } catch(error) {
                 console.error(error);
                 const errStr = `Delete Order error: ${error.message}`;
@@ -290,37 +301,34 @@ class OrderDb {
                 };
 
                 try {
-                    auth.getAuthToken().then(async (authToken: string)=>{
+                    const authToken = await auth.getAuthToken();
+                    const origOrderOwner = this.currentOrder_.meta?.origOrderOwner;
+                    const orderOwner = this.currentOrder_.orderOwner;
+                    if (origOrderOwner && origOrderOwner!==orderOwner) {
+                        await this.deleteOrder(this.currentOrder_.orderId, origOrderOwner);
+                    }
 
-                        if (!this.currentOrder_.orderOwner) {
-                            this.currentOrder_['orderOwner'] = auth.currentUser().getUsername();
-                        }
-
-                        const paramStr = JSON.stringify(this.currentOrder_);
-                        //console.log(`Updating Order: ${paramStr}`);
-                        const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
-                            method: 'post',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                Authorization: authToken
-                            },
-                            body: paramStr
-                        });
-
-                        if (!resp.ok) { // if HTTP-status is 200-299
-                            const errRespBody = await resp.text();
-                            handleErr(new Error(`Failed upserting order id: ${resp.status} reason: ${errRespBody}`));
-                        } else {
-                            this.submitOrderPromise_ = undefined;
-                            // Order Submited so reset active order
-                            this.setActiveOrder();
-                            resolve();
-                        }
-                    }).catch((err: any)=>{
-                        handleErr(err);
+                    const paramStr = this.currentOrder_.serializeForSubmission();
+                    //console.log(`Updating Order: ${paramStr}`);
+                    const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
+                        method: 'post',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: authToken
+                        },
+                        body: paramStr
                     });
 
-
+                    if (!resp.ok) { // if HTTP-status is 200-299
+                        const errRespBody = await resp.text();
+                        handleErr(
+                            new Error(`Failed upserting order id: ${resp.status} reason: ${errRespBody}`));
+                    } else {
+                        this.submitOrderPromise_ = undefined;
+                        // Order Submited so reset active order
+                        this.setActiveOrder();
+                        resolve();
+                    }
                 } catch(err) {
                     const errStr = `Failed req upserting order err: ${err.message}`;
                     handleErr(err);

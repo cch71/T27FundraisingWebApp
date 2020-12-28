@@ -158,6 +158,7 @@ class ReportViews {
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const orderId = row.data()[0];
+            const orderOwner = row.data()[1];
 
             console.log(`Deleting order for ${orderId}`);
             jQuery('#confirmDeleteOrderInput').val('');
@@ -177,7 +178,7 @@ class ReportViews {
                     (event: any)=>{
                         console.log(`Delete confirmed for: ${orderId}`);
                         delOrderDlg.hide();
-                        orderDb.deleteOrder(orderId).then(()=>{
+                        orderDb.deleteOrder(orderId, orderOwner).then(()=>{
                             row.remove().draw();
                         }).catch((err: any)=>{
                             alert(`Failed to delete order: ${orderId}: ${err.message}`);
@@ -477,7 +478,7 @@ const genDeleteDlg = ()=>{
 
 ////////////////////////////////////////////////////////////////////
 //
-const showTheSelectedView = (frConfig: FundraiserConfig, isAdmin: boolean) => {
+const showTheSelectedView = (frConfig: FundraiserConfig) => {
 
     const showView = ()=>{
         const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
@@ -641,20 +642,18 @@ const genCardBody = (frConfig: FundraiserConfig) => {
     const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId());
 
     const onVewSettingsClick = ()=>{
-        auth.getUserIdAndGroups().then(([_, userGroups])=>{
-            const dlgElm = document.getElementById(rprtStngDlgRt);
-            reportSettingsDlg = new bs.Modal(dlgElm, {
-                backdrop: true,
-                keyboard: true,
-                focus: true
-            });
-
-            document.getElementById(rprtStngDlgRt+"OnSave").onclick = (event)=>{
-                showTheSelectedView(frConfig);
-            }
-
-            reportSettingsDlg.show();
+        const dlgElm = document.getElementById(rprtStngDlgRt);
+        reportSettingsDlg = new bs.Modal(dlgElm, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
         });
+
+        document.getElementById(rprtStngDlgRt+"OnSave").onclick = (event)=>{
+            showTheSelectedView(frConfig);
+        }
+
+        reportSettingsDlg.show();
     };
 
 

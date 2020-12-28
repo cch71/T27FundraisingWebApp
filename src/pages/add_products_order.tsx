@@ -140,7 +140,7 @@ export default (params: any) => {
                             Cancel
                         </button>
                         <button type="submit" className="btn btn-primary my-2 float-end"
-                                style={{display: ((currentOrder.isReadOnly)?"none":"block")}}
+                                style={{display: ((currentOrder.meta?.isReadOnly)?"none":"block")}}
                         >
                             Add
                         </button>

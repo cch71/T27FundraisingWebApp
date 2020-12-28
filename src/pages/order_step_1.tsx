@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react"
 import { Router, Link } from '@reach/router';
 import NavBar from "../components/navbar"
 import {orderDb, Order} from "../js/ordersdb"
-//import OrderItem from "../components/order_item" //TODO: Rename DeliveryOrderSummary
+import auth from "../js/auth"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
@@ -11,9 +11,6 @@ import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
 const trashImg = bootstrapIconSprite + "#trash";
 const pencilImg = bootstrapIconSprite + "#pencil";
 const eyeImg = bootstrapIconSprite + "#eye";
-
-//const addToOrderImg = bootstrapIconSprite + "#plus-square";
-
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
 
@@ -31,7 +28,7 @@ const LazyComponent = ({ Component, ...props }) => (
 
 ////////////////////////////////////////////////////////
 //
-const populateForm = (currentOrder: Order, setFormFields: any): any =>{
+const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean): any =>{
 
     const frConfig: FundraiserConfig = getFundraiserConfig();
     if (!frConfig) {
@@ -43,6 +40,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
     // Save off current order values
     const saveCurrentOrder = ()=>{
         //Required
+        currentOrder.orderOwner = (document.getElementById('formOrderOwner') as HTMLInputElement).value;
         currentOrder.firstName = (document.getElementById('formFirstName') as HTMLInputElement).value;
         currentOrder.lastName = (document.getElementById('formLastName') as HTMLInputElement).value;
         currentOrder.phone = (document.getElementById('formPhone') as HTMLInputElement).value;
@@ -279,7 +277,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                 recalculateTotalDue();
             }
 
-            if (currentOrder.isReadOnly) {
+            if (currentOrder.meta?.isReadOnly) {
                 ordersByDeliveryBtns.push(
                     <li className="list-group-item" id={foundTag} key={foundTag}>
                         {orderTotalStr}
@@ -353,6 +351,12 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
         hoods.push(<option key={hood}>{hood}</option>);
     }
+    const orderOwners=[];
+    for (const [uid, fullName] of frConfig.users()) {
+        orderOwners.push(<option value={uid} key={uid}>{fullName}</option>);
+    }
+
+
     const currentNeighborhood = (currentOrder.neighborhood) ?
                                 currentOrder.neighborhood :
                                 frConfig.neighborhoods()[0];
@@ -366,21 +370,37 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
         return (0.00===fld.value) ? undefined : fld.toString();
     };
 
+    const defaultOrderOwner = currentOrder.orderOwner?
+                              currentOrder.orderOwner:auth.currentUser().getUsername()
+
     setFormFields(
         <form className="needs-validation" noValidate onSubmit={onFormSubmission}>
+
+            <div className="row mb-2 g-2" style={{display: (isAdmin?'block':'none')}}>
+                <div className="form-floating col-md-4">
+                    <select className="form-control" id="formOrderOwner" defaultValue={defaultOrderOwner}>
+                        {orderOwners}
+                    </select>
+                    <label htmlFor="formOrderOwner">Order Owner</label>
+                </div>
+            </div>
 
             <div className="row mb-2 g-2">
                 <div className="form-floating col-md-6">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formFirstName"
                            placeholder="First Name" required
                            defaultValue={currentOrder.firstName} />
-                    <label htmlFor="formFirstName">First Name<small className="form-text text-muted ps-1">*required</small></label>
+                    <label htmlFor="formFirstName">
+                        First Name<small className="form-text text-muted ps-1">*required</small>
+                    </label>
                 </div>
                 <div className="form-floating col-md-6">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formLastName"
                            placeholder="Last Name" required
                            defaultValue={currentOrder.lastName}  />
-                    <label htmlFor="formLastName">Last Name<small className="form-text text-muted ps-1">*required</small></label>
+                    <label htmlFor="formLastName">
+                        Last Name<small className="form-text text-muted ps-1">*required</small>
+                    </label>
                 </div>
             </div>
 
@@ -389,7 +409,9 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formAddr1"
                            placeholder="Address 1" required
                            defaultValue={currentOrder.addr1}  />
-                    <label htmlFor="formAddr1">Address 1<small className="form-text text-muted ps-1">*required</small></label>
+                    <label htmlFor="formAddr1">
+                        Address 1<small className="form-text text-muted ps-1">*required</small>
+                    </label>
                 </div>
                 <div className="form-floating col-md-6">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formAddr2"
@@ -404,14 +426,17 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                     <select className="form-control" id="formNeighborhood" defaultValue={currentNeighborhood}>
                         {hoods}
                     </select>
-                    <label htmlFor="formNeighborhood">Neighborhood<small className="form-text text-muted ps-1">*required</small></label>
-
+                    <label htmlFor="formNeighborhood">
+                        Neighborhood<small className="form-text text-muted ps-1">*required</small>
+                    </label>
                 </div>
                 <div className="form-floating col-md-4">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formPhone"
                            placeholder="Phone" required
                            defaultValue={currentOrder.phone}  />
-                    <label htmlFor="formPhone">Phone<small className="form-text text-muted ps-1">*required</small></label>
+                    <label htmlFor="formPhone">
+                        Phone<small className="form-text text-muted ps-1">*required</small>
+                    </label>
                 </div>
                 <div className="form-floating col-md-4">
                     <input className="form-control" type="text" autoComplete="fr-new-cust-info" id="formEmail"
@@ -476,7 +501,7 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
                         <label htmlFor="formCheckNumbers">Enter Check Numbers</label>
                         <input className="form-control" autoComplete="fr-new-cust-info"
                                id="formCheckNumbers" placeholder="Enter Check #s"
-                                onKeyPress={onCheckNumsKeyPress}
+                               onKeyPress={onCheckNumsKeyPress}
                                defaultValue={currentOrder.checkNums}/>
                     </div>
 
@@ -517,53 +542,60 @@ const populateForm = (currentOrder: Order, setFormFields: any): any =>{
 
 export default (params: any)=>{
 
-    const setFormReadOnly = ()=>{
-        const submitBtn = (document.getElementById('formOrderSubmit') as HTMLButtonElement);
-        if (submitBtn) {
-            submitBtn.classList.add('invisible');
-        }
-    };
-    
     // Calculate Initial total due and amount paid from orders at page load time
     const [formFields, setFormFields] = useState();
     useEffect(() => {
-        const order = orderDb.getActiveOrder();
-        if (undefined===order) {
-            const dbOrderId = params?.location?.state?.editOrderId;
-            const dbOrderOwner = params?.location?.state?.editOrderOwner;
-            if (dbOrderId) {
-                const isReadOnly = params?.location?.state?.isOrderReadOnly;
+        const setFormReadOnly = ()=>{
+            const submitBtn = (document.getElementById('formOrderSubmit') as HTMLButtonElement);
+            if (submitBtn) {
+                submitBtn.classList.add('invisible');
+            }
+        };
 
-                orderDb.getOrderFromId(dbOrderId, dbOrderOwner).then((order?: Order)=>{
+        auth.getUserIdAndGroups().then(async ([_, userGroups]) => {
+            const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
+
+            const loadOrder = async ()=>{
+                const dbOrderId = params?.location?.state?.editOrderId;
+                const dbOrderOwner = params?.location?.state?.editOrderOwner;
+                if (dbOrderId) {
+                    const isReadOnly = params?.location?.state?.isOrderReadOnly;
+
+                    const order: Order|undefined = await orderDb.getOrderFromId(dbOrderId, dbOrderOwner);
                     console.log(`Returned Order: ${JSON.stringify(order)}`);
                     if (order) {
                         orderDb.setActiveOrder(order, isReadOnly);
-                        populateForm(order, setFormFields);
-                        if (order.isReadOnly) { setFormReadOnly(); }
+                        populateForm(order, setFormFields, isAdmin);
+                        if (order.meta?.isReadOnly) { setFormReadOnly(); }
                     } else {
                         alert(`Order: ${dbOrderId} could not be retrieved`);
                         navigate('/orders/');
                     }
-                }).catch((err: any)=>{
-                    if ('Invalid Session'===err) {
-                        navigate('/signon/');
-                    } else {
-                        const errStr = `Failed retrieving order: ${JSON.stringify(err)}`;
-                        console.log(errStr);
-                        alert(errStr);
-                        throw err;
-                    }
-                });
+                } else {
+                    //alert("Failed to retrieve active order");
+                    navigate('/');
+                }
+            };
+
+            
+            const order = orderDb.getActiveOrder();
+            if (undefined===order) {
+                await loadOrder();
             } else {
-                //alert("Failed to retrieve active order");
-                navigate('/');
+                populateForm(order, setFormFields, isAdmin);
+                if (order.meta?.isReadOnly) { setFormReadOnly(); }
             }
-        } else {
-            populateForm(order, setFormFields);
-            setTimeout(()=>{
-                if (order.isReadOnly) { setFormReadOnly(); }
-            }, 10);
-        }
+        }).catch((err: any)=>{
+            if ('Invalid Session'===err) {
+                navigate('/signon/');
+            } else {
+                const errStr = `Failed retrieving order: ${JSON.stringify(err)}`;
+                console.log(errStr);
+                alert(errStr);
+                throw err;
+            }
+        });;
+
 
         
     }, [])
