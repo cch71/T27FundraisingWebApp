@@ -30,123 +30,143 @@ table.dataTable.collapsed>tbody>tr>th:first-child:before
 
 table.dataTable.dtr-inline.collapsed>tbody>tr.parent>td.dtr-control:before,
 table.dataTable.dtr-inline.collapsed>tbody>tr.parent>th.dtr-control:before {
-	content: "-";
-	background-color: red;
+    content: "-";
+    background-color: red;
 }
 
 
 /* Global styling for this template */
 html {
-  /*background-color: white;*/
-  p {
-    color: white;
-  }
+    /*background-color: white;*/
+    p {
+        color: white;
+    }
 
-  .navbar-toggler {
-      padding: 0.25rem 0.25rem;
+    .navbar-toggler {
+        padding: 0.25rem 0.25rem;
 
-      .navbar-toggler-icon {
-          width: 1.0em;
-          heigth: 1.0em;
-      }
-  }
+        .navbar-toggler-icon {
+            width: 1.0em;
+            heigth: 1.0em;
+        }
+    }
 
-  nav {
-      border-bottom: lightgray solid 0.1vmin;
+    nav {
+        border-bottom: lightgray solid 0.1vmin;
 
-      .navbar-logo {
-          width: 30px;
-          heigth: 30px;
+        .navbar-logo {
+            width: 30px;
+            heigth: 30px;
 
-      }
-  }
+        }
+    }
 
+    #orderCardTitle {
+        ul {
+            padding-right: 0px;
+            display: inline-flex;
+            li {
+                padding: 0px;
+                border: none;
+            }
+        }
+    }
 
-  #productList {
-      padding: 0;
-      border-style: hidden;
-  }
+    #productList {
+        padding: 0;
+        border-style: hidden;
+    }
 
-  #productList.is-invalid {
-      padding-right: 2rem;
-      border-style: solid;
-  }
-  
-  #cardReportBoday {
-	  padding: 0;
-  }
+    #productList.is-invalid {
+        padding-right: 2rem;
+        border-style: solid;
+    }
 
-  .add-order-btn {
-      position: fixed;
-      bottom: 15px;
-      right: 15px;
-	  width: 2.5rem;
-	  height: 2.5rem;
-	  padding: 0;
-	  margin: 0;
-	  color: black;
-	  box-shadow: 0 0 0 0 rgba(olive, .5);
-	  -webkit-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
-	  -moz-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
-	  -ms-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
-	  animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+    #cardReportBoday {
+        padding: 0;
+    }
 
-	  svg {
-		  width: 100%;
-		  height: 100%;
-	  }
+    .add-order-widget {
+        position: fixed;
+        bottom: 15px;
+        right: 15px;
+        display: inline-flex;
 
-	  &:hover {
-		  -webkit-animation: none;
-		  -moz-animation: none;
-		  -ms-animation: none;
-		  animation: none;
-	  }
+        label {
+            font-style: italic;
+            padding-right: 0.5rem;
+            padding-top: 0.5rem;
+        }
 
-	  @-webkit-keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
-	  @-moz-keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
-	  @-ms-keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
-	  @keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
-  }
+        .add-order-btn {
+            width: 2.0rem;
+            height: 2.0rem;
+            padding: 0;
+            margin: 0;
+            color: black;
+            box-shadow: 0 0 0 0 rgba(olive, .5);
+            -webkit-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+            -moz-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+            -ms-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+            animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
 
-  .reports-view-setting-btn {
-	  padding: 3px;
-	  margin: 0px;
-	  width: 2.0rem;
-	  height: 2.0rem;
-	  margin-bottom: 6px;
+            svg {
+                width: 100%;
+                height: 100%;
+            }
 
-	  svg {
-		  width: 100%;
-		  height: 100%;
-	  }
-  }
+            &:hover {
+                -webkit-animation: none;
+                -moz-animation: none;
+                -ms-animation: none;
+                animation: none;
+            }
 
-  .order-list-name {
-      width: 200px;
-  }
+            @-webkit-keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
+            @-moz-keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
+            @-ms-keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
+            @keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
+        }
+    }
 
-  .order-list-addr {
-      width: 400px;
-  }
+    .reports-view-setting-btn {
+        padding: 3px;
+        margin: 0px;
+        width: 2.0rem;
+        height: 2.0rem;
+        margin-bottom: 6px;
 
-  .order-list-due {
-      width: 150px;
-  }
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+    }
 
-  .order-del-btn,
-  .order-edt-btn,
-  .order-spread-btn,
-  .order-view-btn {
-	  padding: 0;
-	  margin: 0;
-	  width: 2.0rem;
-	  height: 2.0rem;
-      border-radius: 25%;
+    .order-list-name {
+        width: 200px;
+    }
 
-	  svg {
-		  width: 70%;
-		  height: 70%;
-	  }
-  }
+    .order-list-addr {
+        width: 400px;
+    }
+
+    .order-list-due {
+        width: 150px;
+    }
+
+    .order-del-btn,
+    .order-edt-btn,
+    .order-spread-btn,
+    .order-view-btn {
+        padding: 0;
+        margin: 0;
+        width: 2.0rem;
+        height: 2.0rem;
+        border-radius: 25%;
+
+        svg {
+            width: 70%;
+            height: 70%;
+        }
+    }
 }

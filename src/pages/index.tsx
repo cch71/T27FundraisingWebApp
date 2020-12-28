@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
-import { Router, Link } from '@reach/router';
+import { Router, Link } from '@reach/router'
 import NavBar from "../components/navbar"
+import AddNewOrderWidget from "../components/add_new_order_widget"
 import auth from "../js/auth"
 import { navigate } from "gatsby"
 import {orderDb, LeaderBoardSummaryInfo} from "../js/ordersdb"
@@ -8,9 +9,6 @@ import {FundraiserConfig, downloadFundraiserConfig, getFundraiserConfig} from ".
 import awsConfig from "../config"
 import currency from "currency.js"
 import {GoogleCharts} from 'google-charts';
-import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
-
-const addOrderImg = bootstrapIconSprite + "#plus-square-fill"
 
 const NewOrder = React.lazy(() => import('./order_step_1'));
 const SignOn = React.lazy(() => import('./signon'));
@@ -80,37 +78,37 @@ const Home = ()=>{
                                 <td className="py-1">{frConfig.getUserNameFromId(seller)}</td>
                                 <td className="py-1">{USD(amt).format()}</td>
                             </tr>
-								);
+                        );
                     }
-					//console.log("TopSeller ${JSON.stringify(topSellers)}")
+                    //console.log("TopSeller ${JSON.stringify(topSellers)}")
                     let statIndex=0;
                     const summaryStats = [];
-					const userSummary = summary.userSummary();
+                    const userSummary = summary.userSummary();
                     summaryStats.push(
                         <li key={++statIndex} className="list-group-item border-0 py-1">
                             You have collected {USD(userSummary.amountSold).format()} in sales
                         </li>
                     );
-					if ('mulch' === frConfig.kind()) {
-						summaryStats.push(
-							<li key={++statIndex} className="list-group-item border-0 py-1">
-								You have sold {userSummary.bags} bags of mulch
-							</li>
-						);
-						summaryStats.push(
-							<li key={++statIndex} className="list-group-item border-0 py-1">
-								You have sold {userSummary.spreading} spreading jobs
-							</li>
-						);
-					}
+                    if ('mulch' === frConfig.kind()) {
+                        summaryStats.push(
+                            <li key={++statIndex} className="list-group-item border-0 py-1">
+                                You have sold {userSummary.bags} bags of mulch
+                            </li>
+                        );
+                        summaryStats.push(
+                            <li key={++statIndex} className="list-group-item border-0 py-1">
+                                You have sold {userSummary.spreading} spreading jobs
+                            </li>
+                        );
+                    }
 
-					if (0.0 < userSummary.donation.value) {
-						summaryStats.push(
-							<li key={++statIndex} className="list-group-item border-0 py-1">
-								You have collected {USD(userSummary.donation).format()} in donations
-							</li>
-						);
-					}
+                    if (0.0 < userSummary.donation.value) {
+                        summaryStats.push(
+                            <li key={++statIndex} className="list-group-item border-0 py-1">
+                                You have collected {USD(userSummary.donation).format()} in donations
+                            </li>
+                        );
+                    }
 
                     summaryStats.push(
                         <li key={++statIndex} className="list-group-item border-0 py-1">
@@ -118,34 +116,28 @@ const Home = ()=>{
                         </li>
                     );
 
-					//console.log("Summary ${JSON.stringify(summaryStats)}")
+                    //console.log("Summary ${JSON.stringify(summaryStats)}")
 
                     setOrderSummary(
                         <div className="col-xs-1 d-flex justify-content-center">
                             <div className="card">
                                 <div className="card-body">
-									<h5 className="card-title">{frConfig.description()} Fundraiser</h5>
-									<h6>Summary for: {frConfig.getUserNameFromId(auth.getCurrentUserId())}</h6>
-									<ul className="list-group list-group-flush">
-										{summaryStats}
-									</ul>
+                                    <h5 className="card-title">{frConfig.description()} Fundraiser</h5>
+                                    <h6>Summary for: {frConfig.getUserNameFromId(auth.getCurrentUserId())}</h6>
+                                    <ul className="list-group list-group-flush">
+                                        {summaryStats}
+                                    </ul>
 
-									<h6 className="my-2">Top Sellers:</h6>
-									<table className="table table-bordered"><tbody>
-										{topSellers}
-									</tbody></table>
+                                    <h6 className="my-2">Top Sellers:</h6>
+                                    <table className="table table-bordered"><tbody>
+                                        {topSellers}
+                                    </tbody></table>
 
-									<h6>Sales by Patrol:</h6>
-									<div id="patrolStandingsChart"/>
+                                    <h6>Sales by Patrol:</h6>
+                                    <div id="patrolStandingsChart"/>
                                 </div>
+                                <small muted>*updates may take up to 15 minutes</small>
                             </div>
-                            <button type="button"
-                                    className="btn btn-outline-primary add-order-btn"
-                                    onClick={addNewOrder}>
-								<svg className="bi" fill="currentColor">
-									<use xlinkHref={addOrderImg}/>
-								</svg>
-							</button>
                         </div>
                     );
 
@@ -156,7 +148,7 @@ const Home = ()=>{
                         const options = { is3D: true };
 
                         const patrolStandingsData = new GoogleCharts.api.visualization.DataTable();
-                            patrolStandingsData.addColumn('string', 'Patrol Sales');
+                        patrolStandingsData.addColumn('string', 'Patrol Sales');
                         patrolStandingsData.addColumn('number', 'Amount Sold');
 
                         for (const [patrol, amount] of summary.patrolRankings()) {
@@ -190,94 +182,12 @@ const Home = ()=>{
                 }
             }
         }).catch((err)=>{
-			if ('Invalid Session'===err.message) {
+            if ('Invalid Session'===err.message) {
                 navigate('/signon/');
                 return;
-			}
-		});
-    }, []);
-
-
-    const addNewOrder = ()=>{
-        console.log("Add new order");
-        orderDb.newActiveOrder();
-        navigate('/order_step_1/');
-    };
-
-    const onTestAuth = ()=>{
-        auth.getAuthToken().then((authToken: any)=>{
-
-            //https://t27fundraiser.s3.amazonaws.com/T27FundraiserConfig.json
-
-            fetch('https://t27fundraiser.s3.amazonaws.com/T27FundraiserConfig.json', {
-                method: 'get',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': authToken
-                }
-            }).then((resp: any)=>{
-                if (!resp.ok) {
-                    resp.text().then((bodyStr)=>{
-                        throw Error(`HTTP Resp Error: ${resp.status} ${bodyStr}`);
-                    });
-                } else {
-                    return resp.json()
-                }
-            }).then((jresp: any)=>{
-                if (jresp) {
-                    console.log(`FrConfig: ${JSON.stringify(jresp)}`);
-                }
-            }).catch((error)=>{
-                console.error(error);
-            });
-
-
-            /* fetch(awsConfig.api.invokeUrl + '/users', {
-             *     method: 'post',
-             *     headers: {
-             *         'Content-Type': 'application/json',
-             *         'Authorization': authToken
-             *     },
-             *     body: JSON.stringify({'cmd': 'GET_USER', 'userId': 'scout1'})
-             * }).then((resp: any)=>{
-             *     if (!resp.ok) {
-             *         resp.text().then((bodyStr)=>{
-             *             throw Error(`HTTP Resp Error: ${resp.status} ${bodyStr}`);
-             *         });
-             *     } else {
-             *         return resp.json()
-             *     }
-             * }).then((jresp: any)=>{
-             *     if (jresp) {
-             *         console.log(`GetUser: ${JSON.stringify(jresp)}`);
-             *     }
-             * }).catch((error)=>{
-             *     console.error(error);
-             * });
-             */
+            }
         });
-    };
-
-    const onResetUsers = (event: any)=>{
-        event.preventDefault();
-        event.stopPropagation();
-
-        const files = event.currentTarget.files;
-        if (files.length) {
-            const file = files[0];
-            const reader = new FileReader();
-            /* reader.onload = ((aImg)=>{
-             *     return function(e) { aImg.src = e.target.result; }; })(img); */
-            reader.addEventListener('load', (fileLoadEvent: any) => {
-                const contents = JSON.parse(fileLoadEvent.target.result);
-                console.log(`FileLoad  ${JSON.stringify(contents)}`);
-            });
-            reader.readAsBinaryString(file);
-
-        }
-
-
-    };
+    }, []);
 
     return (
         <div>
@@ -288,14 +198,8 @@ const Home = ()=>{
             </div>
             <div id="readyView" style={{display: 'none'}}>
                 <NavBar/>
-
-                {/* <button type="button" className="btn btn-primary my-2" onClick={onTestAuth}>
-                    Test Auth
-					</button>
-
-					<input type="file" id="resetUsers" onChange={onResetUsers} />
-				  */}
                 {orderSummary}
+                <AddNewOrderWidget/>
             </div>
         </div>
     );

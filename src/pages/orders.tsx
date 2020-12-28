@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import NavBar from "../components/navbar";
+import AddNewOrderWidget from "../components/add_new_order_widget"
 import { navigate } from "gatsby";
 import {orderDb, OrderListItem} from "../js/ordersdb";
 import currency from "currency.js";
@@ -13,7 +14,6 @@ if (typeof window !== `undefined`) {
     bs = require('bootstrap');
 }
 //import { Modal } from 'bootstrap';
-const addOrderImg = bootstrapIconSprite + "#plus-square-fill";
 const trashImg = bootstrapIconSprite + "#trash";
 const pencilImg = bootstrapIconSprite + "#pencil";
 const eyeImg = bootstrapIconSprite + "#eye";
@@ -227,8 +227,8 @@ class ReportViews {
         const orderDataSet = [];
         for (const order of orders) {
             const nameStr = `${order.firstName}, ${order.lastName}`;
-            const ownerId = ('any'===userId)?order.orderOwner:userId;
-            const orderDataItem = [order.orderId, ownerId, nameStr];
+            const orderOwner = ('any'===userId)?order.orderOwner:userId;
+            const orderDataItem = [order.orderId, nameStr];
             //only reason to not have a delivery date is if it is a donation
             const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
             orderDataItem.push(deliveryDate);
@@ -236,7 +236,7 @@ class ReportViews {
             if ('mulch' === frConfig.kind()) {
                 orderDataItem.push((order.products?.spreading?order.products.spreading:''));
             }
-
+            orderDataItem.push(orderOwner);
             orderDataItem.push(this.getActionButtons(order, frConfig));
             orderDataSet.push(orderDataItem);
         }
@@ -245,22 +245,15 @@ class ReportViews {
         const tableColumns = [
             {
                 title: "OrderId",
+                className: "all",
                 visible: false
-            },
-            {
-                title: "Order Owner",
-                visible: ('any'!==userId || userId !== currentUserId),
-                render: (data)=>{
-                    //console.log(`Data: JSON.stringify(data)`);
-                    return frConfig.getUserNameFromId(data);
-                }
             },
             {
                 title: "Name",
                 className: "all"
             },
             {
-                title: "Delivery Date"
+                title: "Delivery Date",
             }
         ];
 
@@ -268,6 +261,15 @@ class ReportViews {
             tableColumns.push({ title: "Spreading" });
         }
 
+        tableColumns.push({
+            title: "Order Owner",
+            visible: ('any'!==userId || userId !== currentUserId),
+            render: (data)=>{
+                //console.log(`Data: JSON.stringify(data)`);
+                return frConfig.getUserNameFromId(data);
+            }
+        });
+        
         tableColumns.push({
             title: "Actions",
             "orderable": false,
@@ -313,19 +315,25 @@ class ReportViews {
         const orderDataSet = [];
         for (const order of orders) {
             const nameStr = `${order.firstName}, ${order.lastName}`;
-            const ownerId = ('any'===userId)?order.orderOwner:userId;
+            const orderOwner = ('any'===userId)?order.orderOwner:userId;
             //only reason to not have a delivery date is if it is a donation
             const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
-            const orderDataItem = [order.orderId, ownerId, nameStr, deliveryDate, order.totalAmt,
+            const orderDataItem = [order.orderId, nameStr, deliveryDate, order.totalAmt,
                                    order.cashPaid?order.cashPaid:0,
                                    order.checkPaid?order.checkPaid:0,
                                    order.checkNums?order.checkNums:'',
-                                   htmlValidateSwitch, this.getActionButtons(order, frConfig)];
+                                   orderOwner, htmlValidateSwitch, this.getActionButtons(order, frConfig)];
             orderDataSet.push(orderDataItem);
         }
 
         const tableColumns = [
-            { title: "OrderId", visible: false },
+            { title: "OrderId", className: "all", visible: false },
+            { title: "Name", className: "all" },
+            { title: "Delivery Date" },
+            { title: "Total Amt", render: (data)=>{ return USD(data).format(); } },
+            { title: "Cash Paid", render: (data)=>{ return USD(data).format(); } },
+            { title: "Checks Paid", render: (data)=>{ return USD(data).format(); } },
+            { title: "Checks", render: (data)=>{ return(null!==data ? data : ''); } },
             {
                 title: "Order Owner",
                 visible: ('any'!==userId || userId !== currentUserId),
@@ -334,12 +342,6 @@ class ReportViews {
                     return frConfig.getUserNameFromId(data);
                 }
             },
-            { title: "Name", className: "all" },
-            { title: "Delivery Date" },
-            { title: "Total Amt", render: (data)=>{ return USD(data).format(); } },
-            { title: "Cash Paid", render: (data)=>{ return USD(data).format(); } },
-            { title: "Checks Paid", render: (data)=>{ return USD(data).format(); } },
-            { title: "Checks", render: (data)=>{ return(null!==data ? data : ''); } },
             {
                 title: "Verify",
                 className: "all"
@@ -389,12 +391,11 @@ class ReportViews {
         const orderDataSet = [];
         for (const order of orders) {
             const nameStr = `${order.firstName}, ${order.lastName}`;
-
+            const orderOwner = ('any'===userId)?order.orderOwner:userId;
             const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
 
             let orderDataItem = [
                 order.orderId,
-                order.orderOwner,
                 nameStr,
                 order.phone,
                 getVal(order.email),
@@ -418,25 +419,17 @@ class ReportViews {
                 USD(order.checkPaid).format(),
                 getVal(order.checkNums),
                 USD(order.totalAmt).format(),
-                (order.isVerified?"True":"False")
+                (order.isVerified?"True":"False"),
+                orderOwner,
+                this.getActionButtons(order, frConfig)
             ]);
-
-            orderDataItem.push(this.getActionButtons(order, frConfig));
             orderDataSet.push(orderDataItem);
         }
 
 
         let tableColumns = [
-            { title: "OrderId", visible: false },
-            {
-                title: "Order Owner",
-                visible: ('any'!==userId || userId !== currentUserId),
-                render: (data)=>{
-                    //console.log(`Data: JSON.stringify(data)`);
-                    return frConfig.getUserNameFromId(data);
-                }
-            },
-            { title: "Name"},
+            { title: "OrderId", className: "all", visible: false },
+            { title: "Name", className: "all" },
             { title: "Phone" },
             { title: "Email" },
             { title: "Address 1" },
@@ -460,6 +453,16 @@ class ReportViews {
             { title: "IsValidated" },
 
         ]);
+
+        tableColumns.push({
+            title: "Order Owner",
+            visible: ('any'!==userId || userId !== currentUserId),
+            render: (data)=>{
+                //console.log(`Data: JSON.stringify(data)`);
+                return frConfig.getUserNameFromId(data);
+            }
+        });
+        
 
         tableColumns.push({
             title: "Actions",
@@ -572,8 +575,10 @@ const showTheSelectedView = (frConfig: FundraiserConfig) => {
         const selectedUser = userSelElm.options[userSelElm.selectedIndex].text;
         const selectedViewOpt = viewSelElm.options[viewSelElm.selectedIndex];
         const rvLabel = document.getElementById("reportViewLabel");
+        const rvOrderOwner = document.getElementById("reportViewOrderOwner");
         console.log(`${selectedViewOpt.text}(${selectedUser})`);
-        rvLabel.innerText = `${selectedViewOpt.text}(${selectedUser})`;
+        rvLabel.innerText = `${selectedViewOpt.text}`;
+        rvOrderOwner.innerText = `${selectedUser}`;
 
         const userIdOverride = userSelElm.options[userSelElm.selectedIndex].value;
         reportViews.showView(selectedViewOpt.value, frConfig, userIdOverride);
@@ -754,21 +759,28 @@ const genCardBody = (frConfig: FundraiserConfig) => {
 
     return(
         <div className="card-body" id="cardReportBody">
-            <h5 className="card-title ps-2" id="orderCardTitle">
-                Reports View: <div style={{display: "inline"}} id="reportViewLabel">Default({fullName})</div>
-                <button type="button" className="btn reports-view-setting-btn" onClick={onVewSettingsClick}>
-                    <svg className="bi" fill="currentColor">
-                        <use xlinkHref={reportSettingsImg}/>
-                    </svg>
-                </button>
-                <button type="button" className="btn reports-view-setting-btn float-end" onClick={onDownloadReportClick}>
-                    <svg className="bi" fill="currentColor">
-                        <use xlinkHref={exportImg}/>
-                    </svg>
-                </button>
-
-            </h5>
-
+            <h6 className="card-title ps-2" id="orderCardTitle">
+                <ul className="list-group list-group-horizontal-sm">
+                    <li className="list-group-item me-2">
+                        Report View:<div className="d-inline" id="reportViewLabel">Default</div>
+                    </li>
+                    <li className="list-group-item" id="orderOwnerLabel">
+                        Order Owner:<div className="d-inline" id="reportViewOrderOwner">{fullName}</div>
+                    </li>
+                </ul>
+                <div id="reportViewSettings" className="float-end">
+                    <button type="button" className="btn reports-view-setting-btn" onClick={onDownloadReportClick}>
+                        <svg className="bi" fill="currentColor">
+                            <use xlinkHref={exportImg}/>
+                        </svg>
+                    </button>
+                    <button type="button" className="btn reports-view-setting-btn" onClick={onVewSettingsClick}>
+                        <svg className="bi" fill="currentColor">
+                            <use xlinkHref={reportSettingsImg}/>
+                        </svg>
+                    </button>
+                </div>
+            </h6>
 
 
             <table id="orderListTable"
@@ -806,8 +818,12 @@ export default function orders() {
         setDeleteDlg(genDeleteDlg());
         setSpreadDlg(genSpreadingDlg());
         setReportSettingsDlg(genReportSettingsDlg());
-
+        
         showTheSelectedView(frConfig);
+        auth.getUserIdAndGroups().then(([_, userGroups])=>{
+            const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
+            if (!isAdmin) { document.getElementById("orderOwnerLabel").style.display = "none"; }
+        });
 
     }, []);
 
@@ -815,14 +831,7 @@ export default function orders() {
     return (
         <div>
             <NavBar/>
-
-            <button type="button"
-                    className="btn btn-outline-primary add-order-btn"
-                    onClick={addNewOrder}>
-                <svg className="bi" fill="currentColor">
-                    <use xlinkHref={addOrderImg}/>
-                </svg>
-            </button>
+            <AddNewOrderWidget/>
 
             <div className="col-xs-1 d-flex justify-content-center">
                 <div className="card" style={{width: "100%"}}>
