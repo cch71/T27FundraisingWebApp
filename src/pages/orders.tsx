@@ -7,7 +7,12 @@ import auth from "../js/auth"
 import jQuery from 'jquery';
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config";
 import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
-import * as bs from 'bootstrap/dist/js/bootstrap.min.js'
+//import * as bs from 'bootstrap/dist/js/bootstrap.min.js'
+let bs;
+if (typeof window !== `undefined`) {
+    bs = require('bootstrap');
+}
+//import { Modal } from 'bootstrap';
 const addOrderImg = bootstrapIconSprite + "#plus-square-fill";
 const trashImg = bootstrapIconSprite + "#trash";
 const pencilImg = bootstrapIconSprite + "#pencil";
@@ -363,7 +368,7 @@ class ReportViews {
         const currentUserId =  auth.getCurrentUserId();
         if (!userId) { userId = currentUserId; }
 
-        this.currentQueryResults_ = await orderDb.query();
+        this.currentQueryResults_ = await orderDb.query({orderOwner: userId});
         const orders = this.currentQueryResults_;
 
         console.log(`Full Orders Page: ${JSON.stringify(orders)}`);
@@ -386,7 +391,6 @@ class ReportViews {
             const nameStr = `${order.firstName}, ${order.lastName}`;
 
             const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
-            orderDataItem.push(deliveryDate);
 
             let orderDataItem = [
                 order.orderId,
@@ -426,7 +430,11 @@ class ReportViews {
             { title: "OrderId", visible: false },
             {
                 title: "Order Owner",
-                visible: ('any'!==userId || userId !== currentUserId)
+                visible: ('any'!==userId || userId !== currentUserId),
+                render: (data)=>{
+                    //console.log(`Data: JSON.stringify(data)`);
+                    return frConfig.getUserNameFromId(data);
+                }
             },
             { title: "Name"},
             { title: "Phone" },
