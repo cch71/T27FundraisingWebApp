@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from 'react-dom'
 import NavBar from "../components/navbar";
 import AddNewOrderWidget from "../components/add_new_order_widget"
 import { navigate } from "gatsby";
@@ -131,6 +132,10 @@ class ReportViews {
 			responsive: true,
 			data: orderDataSet,
 			deferRender: true,
+			drawCallback: ( settings: any ) => {
+				console.log("Draw Callback Called");
+				this.registerActionButtonHandlers();
+			},
 			language: {
 				paginate: {
 					previous: "<<",
@@ -146,9 +151,15 @@ class ReportViews {
     ////////////////////////////////////////////////////////////////////
     //
     private registerActionButtonHandlers() {
-        // Handle on Edit Scenario
-        jQuery('#orderListTable').find('.order-edt-btn').on('click', (event: any)=>{
-            const parentTr = jQuery(event.currentTarget).parents('tr');
+		//Removing first so it doesn't get doubled loaded
+		jQuery('#orderListTable').find('.order-edt-btn').off('click');
+		jQuery('#orderListTable').find('.order-view-btn').off('click');
+		jQuery('#orderListTable').find('.order-spread-btn').off('click');
+		jQuery('#orderListTable').find('.order-del-btn').off('click');
+
+		// Handle on Edit Scenario
+		jQuery('#orderListTable').find('.order-edt-btn').on('click', (event: any)=>{
+			const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
 			const rowData = row.data();
             const orderId = rowData[0];
@@ -263,6 +274,17 @@ class ReportViews {
         const orders = this.currentQueryResults_;
         //console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
 
+
+		/* ReactDOM.render(
+		   <button
+		   onClick={() => this.props.getDelCartItem({ rowID: rowData.RowID, code:
+		   rowData.ProdCode })}
+		   data-toggle='tooltip' data-placement='right' title='Delete Item From Cart'
+		   className='btn btn-sm btn-danger'>
+		   <i className="fas fa-times fa-lg"></i>
+		   </button>
+		 *     , td); */
+
         // Fill out rows of data
         const orderDataSet = [];
         for (const order of orders) {
@@ -303,7 +325,7 @@ class ReportViews {
 
         tableColumns.push({
             title: "Order Owner",
-            visible: ('any'!==userId || userId !== currentUserId),
+            visible: ('any'===userId || userId !== currentUserId),
             render: (data)=>{
                 //console.log(`Data: JSON.stringify(data)`);
                 return frConfig.getUserNameFromId(data);
@@ -318,7 +340,7 @@ class ReportViews {
 
         this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
 
-        this.registerActionButtonHandlers();
+        //this.registerActionButtonHandlers();
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -357,7 +379,7 @@ class ReportViews {
                                    order.cashPaid?order.cashPaid:0,
                                    order.checkPaid?order.checkPaid:0,
                                    order.checkNums?order.checkNums:'',
-                                   orderOwner, htmlValidateSwitch, this.getActionButtons(order, frConfig)];
+                                   htmlValidateSwitch, orderOwner, this.getActionButtons(order, frConfig)];
             orderDataSet.push(orderDataItem);
         }
 
@@ -375,7 +397,7 @@ class ReportViews {
             },
             {
                 title: "Order Owner",
-                visible: ('any'!==userId || userId !== currentUserId),
+                visible: ('any'===userId || userId !== currentUserId),
                 render: (data)=>{
                     //console.log(`Data: JSON.stringify(data)`);
                     return frConfig.getUserNameFromId(data);
@@ -390,7 +412,7 @@ class ReportViews {
 
         this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
 
-        this.registerActionButtonHandlers();
+        //this.registerActionButtonHandlers();
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -486,7 +508,7 @@ class ReportViews {
 
         tableColumns.push({
             title: "Order Owner",
-            visible: ('any'!==userId || userId !== currentUserId),
+            visible: ('any'===userId || userId !== currentUserId),
             render: (data)=>{
                 //console.log(`Data: JSON.stringify(data)`);
                 return frConfig.getUserNameFromId(data);
@@ -501,7 +523,7 @@ class ReportViews {
 
         this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
 
-        this.registerActionButtonHandlers();
+        //this.registerActionButtonHandlers();
     }
 
     ////////////////////////////////////////////////////////////////////
