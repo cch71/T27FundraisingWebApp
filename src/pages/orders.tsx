@@ -133,7 +133,7 @@ class ReportViews {
 			data: orderDataSet,
 			deferRender: true,
 			drawCallback: ( settings: any ) => {
-				console.log("Draw Callback Called");
+				// console.log("Draw Callback Called");
 				this.registerActionButtonHandlers();
 			},
 			language: {
@@ -466,6 +466,8 @@ class ReportViews {
 
             orderDataItem = orderDataItem.concat([
                 getVal(order.specialInstructions),
+				true===order.isVerified?"Yes":"No",
+				true===order.doCollectMoneyLater?'No':'Yes',
                 USD(order.donation).format(),
                 USD(order.cashPaid).format(),
                 USD(order.checkPaid).format(),
@@ -497,6 +499,8 @@ class ReportViews {
 
         tableColumns = tableColumns.concat([
             { title: "Special Instructions" },
+            { title: "Verified" },
+            { title: "Money Collected" },
             { title: "Donations" },
             { title: "Cash" },
             { title: "Check" },

@@ -28,9 +28,6 @@ class Order {
     email?: string;
     addr1?: string;
     addr2?: string;
-    city?: string;
-    state?: string;
-    zip?: string;
     specialInstructions?: string;
     neighborhood?: string;
     products?: Record<string, number>;

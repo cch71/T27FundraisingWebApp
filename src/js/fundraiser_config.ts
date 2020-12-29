@@ -10,6 +10,7 @@ interface Product {
     id: string;
     label: string;
     unitPrice: number;
+	minUnits?: number;
     priceBreaks?: Array<PriceBreak>;
 }
 
@@ -148,7 +149,7 @@ class FundraiserConfig {
             }
         }
     }
-    
+
     /////////////////////////////////////////
     //
     isEditableDeliveryDate(id?: string): boolean {
@@ -158,7 +159,7 @@ class FundraiserConfig {
         try {
             const deliveryDate = Date.parse(deliveryEntry.date);
             const nowDate = Date.now();
-            if (nowDate >= deliveryDate) { return false; }                
+            if (nowDate >= deliveryDate) { return false; }
 
             if (deliveryEntry.disabledDate) {
                 const disabledDate = Date.parse(deliveryEntry.disabledDate);
@@ -166,13 +167,13 @@ class FundraiserConfig {
                     return false;
                 }
             }
-            
+
         }catch(err) {
             console.error(`Failed handling valid delivery date ${err}`);
         }
         return true;
     }
-    
+
     /////////////////////////////////////////
     // return [id, date]
     *validDeliveryDates(): IterableIterator<[string,string]> {
