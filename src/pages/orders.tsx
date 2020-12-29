@@ -35,21 +35,30 @@ class ReportViews {
     private currentDataTable_: any = undefined;
     private currentQueryResults_: Array<OrderListItem<string>> = undefined;
 
+	/*
     constructor() {
         console.log("Constructing...");
+		window.addEventListener('resize', ()=>{
+			console.log(`Evt Screen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
+			if (this.currentDataTable_) {
+				if (window.innerHeight
+				   this.currentDataTable_.page.len(10).draw();
+			}
+		});
     }
+	*/
 
     ////////////////////////////////////////////////////////////////////
     //
     showView(view: string, frConfig: FundraiserConfig, userId?: string) {
         const asyncShow = async () => {
-            
-            if (jQuery.fn.dataTable.isDataTable( '#orderListTable')) {
+
+            if (jQuery.fn.dataTable.isDataTable('#orderListTable table')) {
                 if (view === this.currentView_ && userId === this.currentUserId_) { return; }
 
-                jQuery('#orderListTable').DataTable().clear();
-                jQuery('#orderListTable').DataTable().destroy();
-                jQuery('#orderListTable').empty();
+                jQuery('#orderListTable table').DataTable().clear();
+                jQuery('#orderListTable table').DataTable().destroy();
+                jQuery('#orderListTable table').empty();
                 delete this.currentDataTable_;
                 delete this.currentQueryResults_;
             }
@@ -89,7 +98,7 @@ class ReportViews {
     ////////////////////////////////////////////////////////////////////
     //
     private getActionButtons(order: any, frConfig: FundraiserConfig) {
-        
+
         let htmlStr = `<div style="float: right">`;
 
         if (('mulch' === frConfig.kind()) && order.products?.spreading) {
@@ -97,7 +106,7 @@ class ReportViews {
                 `<button type="button" class="btn btn-outline-info me-1 order-spread-btn">` +
                 `<svg class="bi" fill="currentColor"><use xlink:href="${spreadImg}" /></svg></button>`;
         }
-        
+
         if (frConfig.isEditableDeliveryDate(order.deliveryId)) {
             htmlStr +=
                 `<button type="button" class="btn btn-outline-info me-1 order-edt-btn">` +
@@ -116,13 +125,34 @@ class ReportViews {
 
     ////////////////////////////////////////////////////////////////////
     //
+    private genDataTable(orderDataSet: any, tableColumns: any) {
+		//console.log(`Screen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
+		return jQuery('#orderListTable table').DataTable({
+			responsive: true,
+			data: orderDataSet,
+			deferRender: true,
+			language: {
+				paginate: {
+					previous: "<<",
+					next: ">>"
+				}
+			},
+			columns: tableColumns
+		});
+
+	}
+
+
+    ////////////////////////////////////////////////////////////////////
+    //
     private registerActionButtonHandlers() {
         // Handle on Edit Scenario
         jQuery('#orderListTable').find('.order-edt-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
-            const orderId = row.data()[0];
-            const orderOwner = row.data()[1];
+			const rowData = row.data();
+            const orderId = rowData[0];
+            const orderOwner = rowData[rowData.length - 2];
 
             console.log(`Editing order for ${orderId}`);
             orderDb.setActiveOrder(); // Reset active order to let order edit for set it
@@ -136,18 +166,27 @@ class ReportViews {
         jQuery('#orderListTable').find('.order-view-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
-            const orderId = row.data()[0];
+			const rowData = row.data();
+            const orderId = rowData[0];
+            const orderOwner = rowData[rowData.length - 2];
 
             console.log(`View order for ${orderId}`);
             orderDb.setActiveOrder(); // Reset active order to let order edit for set it
-            navigate('/order_step_1/', {state: {editOrderId: orderId, isOrderReadOnly: true}});
+            navigate('/order_step_1/', {state: {
+				editOrderId: orderId,
+                editOrderOwner: orderOwner,
+				isOrderReadOnly: true
+			}});
         });
 
         // Handle on View Scenario
         jQuery('#orderListTable').find('.order-spread-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
-            const orderId = row.data()[0];
+			const rowData = row.data();
+            const orderId = rowData[0];
+            const orderOwner = rowData[rowData.length - 2];
+
             console.log(`Spreading Dlg order for ${orderId}`);
             const dlgElm = document.getElementById(spreadingDlgRt);
             const spreadOrderDlg = new bs.Modal(dlgElm, {
@@ -162,8 +201,9 @@ class ReportViews {
         jQuery('#orderListTable').find('.order-del-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
-            const orderId = row.data()[0];
-            const orderOwner = row.data()[1];
+			const rowData = row.data();
+            const orderId = rowData[0];
+            const orderOwner = rowData[rowData.length - 2];
 
             console.log(`Deleting order for ${orderId}`);
             jQuery('#confirmDeleteOrderInput').val('');
@@ -221,7 +261,7 @@ class ReportViews {
 
         this.currentQueryResults_ = await orderDb.query({fields: fieldNames, orderOwner: userId});
         const orders = this.currentQueryResults_;
-        console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
+        //console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
 
         // Fill out rows of data
         const orderDataSet = [];
@@ -269,19 +309,14 @@ class ReportViews {
                 return frConfig.getUserNameFromId(data);
             }
         });
-        
+
         tableColumns.push({
             title: "Actions",
             "orderable": false,
             className: "all"
         });
 
-        this.currentDataTable_ = jQuery('#orderListTable').DataTable({
-            data: orderDataSet,
-            paging: false,
-            bInfo : false,
-            columns: tableColumns
-        });
+        this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
 
         this.registerActionButtonHandlers();
     }
@@ -296,7 +331,7 @@ class ReportViews {
         const fieldNames = ["orderId", "firstName", "lastName", "deliveryId",
                             "totalAmt", "cashPaid", "checkPaid", "checkNums", "isVerified"];
 
-        
+
         if ('any'===userId) {
             fieldNames.push("orderOwner");
         }
@@ -304,9 +339,9 @@ class ReportViews {
 
         this.currentQueryResults_ = await orderDb.query({fields: fieldNames, orderOwner: userId});
         const orders = this.currentQueryResults_;
-        console.log(`Verify Orders Page: ${JSON.stringify(orders)}`);
+        //console.log(`Verify Orders Page: ${JSON.stringify(orders)}`);
 
-        const htmlValidateSwitch = 
+        const htmlValidateSwitch =
             `<div class="form-check form-switch">` +
             `<input class="form-check-input" type="checkbox" />` +
             `</div>`;
@@ -335,6 +370,10 @@ class ReportViews {
             { title: "Checks Paid", render: (data)=>{ return USD(data).format(); } },
             { title: "Checks", render: (data)=>{ return(null!==data ? data : ''); } },
             {
+                title: "Verify",
+                className: "all"
+            },
+            {
                 title: "Order Owner",
                 visible: ('any'!==userId || userId !== currentUserId),
                 render: (data)=>{
@@ -343,22 +382,13 @@ class ReportViews {
                 }
             },
             {
-                title: "Verify",
-                className: "all"
-            },
-            {
                 title: "Actions",
                 "orderable": false,
                 className: "all"
             }
         ];
 
-        this.currentDataTable_ = jQuery('#orderListTable').DataTable({
-            data: orderDataSet,
-            paging: false,
-            bInfo : false,
-            columns: tableColumns
-        });
+        this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
 
         this.registerActionButtonHandlers();
     }
@@ -373,7 +403,7 @@ class ReportViews {
         this.currentQueryResults_ = await orderDb.query({orderOwner: userId});
         const orders = this.currentQueryResults_;
 
-        console.log(`Full Orders Page: ${JSON.stringify(orders)}`);
+        //console.log(`Full Orders Page: ${JSON.stringify(orders)}`);
 
         const getVal = (fld?: any, dflt?: any)=>{
             if (undefined===fld) {
@@ -462,7 +492,6 @@ class ReportViews {
                 return frConfig.getUserNameFromId(data);
             }
         });
-        
 
         tableColumns.push({
             title: "Actions",
@@ -470,12 +499,7 @@ class ReportViews {
             className: "all"
         });
 
-        this.currentDataTable_ = jQuery('#orderListTable').DataTable({
-            data: orderDataSet,
-            paging: false,
-            bInfo : false,
-            columns: tableColumns
-        });
+        this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
 
         this.registerActionButtonHandlers();
     }
@@ -782,12 +806,9 @@ const genCardBody = (frConfig: FundraiserConfig) => {
                 </div>
             </h6>
 
-
-            <table id="orderListTable"
-                   className="display responsive nowrap collapsed" role="grid" style={{width:"100%"}}/>
-
-
-
+			<div id="orderListTable">
+				<table  className="display responsive nowrap collapsed" role="grid" style={{width:"100%"}}/>
+			</div>
 
             <div className="spinner-border" role="status" id="orderLoadingSpinner">
                 <span className="visually-hidden">Loading...</span>
@@ -818,7 +839,7 @@ export default function orders() {
         setDeleteDlg(genDeleteDlg());
         setSpreadDlg(genSpreadingDlg());
         setReportSettingsDlg(genReportSettingsDlg());
-        
+
         showTheSelectedView(frConfig);
         auth.getUserIdAndGroups().then(([_, userGroups])=>{
             const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
@@ -831,13 +852,14 @@ export default function orders() {
     return (
         <div>
             <NavBar/>
-            <AddNewOrderWidget/>
 
             <div className="col-xs-1 d-flex justify-content-center">
                 <div className="card" style={{width: "100%"}}>
                     {cardBody}
                 </div>
             </div>
+
+			<AddNewOrderWidget/>
 
             {deleteDlg}
             {settingsDlg}

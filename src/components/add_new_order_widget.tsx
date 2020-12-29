@@ -1,5 +1,6 @@
 import React from 'react'
-import { Link } from 'gatsby'
+import { navigate } from "gatsby";
+import {orderDb} from "../js/ordersdb";
 import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
 
 const addOrderImg = bootstrapIconSprite + "#plus-square-fill"
@@ -13,7 +14,7 @@ const AddNewOrderWidget = () => {
 
 
     return (
-        <div className="add-order-widget">
+        <div className="add-order-widget float-end me-3 my-1">
             <label>Add New Order</label>
             <button type="button"
                     className="btn btn-outline-primary add-order-btn"

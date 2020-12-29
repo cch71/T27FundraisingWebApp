@@ -6,7 +6,7 @@ import "./src/style/index.scss"
 // import 'popper.js/dist/popper.min'
 
 // Needed for bootstrap components
-//import 'bootstrap/dist/js/bootstrap.min.js'
+// import 'bootstrap/dist/js/bootstrap.min.js'
 
 import 'datatables.net/js/jquery.dataTables.min.js'
 import 'datatables.net-responsive/js/dataTables.responsive.min.js'

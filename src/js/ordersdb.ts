@@ -18,7 +18,7 @@ class Order {
     // Always should have some initialization
     readonly orderId: string;
     totalAmt: currency;
-    
+
     isVerified?: boolean;
     doDeleteOrder?: boolean;
     orderOwner?: string;
@@ -352,7 +352,7 @@ class OrderDb {
                     params['orderOwner'] = auth.currentUser().getUsername();
                 }
                 const paramStr = JSON.stringify(params);
-                //console.log(`OrderDB Query Parms: ${paramStr}`);
+                console.log(`OrderDB Query Parms: ${paramStr}`);
                 const resp = await fetch(awsConfig.api.invokeUrl + '/queryorders', {
                     method: 'post',
                     headers: {

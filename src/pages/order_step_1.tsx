@@ -28,9 +28,65 @@ const LazyComponent = ({ Component, ...props }) => (
 
 ////////////////////////////////////////////////////////
 //
+const validateOrderForm = (currentOrder: Order) => {
+    //  Goes through required fields and verifies that they are valid
+    const validatePayment = async ()=>{
+        const amountDue = currency(document.getElementById('orderAmountDue').innerText);
+        const amountPaid = currency(document.getElementById('orderAmountPaid').innerText);
+        const checksPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
+        const checkNumField = document.getElementById('formCheckNumbers') as HTMLInputElement;
+        const checkNumFieldVal = checkNumField.value;
+        const isCheckNumGood = (0.0<checksPaid.value)?(0<checkNumFieldVal.length):true;
+        const isCollectLaterChecked = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
+        const isPaidChecked = amountDue.value===amountPaid.value;
+
+        //console.log(`AD: ${amountDue.value} AP: ${amountPaid.value}`);
+
+        if ((isPaidChecked || isCollectLaterChecked) && isCheckNumGood) {
+            document.getElementById('totalsFormRow').classList.remove('is-invalid');
+            checkNumField.classList.remove('is-invalid');
+            return true;
+        }
+
+        document.getElementById('totalsFormRow').classList.add('is-invalid');
+        if (!isCheckNumGood) { checkNumFields.classList.add('is-invalid'); }
+        return false;
+    };
+
+    const validateRequiredFormFields = async ()=>{
+        let isValid = true;
+        const formElms = document.querySelectorAll('[required]');
+        Array.prototype.slice.call(formElms).forEach((aform) => {
+            if (!aform.checkValidity()) {
+                aform.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                aform.classList.remove('is-invalid');
+            }
+        });
+
+        return isValid;
+    };
+
+
+    const validateProducts = async ()=>{
+        if (currentOrder.products || currentOrder.donation) {
+            document.getElementById('productList').classList.remove('is-invalid');
+            return true;
+        }
+
+        document.getElementById('productList').classList.add('is-invalid');
+        return false;
+    };
+
+    return [validatePayment(), validateRequiredFormFields(), validateProducts()];
+}
+
+////////////////////////////////////////////////////////
+//
 const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean): any =>{
 
-    const frConfig: FundraiserConfig = getFundraiserConfig();
+        const frConfig: FundraiserConfig = getFundraiserConfig();
     if (!frConfig) {
         alert("Failed to load fundraiser config");
         return(<div/>);
@@ -77,70 +133,20 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
 
         //console.log(`Submitting Active Order`);
         saveCurrentOrder();
-
+        
         // Validate Form
-        //  Goes through required fields and verifies that they are valid
-        const validatePayment = async ()=>{
-            const amountDue = currency(document.getElementById('orderAmountDue').innerText);
-            const amountPaid = currency(document.getElementById('orderAmountPaid').innerText);
-            const checksPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
-            const checkNumField = document.getElementById('formCheckNumbers') as HTMLInputElement;
-            const checkNumFieldVal = checkNumField.value;
-            const isCheckNumGood = (0.0<checksPaid.value)?(0<checkNumFieldVal.length):true;
-            const isCollectLaterChecked = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
-            const isPaidChecked = amountDue.value===amountPaid.value;
-
-            //console.log(`AD: ${amountDue.value} AP: ${amountPaid.value}`);
-
-            if ((isPaidChecked || isCollectLaterChecked) && isCheckNumGood) {
-                document.getElementById('totalsFormRow').classList.remove('is-invalid');
-                checkNumField.classList.remove('is-invalid');
-                return true;
-            }
-
-            document.getElementById('totalsFormRow').classList.add('is-invalid');
-            if (!isCheckNumGood) { checkNumFields.classList.add('is-invalid'); }
-            return false;
-        };
-
-        const validateRequiredFormFields = async ()=>{
-            let isValid = true;
-            const formElms = document.querySelectorAll('[required]');
-            Array.prototype.slice.call(formElms).forEach((aform) => {
-                if (!aform.checkValidity()) {
-                    aform.classList.add('is-invalid');
-                    isValid = false;
-                } else {
-                    aform.classList.remove('is-invalid');
-                }
-            });
-
-            return isValid;
-        };
-
-
-        const validateProducts = async ()=>{
-            if (currentOrder.products || currentOrder.donation) {
-                document.getElementById('productList').classList.remove('is-invalid');
-                return true;
-            }
-
-            document.getElementById('productList').classList.add('is-invalid');
-            return false;
-
-        };
-
-        const reenableSubmitButton = ()=>{
+        const reenableSubmitButton = () => {
             (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = false;
             (document.getElementById('formOrderSubmitSpinner') as HTMLButtonElement).style.display = "none";
             (document.getElementById('formOrderCancel') as HTMLButtonElement).disabled = false;
-
         };
 
-        Promise.all([validatePayment(), validateRequiredFormFields(), validateProducts()])
-               .then((results)=>{
-                   if (results[0] && results[1] && results[2]) {
+        // If everything vlidates then submit
+				Promise.all(validateOrderForm(currentOrder))
+				       .then((results)=>{
+					         if (results[0] && results[1] && results[2]) {
                        // If we got here they we are good to submit form
+                       currentOrder.isVerified = false;
                        orderDb.submitActiveOrder().then(()=>{
                            navigate('/');
                        }).catch((err:any)=>{
@@ -158,7 +164,7 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
                        reenableSubmitButton();
                    }
                });
-    }
+				}
 
     // Add New Product Order
     const onAddOrder = (event: any)=>{
@@ -577,7 +583,7 @@ export default (params: any)=>{
                 }
             };
 
-            
+
             const order = orderDb.getActiveOrder();
             if (undefined===order) {
                 await loadOrder();
@@ -597,7 +603,7 @@ export default (params: any)=>{
         });;
 
 
-        
+
     }, [])
 
     return (
