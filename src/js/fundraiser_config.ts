@@ -202,7 +202,7 @@ class FundraiserConfig {
 
 /////////////////////////////////////////
 //
-let frConfig: FundraiserConfig|null = null;
+let frConfig: FundraiserConfig|undefined = undefined;
 
 /////////////////////////////////////////
 //
@@ -256,9 +256,9 @@ function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig |
 /////////////////////////////////////////
 //
 function getFundraiserConfig(): FundraiserConfig {
-    if (null===frConfig) {
-        console.log("Loading Default Config");
-        return new FundraiserConfig();
+    if (!frConfig) {
+		console.log("Fr Config is NULL");
+        frConfig = new FundraiserConfig();
     }
     return frConfig;
 }

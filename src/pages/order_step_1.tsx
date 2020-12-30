@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react"
 import { Router, Link } from '@reach/router';
-import NavBar from "../components/navbar"
 import {orderDb, Order} from "../js/ordersdb"
 import auth from "../js/auth"
 import { navigate } from "gatsby"
@@ -133,7 +132,7 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
 
         //console.log(`Submitting Active Order`);
         saveCurrentOrder();
-        
+
         // Validate Form
         const reenableSubmitButton = () => {
             (document.getElementById('formOrderSubmit') as HTMLButtonElement).disabled = false;
@@ -607,8 +606,7 @@ export default (params: any)=>{
     }, [])
 
     return (
-        <div>
-            <NavBar/>
+        <>
             <div className="col-xs-1 justify-content-center">
                 <div className="card">
                     <div className="card-body">
@@ -623,6 +621,6 @@ export default (params: any)=>{
                 <LazyComponent Component={AddDonation} path="/add_donations/" />
                 <LazyComponent Component={SignOn} path="/signon/" />
             </Router>
-        </div>
+        </>
     );
 }

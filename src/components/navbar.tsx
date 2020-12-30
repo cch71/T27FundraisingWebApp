@@ -5,40 +5,18 @@ import t27patch from "../../static/t27patch.png"
 import {orderDb} from "../js/ordersdb"
 
 const NavBar = () => {
-    const [baseNav, setBaseNav] = useState();
+	const pathNm = (typeof window !== 'undefined')?window.location.pathname:undefined;
+
+    const setIfActive = (srchPath: string) => {
+        if (pathNm===srchPath || `${pathNm}/`===srchPath) {
+            return('nav-item nav-link active');
+        } else {
+            return('nav-item nav-link');
+        }
+    };
+
     const [userNav, setUserNav] = useState();
-    const [activeOrder, setActiveOrder] = useState();
     useEffect(() => {
-        console.log(`Location: ${window.location.pathname}`)
-        const pathNm = window.location.pathname;
-        const baseNavItems = [];
-        const setIfActive = (srchPath: string)=>{
-            if (pathNm===srchPath || `${pathNm}/`===srchPath) {
-                return('nav-item active');
-            } else {
-                return('nav-item');
-            }
-        };
-        baseNavItems.push(
-            <li className={setIfActive('/')} key="/">
-                <Link className='nav-item nav-link' replace to='/'>Home</Link>
-            </li>
-        );
-        baseNavItems.push(
-            <li className={setIfActive('/orders/')} key="/orders">
-                <Link className='nav-item nav-link' replace to='/orders/'>Reports</Link>
-            </li>
-        );
-        baseNavItems.push(
-            <li key="AppHelp">
-                <a className='nav-item nav-link'
-                   href='https://cch71.github.io/T27FundraisingWebApp/' target="_blank">Help</a>
-            </li>
-        );
-
-        setBaseNav(baseNavItems);
-
-
         auth.getUserIdAndGroups().then(([userName, userGroups])=>{
             setUserNav(
                 <span className="navbar-nav nav-item dropdown">
@@ -53,42 +31,48 @@ const NavBar = () => {
                     </div>
                 </span>
             );
+
             if (userGroups && userGroups.includes("FrAdmins")) {
-                console.log("This user is an admin");
+				//TODO: Placeholder for the Admin Menu Options
             }
 
-            if (orderDb.getActiveOrder()) {
-                setActiveOrder(
-                    <li className={setIfActive('/order_step_1/')}>
-                        <Link className='nav-item nav-link' replace to='/order_step_1/'>Open Order</Link>
-                    </li>
-                );
-            }
-        });
+        }).catch((err: any)=>{});
     }, []);
 
 
     return (
         <nav className="navbar navbar-expand-sm navbar-light bg-light">
-            <a className="navbar-brand" href="#">
-                <span>
-                    <img className="navbar-logo ms-2" src={t27patch} alt="Logo" />
-                </span>
-            </a>
+			<a className="navbar-brand" href="#">
+				<span>
+					<img className="navbar-logo ms-2" src={t27patch} alt="Logo" />
+				</span>
+			</a>
 
-            <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span className="navbar-toggler-icon"></span>
-            </button>
+			<button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+				aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+				<span className="navbar-toggler-icon"></span>
+			</button>
 
-            <div className="collapse navbar-collapse" id="navbarNav">
-                <ul className="navbar-nav me-auto">
-                    {baseNav}
-                    {activeOrder}
-                </ul>
-                {userNav}
-            </div>
-        </nav>
+			<div className="collapse navbar-collapse" id="navbarNav">
+				<ul className="navbar-nav me-auto">
+					<li>
+						<Link className={setIfActive('/')} replace to='/'>Home</Link>
+					</li>
+					<li>
+						<Link className={setIfActive('/orders/')} replace to='/orders/'>Reports</Link>
+					</li>
+					<li style={{display: (orderDb.getActiveOrder()?'block':'none')}} >
+						<Link className={setIfActive('/order_step_1/')} replace to='/order_step_1/'>Open Order</Link>
+					</li>
+					<li>
+						<a className='nav-item nav-link'
+						   href='https://cch71.github.io/T27FundraisingWebApp/' target="_blank">Help</a>
+					</li>
+
+				</ul>
+				{userNav}
+			</div>
+		</nav>
     );
 }
 

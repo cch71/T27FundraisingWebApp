@@ -23,7 +23,12 @@ module.exports = {
                 display: `minimal-ui`,
                 icon: `static/t27patch.png`,
             },
-        },
+        },{
+			resolve: `gatsby-plugin-layout`,
+			options: {
+				component: require.resolve(`./src/layouts/primary_layout.tsx`),
+			},
+		},
         `gatsby-plugin-sharp`,
         `gatsby-transformer-sharp`,
         `gatsby-plugin-offline`,

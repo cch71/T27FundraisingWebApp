@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from 'react-dom'
-import NavBar from "../components/navbar";
 import AddNewOrderWidget from "../components/add_new_order_widget"
 import { navigate } from "gatsby";
 import {orderDb, OrderListItem} from "../js/ordersdb";
 import currency from "currency.js";
 import auth from "../js/auth"
-import jQuery from 'jquery';
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config";
 import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
-//import * as bs from 'bootstrap/dist/js/bootstrap.min.js'
-let bs;
-if (typeof window !== `undefined`) {
-    bs = require('bootstrap');
-}
-//import { Modal } from 'bootstrap';
+import jQuery from 'jquery'
+
 const trashImg = bootstrapIconSprite + "#trash";
 const pencilImg = bootstrapIconSprite + "#pencil";
 const eyeImg = bootstrapIconSprite + "#eye";
@@ -26,7 +20,6 @@ const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 const rprtStngDlgRt = 'reportViewSettingsDlg';
 const spreadingDlgRt = 'spreadingDlg';
 let reportSettingsDlg = undefined;
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -89,7 +82,6 @@ class ReportViews {
                 } else {
                     const errStr = `Failed creating order list: ${JSON.stringify(err)}`;
                     console.log(errStr);
-                    alert(errStr);
                     throw err;
                 }
             });
@@ -200,7 +192,7 @@ class ReportViews {
 
             console.log(`Spreading Dlg order for ${orderId}`);
             const dlgElm = document.getElementById(spreadingDlgRt);
-            const spreadOrderDlg = new bs.Modal(dlgElm, {
+            const spreadOrderDlg = new bootstrap.Modal(dlgElm, {
                 backdrop: true,
                 keyboard: true,
                 focus: true
@@ -221,7 +213,7 @@ class ReportViews {
             parentTr.find('button').attr("disabled", true);
 
             const dlgElm = document.getElementById('deleteOrderDlg');
-            const delOrderDlg = new bs.Modal(dlgElm, {
+            const delOrderDlg = new bootstrap.Modal(dlgElm, {
                 backdrop: true,
                 keyboard: true,
                 focus: true
@@ -563,7 +555,7 @@ class ReportViews {
 
 }
 
-const reportViews: ReportViews = new ReportViews();
+let reportViews: ReportViews = new ReportViews();
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -615,12 +607,11 @@ const genDeleteDlg = ()=>{
 
 ////////////////////////////////////////////////////////////////////
 //
-const showTheSelectedView = (frConfig: FundraiserConfig) => {
+const showTheSelectedView = async (frConfig: FundraiserConfig) => {
+    const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
+    const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
 
     const showView = ()=>{
-        const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
-        const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
-
         //Update the selected view label
         const selectedUser = userSelElm.options[userSelElm.selectedIndex].text;
         const selectedViewOpt = viewSelElm.options[viewSelElm.selectedIndex];
@@ -635,7 +626,7 @@ const showTheSelectedView = (frConfig: FundraiserConfig) => {
     };
 
     // Check to see if Report Views User view has been initialized
-    if (!document.getElementById(`${rprtStngDlgRt}UserSelection`)) {
+    if (0===userSelElm.options.length) {
         const genOption = (label, val)=>{
             const option = document.createElement("option");
             option.text = label;
@@ -643,37 +634,38 @@ const showTheSelectedView = (frConfig: FundraiserConfig) => {
             return option;
         };
 
-        auth.getUserIdAndGroups().then(([_, userGroups])=>{
-            const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
-            const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
+        const [_, userGroups] = auth.getUserIdAndGroups();
+        const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
+        const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
 
-            const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
+        const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
 
-            if (userGroups && userGroups.includes("FrAdmins")) {
-                for (const userInfo of frConfig.users()) {
-                    userSelElm.add(genOption(userInfo[1], userInfo[0]));
-                }
-                userSelElm.add(genOption('All', 'any'));
-                userSelElm.value = auth.getCurrentUserId();
-                document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "inline-block";
-
-                viewSelElm.add(genOption('Default'));
-                viewSelElm.add(genOption('Full'));
-                viewSelElm.add(genOption('Verify Orders', 'VerifyOrders'));
-                viewSelElm.selectedIndex = 0;
-            } else {
-                document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "none";
-                userSelElm.add(genOption(fullName, auth.getCurrentUserId()));
-                userSelElm.selectedIndex = 0;
-
-                viewSelElm.add(genOption('Default'));
-                viewSelElm.add(genOption('Full'));
-                viewSelElm.selectedIndex = 0;
+        if (userGroups && userGroups.includes("FrAdmins")) {
+            for (const userInfo of frConfig.users()) {
+                userSelElm.add(genOption(userInfo[1], userInfo[0]));
             }
+            userSelElm.add(genOption('All', 'any'));
+            userSelElm.value = auth.getCurrentUserId();
+            document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "inline-block";
 
-            showView();
-        });
+            viewSelElm.add(genOption('Default'));
+            viewSelElm.add(genOption('Full'));
+            viewSelElm.add(genOption('Verify Orders', 'VerifyOrders'));
+            viewSelElm.selectedIndex = 0;
+        } else {
+            document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "none";
+            userSelElm.add(genOption(fullName, auth.getCurrentUserId()));
+            userSelElm.selectedIndex = 0;
+
+            viewSelElm.add(genOption('Default'));
+            viewSelElm.add(genOption('Full'));
+            viewSelElm.selectedIndex = 0;
+        }
+
+        showView();
+		console.log("Show View Not Initted");
     } else {
+		console.log("Show View Initted");
         showView();
     }
 
@@ -783,7 +775,7 @@ const genCardBody = (frConfig: FundraiserConfig) => {
 
     const onVewSettingsClick = ()=>{
         const dlgElm = document.getElementById(rprtStngDlgRt);
-        reportSettingsDlg = new bs.Modal(dlgElm, {
+        reportSettingsDlg = new bootstrap.Modal(dlgElm, {
             backdrop: true,
             keyboard: true,
             focus: true
@@ -860,25 +852,47 @@ export default function orders() {
     const [spreadDlg, setSpreadDlg] = useState();
     const [settingsDlg, setReportSettingsDlg] = useState();
     useEffect(() => {
-        const frConfig = getFundraiserConfig();
-        setCardBody(genCardBody(frConfig));
-        setDeleteDlg(genDeleteDlg());
-        setSpreadDlg(genSpreadingDlg());
-        setReportSettingsDlg(genReportSettingsDlg());
+		const onLoadComponent = async ()=>{
+			const [isValidSession, session] = await auth.getSession();
+            if (!isValidSession) {
+                // If no active user go to login screen
+                navigate('/signon/');
+                return;
+            }
 
-        showTheSelectedView(frConfig);
-        auth.getUserIdAndGroups().then(([_, userGroups])=>{
-            const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
-            if (!isAdmin) { document.getElementById("orderOwnerLabel").style.display = "none"; }
-        });
+			const frConfig = getFundraiserConfig();
+
+			console.log("loaded FrConfig");
+
+			console.log("Loading Gen Card Body");
+			setCardBody(genCardBody(frConfig));
+			setDeleteDlg(genDeleteDlg());
+			setSpreadDlg(genSpreadingDlg());
+			setReportSettingsDlg(genReportSettingsDlg());
+
+
+			await showTheSelectedView(frConfig);
+			const [_, userGroups] = await auth.getUserIdAndGroups();
+			const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
+			if (!isAdmin) { document.getElementById("orderOwnerLabel").style.display = "none"; }
+		};
+
+		onLoadComponent()
+			.then(()=>{})
+			.catch((err)=>{
+				if ('Invalid Session'===err.message) {
+					navigate('/signon/');
+					return;
+				} else {
+					console.error(err);
+				}
+			});
 
     }, []);
 
 
     return (
         <div>
-            <NavBar/>
-
             <div className="col-xs-1 d-flex justify-content-center">
                 <div className="card" style={{width: "100%"}}>
                     {cardBody}

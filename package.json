@@ -14,25 +14,20 @@
     "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing\" && exit 1"
   },
   "dependencies": {
-    "@popperjs/core": "^2.6.0",
     "amazon-cognito-identity-js": "^4.5.5",
-    "bootstrap": "^5.0.0-beta1",
     "bootstrap-icons": "^1.2.2",
     "currency.js": "^2.0.3",
-    "datatables.net": "^1.10.22",
-    "datatables.net-bs4": "^1.10.22",
-    "datatables.net-responsive": "^2.2.6",
-    "datatables.net-responsive-bs4": "^2.2.6",
     "gatsby": "^2.29.2",
+    "gatsby-plugin-layout": "^1.7.0",
     "gatsby-plugin-manifest": "^2.9.1",
     "gatsby-plugin-offline": "^3.7.1",
     "gatsby-plugin-sass": "^2.6.0",
     "gatsby-plugin-sharp": "^2.11.2",
     "gatsby-transformer-sharp": "^2.7.0",
-    "google-charts": "^2.0.0",
     "jquery": "^3.5.1",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
+    "react-helmet": "^6.1.0",
     "uuid": "^8.3.0"
   },
   "devDependencies": {
