@@ -70,6 +70,7 @@ class Order {
             submissionOrder['orderOwner'] = auth.currentUser().getUsername();
         }
         delete submissionOrder['meta'];
+		console.log(`Submitting Order: ${JSON.stringify(submissionOrder, null, '\t')}`);
         return JSON.stringify(submissionOrder);
     }
 }
@@ -306,7 +307,6 @@ class OrderDb {
                     }
 
                     const paramStr = this.currentOrder_.serializeForSubmission();
-                    //console.log(`Updating Order: ${paramStr}`);
                     const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
                         method: 'post',
                         headers: {
