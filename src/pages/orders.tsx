@@ -19,7 +19,7 @@ const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 const rprtStngDlgRt = 'reportViewSettingsDlg';
 const spreadingDlgRt = 'spreadingDlg';
 let reportSettingsDlg = undefined;
-let lastAuthenticatedUser = auth.getCurrentUserId();
+let lastAuthenticatedUser;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -31,7 +31,6 @@ class ReportViews {
 
     
     constructor() {
-        this.resetToDefault();
         /* console.log("Constructing...");
          * window.addEventListener('resize', ()=>{
          *     console.log(`Evt Screen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
