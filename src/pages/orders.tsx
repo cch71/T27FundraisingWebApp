@@ -19,27 +19,72 @@ const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 const rprtStngDlgRt = 'reportViewSettingsDlg';
 const spreadingDlgRt = 'spreadingDlg';
 let reportSettingsDlg = undefined;
+let lastAuthenticatedUser = auth.getCurrentUserId();
 
 ////////////////////////////////////////////////////////////////////
 //
 class ReportViews {
-    private currentView_: string = "";
-    private currentUserId_: string = "";
+    private currentView_: string;
+    private currentUserId_: string;
     private currentDataTable_: any = undefined;
     private currentQueryResults_: Array<OrderListItem<string>> = undefined;
 
-	/*
+    
     constructor() {
-        console.log("Constructing...");
-		window.addEventListener('resize', ()=>{
-			console.log(`Evt Screen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
-			if (this.currentDataTable_) {
-				if (window.innerHeight
-				   this.currentDataTable_.page.len(10).draw();
-			}
-		});
+        this.resetToDefault();
+        /* console.log("Constructing...");
+         * window.addEventListener('resize', ()=>{
+         *     console.log(`Evt Screen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
+         *     if (this.currentDataTable_) {
+         *         if (window.innerHeight
+         *             this.currentDataTable_.page.len(10).draw();
+         *     }
+         *         }); */
     }
-	*/
+    
+
+    ////////////////////////////////////////////////////////////////////
+    //
+    async getViewOptions() {
+        const [_, userGroups] = await auth.getUserIdAndGroups();
+        const frConfig = getFundraiserConfig();
+        const views=[];
+        const users=[];
+
+        if (userGroups && userGroups.includes("FrAdmins")) {
+            views.push(['Default', undefined]);
+            views.push(['Full', undefined]);
+            views.push(['Verify Orders', 'VerifyOrders']);
+
+            for (const userInfo of frConfig.users()) {
+                users.push(userInfo);
+            }
+            users.push(['any', 'All']);
+        } else {
+            views.push(['Default', undefined]);
+            views.push(['Full', undefined]);
+
+            const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
+            const uid = auth.getCurrentUserId();
+            users.push([uid, fullName]);
+        }
+        return [views, users];
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    //
+    resetToDefault() {
+        this.currentUserId_ = auth.getCurrentUserId();
+        this.currentView_ = 'Default';
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    //
+    getCurrentUserId() { return this.currentUserId_; }
+
+    ////////////////////////////////////////////////////////////////////
+    //
+    getCurrentView() { return this.currentView_; }
 
     ////////////////////////////////////////////////////////////////////
     //
@@ -86,7 +131,6 @@ class ReportViews {
             });
     }
 
-
     ////////////////////////////////////////////////////////////////////
     //
     private getActionButtons(order: any, frConfig: FundraiserConfig) {
@@ -118,41 +162,41 @@ class ReportViews {
     ////////////////////////////////////////////////////////////////////
     //
     private genDataTable(orderDataSet: any, tableColumns: any) {
-		//console.log(`Screen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
-		return jQuery('#orderListTable table').DataTable({
-			responsive: true,
-			data: orderDataSet,
-			deferRender: true,
-			drawCallback: ( settings: any ) => {
-				// console.log("Draw Callback Called");
-				this.registerActionButtonHandlers();
-			},
-			language: {
-				paginate: {
-					previous: "<<",
-					next: ">>"
-				}
-			},
-			columns: tableColumns
-		});
+        //console.log(`Screen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
+        return jQuery('#orderListTable table').DataTable({
+            responsive: true,
+            data: orderDataSet,
+            deferRender: true,
+            drawCallback: ( settings: any ) => {
+                // console.log("Draw Callback Called");
+                this.registerActionButtonHandlers();
+            },
+            language: {
+                paginate: {
+                    previous: "<<",
+                    next: ">>"
+                }
+            },
+            columns: tableColumns
+        });
 
-	}
+    }
 
 
     ////////////////////////////////////////////////////////////////////
     //
     private registerActionButtonHandlers() {
-		//Removing first so it doesn't get doubled loaded
-		jQuery('#orderListTable').find('.order-edt-btn').off('click');
-		jQuery('#orderListTable').find('.order-view-btn').off('click');
-		jQuery('#orderListTable').find('.order-spread-btn').off('click');
-		jQuery('#orderListTable').find('.order-del-btn').off('click');
+        //Removing first so it doesn't get doubled loaded
+        jQuery('#orderListTable').find('.order-edt-btn').off('click');
+        jQuery('#orderListTable').find('.order-view-btn').off('click');
+        jQuery('#orderListTable').find('.order-spread-btn').off('click');
+        jQuery('#orderListTable').find('.order-del-btn').off('click');
 
-		// Handle on Edit Scenario
-		jQuery('#orderListTable').find('.order-edt-btn').on('click', (event: any)=>{
-			const parentTr = jQuery(event.currentTarget).parents('tr');
+        // Handle on Edit Scenario
+        jQuery('#orderListTable').find('.order-edt-btn').on('click', (event: any)=>{
+            const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
-			const rowData = row.data();
+            const rowData = row.data();
             const orderId = rowData[0];
             const orderOwner = rowData[rowData.length - 2];
 
@@ -168,24 +212,24 @@ class ReportViews {
         jQuery('#orderListTable').find('.order-view-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
-			const rowData = row.data();
+            const rowData = row.data();
             const orderId = rowData[0];
             const orderOwner = rowData[rowData.length - 2];
 
             console.log(`View order for ${orderId}`);
             orderDb.setActiveOrder(); // Reset active order to let order edit for set it
             navigate('/order_step_1/', {state: {
-				editOrderId: orderId,
+                editOrderId: orderId,
                 editOrderOwner: orderOwner,
-				isOrderReadOnly: true
-			}});
+                isOrderReadOnly: true
+            }});
         });
 
         // Handle on View Scenario
         jQuery('#orderListTable').find('.order-spread-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
-			const rowData = row.data();
+            const rowData = row.data();
             const orderId = rowData[0];
             const orderOwner = rowData[rowData.length - 2];
 
@@ -203,7 +247,7 @@ class ReportViews {
         jQuery('#orderListTable').find('.order-del-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
-			const rowData = row.data();
+            const rowData = row.data();
             const orderId = rowData[0];
             const orderOwner = rowData[rowData.length - 2];
 
@@ -266,15 +310,15 @@ class ReportViews {
         //console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
 
 
-		/* ReactDOM.render(
-		   <button
-		   onClick={() => this.props.getDelCartItem({ rowID: rowData.RowID, code:
-		   rowData.ProdCode })}
-		   data-toggle='tooltip' data-placement='right' title='Delete Item From Cart'
-		   className='btn btn-sm btn-danger'>
-		   <i className="fas fa-times fa-lg"></i>
-		   </button>
-		 *     , td); */
+        /* ReactDOM.render(
+           <button
+           onClick={() => this.props.getDelCartItem({ rowID: rowData.RowID, code:
+           rowData.ProdCode })}
+           data-toggle='tooltip' data-placement='right' title='Delete Item From Cart'
+           className='btn btn-sm btn-danger'>
+           <i className="fas fa-times fa-lg"></i>
+           </button>
+         *     , td); */
 
         // Fill out rows of data
         const orderDataSet = [];
@@ -457,8 +501,8 @@ class ReportViews {
 
             orderDataItem = orderDataItem.concat([
                 getVal(order.specialInstructions),
-				true===order.isVerified?"Yes":"No",
-				true===order.doCollectMoneyLater?'No':'Yes',
+                true===order.isVerified?"Yes":"No",
+                true===order.doCollectMoneyLater?'No':'Yes',
                 USD(order.donation).format(),
                 USD(order.cashPaid).format(),
                 USD(order.checkPaid).format(),
@@ -633,38 +677,28 @@ const showTheSelectedView = async (frConfig: FundraiserConfig) => {
             return option;
         };
 
-        const [_, userGroups] = auth.getUserIdAndGroups();
         const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
         const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
 
-        const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
+        const [views, users] = await reportViews.getViewOptions();
+        for (const userInfo of users) {
+            userSelElm.add(genOption(userInfo[1], userInfo[0]));
+        }
+        userSelElm.value = reportViews.getCurrentUserId();
 
+        for (const reportView of views) {
+            viewSelElm.add(genOption(reportView[0], reportView[1]));
+        }
+        viewSelElm.value = reportViews.getCurrentView();
+        
+        const [_, userGroups] = await auth.getUserIdAndGroups();
         if (userGroups && userGroups.includes("FrAdmins")) {
-            for (const userInfo of frConfig.users()) {
-                userSelElm.add(genOption(userInfo[1], userInfo[0]));
-            }
-            userSelElm.add(genOption('All', 'any'));
-            userSelElm.value = auth.getCurrentUserId();
             document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "inline-block";
-
-            viewSelElm.add(genOption('Default'));
-            viewSelElm.add(genOption('Full'));
-            viewSelElm.add(genOption('Verify Orders', 'VerifyOrders'));
-            viewSelElm.selectedIndex = 0;
         } else {
             document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "none";
-            userSelElm.add(genOption(fullName, auth.getCurrentUserId()));
-            userSelElm.selectedIndex = 0;
-
-            viewSelElm.add(genOption('Default'));
-            viewSelElm.add(genOption('Full'));
-            viewSelElm.selectedIndex = 0;
         }
-
         showView();
-		console.log("Show View Not Initted");
     } else {
-		console.log("Show View Initted");
         showView();
     }
 
@@ -802,11 +836,11 @@ const genCardBody = (frConfig: FundraiserConfig) => {
         <div className="card-body" id="cardReportBody">
             <h6 className="card-title ps-2" id="orderCardTitle">
                 <ul className="list-group list-group-horizontal-sm">
-                    <li className="list-group-item me-2">
-                        Report View:<div className="d-inline" id="reportViewLabel">Default</div>
+                    <li className="list-group-item me-3">
+                        <label className="text-muted pe-2">Report View:</label><div className="d-inline" id="reportViewLabel">Default</div>
                     </li>
                     <li className="list-group-item" id="orderOwnerLabel">
-                        Order Owner:<div className="d-inline" id="reportViewOrderOwner">{fullName}</div>
+                        <label className="text-muted pe-2">Showing Orders for:</label><div className="d-inline" id="reportViewOrderOwner">{fullName}</div>
                     </li>
                 </ul>
                 <div id="reportViewSettings" className="float-end">
@@ -823,9 +857,9 @@ const genCardBody = (frConfig: FundraiserConfig) => {
                 </div>
             </h6>
 
-			<div id="orderListTable">
-				<table  className="display responsive nowrap collapsed" role="grid" style={{width:"100%"}}/>
-			</div>
+            <div id="orderListTable">
+                <table  className="display responsive nowrap collapsed" role="grid" style={{width:"100%"}}/>
+            </div>
 
             <div className="spinner-border" role="status" id="orderLoadingSpinner">
                 <span className="visually-hidden">Loading...</span>
@@ -851,41 +885,47 @@ export default function orders() {
     const [spreadDlg, setSpreadDlg] = useState();
     const [settingsDlg, setReportSettingsDlg] = useState();
     useEffect(() => {
-		const onLoadComponent = async ()=>{
-			const [isValidSession, session] = await auth.getSession();
+        const onLoadComponent = async ()=>{
+            const [isValidSession, session] = await auth.getSession();
             if (!isValidSession) {
                 // If no active user go to login screen
                 navigate('/signon/');
                 return;
             }
 
-			const frConfig = getFundraiserConfig();
+            if (lastAuthenticatedUser !== auth.getCurrentUserId()) {
+                // We had a user login change
+                reportViews.resetToDefault();
+                lastAuthenticatedUser = auth.getCurrentUserId();
+            }
+            
+            const frConfig = getFundraiserConfig();
 
-			console.log("loaded FrConfig");
+            console.log("loaded FrConfig");
 
-			console.log("Loading Gen Card Body");
-			setCardBody(genCardBody(frConfig));
-			setDeleteDlg(genDeleteDlg());
-			setSpreadDlg(genSpreadingDlg());
-			setReportSettingsDlg(genReportSettingsDlg());
+            console.log("Loading Gen Card Body");
+            setCardBody(genCardBody(frConfig));
+            setDeleteDlg(genDeleteDlg());
+            setSpreadDlg(genSpreadingDlg());
+            setReportSettingsDlg(genReportSettingsDlg());
 
 
-			await showTheSelectedView(frConfig);
-			const [_, userGroups] = await auth.getUserIdAndGroups();
-			const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
-			if (!isAdmin) { document.getElementById("orderOwnerLabel").style.display = "none"; }
-		};
+            await showTheSelectedView(frConfig);
+            const [_, userGroups] = await auth.getUserIdAndGroups();
+            const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
+            if (!isAdmin) { document.getElementById("orderOwnerLabel").style.display = "none"; }
+        };
 
-		onLoadComponent()
-			.then(()=>{})
-			.catch((err)=>{
-				if ('Invalid Session'===err.message) {
-					navigate('/signon/');
-					return;
-				} else {
-					console.error(err);
-				}
-			});
+        onLoadComponent()
+            .then(()=>{})
+            .catch((err)=>{
+                if ('Invalid Session'===err.message) {
+                    navigate('/signon/');
+                    return;
+                } else {
+                    console.error(err);
+                }
+            });
 
     }, []);
 
@@ -898,7 +938,7 @@ export default function orders() {
                 </div>
             </div>
 
-			<AddNewOrderWidget/>
+            <AddNewOrderWidget/>
 
             {deleteDlg}
             {settingsDlg}
