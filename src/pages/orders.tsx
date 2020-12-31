@@ -19,7 +19,29 @@ const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 const rprtStngDlgRt = 'reportViewSettingsDlg';
 const spreadingDlgRt = 'spreadingDlg';
 let reportSettingsDlg = undefined;
-let lastAuthenticatedUser;
+let lastAuthenticatedUser = undefined;
+
+////////////////////////////////////////////////////////////////////
+//
+const resetSpreaderDlg = ()=>{
+    // reset dlg to default state.  I.E. have selection btn be active view
+    // and reset hidden currentOrderId, currentOrderOwner
+    const reviewSelections = document.getElementById(spreadingDlgRt+"SpreaderSelectionReview");
+    document.getElementById('spreadingSubmitBtnSpinny').style.display = 'none';
+    for (let i = reviewSelections.options.length-1; i >= 0; i--) {
+        reviewSelections.remove(i);
+    }
+    const selectedOpts = document.getElementById(`${spreadingDlgRt}SpreaderSelection`).options;
+    for (const anOpt of selectedOpts) {
+        anOpt.selected=false;
+    }
+    document.getElementById('spreadSelectTab').style.display='block';
+    document.getElementById('spreadReviewTab').style.display='none';
+    
+    document.getElementById("spreadersSelectBtn").checked = true;
+    document.getElementById("spreadersSaveBtn").classList.add("make-disabled");
+};
+
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -29,7 +51,7 @@ class ReportViews {
     private currentDataTable_: any = undefined;
     private currentQueryResults_: Array<OrderListItem<string>> = undefined;
 
-    
+
     constructor() {
         /* console.log("Constructing...");
          * window.addEventListener('resize', ()=>{
@@ -40,7 +62,7 @@ class ReportViews {
          *     }
          *         }); */
     }
-    
+
 
     ////////////////////////////////////////////////////////////////////
     //
@@ -52,6 +74,9 @@ class ReportViews {
 
         if (userGroups && userGroups.includes("FrAdmins")) {
             views.push(['Default', undefined]);
+            if ('mulch' === frConfig.kind()) {
+                views.push(['Spreading Jobs', 'SpreadingJobs']);
+            }
             views.push(['Full', undefined]);
             views.push(['Verify Orders', 'VerifyOrders']);
 
@@ -61,6 +86,9 @@ class ReportViews {
             users.push(['any', 'All']);
         } else {
             views.push(['Default', undefined]);
+            if ('mulch' === frConfig.kind()) {
+                views.push(['Spreading Jobs', 'SpreadingJobs']);
+            }
             views.push(['Full', undefined]);
 
             const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
@@ -196,8 +224,8 @@ class ReportViews {
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
-            const orderId = rowData[0];
-            const orderOwner = rowData[rowData.length - 2];
+            const orderId = rowData[this.currentDataTable_.column('OrderId:name').index()];
+            const orderOwner = rowData[this.currentDataTable_.column('OrderOwner:name').index()];
 
             console.log(`Editing order for ${orderId}`);
             orderDb.setActiveOrder(); // Reset active order to let order edit for set it
@@ -212,8 +240,8 @@ class ReportViews {
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
-            const orderId = rowData[0];
-            const orderOwner = rowData[rowData.length - 2];
+            const orderId = rowData[this.currentDataTable_.column('OrderId:name').index()];
+            const orderOwner = rowData[this.currentDataTable_.column('OrderOwner:name').index()];
 
             console.log(`View order for ${orderId}`);
             orderDb.setActiveOrder(); // Reset active order to let order edit for set it
@@ -229,16 +257,84 @@ class ReportViews {
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
-            const orderId = rowData[0];
-            const orderOwner = rowData[rowData.length - 2];
+            const orderId = rowData[this.currentDataTable_.column('OrderId:name').index()];
+            const orderOwner = rowData[this.currentDataTable_.column('OrderOwner:name').index()];
+            const spreadersIdx = this.currentDataTable_.column('Spreaders:name').index();
 
-            console.log(`Spreading Dlg order for ${orderId}`);
+            if (!(orderOwner && orderId)) {
+                throw new Error("For spreading both orderOwner and orderID needs to be set to valid value");
+            }
+
+            // Reset so the form comes up pristine
+            resetSpreaderDlg();
+            // Now populate with existing spreader data.
+            const selectedOpts = document.getElementById(`${spreadingDlgRt}SpreaderSelection`).options;
+            for (const anOpt of selectedOpts) {
+                for(const spreader of rowData[spreadersIdx]) {
+                    if (anOpt.value === spreader) {
+                        anOpt.selected = true;
+                    }
+                }
+            }
+                        
+            // This works differently from delete dlg as most functionailty is in genDlg
+            console.log(`Spreading Dlg order for ${orderId}:${orderOwner}`);
             const dlgElm = document.getElementById(spreadingDlgRt);
             const spreadOrderDlg = new bootstrap.Modal(dlgElm, {
                 backdrop: true,
                 keyboard: true,
                 focus: true
             });
+
+            jQuery('#spreadersSaveBtn')
+                .off('click')
+                .click((event: any)=>{
+                    // record existing selections
+                    if (!(orderOwner && orderId)) {
+                        throw new Error("Trying to save without orderOwner or orderId");
+                    }
+
+                    const reviewSelections = document.getElementById(spreadingDlgRt+"SpreaderSelectionReview");
+
+                    const spreaders=[];
+                    for (const anOpt of reviewSelections.options) {
+                        spreaders.push(anOpt.value);
+                    }
+
+                    if (0===spreaders.length) {
+                        throw new Error("No spreaders selected so can't save");
+                    }
+
+                    // submit order update
+                    console.log(`Submitting spreading job for ` +
+                                `${orderId}:${orderOwner}: ${JSON.stringify(spreaders)}`);
+
+                    // Start submit spnner
+                    document.getElementById('spreadingSubmitBtnSpinny').style.display = "inline-block";
+
+                    orderDb.submitSpreadingComplete({
+                        orderOwner: orderOwner,
+                        orderId: orderId,
+                        spreaders: spreaders
+                    }).then(()=>{
+                        resetSpreaderDlg();
+                        spreadOrderDlg.hide();
+                        rowData[spreadersIdx] = spreaders;
+                        row.data(rowData).draw();
+                    }).catch((err:any)=>{
+                        if ('Invalid Session'===err) {
+                            navigate('/signon/')
+                        } else {
+                            submitSpinner.style.display = "none";
+                            const errStr = `Failed submitting order: ${JSON.stringify(err)}`;
+                            console.log(errStr);
+                            alert(errStr);
+                            throw err;
+                        }
+                    });
+                    
+                });
+            
             spreadOrderDlg.show();
         });
 
@@ -247,8 +343,8 @@ class ReportViews {
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
-            const orderId = rowData[0];
-            const orderOwner = rowData[rowData.length - 2];
+            const orderId = rowData[this.currentDataTable_.column('OrderId:name').index()];
+            const orderOwner = rowData[this.currentDataTable_.column('OrderOwner:name').index()];
 
             console.log(`Deleting order for ${orderId}`);
             jQuery('#confirmDeleteOrderInput').val('');
@@ -293,9 +389,9 @@ class ReportViews {
         const currentUserId =  auth.getCurrentUserId();
         if (!userId) { userId = currentUserId; }
         // Build query fields
-        const fieldNames = ["orderId", "firstName", "lastName"];
-        fieldNames.push("deliveryId");
+        const fieldNames = ["orderId", "firstName", "lastName", "deliveryId"];
         if ('mulch' === frConfig.kind()) {
+            fieldNames.push("spreaders");
             fieldNames.push("products.spreading");
         }
 
@@ -308,17 +404,6 @@ class ReportViews {
         const orders = this.currentQueryResults_;
         //console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
 
-
-        /* ReactDOM.render(
-           <button
-           onClick={() => this.props.getDelCartItem({ rowID: rowData.RowID, code:
-           rowData.ProdCode })}
-           data-toggle='tooltip' data-placement='right' title='Delete Item From Cart'
-           className='btn btn-sm btn-danger'>
-           <i className="fas fa-times fa-lg"></i>
-           </button>
-         *     , td); */
-
         // Fill out rows of data
         const orderDataSet = [];
         for (const order of orders) {
@@ -330,6 +415,7 @@ class ReportViews {
             orderDataItem.push(deliveryDate);
 
             if ('mulch' === frConfig.kind()) {
+                orderDataItem.push(order.spreaders?order.spreaders:[]);
                 orderDataItem.push((order.products?.spreading?order.products.spreading:''));
             }
             orderDataItem.push(orderOwner);
@@ -340,7 +426,7 @@ class ReportViews {
 
         const tableColumns = [
             {
-                title: "OrderId",
+                name: "OrderId",
                 className: "all",
                 visible: false
             },
@@ -350,15 +436,32 @@ class ReportViews {
             },
             {
                 title: "Delivery Date",
+                name: "DeliveryDate"
             }
         ];
 
         if ('mulch' === frConfig.kind()) {
-            tableColumns.push({ title: "Spreading" });
+            tableColumns.push({
+                title: "Spreaders",
+                name: "Spreaders",
+                visible: false
+            });
+            tableColumns.push({
+                title: "Spreading",
+                className: "all",
+                render: (data, _, row, meta) => {
+                    if (0!==row[meta.col-1].length) {
+                        return `${data}: Spread`
+                    } else {
+                        return data;
+                    }
+                }
+            });
         }
 
         tableColumns.push({
             title: "Order Owner",
+            name: "OrderOwner",
             visible: ('any'===userId || userId !== currentUserId),
             render: (data)=>{
                 //console.log(`Data: JSON.stringify(data)`);
@@ -370,6 +473,121 @@ class ReportViews {
             title: "Actions",
             "orderable": false,
             className: "all"
+        });
+
+        this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
+
+        //this.registerActionButtonHandlers();
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    //
+    private async showSpreadingJobs(frConfig: FundraiserConfig, userId?: string) {
+
+        const currentUserId =  auth.getCurrentUserId();
+        if (!userId) { userId = currentUserId; }
+        // Build query fields
+        const fieldNames = ["orderId", "firstName", "lastName", "deliveryId", "addr1", "addr2",
+                            "specialInstructions", "neighborhood"];
+        if ('mulch' === frConfig.kind()) {
+            fieldNames.push("spreaders");
+            fieldNames.push("products.spreading");
+        }
+
+        if ('any'===userId) {
+            fieldNames.push("orderOwner");
+        }
+
+
+        this.currentQueryResults_ = await orderDb.query({fields: fieldNames, orderOwner: userId});
+        const orders = this.currentQueryResults_;
+        //console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
+
+        // Fill out rows of data
+        const orderDataSet = [];
+        const nowDate = Date.now();
+        for (const order of orders) {
+            const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
+           
+            if (!(order.products?.spreading && deliveryDate!=='donation' && nowDate > Date.parse(deliveryDate))) {
+                continue;
+            }
+            const nameStr = `${order.firstName}, ${order.lastName}`;
+            const orderOwner = ('any'===userId)?order.orderOwner:userId;
+            const orderDataItem = [order.orderId, nameStr];
+            //only reason to not have a delivery date is if it is a donation
+            orderDataItem.push(deliveryDate);
+            orderDataItem.push(`${order.specialInstructions?order.specialInstructions:''}`);
+            orderDataItem.push(`${order.addr1} ${order.addr2?order.addr2:''}`);
+            if ('mulch' === frConfig.kind()) {
+                orderDataItem.push(order.neighborhood);
+                orderDataItem.push(order.spreaders?order.spreaders:[]);
+                orderDataItem.push((order.products?.spreading?order.products.spreading:''));
+            }
+            orderDataItem.push(orderOwner);
+            orderDataItem.push(this.getActionButtons(order, frConfig));
+            orderDataSet.push(orderDataItem);
+        }
+
+
+        const tableColumns = [
+            {
+                name: "OrderId",
+                className: "all",
+                visible: false
+            },
+            {
+                title: "Name",
+                className: "all"
+            },
+            {
+                title: "Delivery Date",
+                name: "DeliveryDate"
+            },
+            {
+                title: "Instructions"
+            },
+            {
+                title: "Address"
+            }
+        ];
+
+        if ('mulch' === frConfig.kind()) {
+            tableColumns.push({
+                title: "Neighborhood",
+                className: "all"
+            });
+            tableColumns.push({
+                title: "Spreaders",
+                name: "Spreaders",
+                visible: false
+            });
+            tableColumns.push({
+                title: "Spreading",
+                className: "all",
+                render: (data, _, row, meta) => {
+                    if (0!==row[meta.col-1].length) {
+                        return `${data}: Spread`
+                    } else {
+                        return data;
+                    }
+                }
+            });
+        }
+
+        tableColumns.push({
+            title: "Order Owner",
+            name: "OrderOwner",
+            visible: ('any'===userId || userId !== currentUserId),
+            render: (data)=>{
+                //console.log(`Data: JSON.stringify(data)`);
+                return frConfig.getUserNameFromId(data);
+            }
+        });
+
+        tableColumns.push({
+            title: "Actions",
+            "orderable": false
         });
 
         this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
@@ -418,7 +636,7 @@ class ReportViews {
         }
 
         const tableColumns = [
-            { title: "OrderId", className: "all", visible: false },
+            { name: "OrderId", className: "all", visible: false },
             { title: "Name", className: "all" },
             { title: "Delivery Date" },
             { title: "Total Amt", render: (data)=>{ return USD(data).format(); } },
@@ -431,6 +649,7 @@ class ReportViews {
             },
             {
                 title: "Order Owner",
+                name: "OrderOwner",
                 visible: ('any'===userId || userId !== currentUserId),
                 render: (data)=>{
                     //console.log(`Data: JSON.stringify(data)`);
@@ -492,6 +711,7 @@ class ReportViews {
 
             if ('mulch' === frConfig.kind()) {
                 orderDataItem.push(order.neighborhood);
+                orderDataItem.push(order.spreaders?order.spreaders:[]);
                 orderDataItem.push(getVal(order.products?.spreading, 0));
                 orderDataItem.push(getVal(order.products?.bags, 0));
             } else {
@@ -516,7 +736,7 @@ class ReportViews {
 
 
         let tableColumns = [
-            { title: "OrderId", className: "all", visible: false },
+            { name: "OrderId", className: "all", visible: false },
             { title: "Name", className: "all" },
             { title: "Phone" },
             { title: "Email" },
@@ -527,7 +747,21 @@ class ReportViews {
 
         if ('mulch' === frConfig.kind()) {
             tableColumns.push({ title: "Neighborhood" });
-            tableColumns.push({ title: "Spreading" });
+            tableColumns.push({
+                title: "Spreaders",
+                name: "Spreaders",
+                visible: false
+            });
+            tableColumns.push({
+                title: "Spreading",
+                render: (data, _, row, meta) => {
+                    if (0!==row[meta.col-1].length) {
+                        return `${data}: Spread`
+                    } else {
+                        return data;
+                    }
+                }
+            });
             tableColumns.push({ title: "Bags" });
         }
 
@@ -546,6 +780,7 @@ class ReportViews {
 
         tableColumns.push({
             title: "Order Owner",
+            name: "OrderOwner",
             visible: ('any'===userId || userId !== currentUserId),
             render: (data)=>{
                 //console.log(`Data: JSON.stringify(data)`);
@@ -633,12 +868,12 @@ const genDeleteDlg = ()=>{
                         </small>
 
                     </div>
+                    <button type="button" className="btn btn-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
                     <div className="modal-footer">
                         <button type="button" disabled className="btn btn-primary" id="deleteDlgBtn">
                             Delete Order
                         </button>
-                        <button type="button" className="btn btn-secondary"
-                                data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -647,9 +882,17 @@ const genDeleteDlg = ()=>{
 };
 
 
+
 ////////////////////////////////////////////////////////////////////
 //
 const showTheSelectedView = async (frConfig: FundraiserConfig) => {
+    const genOption = (label, val)=>{
+        const option = document.createElement("option");
+        option.text = label;
+        option.value = val ? val : label;
+        return option;
+    };
+
     const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
     const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
 
@@ -669,13 +912,6 @@ const showTheSelectedView = async (frConfig: FundraiserConfig) => {
 
     // Check to see if Report Views User view has been initialized
     if (0===userSelElm.options.length) {
-        const genOption = (label, val)=>{
-            const option = document.createElement("option");
-            option.text = label;
-            option.value = val ? val : label;
-            return option;
-        };
-
         const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
         const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
 
@@ -689,7 +925,7 @@ const showTheSelectedView = async (frConfig: FundraiserConfig) => {
             viewSelElm.add(genOption(reportView[0], reportView[1]));
         }
         viewSelElm.value = reportViews.getCurrentView();
-        
+
         const [_, userGroups] = await auth.getUserIdAndGroups();
         if (userGroups && userGroups.includes("FrAdmins")) {
             document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "inline-block";
@@ -724,7 +960,7 @@ const genReportSettingsDlg = ()=>{
                             <div className="row">
                                 <div className="col-sm">
                                     <div className="form-floating">
-                                        <select className="form-control" id={rprtStngDlgRt+"ViewSelection"}/>
+                                        <select className="form-select" id={rprtStngDlgRt+"ViewSelection"}/>
                                         <label htmlFor={rprtStngDlgRt+"ViewSelection"}>
                                             Select Report View
                                         </label>
@@ -732,7 +968,7 @@ const genReportSettingsDlg = ()=>{
                                 </div>
                                 <div className="col-sm" id={rprtStngDlgRt+"UserSelectionCol"}>
                                     <div className="form-floating">
-                                        <select className="form-control" id={rprtStngDlgRt+"UserSelection"} />
+                                        <select className="form-select" id={rprtStngDlgRt+"UserSelection"} />
                                         <label htmlFor={rprtStngDlgRt+"UserSelection"}>
                                             Select User
                                         </label>
@@ -742,12 +978,12 @@ const genReportSettingsDlg = ()=>{
                         </div>
                     </div>
                     <div className="modal-footer">
+                        <button type="button" className="btn btn-secondary"
+                                data-bs-dismiss="modal">Cancel</button>
                         <button type="button" className="btn btn-primary"
                                 data-bs-dismiss="modal" id={rprtStngDlgRt + "OnSave"}>
                             Save
                         </button>
-                        <button type="button" className="btn btn-secondary"
-                                data-bs-dismiss="modal">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -757,7 +993,70 @@ const genReportSettingsDlg = ()=>{
 
 ////////////////////////////////////////////////////////////////////
 //
-const genSpreadingDlg = () => {
+const genSpreadingDlg = (frConfig: FundraiserConfig) => {
+
+    /////////////////////////////////////
+    //
+    const handleSelection = (evt)=>{
+        evt.preventDefault();
+        evt.currentTarget.selected = !evt.currentTarget.selected;
+        return false;
+    };
+
+    /////////////////////////////////////
+    //
+    const onSelect = ()=>{
+        const spreaderSelectTabElm = document.getElementById('spreadSelectTab');
+        spreaderSelectTabElm.style.display='block';
+        const spreaderReviewTabElm = document.getElementById('spreadReviewTab');
+        spreaderReviewTabElm.style.display='none';
+
+        document.getElementById("spreadersSaveBtn").classList.add("make-disabled");
+    };
+
+    /////////////////////////////////////
+    //
+    const onReview = ()=>{
+        const spreaderSelectTabElm = document.getElementById('spreadSelectTab');
+        spreaderSelectTabElm.style.display='none';
+        const spreaderReviewTabElm = document.getElementById('spreadReviewTab');
+        spreaderReviewTabElm.style.display='block';
+
+
+        const reviewSelections = document.getElementById(spreadingDlgRt+"SpreaderSelectionReview");
+
+        //Clear any old selections
+        if (0!==reviewSelections.options.length) {
+            for (let i = reviewSelections.options.length-1; i >= 0; i--) {
+                reviewSelections.remove(i);
+            }
+        }
+
+        //Add new options
+        const selectedOptions = document.getElementById(`${spreadingDlgRt}SpreaderSelection`).options
+        for (const anOpt of selectedOptions) {
+            if (anOpt.selected) {
+                const newOpt = document.createElement("option");
+                newOpt.text = anOpt.text;
+                newOpt.value = anOpt.value;
+                reviewSelections.add(newOpt);
+            }
+        }
+        if (0===reviewSelections.options.length) { return; }
+
+        document.getElementById("spreadersSaveBtn").classList.remove("make-disabled");
+    };
+    
+    /////////////////////////////////////
+    //
+    const spreaderCandidates = [];
+    for (const userInfo of frConfig.users({doFilterOutAdmins: true})) {
+        spreaderCandidates.push(
+            <option key={userInfo[0]} value={userInfo[0]} onMouseDown={handleSelection}>
+                {userInfo[1]}
+            </option>);
+    }
+
     return(
         <div className="modal fade" id={spreadingDlgRt}
              tabIndex="-1" role="dialog" aria-labelledby={spreadingDlgRt + "Title"} aria-hidden="true">
@@ -774,25 +1073,43 @@ const genSpreadingDlg = () => {
                     <div className="modal-body">
                         <div className="container-sm">
                             <div className="row">
-                                <div className="col-sm">
-                                    <div className="form-floating">
-                                        <div className="form-check form-switch">
-                                            <input className="form-check-input" type="checkbox" id="isSpreadCheck" />
-                                            <label className="form-check-label"
-                                                   htmlFor="isSpreadCheck">Spreading Complete</label>
-                                        </div>
-                                    </div>
+                                <div className="col-sm" id="spreadSelectTab">
+                                    <label htmlFor={spreadingDlgRt+"SpreaderSelection"}>
+                                        Select Spreaders
+                                    </label>
+                                    <select className="form-select" id={spreadingDlgRt+"SpreaderSelection"}
+                                            multiple size="10" aria-label="Select Spreaders">
+                                        {spreaderCandidates}
+                                    </select>
+                                </div>
+                                <div className="col-sm" id="spreadReviewTab" style={{display: 'none'}}>
+                                    <label htmlFor={spreadingDlgRt+"SpreaderSelectionReview"}>
+                                        Review Spreaders
+                                    </label>
+                                    <select className="form-select" id={spreadingDlgRt+"SpreaderSelectionReview"}
+                                            multiple size="10" disabled aria-label="Review Spreaders">
+                                    </select>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className="modal-footer">
-                        <button type="button" className="btn btn-primary"
-                                data-bs-dismiss="modal" id={spreadingDlgRt + "OnSave"}>
-                            Save
-                        </button>
-                        <button type="button" className="btn btn-secondary"
+                        <button type="button float-start" className="btn btn-secondary"
                                 data-bs-dismiss="modal">Cancel</button>
+                        <div className="btn-group" role="group" aria-label="Spreader Selection Group">
+                            <input type="radio" className="btn-check" name="btnradio" id="spreadersSelectBtn"
+                                   autoComplete="off" defaultChecked onClick={onSelect}/>
+                            <label className="btn btn-outline-primary" htmlFor="spreadersSelectBtn" >Select</label>
+
+                            <input type="radio" className="btn-check" name="btnradio" id="spreadersReviewBtn"
+                                   autoComplete="off" onClick={onReview}/>
+                            <label className="btn btn-outline-primary" htmlFor="spreadersReviewBtn" >Review</label>
+                        </div>
+                        <button type="button" className="btn btn-primary make-disabled" id="spreadersSaveBtn">
+                            <span className="spinner-border spinner-border-sm me-1" role="status"
+                                  aria-hidden="true" id="spreadingSubmitBtnSpinny" style={{display: "none"}} />
+                            Submit
+                        </button>
                     </div>
                 </div>
             </div>
@@ -836,10 +1153,12 @@ const genCardBody = (frConfig: FundraiserConfig) => {
             <h6 className="card-title ps-2" id="orderCardTitle">
                 <ul className="list-group list-group-horizontal-sm">
                     <li className="list-group-item me-3">
-                        <label className="text-muted pe-2">Report View:</label><div className="d-inline" id="reportViewLabel">Default</div>
+                        <label className="text-muted pe-2">Report View:</label>
+                        <div className="d-inline" id="reportViewLabel">Default</div>
                     </li>
                     <li className="list-group-item" id="orderOwnerLabel">
-                        <label className="text-muted pe-2">Showing Orders for:</label><div className="d-inline" id="reportViewOrderOwner">{fullName}</div>
+                        <label className="text-muted pe-2">Showing Orders for:</label>
+                        <div className="d-inline" id="reportViewOrderOwner">{fullName}</div>
                     </li>
                 </ul>
                 <div id="reportViewSettings" className="float-end">
@@ -897,7 +1216,7 @@ export default function orders() {
                 reportViews.resetToDefault();
                 lastAuthenticatedUser = auth.getCurrentUserId();
             }
-            
+
             const frConfig = getFundraiserConfig();
 
             console.log("loaded FrConfig");
@@ -905,7 +1224,7 @@ export default function orders() {
             console.log("Loading Gen Card Body");
             setCardBody(genCardBody(frConfig));
             setDeleteDlg(genDeleteDlg());
-            setSpreadDlg(genSpreadingDlg());
+            setSpreadDlg(genSpreadingDlg(frConfig));
             setReportSettingsDlg(genReportSettingsDlg());
 
 

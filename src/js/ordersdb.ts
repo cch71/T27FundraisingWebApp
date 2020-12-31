@@ -4,6 +4,7 @@ import awsConfig from "../config"
 import auth from "../js/auth"
 import { v4 as uuidv4 } from 'uuid';
 
+
 /////////////////////////////////////////////
 //
 class OrderMetaFields{
@@ -35,6 +36,7 @@ class Order {
     cashPaid?: currency;
     checkPaid?: currency;
     checkNums?: string;
+    spreaders?: Array<string>;
     doCollectMoneyLater?: boolean;
 
     meta: OrderMetaFields|undefined = new OrderMetaFields();
@@ -89,6 +91,13 @@ interface OrderListItem<T> {
     amountTotal: T;
 }
 
+/////////////////////////////////////////////
+//
+interface OrderSpradingComplete {
+    orderId: string,
+    orderOwner: string,
+    spreaders: Array<string>
+}
 
 // const hashStr = (val: string): string {
 //     let hash = 0, i, chr;
@@ -337,6 +346,43 @@ class OrderDb {
 
     }
 
+
+    /////////////////////////////////////////
+    //
+    submitSpreadingComplete(spreadingCompleteParams: OrderSpradingComplete): Promise<void> {
+        return new Promise(async (resolve, reject)=>{
+            const handleErr = (err: any)=>{
+                reject(err);
+            };
+
+            try {
+                const authToken = await auth.getAuthToken();
+
+                const paramStr = JSON.stringify(spreadingCompleteParams);
+                const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
+                    method: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: authToken
+                    },
+                    body: paramStr
+                });
+
+                if (!resp.ok) { // if HTTP-status is 200-299
+                    const errRespBody = await resp.text();
+                    handleErr(
+                        new Error(`Failed upserting order id: ${resp.status} reason: ${errRespBody}`));
+                } else {
+                    resolve();
+                }
+            } catch(err) {
+                const errStr = `Failed req upserting order err: ${err.message}`;
+                handleErr(err);
+            }
+        });
+    }
+
+    
     /////////////////////////////////////////
     //
     query(params: any|undefined): Promise<Array<any>> {

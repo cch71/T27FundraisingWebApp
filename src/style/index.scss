@@ -110,6 +110,17 @@ html {
     //     // padding: 0;
 	// }
 
+  #spreadingDlg {
+      .make-disabled {
+          pointer-events: none;
+          opacity: 0.3;
+      }
+
+      select {
+          height: auto;
+      }
+  }
+
 	#orderCardTitle {
         ul {
             padding-right: 0px;
