@@ -7,7 +7,6 @@ import currency from "currency.js";
 import auth from "../js/auth"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config";
 import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
-import jQuery from 'jquery'
 
 const trashImg = bootstrapIconSprite + "#trash";
 const pencilImg = bootstrapIconSprite + "#pencil";
