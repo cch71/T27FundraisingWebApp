@@ -218,7 +218,8 @@ class ReportViews {
         jQuery('#orderListTable').find('.order-view-btn').off('click');
         jQuery('#orderListTable').find('.order-spread-btn').off('click');
         jQuery('#orderListTable').find('.order-del-btn').off('click');
-
+        jQuery('#orderListTable').find('.order-vrfy-switch').off('change');
+        
         // Handle on Edit Scenario
         jQuery('#orderListTable').find('.order-edt-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
@@ -381,6 +382,72 @@ class ReportViews {
 
             delOrderDlg.show();
         });
+
+        jQuery('#orderListTable').find('.order-vrfy-switch').on('change', (event: any)=>{
+            const parentTr = jQuery(event.currentTarget).parents('tr');
+            const row = this.currentDataTable_.row(parentTr);
+            const rowData = row.data();
+            const orderId = rowData[this.currentDataTable_.column('OrderId:name').index()];
+            const orderOwner = rowData[this.currentDataTable_.column('OrderOwner:name').index()];
+            const verifyIdx = this.currentDataTable_.column('Verify:name').index();
+            console.log(`Verifiying order for ${orderId}`);
+
+            event.preventDefault();
+			      event.stopPropagation();
+
+            // Don't allow change to happen here
+            const newVal = event.currentTarget.checked;
+            event.currentTarget.checked = !newVal;
+            
+            const dlgElm = document.getElementById('confirmDlg');
+            const confirmDlg = new bootstrap.Modal(dlgElm, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            jQuery('#confirmDlgBtn')
+                .off('click')
+                .click((evt: any)=> {
+                    event.currentTarget.checked = newVal;
+                    confirmDlg.hide();
+
+                    // Start submit spnner
+                    const submitSpinner = document.getElementById('confirmDlgBtnSpinny');
+                    submitSpinner.style.display = "inline-block";
+
+                    orderDb.submitVerification({
+                        orderOwner: orderOwner,
+                        orderId: orderId,
+                        isVerified: newVal
+                    }).then(()=>{
+                        submitSpinner.style.display = "none";
+                        confirmDlg.hide();
+
+                        console.log(`Saved Verifiying order for ${orderId} ${newVal}`);
+
+                        rowData[verifyIdx] = newVal;
+                        row.data(rowData).draw();
+                    }).catch((err:any)=>{
+                        if ('Invalid Session'===err) {
+                            navigate('/signon/')
+                        } else {
+                            submitSpinner.style.display = "none";
+                            const errStr = `Failed submitting order: ${JSON.stringify(err)}`;
+                            console.log(errStr);
+                            alert(errStr);
+                            throw err;
+                        }
+                    });
+
+
+
+
+                    
+                });
+
+            confirmDlg.show();
+        });
+
     }
     ////////////////////////////////////////////////////////////////////
     //
@@ -615,11 +682,11 @@ class ReportViews {
         const orders = this.currentQueryResults_;
         //console.log(`Verify Orders Page: ${JSON.stringify(orders)}`);
 
-        const htmlValidateSwitch =
-            `<div class="form-check form-switch">` +
-            `<input class="form-check-input" type="checkbox" />` +
-            `</div>`;
-
+        /* const htmlValidateSwitch =
+         *     `<div class="form-check form-switch">` +
+         *     `<input class="form-check-input order-vrfy-switch" type="checkbox" />` +
+         *     `</div>`;
+         */
         // Fill out rows of data
         const orderDataSet = [];
         for (const order of orders) {
@@ -631,7 +698,8 @@ class ReportViews {
                                    order.cashPaid?order.cashPaid:0,
                                    order.checkPaid?order.checkPaid:0,
                                    order.checkNums?order.checkNums:'',
-                                   htmlValidateSwitch, orderOwner, this.getActionButtons(order, frConfig)];
+                                   orderOwner, order.isVerified?true:false,
+                                   this.getActionButtons(order, frConfig)];
             orderDataSet.push(orderDataItem);
         }
 
@@ -644,16 +712,29 @@ class ReportViews {
             { title: "Checks Paid", render: (data)=>{ return USD(data).format(); } },
             { title: "Checks", render: (data)=>{ return(null!==data ? data : ''); } },
             {
-                title: "Verify",
-                className: "all"
-            },
-            {
                 title: "Order Owner",
                 name: "OrderOwner",
                 visible: ('any'===userId || userId !== currentUserId),
                 render: (data)=>{
                     //console.log(`Data: JSON.stringify(data)`);
                     return frConfig.getUserNameFromId(data);
+                }
+            },
+            {
+                title: "Verify",
+                name: "Verify",
+                className: "all",
+                render: (isVerified, renderType)=>{
+                    if (renderType !== 'display') { return(isVerified); }
+                    if (isVerified) {
+                        return( `<div class="form-check form-switch">` +
+                                `<input class="form-check-input order-vrfy-switch" type="checkbox" checked />` +
+                                `</div>`);
+                    } else {
+                        return( `<div class="form-check form-switch">` +
+                                `<input class="form-check-input order-vrfy-switch" type="checkbox" />` +
+                                `</div>`);
+                    }
                 }
             },
             {
@@ -880,7 +961,6 @@ const genDeleteDlg = ()=>{
         </div>
     );
 };
-
 
 
 ////////////////////////////////////////////////////////////////////
@@ -1261,7 +1341,39 @@ export default function orders() {
             {deleteDlg}
             {settingsDlg}
             {spreadDlg}
+            <div className="modal fade" id="confirmDlg"
+                 tabIndex="-1" role="dialog" aria-labelledby="deleteOrderDlgTitle" aria-hidden="true">
+                <div className="modal-dialog modal-dialog-centered" role="document">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title" id="deleteOrderDlgLongTitle">
+                                Confirmation Requested
+                            </h5>
+                            <button type="button" className="close" data-bs-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <small id="confirmDeleteOrderHelp" className="form-text text-muted">
+                                Do you wish to continue?
+                            </small>
 
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary"
+                                    data-bs-dismiss="modal">Cancel</button>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-primary" id="confirmDlgBtn">
+                                    <span className="spinner-border spinner-border-sm me-1" role="status"
+                                          aria-hidden="true" id="confirmDlgBtnSpinny"
+                                          style={{display: "none"}} />
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

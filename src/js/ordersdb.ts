@@ -382,6 +382,40 @@ class OrderDb {
         });
     }
 
+    /////////////////////////////////////////
+    //
+    submitVerification(spreadingCompleteParams: OrderSpradingComplete): Promise<void> {
+        return new Promise(async (resolve, reject)=>{
+            const handleErr = (err: any)=>{
+                reject(err);
+            };
+
+            try {
+                const authToken = await auth.getAuthToken();
+
+                const paramStr = JSON.stringify(spreadingCompleteParams);
+                const resp = await fetch(awsConfig.api.invokeUrl + '/upsertorder', {
+                    method: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: authToken
+                    },
+                    body: paramStr
+                });
+
+                if (!resp.ok) { // if HTTP-status is 200-299
+                    const errRespBody = await resp.text();
+                    handleErr(
+                        new Error(`Failed upserting order id: ${resp.status} reason: ${errRespBody}`));
+                } else {
+                    resolve();
+                }
+            } catch(err) {
+                const errStr = `Failed req upserting order err: ${err.message}`;
+                handleErr(err);
+            }
+        });
+    }
     
     /////////////////////////////////////////
     //
