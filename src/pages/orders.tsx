@@ -286,7 +286,54 @@ class ReportViews {
                 keyboard: true,
                 focus: true
             });
+            
+            jQuery('#spreadersEraseBtn')
+                .off('click')
+                .click((event: any)=>{
+                    // record existing selections
+                    if (!(orderOwner && orderId)) {
+                        throw new Error("Trying to save without orderOwner or orderId");
+                    }
 
+                    const spreaders=[];
+
+                    // submit order update
+                    console.log(`Submitting Erasure spreading job for ` +
+                                `${orderId}:${orderOwner}`);
+
+                    // Start submit spnner
+                    const submitSpinner = document.getElementById('spreadingSubmitBtnSpinny');
+                    submitSpinner.style.display = "inline-block";
+                    document.getElementById('spreadersSaveBtn').disabled = true;
+                    document.getElementById('spreadersEraseBtn').disabled = true;
+                    orderDb.submitSpreadingComplete({
+                        orderOwner: orderOwner,
+                        orderId: orderId,
+                        spreaders: spreaders
+                    }).then(()=>{
+                        document.getElementById('spreadersSaveBtn').disabled = false;
+                        document.getElementById('spreadersEraseBtn').disabled = false;
+                        resetSpreaderDlg();
+                        spreadOrderDlg.hide();
+                        rowData[spreadersIdx] = spreaders;
+                        row.data(rowData).draw();
+                    }).catch((err:any)=>{
+                        if ('Invalid Session'===err) {
+                            navigate('/signon/')
+                        } else {
+                        document.getElementById('spreadersSaveBtn').disabled = false;
+                            document.getElementById('spreadersEraseBtn').disabled = false;
+                            submitSpinner.style.display = "none";
+                            const errStr = `Failed submitting erasure order: ${JSON.stringify(err)}`;
+                            console.log(errStr);
+                            alert(errStr);
+                            throw err;
+                        }
+                    });
+                    
+                });
+
+            
             jQuery('#spreadersSaveBtn')
                 .off('click')
                 .click((event: any)=>{
@@ -311,18 +358,24 @@ class ReportViews {
                                 `${orderId}:${orderOwner}: ${JSON.stringify(spreaders)}`);
 
                     // Start submit spnner
-                    document.getElementById('spreadingSubmitBtnSpinny').style.display = "inline-block";
-
+                    const submitSpinner = document.getElementById('spreadingSubmitBtnSpinny');
+                    submitSpinner.style.display = "inline-block";
+                    document.getElementById('spreadersSaveBtn').disabled = true;
+                    document.getElementById('spreadersEraseBtn').disabled = true;
                     orderDb.submitSpreadingComplete({
                         orderOwner: orderOwner,
                         orderId: orderId,
                         spreaders: spreaders
                     }).then(()=>{
+                        document.getElementById('spreadersSaveBtn').disabled = false;
+                        document.getElementById('spreadersEraseBtn').disabled = false;
                         resetSpreaderDlg();
                         spreadOrderDlg.hide();
                         rowData[spreadersIdx] = spreaders;
                         row.data(rowData).draw();
                     }).catch((err:any)=>{
+                        document.getElementById('spreadersSaveBtn').disabled = false;
+                        document.getElementById('spreadersEraseBtn').disabled = false;
                         if ('Invalid Session'===err) {
                             navigate('/signon/')
                         } else {
@@ -1174,8 +1227,11 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
                         </div>
                     </div>
                     <div className="modal-footer">
-                        <button type="button float-start" className="btn btn-secondary"
+                        <button type="button" className="btn btn-secondary"
                                 data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" className="btn btn-danger" id="spreadersEraseBtn">
+                            Erase
+                        </button>
                         <div className="btn-group" role="group" aria-label="Spreader Selection Group">
                             <input type="radio" className="btn-check" name="btnradio" id="spreadersSelectBtn"
                                    autoComplete="off" defaultChecked onClick={onSelect}/>
