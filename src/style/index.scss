@@ -34,7 +34,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr.parent>th.dtr-control:before {
     background-color: red;
 }
 
-
 /* Global styling for this template */
 html {
     /*background-color: white;*/
@@ -61,6 +60,15 @@ html {
         }
     }
 
+    .is-invalid {
+        ~label {
+            small {
+                color: red !important;
+            }
+        }
+    }
+
+    
 	.add-order-widget {
 		z-index: 0;
 		// position: fixed;
