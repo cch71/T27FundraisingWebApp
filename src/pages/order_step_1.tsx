@@ -525,7 +525,7 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
                 </div>
             </div>
             <div className="invalid-feedback">
-                *Must match total due
+                *Must match total due or the check amount field is populated but there are no check numbers
             </div>
 
 
