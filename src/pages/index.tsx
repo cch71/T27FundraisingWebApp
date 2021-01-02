@@ -112,9 +112,11 @@ async function enableReady(frConfig: FundraiserConfig, setOrderSummary) {
                         </ul>
 
                         <h6 className="my-2">Top Sellers:</h6>
-                        <table className="table table-bordered"><tbody>
-                            {topSellers}
-                        </tbody></table>
+                        <table className="table table-sm table-borderless table-responsive" id="topSellersTable">
+                            <tbody>
+                                {topSellers}
+                            </tbody>
+                        </table>
 
                         <h6>Sales by Patrol:</h6>
                         <div id="patrolStandingsChart"/>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react"
 import { Router, Link } from '@reach/router';
 import {orderDb, Order} from "../js/ordersdb"
 import auth from "../js/auth"
+import {reportViews} from "../components/report_view"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
@@ -85,7 +86,7 @@ const validateOrderForm = (currentOrder: Order) => {
 //
 const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean): any =>{
 
-        const frConfig: FundraiserConfig = getFundraiserConfig();
+    const frConfig: FundraiserConfig = getFundraiserConfig();
     if (!frConfig) {
         alert("Failed to load fundraiser config");
         return(<div/>);
@@ -141,17 +142,16 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
         };
 
         // If everything vlidates then submit
-				Promise.all(validateOrderForm(currentOrder))
-				       .then((results)=>{
-					         if (results[0] && results[1] && results[2]) {
+        Promise.all(validateOrderForm(currentOrder))
+               .then((results)=>{
+                   if (results[0] && results[1] && results[2]) {
                        // If we got here they we are good to submit form
                        currentOrder.isVerified = false;
                        const isLoadedFromDb = currentOrder.meta?.isLoadedFromDb;
                        orderDb.submitActiveOrder().then(()=>{
+                           reportViews.dataSetChanged();
                            if (isLoadedFromDb) {
-                               navigate('/orders/', {state: {
-                                   isOrderChange: true,
-                               }});
+                               navigate('/orders/');
                            } else {
                                navigate('/');
                            }
@@ -170,7 +170,7 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
                        reenableSubmitButton();
                    }
                });
-				}
+    }
 
     // Add New Product Order
     const onAddOrder = (event: any)=>{
@@ -468,7 +468,9 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
 
             <div className="row mb-2 g-2">
                 <div className="form-floating col-md-12">
-                    <textarea className="form-control" id="formSpecialInstructions" rows="2"></textarea>
+                    <textarea className="form-control" id="formSpecialInstructions" rows="2"
+                              defaultValue={currentOrder.specialInstructions}>
+                    </textarea>
                     <label htmlFor="formSpecialInstructions">Special Delivery Instructions</label>
                 </div>
             </div>

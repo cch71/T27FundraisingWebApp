@@ -68,8 +68,14 @@ html {
         }
     }
 
+    #topSellersTable {
+        td {
+            padding-bottom: 0px !important;
+            padding-top: 0px !important;
+        }
+    }
     
-	.add-order-widget {
+	  .add-order-widget {
 		z-index: 0;
 		// position: fixed;
 		// bottom: 15px;
