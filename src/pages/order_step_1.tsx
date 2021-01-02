@@ -146,8 +146,15 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
 					         if (results[0] && results[1] && results[2]) {
                        // If we got here they we are good to submit form
                        currentOrder.isVerified = false;
+                       const isLoadedFromDb = currentOrder.meta?.isLoadedFromDb;
                        orderDb.submitActiveOrder().then(()=>{
-                           navigate('/');
+                           if (isLoadedFromDb) {
+                               navigate('/orders/', {state: {
+                                   isOrderChange: true,
+                               }});
+                           } else {
+                               navigate('/');
+                           }
                        }).catch((err:any)=>{
                            if ('Invalid Session'===err) {
                                navigate('/signon/')
@@ -198,8 +205,13 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
     ////////////////////////////////////////////////////////
     // Discard the order and go back to home
     const onDiscardOrder = ()=>{
+        const isLoadedFromDb = currentOrder.meta?.isLoadedFromDb;
         orderDb.setActiveOrder();
-        navigate('/');
+        if (isLoadedFromDb) {
+            navigate('/orders/');
+        } else {
+            navigate('/');
+        }
     };
 
     ////////////////////////////////////////////////////////
@@ -580,7 +592,7 @@ export default (params: any)=>{
                         navigate('/orders/');
                     }
                 } else {
-                    //alert("Failed to retrieve active order");
+                    console.error(new Error("Failed to retrieve active order"));
                     navigate('/');
                 }
             };

@@ -49,7 +49,7 @@ class ReportViews {
     private currentView_: string;
     private currentUserId_: string;
     private currentDataTable_: any = undefined;
-    private currentQueryResults_: Array<OrderListItem<string>> = undefined;
+    private currentDataset_: Array<any> = undefined;
 
 
     constructor() {
@@ -101,8 +101,11 @@ class ReportViews {
     ////////////////////////////////////////////////////////////////////
     //
     resetToDefault() {
+        console.log("Resetting Report Data To Defaults");
         this.currentUserId_ = auth.getCurrentUserId();
         this.currentView_ = 'Default';
+        delete this.currentDataTable_;
+        delete this.currentDataset_;
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -115,17 +118,27 @@ class ReportViews {
 
     ////////////////////////////////////////////////////////////////////
     //
-    showView(view: string, frConfig: FundraiserConfig, userId?: string) {
+    // interface ReportsShowViewParams {
+    //    userId?: string;
+    //    isReportDataChanged?: boolean;
+    //}
+    showView(view: string, frConfig: FundraiserConfig, params?: any /* ReportsShowViewParams*/) {
         const asyncShow = async () => {
+            const userId = params?.userId;
 
             if (jQuery.fn.dataTable.isDataTable('#orderListTable table')) {
                 if (view === this.currentView_ && userId === this.currentUserId_) { return; }
 
+                console.log("Resetting Report Data Table");
                 jQuery('#orderListTable table').DataTable().clear();
                 jQuery('#orderListTable table').DataTable().destroy();
                 jQuery('#orderListTable table').empty();
-                delete this.currentDataTable_;
-                delete this.currentQueryResults_;
+                this.resetToDefault();
+            }
+
+            if (params?.isReportDataChanged) {
+                console.log("Resetting report dataset to force requery");
+                delete this.currentDataset_;
             }
 
             console.log(`Current View: ${this.currentView_} New View: ${view}`);
@@ -508,39 +521,41 @@ class ReportViews {
 
         const currentUserId =  auth.getCurrentUserId();
         if (!userId) { userId = currentUserId; }
-        // Build query fields
-        const fieldNames = ["orderId", "firstName", "lastName", "deliveryId"];
-        if ('mulch' === frConfig.kind()) {
-            fieldNames.push("spreaders");
-            fieldNames.push("products.spreading");
-        }
 
-        if ('any'===userId) {
-            fieldNames.push("orderOwner");
-        }
-
-
-        this.currentQueryResults_ = await orderDb.query({fields: fieldNames, orderOwner: userId});
-        const orders = this.currentQueryResults_;
-        //console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
-
-        // Fill out rows of data
-        const orderDataSet = [];
-        for (const order of orders) {
-            const nameStr = `${order.firstName}, ${order.lastName}`;
-            const orderOwner = ('any'===userId)?order.orderOwner:userId;
-            const orderDataItem = [order.orderId, nameStr];
-            //only reason to not have a delivery date is if it is a donation
-            const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
-            orderDataItem.push(deliveryDate);
-
+        if (!this.currentDataset_) {
+            // Build query fields
+            const fieldNames = ["orderId", "firstName", "lastName", "deliveryId"];
             if ('mulch' === frConfig.kind()) {
-                orderDataItem.push(order.spreaders?order.spreaders:[]);
-                orderDataItem.push((order.products?.spreading?order.products.spreading:''));
+                fieldNames.push("spreaders");
+                fieldNames.push("products.spreading");
             }
-            orderDataItem.push(orderOwner);
-            orderDataItem.push(this.getActionButtons(order, frConfig));
-            orderDataSet.push(orderDataItem);
+
+            if ('any'===userId) {
+                fieldNames.push("orderOwner");
+            }
+
+
+            const orders = await orderDb.query({fields: fieldNames, orderOwner: userId});
+            //console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
+
+            // Fill out rows of data
+            this.currentDataset_ = [];
+            for (const order of orders) {
+                const nameStr = `${order.firstName}, ${order.lastName}`;
+                const orderOwner = ('any'===userId)?order.orderOwner:userId;
+                const orderDataItem = [order.orderId, nameStr];
+                //only reason to not have a delivery date is if it is a donation
+                const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
+                orderDataItem.push(deliveryDate);
+
+                if ('mulch' === frConfig.kind()) {
+                    orderDataItem.push(order.spreaders?order.spreaders:[]);
+                    orderDataItem.push((order.products?.spreading?order.products.spreading:''));
+                }
+                orderDataItem.push(orderOwner);
+                orderDataItem.push(this.getActionButtons(order, frConfig));
+                this.currentDataset_.push(orderDataItem);
+            }
         }
 
 
@@ -595,7 +610,7 @@ class ReportViews {
             className: "all"
         });
 
-        this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
+        this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
 
         //this.registerActionButtonHandlers();
     }
@@ -606,49 +621,52 @@ class ReportViews {
 
         const currentUserId =  auth.getCurrentUserId();
         if (!userId) { userId = currentUserId; }
-        // Build query fields
-        const fieldNames = ["orderId", "firstName", "lastName", "deliveryId", "addr1", "addr2",
-                            "specialInstructions", "neighborhood"];
-        if ('mulch' === frConfig.kind()) {
-            fieldNames.push("spreaders");
-            fieldNames.push("products.spreading");
-        }
-
-        if ('any'===userId) {
-            fieldNames.push("orderOwner");
-        }
-
-
-        this.currentQueryResults_ = await orderDb.query({fields: fieldNames, orderOwner: userId});
-        const orders = this.currentQueryResults_;
-        //console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
-
-        // Fill out rows of data
-        const orderDataSet = [];
-        const nowDate = Date.now();
-        for (const order of orders) {
-            const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
-           
-            if (!(order.products?.spreading && deliveryDate!=='donation' && nowDate > Date.parse(deliveryDate))) {
-                continue;
-            }
-            const nameStr = `${order.firstName}, ${order.lastName}`;
-            const orderOwner = ('any'===userId)?order.orderOwner:userId;
-            const orderDataItem = [order.orderId, nameStr];
-            //only reason to not have a delivery date is if it is a donation
-            orderDataItem.push(deliveryDate);
-            orderDataItem.push(`${order.specialInstructions?order.specialInstructions:''}`);
-            orderDataItem.push(`${order.addr1} ${order.addr2?order.addr2:''}`);
+        if (!this.currentDataset_) {
+            // Build query fields
+            const fieldNames = ["orderId", "firstName", "lastName", "deliveryId", "addr1", "addr2",
+                                "specialInstructions", "neighborhood"];
             if ('mulch' === frConfig.kind()) {
-                orderDataItem.push(order.neighborhood);
-                orderDataItem.push(order.spreaders?order.spreaders:[]);
-                orderDataItem.push((order.products?.spreading?order.products.spreading:''));
+                fieldNames.push("spreaders");
+                fieldNames.push("products.spreading");
             }
-            orderDataItem.push(orderOwner);
-            orderDataItem.push(this.getActionButtons(order, frConfig));
-            orderDataSet.push(orderDataItem);
-        }
 
+            if ('any'===userId) {
+                fieldNames.push("orderOwner");
+            }
+
+
+            const orders = await orderDb.query({fields: fieldNames, orderOwner: userId});
+            //console.log(`Default Orders Page: ${JSON.stringify(orders)}`);
+
+            // Fill out rows of data
+            this.currentDataset_ = [];
+            const nowDate = Date.now();
+            for (const order of orders) {
+                const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
+                
+                if (!(order.products?.spreading &&
+                      deliveryDate!=='donation' &&
+                      nowDate > Date.parse(deliveryDate)))
+                {
+                    continue;
+                }
+                const nameStr = `${order.firstName}, ${order.lastName}`;
+                const orderOwner = ('any'===userId)?order.orderOwner:userId;
+                const orderDataItem = [order.orderId, nameStr];
+                //only reason to not have a delivery date is if it is a donation
+                orderDataItem.push(deliveryDate);
+                orderDataItem.push(`${order.specialInstructions?order.specialInstructions:''}`);
+                orderDataItem.push(`${order.addr1} ${order.addr2?order.addr2:''}`);
+                if ('mulch' === frConfig.kind()) {
+                    orderDataItem.push(order.neighborhood);
+                    orderDataItem.push(order.spreaders?order.spreaders:[]);
+                    orderDataItem.push((order.products?.spreading?order.products.spreading:''));
+                }
+                orderDataItem.push(orderOwner);
+                orderDataItem.push(this.getActionButtons(order, frConfig));
+                this.currentDataset_.push(orderDataItem);
+            }
+        }
 
         const tableColumns = [
             {
@@ -710,7 +728,7 @@ class ReportViews {
             "orderable": false
         });
 
-        this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
+        this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
 
         //this.registerActionButtonHandlers();
     }
@@ -721,39 +739,40 @@ class ReportViews {
 
         const currentUserId =  auth.getCurrentUserId();
         if (!userId) { userId = currentUserId; }
-        // Build query fields
-        const fieldNames = ["orderId", "firstName", "lastName", "deliveryId",
-                            "totalAmt", "cashPaid", "checkPaid", "checkNums", "isVerified"];
+        if (!this.currentDataset_) {
+            // Build query fields
+            const fieldNames = ["orderId", "firstName", "lastName", "deliveryId",
+                                "totalAmt", "cashPaid", "checkPaid", "checkNums", "isVerified"];
 
 
-        if ('any'===userId) {
-            fieldNames.push("orderOwner");
-        }
+            if ('any'===userId) {
+                fieldNames.push("orderOwner");
+            }
 
 
-        this.currentQueryResults_ = await orderDb.query({fields: fieldNames, orderOwner: userId});
-        const orders = this.currentQueryResults_;
-        //console.log(`Verify Orders Page: ${JSON.stringify(orders)}`);
+            const orders = await orderDb.query({fields: fieldNames, orderOwner: userId});
+            //console.log(`Verify Orders Page: ${JSON.stringify(orders)}`);
 
-        /* const htmlValidateSwitch =
-         *     `<div class="form-check form-switch">` +
-         *     `<input class="form-check-input order-vrfy-switch" type="checkbox" />` +
-         *     `</div>`;
-         */
-        // Fill out rows of data
-        const orderDataSet = [];
-        for (const order of orders) {
-            const nameStr = `${order.firstName}, ${order.lastName}`;
-            const orderOwner = ('any'===userId)?order.orderOwner:userId;
-            //only reason to not have a delivery date is if it is a donation
-            const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
-            const orderDataItem = [order.orderId, nameStr, deliveryDate, order.totalAmt,
-                                   order.cashPaid?order.cashPaid:0,
-                                   order.checkPaid?order.checkPaid:0,
-                                   order.checkNums?order.checkNums:'',
-                                   orderOwner, order.isVerified?true:false,
-                                   this.getActionButtons(order, frConfig)];
-            orderDataSet.push(orderDataItem);
+            /* const htmlValidateSwitch =
+             *     `<div class="form-check form-switch">` +
+             *     `<input class="form-check-input order-vrfy-switch" type="checkbox" />` +
+             *     `</div>`;
+             */
+            // Fill out rows of data
+            this.currentDataset_ = [];
+            for (const order of orders) {
+                const nameStr = `${order.firstName}, ${order.lastName}`;
+                const orderOwner = ('any'===userId)?order.orderOwner:userId;
+                //only reason to not have a delivery date is if it is a donation
+                const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
+                const orderDataItem = [order.orderId, nameStr, deliveryDate, order.totalAmt,
+                                       order.cashPaid?order.cashPaid:0,
+                                       order.checkPaid?order.checkPaid:0,
+                                       order.checkNums?order.checkNums:'',
+                                       orderOwner, order.isVerified?true:false,
+                                       this.getActionButtons(order, frConfig)];
+                this.currentDataset_.push(orderDataItem);
+            }
         }
 
         const tableColumns = [
@@ -797,7 +816,7 @@ class ReportViews {
             }
         ];
 
-        this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
+        this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
 
         //this.registerActionButtonHandlers();
     }
@@ -809,63 +828,64 @@ class ReportViews {
         const currentUserId =  auth.getCurrentUserId();
         if (!userId) { userId = currentUserId; }
 
-        this.currentQueryResults_ = await orderDb.query({orderOwner: userId});
-        const orders = this.currentQueryResults_;
+        if (!this.currentDataset_) {
+            const orders = await orderDb.query({orderOwner: userId});
 
-        //console.log(`Full Orders Page: ${JSON.stringify(orders)}`);
+            //console.log(`Full Orders Page: ${JSON.stringify(orders)}`);
 
-        const getVal = (fld?: any, dflt?: any)=>{
-            if (undefined===fld) {
-                if (undefined===dflt) {
-                    return '';
+            const getVal = (fld?: any, dflt?: any)=>{
+                if (undefined===fld) {
+                    if (undefined===dflt) {
+                        return '';
+                    } else {
+                        return `${dflt}`;
+                    }
                 } else {
-                    return `${dflt}`;
+                    return `${fld}`;
                 }
-            } else {
-                return `${fld}`;
+            };
+
+            // Fill out rows of data
+            this.currentDataset_ = [];
+            for (const order of orders) {
+                const nameStr = `${order.firstName}, ${order.lastName}`;
+                const orderOwner = ('any'===userId)?order.orderOwner:userId;
+                const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
+
+                let orderDataItem = [
+                    order.orderId,
+                    nameStr,
+                    order.phone,
+                    getVal(order.email),
+                    order.addr1,
+                    getVal(order.addr2),
+                    deliveryDate
+                ];
+
+                if ('mulch' === frConfig.kind()) {
+                    orderDataItem.push(order.neighborhood);
+                    orderDataItem.push(order.spreaders?order.spreaders:[]);
+                    orderDataItem.push(getVal(order.products?.spreading, 0));
+                    orderDataItem.push(getVal(order.products?.bags, 0));
+                } else {
+                    //TODO:  Add Products stuff like city, state, zip
+                }
+
+                orderDataItem = orderDataItem.concat([
+                    getVal(order.specialInstructions),
+                    true===order.isVerified?"Yes":"No",
+                    true===order.doCollectMoneyLater?'No':'Yes',
+                    USD(order.donation).format(),
+                    USD(order.cashPaid).format(),
+                    USD(order.checkPaid).format(),
+                    getVal(order.checkNums),
+                    USD(order.totalAmt).format(),
+                    (order.isVerified?"True":"False"),
+                    orderOwner,
+                    this.getActionButtons(order, frConfig)
+                ]);
+                this.currentDataset_.push(orderDataItem);
             }
-        };
-
-        // Fill out rows of data
-        const orderDataSet = [];
-        for (const order of orders) {
-            const nameStr = `${order.firstName}, ${order.lastName}`;
-            const orderOwner = ('any'===userId)?order.orderOwner:userId;
-            const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
-
-            let orderDataItem = [
-                order.orderId,
-                nameStr,
-                order.phone,
-                getVal(order.email),
-                order.addr1,
-                getVal(order.addr2),
-                deliveryDate
-            ];
-
-            if ('mulch' === frConfig.kind()) {
-                orderDataItem.push(order.neighborhood);
-                orderDataItem.push(order.spreaders?order.spreaders:[]);
-                orderDataItem.push(getVal(order.products?.spreading, 0));
-                orderDataItem.push(getVal(order.products?.bags, 0));
-            } else {
-                //TODO:  Add Products stuff like city, state, zip
-            }
-
-            orderDataItem = orderDataItem.concat([
-                getVal(order.specialInstructions),
-                true===order.isVerified?"Yes":"No",
-                true===order.doCollectMoneyLater?'No':'Yes',
-                USD(order.donation).format(),
-                USD(order.cashPaid).format(),
-                USD(order.checkPaid).format(),
-                getVal(order.checkNums),
-                USD(order.totalAmt).format(),
-                (order.isVerified?"True":"False"),
-                orderOwner,
-                this.getActionButtons(order, frConfig)
-            ]);
-            orderDataSet.push(orderDataItem);
         }
 
 
@@ -928,7 +948,7 @@ class ReportViews {
             className: "all"
         });
 
-        this.currentDataTable_ = this.genDataTable(orderDataSet, tableColumns);
+        this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
 
         //this.registerActionButtonHandlers();
     }
@@ -1018,7 +1038,7 @@ const genDeleteDlg = ()=>{
 
 ////////////////////////////////////////////////////////////////////
 //
-const showTheSelectedView = async (frConfig: FundraiserConfig) => {
+const showTheSelectedView = async (frConfig: FundraiserConfig, isReportDataChanged?: boolean) => {
     const genOption = (label, val)=>{
         const option = document.createElement("option");
         option.text = label;
@@ -1029,7 +1049,7 @@ const showTheSelectedView = async (frConfig: FundraiserConfig) => {
     const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
     const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
 
-    const showView = ()=>{
+    const showView_ = ()=>{
         //Update the selected view label
         const selectedUser = userSelElm.options[userSelElm.selectedIndex].text;
         const selectedViewOpt = viewSelElm.options[viewSelElm.selectedIndex];
@@ -1039,8 +1059,11 @@ const showTheSelectedView = async (frConfig: FundraiserConfig) => {
         rvLabel.innerText = `${selectedViewOpt.text}`;
         rvOrderOwner.innerText = `${selectedUser}`;
 
-        const userIdOverride = userSelElm.options[userSelElm.selectedIndex].value;
-        reportViews.showView(selectedViewOpt.value, frConfig, userIdOverride);
+        const params = {
+            userId: userSelElm.options[userSelElm.selectedIndex].value,
+            isReportDataChanged: isReportDataChanged
+        };
+        reportViews.showView(selectedViewOpt.value, frConfig, params);
     };
 
     // Check to see if Report Views User view has been initialized
@@ -1065,9 +1088,9 @@ const showTheSelectedView = async (frConfig: FundraiserConfig) => {
         } else {
             document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "none";
         }
-        showView();
+        showView_();
     } else {
-        showView();
+        showView_();
     }
 
 };
@@ -1325,7 +1348,7 @@ const genCardBody = (frConfig: FundraiserConfig) => {
 
 ////////////////////////////////////////////////////////////////////
 //
-export default function orders() {
+export default function orders(params: any) {
 
     const addNewOrder=()=>{
         console.log("Add new order");
@@ -1349,6 +1372,7 @@ export default function orders() {
 
             if (lastAuthenticatedUser !== auth.getCurrentUserId()) {
                 // We had a user login change
+                console.log("Detected differentUser");
                 reportViews.resetToDefault();
                 lastAuthenticatedUser = auth.getCurrentUserId();
             }
@@ -1364,7 +1388,7 @@ export default function orders() {
             setReportSettingsDlg(genReportSettingsDlg());
 
 
-            await showTheSelectedView(frConfig);
+            await showTheSelectedView(frConfig, params?.location?.state?.isOrderChange);
             const [_, userGroups] = await auth.getUserIdAndGroups();
             const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
             if (!isAdmin) { document.getElementById("orderOwnerLabel").style.display = "none"; }
