@@ -48,7 +48,7 @@ const validateOrderForm = (currentOrder: Order) => {
         }
 
         document.getElementById('totalsFormRow').classList.add('is-invalid');
-        if (!isCheckNumGood) { checkNumFields.classList.add('is-invalid'); }
+        if (!isCheckNumGood) { checkNumField.classList.add('is-invalid'); }
         return false;
     };
 
@@ -454,7 +454,7 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
             <div className="row mb-2 g-2">
                 <div className="form-floating col-md-12">
                     <textarea className="form-control" id="formSpecialInstructions" rows="2"></textarea>
-                    <label htmlFor="formSpecialInstructions">Special Instructions</label>
+                    <label htmlFor="formSpecialInstructions">Special Delivery Instructions</label>
                 </div>
             </div>
 
