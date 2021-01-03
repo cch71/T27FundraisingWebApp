@@ -447,14 +447,14 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
                         Neighborhood<small className="form-text text-muted ps-1">*required</small>
                     </label>
                 </div>
-                <div className="form-floating col-md-4">
+                <div className="form-floating col-md-4" id="formPhoneFloatDiv">
                     <input className="form-control" type="tel" autoComplete="fr-new-cust-info" id="formPhone"
                            pattern={`[0-9]{3}[-|.]{0,1}[0-9]{3}[-|.]{0,1}[0-9]{4}`}
                            placeholder="Phone" required
                            defaultValue={currentOrder.phone}  />
                     <label htmlFor="formPhone">
                         Phone
-                        <small className="form-text text-muted ps-1">(format:xxx-xxx-xxxx)</small>
+                        <small className="form-text text-muted ps-1">(xxx-xxx-xxxx)</small>
                         <small className="form-text text-muted ps-1">*required</small>
                     </label>
                 </div>
