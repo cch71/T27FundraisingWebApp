@@ -1,7 +1,4 @@
-// bootstrap
-// @import "~bootstrap/scss/bootstrap";
-// @import "~datatables.net-bs4/css/dataTables.bootstrap4.min.css";
-// @import "~datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css";
+/* Global styling for this template */
 @import "~bootstrap-icons/font/bootstrap-icons.css";
 
 table.dataTable.collapsed>tbody>tr>td:first-child:before,
@@ -34,7 +31,18 @@ table.dataTable.dtr-inline.collapsed>tbody>tr.parent>th.dtr-control:before {
     background-color: red;
 }
 
-/* Global styling for this template */
+// @each $breakpoint in map-keys($grid-breakpoints) {
+//   @include media-breakpoint-up($breakpoint) {
+//     $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
+
+//     #orderOwnerSummaryList#{$infix}-owner-summary {
+//         li {
+//             font-size: xx-small;
+//         }
+//     }
+//   }
+// }
+
 html {
     /*background-color: white;*/
     p {
@@ -68,14 +76,36 @@ html {
         }
     }
 
-    #topSellersTable {
-        td {
-            padding-bottom: 0px !important;
-            padding-top: 0px !important;
+    @media screen and (max-height: 900px) {
+        #orderOwnerSummaryList {
+            li {
+                font-size: small;
+                padding-bottom: 0px !important;
+                padding-top: 0px !important;
+            }
+        }
+
+        #topSellersTable {
+            td {
+                font-size: small;
+                padding-bottom: 0px !important;
+                padding-top: 0px !important;
+            }
+        }
+
+        #patrolStandingsChartWidget {
+            display: none;
+        }
+
+        #reportsTable {
+            td {
+                font-size: small;
+            }
         }
     }
-    
-	  .add-order-widget {
+
+
+    .add-order-widget {
 		z-index: 0;
 		// position: fixed;
 		// bottom: 15px;

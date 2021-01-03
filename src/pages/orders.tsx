@@ -185,7 +185,7 @@ const genCardBody = (frConfig: FundraiserConfig) => {
                 </div>
             </h6>
 
-            <div id="orderListTable">
+            <div id="reportsTable">
                 <table  className="display responsive nowrap collapsed" role="grid" style={{width:"100%"}}/>
             </div>
 

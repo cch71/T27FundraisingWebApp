@@ -125,14 +125,18 @@ class ReportViews {
     showView(view: string, frConfig: FundraiserConfig, params?: any /* ReportsShowViewParams*/) {
         const asyncShow = async () => {
             const userId = params?.userId;
+            const spinnerElm = document.getElementById('orderLoadingSpinner');
+            if (spinnerElm) {
+                spinnerElm.classList.remove('visually-hidden');
+            }
 
-            if (jQuery.fn.dataTable.isDataTable('#orderListTable table')) {
+            if (jQuery.fn.dataTable.isDataTable('#reportsTable table')) {
                 if (view === this.currentView_ && userId === this.currentUserId_) { return; }
 
                 console.log("Resetting Report Data Table");
-                jQuery('#orderListTable table').DataTable().clear();
-                jQuery('#orderListTable table').DataTable().destroy();
-                jQuery('#orderListTable table').empty();
+                jQuery('#reportsTable table').DataTable().clear();
+                jQuery('#reportsTable table').DataTable().destroy();
+                jQuery('#reportsTable table').empty();
                 this.resetToDefault();
             }
 
@@ -142,19 +146,20 @@ class ReportViews {
             this.currentUserId_ = userId;
 
             if(typeof this[`show${view}`] === 'function') {
-                this[`show${view}`](frConfig, userId);
+                await this[`show${view}`](frConfig, userId);
             } else {
                 throw new Error(`Report View Type: ${view} not found`);
             }
 
-            const spinnerElm = document.getElementById('orderLoadingSpinner');
             if (spinnerElm) {
-                spinnerElm.className = "d-none";
+                spinnerElm.classList.add('visually-hidden');
             }
         }
 
         asyncShow()
-            .then(()=>{})
+            .then(()=>{
+                console.log(`Report contains ${this.currentDataset_.length} rows`);
+            })
             .catch((err: any)=>{
                 if ('Invalid Session'===err) {
                     navigate('/signon/')
@@ -198,7 +203,7 @@ class ReportViews {
     //
     private genDataTable(orderDataSet: any, tableColumns: any) {
         //console.log(`Screen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
-        return jQuery('#orderListTable table').DataTable({
+        return jQuery('#reportsTable table').DataTable({
             responsive: true,
             data: orderDataSet,
             deferRender: true,
@@ -222,14 +227,14 @@ class ReportViews {
     //
     private registerActionButtonHandlers() {
         //Removing first so it doesn't get doubled loaded
-        jQuery('#orderListTable').find('.order-edt-btn').off('click');
-        jQuery('#orderListTable').find('.order-view-btn').off('click');
-        jQuery('#orderListTable').find('.order-spread-btn').off('click');
-        jQuery('#orderListTable').find('.order-del-btn').off('click');
-        jQuery('#orderListTable').find('.order-vrfy-switch').off('change');
+        jQuery('#reportsTable').find('.order-edt-btn').off('click');
+        jQuery('#reportsTable').find('.order-view-btn').off('click');
+        jQuery('#reportsTable').find('.order-spread-btn').off('click');
+        jQuery('#reportsTable').find('.order-del-btn').off('click');
+        jQuery('#reportsTable').find('.order-vrfy-switch').off('change');
 
         // Handle on Edit Scenario
-        jQuery('#orderListTable').find('.order-edt-btn').on('click', (event: any)=>{
+        jQuery('#reportsTable').find('.order-edt-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
@@ -245,7 +250,7 @@ class ReportViews {
         });
 
         // Handle on View Scenario
-        jQuery('#orderListTable').find('.order-view-btn').on('click', (event: any)=>{
+        jQuery('#reportsTable').find('.order-view-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
@@ -262,7 +267,7 @@ class ReportViews {
         });
 
         // Handle on View Scenario
-        jQuery('#orderListTable').find('.order-spread-btn').on('click', (event: any)=>{
+        jQuery('#reportsTable').find('.order-spread-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
@@ -401,7 +406,7 @@ class ReportViews {
         });
 
         // Handle On Delete Scenario
-        jQuery('#orderListTable').find('.order-del-btn').on('click', (event: any)=>{
+        jQuery('#reportsTable').find('.order-del-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
@@ -444,7 +449,7 @@ class ReportViews {
             delOrderDlg.show();
         });
 
-        jQuery('#orderListTable').find('.order-vrfy-switch').on('change', (event: any)=>{
+        jQuery('#reportsTable').find('.order-vrfy-switch').on('change', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
@@ -551,6 +556,7 @@ class ReportViews {
                 orderDataItem.push(this.getActionButtons(order, frConfig));
                 this.currentDataset_.push(orderDataItem);
             }
+
         }
 
 

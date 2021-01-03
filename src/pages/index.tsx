@@ -107,7 +107,7 @@ async function enableReady(frConfig: FundraiserConfig, setOrderSummary) {
                     <div className="card-body">
                         <h5 className="card-title">{frConfig.description()} Fundraiser</h5>
                         <h6>Summary for: {frConfig.getUserNameFromId(auth.getCurrentUserId())}</h6>
-                        <ul className="list-group list-group-flush">
+                        <ul className="list-group list-group-flush sm-owner-summary" id="orderOwnerSummaryList">
                             {summaryStats}
                         </ul>
 
@@ -118,8 +118,10 @@ async function enableReady(frConfig: FundraiserConfig, setOrderSummary) {
                             </tbody>
                         </table>
 
-                        <h6>Sales by Patrol:</h6>
-                        <div id="patrolStandingsChart"/>
+                        <div id="patrolStandingsChartWidget">
+                            <h6>Sales by Patrol:</h6>
+                            <div id="patrolStandingsChart"/>
+                        </div>
                     </div>
                     <small muted>*updates may take up to 15 minutes</small>
                 </div>
