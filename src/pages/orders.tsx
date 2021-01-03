@@ -153,7 +153,7 @@ const genCardBody = (frConfig: FundraiserConfig) => {
         const hiddenElement = document.createElement('a');
         hiddenElement.href = 'data:text/plain;charset=utf-8,' + encodeURI(csvData);
         hiddenElement.target = '_blank';
-        hiddenElement.download = 'FundraisingReport.text';
+        hiddenElement.download = 'FundraisingReport.csv';
         hiddenElement.click();
     };
 
