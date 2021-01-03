@@ -23,9 +23,7 @@ const resetSpreaderDlg = ()=>{
     reviewSelections.style.display='none';
     document.getElementById(spreadingDlgRt+"SpreaderNoSelectionReview").style.display='none';
     document.getElementById('spreadingSubmitBtnSpinny').style.display = 'none';
-    for (let i = reviewSelections.options.length-1; i >= 0; i--) {
-        reviewSelections.remove(i);
-    }
+    jQuery(reviewSelections).empty();
     const selectedOpts = document.getElementById(`${spreadingDlgRt}SpreaderSelection`).options;
     for (const anOpt of selectedOpts) {
         anOpt.selected=false;
@@ -310,11 +308,13 @@ class ReportViews {
                         throw new Error("Trying to save without orderOwner or orderId");
                     }
 
-                    const reviewSelections = document.getElementById(spreadingDlgRt+"SpreaderSelectionReview");
+                    const selectedSpreaders = document.getElementById(spreadingDlgRt+"SpreaderSelection");
 
                     const spreaders=[];
-                    for (const anOpt of reviewSelections.options) {
-                        spreaders.push(anOpt.value);
+                    for (const anOpt of selectedSpreaders.options) {
+                        if (anOpt.selected) {
+                            spreaders.push(anOpt.value);
+                        }
                     }
 
                     // submit order update
@@ -972,23 +972,24 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
         const reviewSelections = document.getElementById(spreadingDlgRt+"SpreaderSelectionReview");
 
         //Clear any old selections
-        if (0!==reviewSelections.options.length) {
-            for (let i = reviewSelections.options.length-1; i >= 0; i--) {
-                reviewSelections.remove(i);
-            }
-        }
+        jQuery(reviewSelections).empty();
+
+        const genLi = (label)=>{
+            const li = document.createElement("li");
+            li.appendChild(document.createTextNode(label));
+            li.classList.add('list-group-item');
+            return li;
+        };
 
         //Add new options
         const selectedOptions = document.getElementById(`${spreadingDlgRt}SpreaderSelection`).options
         for (const anOpt of selectedOptions) {
             if (anOpt.selected) {
-                const newOpt = document.createElement("option");
-                newOpt.text = anOpt.text;
-                newOpt.value = anOpt.value;
-                reviewSelections.add(newOpt);
+                const newOpt = genLi(anOpt.text);
+                reviewSelections.appendChild(newOpt);
             }
         }
-        if (0===reviewSelections.options.length) {
+        if (0===reviewSelections.querySelectorAll("li").length) {
             reviewSelections.style.display = 'none';
             document.getElementById(spreadingDlgRt+"SpreaderNoSelectionReview").style.display = 'block';
         } else {
@@ -1038,11 +1039,12 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
                                     <label htmlFor={spreadingDlgRt+"SpreaderSelectionReview"}>
                                         Review Spreaders
                                     </label>
-                                    <select className="form-select" id={spreadingDlgRt+"SpreaderSelectionReview"}
-                                            multiple size="10" disabled aria-label="Review Spreaders">
-                                    </select>
-                                    <div className="alert alert-danger" id={spreadingDlgRt+"SpreaderNoSelectionReview"}>
-                                        <h6>No spreaders were selected. Submitting this will mark this order as not spread yet.</h6>
+                                    <ul className="list-group" id={spreadingDlgRt+"SpreaderSelectionReview"}>
+                                    </ul>
+                                    <div className="alert alert-danger"
+                                         id={spreadingDlgRt+"SpreaderNoSelectionReview"}>
+                                        <h6>No spreaders were selected.
+                                            Submitting this will mark this order as not spread yet.</h6>
                                     </div>
                                 </div>
                             </div>
