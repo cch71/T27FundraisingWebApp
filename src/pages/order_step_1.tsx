@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react"
-import { Router, Link } from '@reach/router';
+import { Router } from '@reach/router';
 import {orderDb, Order} from "../js/ordersdb"
 import auth from "../js/auth"
 import {reportViews} from "../components/report_view"
 import { navigate } from "gatsby"
 import currency from "currency.js"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
-import {onCurrencyFieldKeyPress, onCheckNumsKeyPress, moneyFloor} from "../js/utils"
+import {onCurrencyFieldKeyPress, onCheckNumsKeyPress, moneyFloor, saveCurrentOrder} from "../js/utils"
 import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
 const trashImg = bootstrapIconSprite + "#trash";
 const pencilImg = bootstrapIconSprite + "#pencil";
@@ -90,34 +90,6 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
     if (!frConfig) {
         alert("Failed to load fundraiser config");
         return(<div/>);
-    }
-
-    ////////////////////////////////////////////////////////
-    // Save off current order values
-    const saveCurrentOrder = ()=>{
-        //Required
-        currentOrder.orderOwner = (document.getElementById('formOrderOwner') as HTMLInputElement).value;
-        currentOrder.firstName = (document.getElementById('formFirstName') as HTMLInputElement).value;
-        currentOrder.lastName = (document.getElementById('formLastName') as HTMLInputElement).value;
-        currentOrder.phone = (document.getElementById('formPhone') as HTMLInputElement).value;
-        currentOrder.addr1 = (document.getElementById('formAddr1') as HTMLInputElement).value;
-        currentOrder.neighborhood = (document.getElementById('formNeighborhood') as HTMLSelectElement).value;
-
-
-        currentOrder.email = (document.getElementById('formEmail') as HTMLInputElement).value;
-        currentOrder.addr2 = (document.getElementById('formAddr2') as HTMLInputElement).value;
-        /* currentOrder.city = (document.getElementById('formCity') as HTMLInputElement).value;
-         * currentOrder.state = (document.getElementById('formState') as HTMLInputElement).value;
-         * currentOrder.zip = (document.getElementById('formZip') as HTMLInputElement).value;
-         */
-        currentOrder.specialInstructions =
-            (document.getElementById('formSpecialInstructions') as HTMLInputElement).value;
-        currentOrder.checkNums = (document.getElementById('formCheckNumbers') as HTMLInputElement).value;
-        currentOrder.cashPaid = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
-        currentOrder.checkPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
-        currentOrder.doCollectMoneyLater  = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
-        currentOrder.totalAmt = currency(currentOrder.donation).add(currency(currentOrder.productsCost));
-        console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
     }
 
     ////////////////////////////////////////////////////////
@@ -236,8 +208,10 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
     ////////////////////////////////////////////////////////
     //
     const recalculateTotalPaid = ()=> {
-        const [cash, isCashChanged] = moneyFloor((document.getElementById('formCashPaid') as HTMLInputElement).value);
-        const [checks, isChecksChanged] = moneyFloor((document.getElementById('formCheckPaid') as HTMLInputElement).value);
+        const [cash, isCashChanged] =
+            moneyFloor((document.getElementById('formCashPaid') as HTMLInputElement).value);
+        const [checks, isChecksChanged] =
+            moneyFloor((document.getElementById('formCheckPaid') as HTMLInputElement).value);
 
         if (isCashChanged) {
             (document.getElementById('formCashPaid') as HTMLInputElement).value = cash.toString();
@@ -391,7 +365,7 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
                               currentOrder.orderOwner:auth.currentUser().getUsername()
 
     setFormFields(
-        <form className="needs-validation" noValidate onSubmit={onFormSubmission}>
+        <form className="needs-validation" id="newOrEditOrderForm" noValidate onSubmit={onFormSubmission}>
 
             <div className="row mb-2 g-2" style={{display: (isAdmin?'block':'none')}}>
                 <div className="form-floating col-md-4">

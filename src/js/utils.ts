@@ -1,4 +1,5 @@
 import currency from "currency.js"
+import {orderDb, Order} from "../js/ordersdb"
 
 const onCurrencyFieldKeyPress = (evt: any)=>{
     const charCode = (evt.which) ? evt.which : event.keyCode;
@@ -53,4 +54,35 @@ const moneyFloor = (value: string)=>{
 	return [amt, isChanged];
 };
 
-export {onCurrencyFieldKeyPress, onCheckNumsKeyPress, onNonNumsKeyPress, moneyFloor}
+////////////////////////////////////////////////////////
+// Save off current order values
+const saveCurrentOrder = ()=>{
+    const currentOrder = orderDb.getActiveOrder();
+
+    if (!(document.getElementById('newOrEditOrderForm') && currentOrder)) { return; }
+    //Required
+    currentOrder.orderOwner = (document.getElementById('formOrderOwner') as HTMLInputElement).value;
+    currentOrder.firstName = (document.getElementById('formFirstName') as HTMLInputElement).value;
+    currentOrder.lastName = (document.getElementById('formLastName') as HTMLInputElement).value;
+    currentOrder.phone = (document.getElementById('formPhone') as HTMLInputElement).value;
+    currentOrder.addr1 = (document.getElementById('formAddr1') as HTMLInputElement).value;
+    currentOrder.neighborhood = (document.getElementById('formNeighborhood') as HTMLSelectElement).value;
+
+
+    currentOrder.email = (document.getElementById('formEmail') as HTMLInputElement).value;
+    currentOrder.addr2 = (document.getElementById('formAddr2') as HTMLInputElement).value;
+    /* currentOrder.city = (document.getElementById('formCity') as HTMLInputElement).value;
+     * currentOrder.state = (document.getElementById('formState') as HTMLInputElement).value;
+     * currentOrder.zip = (document.getElementById('formZip') as HTMLInputElement).value;
+     */
+    currentOrder.specialInstructions =
+        (document.getElementById('formSpecialInstructions') as HTMLInputElement).value;
+    currentOrder.checkNums = (document.getElementById('formCheckNumbers') as HTMLInputElement).value;
+    currentOrder.cashPaid = currency((document.getElementById('formCashPaid') as HTMLInputElement).value);
+    currentOrder.checkPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
+    currentOrder.doCollectMoneyLater  = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
+    currentOrder.totalAmt = currency(currentOrder.donation).add(currency(currentOrder.productsCost));
+    console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
+}
+
+export {onCurrencyFieldKeyPress, onCheckNumsKeyPress, onNonNumsKeyPress, moneyFloor, saveCurrentOrder}

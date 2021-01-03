@@ -144,10 +144,11 @@ html {
 
 
     .add-order-widget {
-        z-index: 0;
-        position: fixed;
-        bottom: 0.5rem;
-        right: 0.5rem;
+        z-index: 1;
+        position: absolute;
+        bottom: 10px;
+        right: 15px;
+
 
         label {
             font-style: italic;
