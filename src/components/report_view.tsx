@@ -20,6 +20,8 @@ const resetSpreaderDlg = ()=>{
     // reset dlg to default state.  I.E. have selection btn be active view
     // and reset hidden currentOrderId, currentOrderOwner
     const reviewSelections = document.getElementById(spreadingDlgRt+"SpreaderSelectionReview");
+    reviewSelections.style.display='none';
+    document.getElementById(spreadingDlgRt+"SpreaderNoSelectionReview").style.display='none';
     document.getElementById('spreadingSubmitBtnSpinny').style.display = 'none';
     for (let i = reviewSelections.options.length-1; i >= 0; i--) {
         reviewSelections.remove(i);
@@ -300,53 +302,6 @@ class ReportViews {
                 focus: true
             });
 
-            jQuery('#spreadersEraseBtn')
-                .off('click')
-                .click((event: any)=>{
-                    // record existing selections
-                    if (!(orderOwner && orderId)) {
-                        throw new Error("Trying to save without orderOwner or orderId");
-                    }
-
-                    const spreaders=[];
-
-                    // submit order update
-                    console.log(`Submitting Erasure spreading job for ` +
-                                `${orderId}:${orderOwner}`);
-
-                    // Start submit spnner
-                    const submitSpinner = document.getElementById('spreadingSubmitBtnSpinny');
-                    submitSpinner.style.display = "inline-block";
-                    document.getElementById('spreadersSaveBtn').disabled = true;
-                    document.getElementById('spreadersEraseBtn').disabled = true;
-                    orderDb.submitSpreadingComplete({
-                        orderOwner: orderOwner,
-                        orderId: orderId,
-                        spreaders: spreaders
-                    }).then(()=>{
-                        document.getElementById('spreadersSaveBtn').disabled = false;
-                        document.getElementById('spreadersEraseBtn').disabled = false;
-                        resetSpreaderDlg();
-                        spreadOrderDlg.hide();
-                        rowData[spreadersIdx] = spreaders;
-                        row.data(rowData).draw();
-                    }).catch((err:any)=>{
-                        if ('Invalid Session'===err) {
-                            navigate('/signon/')
-                        } else {
-                        document.getElementById('spreadersSaveBtn').disabled = false;
-                            document.getElementById('spreadersEraseBtn').disabled = false;
-                            submitSpinner.style.display = "none";
-                            const errStr = `Failed submitting erasure order: ${JSON.stringify(err)}`;
-                            console.log(errStr);
-                            alert(errStr);
-                            throw err;
-                        }
-                    });
-
-                });
-
-
             jQuery('#spreadersSaveBtn')
                 .off('click')
                 .click((event: any)=>{
@@ -362,10 +317,6 @@ class ReportViews {
                         spreaders.push(anOpt.value);
                     }
 
-                    if (0===spreaders.length) {
-                        throw new Error("No spreaders selected so can't save");
-                    }
-
                     // submit order update
                     console.log(`Submitting spreading job for ` +
                                 `${orderId}:${orderOwner}: ${JSON.stringify(spreaders)}`);
@@ -374,21 +325,18 @@ class ReportViews {
                     const submitSpinner = document.getElementById('spreadingSubmitBtnSpinny');
                     submitSpinner.style.display = "inline-block";
                     document.getElementById('spreadersSaveBtn').disabled = true;
-                    document.getElementById('spreadersEraseBtn').disabled = true;
                     orderDb.submitSpreadingComplete({
                         orderOwner: orderOwner,
                         orderId: orderId,
                         spreaders: spreaders
                     }).then(()=>{
                         document.getElementById('spreadersSaveBtn').disabled = false;
-                        document.getElementById('spreadersEraseBtn').disabled = false;
                         resetSpreaderDlg();
                         spreadOrderDlg.hide();
                         rowData[spreadersIdx] = spreaders;
                         row.data(rowData).draw();
                     }).catch((err:any)=>{
                         document.getElementById('spreadersSaveBtn').disabled = false;
-                        document.getElementById('spreadersEraseBtn').disabled = false;
                         if ('Invalid Session'===err) {
                             navigate('/signon/')
                         } else {
@@ -1040,7 +988,13 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
                 reviewSelections.add(newOpt);
             }
         }
-        if (0===reviewSelections.options.length) { return; }
+        if (0===reviewSelections.options.length) {
+            reviewSelections.style.display = 'none';
+            document.getElementById(spreadingDlgRt+"SpreaderNoSelectionReview").style.display = 'block';
+        } else {
+            reviewSelections.style.display = 'block';
+            document.getElementById(spreadingDlgRt+"SpreaderNoSelectionReview").style.display = 'none';
+        }
 
         document.getElementById("spreadersSaveBtn").classList.remove("make-disabled");
     };
@@ -1087,6 +1041,9 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
                                     <select className="form-select" id={spreadingDlgRt+"SpreaderSelectionReview"}
                                             multiple size="10" disabled aria-label="Review Spreaders">
                                     </select>
+                                    <div className="alert alert-danger" id={spreadingDlgRt+"SpreaderNoSelectionReview"}>
+                                        <h6>No spreaders were selected. Submitting this will mark this order as not spread yet.</h6>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1094,23 +1051,22 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary"
                                 data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" className="btn btn-danger" id="spreadersEraseBtn">
-                            Undo Spreading
-                        </button>
                         <div className="btn-group" role="group" aria-label="Spreader Selection Group">
                             <input type="radio" className="btn-check" name="btnradio" id="spreadersSelectBtn"
                                    autoComplete="off" defaultChecked onClick={onSelect}/>
-                            <label className="btn btn-outline-primary" htmlFor="spreadersSelectBtn" >Select</label>
+                            <label className="btn btn-outline-primary" htmlFor="spreadersSelectBtn" >1. Select</label>
 
                             <input type="radio" className="btn-check" name="btnradio" id="spreadersReviewBtn"
                                    autoComplete="off" onClick={onReview}/>
-                            <label className="btn btn-outline-primary" htmlFor="spreadersReviewBtn" >Review</label>
+                            <label className="btn btn-outline-primary" htmlFor="spreadersReviewBtn" >2. Review</label>
+                            <input type="radio" className="btn-check make-disabled" name="btnradio" id="spreadersSaveBtn"
+                                   autoComplete="off"/>
+                            <label className="btn btn-outline-primary" htmlFor="spreadersSaveBtn" >
+                                3. Submit
+                                <span className="spinner-border spinner-border-sm me-1" role="status"
+                                      aria-hidden="true" id="spreadingSubmitBtnSpinny" style={{display: "none"}} />
+                            </label>
                         </div>
-                        <button type="button" className="btn btn-primary make-disabled" id="spreadersSaveBtn">
-                            <span className="spinner-border spinner-border-sm me-1" role="status"
-                                  aria-hidden="true" id="spreadingSubmitBtnSpinny" style={{display: "none"}} />
-                            Submit
-                        </button>
                     </div>
                 </div>
             </div>

@@ -158,6 +158,11 @@ html {
       .make-disabled {
           pointer-events: none;
           opacity: 0.3;
+
+          ~label {
+              pointer-events: none;
+              opacity: 0.3;
+          }
       }
 
       select {
