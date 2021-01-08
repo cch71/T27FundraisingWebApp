@@ -64,50 +64,53 @@ async function enableReady(frConfig: FundraiserConfig, setOrderSummary) {
         //console.log("Summary ${JSON.stringify(summaryStats)}")
 
         setOrderSummary(
-            <div className="justify-content-center text-center">
-                <h6>{frConfig.description()} Fundraiser</h6>
-                <div className="col-xs-1 d-flex justify-content-center">
-                    <div className="row">
+            <div>
+                <div className="justify-content-center text-center">
+                    <h6>{frConfig.description()} Fundraiser</h6>
+                    <div className="col-xs-1 d-flex justify-content-center">
+                        <div className="row">
 
-                        <div className="col-lg-4">
-                            <div className="card" id="orderOwnerSummaryCard">
-                                <div className="card-header">
-                                    Summary for: {frConfig.getUserNameFromId(auth.getCurrentUserId())}
-                                </div>
-                                <div className="card-body text-start">
-                                    <small muted>*updates may take up to 15 minutes</small>
-                                    <ul className="list-group list-group-flush sm-owner-summary"
-                                        id="orderOwnerSummaryList">
-                                        {summaryStats}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-4">
-                            <div className="card" id="topSellersCard">
-                                <div className="card-header">Top Sellers:</div>
-                                <div className="card-body text-start">
-                                    <table className="table table-sm table-borderless table-responsive"
-                                           id="topSellersTable">
-                                        <tbody>
-                                            {topSellers}
-                                        </tbody>
-                                    </table>
+                            <div className="col-lg-4">
+                                <div className="card" id="orderOwnerSummaryCard">
+                                    <div className="card-header">
+                                        Summary for: {frConfig.getUserNameFromId(auth.getCurrentUserId())}
+                                    </div>
+                                    <div className="card-body text-start">
+                                        <small muted>*updates may take up to 15 minutes</small>
+                                        <ul className="list-group list-group-flush sm-owner-summary"
+                                            id="orderOwnerSummaryList">
+                                            {summaryStats}
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="col-lg-4">
-                            <div className="card" id="patrolStandingsChartCard">
-                                <div className="card-header">Sales by Patrol:</div>
-                                <div className="card-body">
-                                    <div id="patrolStandingsChart"/>
+                            <div className="col-lg-4">
+                                <div className="card" id="topSellersCard">
+                                    <div className="card-header">Top Sellers:</div>
+                                    <div className="card-body text-start">
+                                        <table className="table table-sm table-borderless table-responsive"
+                                               id="topSellersTable">
+                                            <tbody>
+                                                {topSellers}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="col-lg-4">
+                                <div className="card" id="patrolStandingsChartCard">
+                                    <div className="card-header">Sales by Patrol:</div>
+                                    <div className="card-body">
+                                        <div id="patrolStandingsChart"/>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                <AddNewOrderWidget/>
             </div>
         );
 
@@ -147,8 +150,10 @@ const Home = ()=>{
     const [isLoading, setIsLoading] = useState(false);
 
     const switchToSignOn = ()=>{
-        setIsLoading(false);
-        navigate('/signon/');
+        setTimeout( () =>{
+            setIsLoading(false);
+            navigate('/signon/');
+        }, 2000);
     };
 
 
@@ -199,10 +204,7 @@ const Home = ()=>{
                     </div>
                 </div>
             ) : (
-                <div id="readyView">
-                    {orderSummary}
-                    <AddNewOrderWidget/>
-                </div>
+                <>{orderSummary}</>
             )}
         </div>
     );
