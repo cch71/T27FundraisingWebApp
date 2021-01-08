@@ -150,10 +150,8 @@ const Home = ()=>{
     const [isLoading, setIsLoading] = useState(false);
 
     const switchToSignOn = ()=>{
-        setTimeout( () =>{
-            setIsLoading(false);
-            navigate('/signon/');
-        }, 2000);
+        setIsLoading(false);
+        navigate('/signon/');
     };
 
 
