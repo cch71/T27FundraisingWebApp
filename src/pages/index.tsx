@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react"
 import { Router, Link } from '@reach/router'
-//import NavBar from "../components/navbar"
 import AddNewOrderWidget from "../components/add_new_order_widget"
 import auth from "../js/auth"
 import { navigate } from "gatsby"
@@ -9,46 +8,9 @@ import {FundraiserConfig, downloadFundraiserConfig, getFundraiserConfig} from ".
 import awsConfig from "../config"
 import currency from "currency.js"
 
-const NewOrder = React.lazy(() => import('./order_step_1'));
-const Reports = React.lazy(() => import('./orders'));
-const SignOn = React.lazy(() => import('./signon'));
-
-const LazyComponent = ({ Component, ...props }) => (
-    <React.Suspense fallback={'<p>Loading...</p>'}>
-        <Component {...props} />
-    </React.Suspense>
-);
-
-
-/* function *dynamicColors(): Generator<string> {
- *      var r = Math.floor(Math.random() * 255);
- *      * var g = Math.floor(Math.random() * 255);
- *      * var b = Math.floor(Math.random() * 255);
- *      * return "rgb(" + r + "," + g + "," + b + ")";
- *     for (const c of ['red', 'green', 'blue', 'purple', 'yellow', 'brown', 'orange']) {
- *         yield c
- *     }
- * };
- *  */
-
-/* function dynamicColors(){
- *     return ['SaddleBrown', 'DarkOliveGreen', 'Blue', 'Purple', 'SlateGrey', 'Yellow', 'Salmon'];
- * };
- *  */
-
 const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
-
 async function enableReady(frConfig: FundraiserConfig, setOrderSummary) {
-    const readyViewElm = document.getElementById('readyView');
-    if (readyViewElm) {
-        readyViewElm.style.display = "block";
-    }
-
-    const notReadyViewElm = document.getElementById('notReadyView');
-    if (notReadyViewElm) {
-        notReadyViewElm.className = "d-none";
-    }
     const summaryArr=[];
     orderDb.getOrderSummary().then((summary: LeaderBoardSummaryInfo)=>{
         if (!summary) { return; }
@@ -172,22 +134,29 @@ async function enableReady(frConfig: FundraiserConfig, setOrderSummary) {
 
 
         };
-		// Load the Visualization API and the corechart package.
-		google.charts.load('current', {'packages':['corechart']});
-		// Set a callback to run when the Google Visualization API is loaded.
-		google.charts.setOnLoadCallback(drawCharts);
+        // Load the Visualization API and the corechart package.
+        google.charts.load('current', {'packages':['corechart']});
+        // Set a callback to run when the Google Visualization API is loaded.
+        google.charts.setOnLoadCallback(drawCharts);
     });
 }
 
 const Home = ()=>{
 
     const [orderSummary, setOrderSummary] = useState();
+    const [isLoading, setIsLoading] = useState(true);
+
+    const switchToSignOn = ()=>{
+        navigate('/signon/');
+    };
+
+
     useEffect(() => {
-		const onLoadComponent = async ()=>{
-			const [isValidSession, session] = await auth.getSession();
+        const onAsyncView = async ()=>{
+            const [isValidSession, session] = await auth.getSession();
             if (!isValidSession) {
                 // If no active user go to login screen
-                navigate('/signon/');
+                switchToSignOn();
                 return;
             }
             console.log(`Active User: ${auth.getCurrentUserId()}`);
@@ -204,49 +173,37 @@ const Home = ()=>{
                 }
                 await enableReady(loadedConfig, setOrderSummary);
             }
+            setIsLoading(false);
+        };
 
-		};
-
-		onLoadComponent()
-			.then()
-			.catch((err)=>{
-				if ('Invalid Session'===err.message) {
-					navigate('/signon/');
-					return;
-				} else {
-					console.error(err);
-				}
-			});
+        onAsyncView()
+            .then()
+            .catch((err)=>{
+                if ('Invalid Session'===err.message) {
+                    switchToSignOn();
+                    return;
+                } else {
+                    console.error(err);
+                }
+            });
     }, []);
 
     return (
-        <>
-            <div id="notReadyView" className='col-xs-1 d-flex justify-content-center' >
-                <div className="spinner-border" role="status">
-                    <span className="visually-hidden">Loading...</span>
+        <div id="indexPage">
+            {isLoading ? (
+                <div id="notReadyView" className='col-xs-1 d-flex justify-content-center' >
+                    <div className="spinner-border" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
                 </div>
-            </div>
-            <div id="readyView" style={{display: 'none'}}>
-                {orderSummary}
-                <AddNewOrderWidget/>
-            </div>
-        </>
+            ) : (
+                <div id="readyView">
+                    {orderSummary}
+                    <AddNewOrderWidget/>
+                </div>
+            )}
+        </div>
     );
 }
-//<NavBar/>
 
-
-const IndexPage = ()=>{
-    return(
-        <Router>
-            <Home path="/" />
-            <LazyComponent Component={Reports} path="/orders/" />
-            <LazyComponent Component={NewOrder} path="/order_step_1/" />
-            <LazyComponent Component={SignOn} path="/signon/" />
-        </Router>
-    );
-};
-
-
-
-export default IndexPage;
+export default Home;

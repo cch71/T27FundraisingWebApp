@@ -32,10 +32,6 @@ export default function signon() {
         auth.signIn(loginId, pw, onSuccess, onFailure);
     };
 
-    const curUsr = auth.currentUser();
-    const loginId = (curUsr && curUsr.username) ? curUsr.username : '';
-
-
     return (
         <div className="col-xs-1 d-flex justify-content-center">
             <div className="card" style={{ width: '20rem' }}>
@@ -44,7 +40,7 @@ export default function signon() {
                     <form onSubmit={onFormSubmission}>
                         <div className="row mb-3">
                             <label htmlFor="formLoginId">Login ID</label>
-                            <input type="text" className="form-control" id="formLoginId" defaultValue={loginId}
+                            <input type="text" className="form-control" id="formLoginId"
                                    aria-describedby="loginIdHelp" placeholder="Enter Login ID" />
                             <small id="loginIdHelp" className="form-text text-muted">
                                 For questions contact the Fundraising Coordinator

@@ -15,12 +15,12 @@ module.exports = {
         {
             resolve: `gatsby-plugin-manifest`,
             options: {
-                name: `T27OrderSystem`,
+                name: `T27 Fundraiser App`,
                 short_name: `t27Orders`,
                 start_url: `/`,
                 background_color: `#f7f0eb`,
                 theme_color: `#a2466c`,
-                display: `minimal-ui`,
+                display: `standalone`,
                 icon: `static/t27patch.png`,
             },
         },{
