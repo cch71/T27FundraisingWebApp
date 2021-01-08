@@ -144,14 +144,16 @@ async function enableReady(frConfig: FundraiserConfig, setOrderSummary) {
 const Home = ()=>{
 
     const [orderSummary, setOrderSummary] = useState();
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
     const switchToSignOn = ()=>{
+        setIsLoading(false);
         navigate('/signon/');
     };
 
 
     useEffect(() => {
+        setIsLoading(true);
         const onAsyncView = async ()=>{
             const [isValidSession, session] = await auth.getSession();
             if (!isValidSession) {

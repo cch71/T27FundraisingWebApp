@@ -5,7 +5,7 @@ import { navigate } from "gatsby"
 import {orderDb} from "../js/ordersdb"
 
 
-export default function signon() {
+const SignOn = () => {
     //If you got here then lets go ahean and sign out if already signed in.
     auth.signOut();
     orderDb.setActiveOrder(); // Reset active order
@@ -33,7 +33,7 @@ export default function signon() {
     };
 
     return (
-        <div className="col-xs-1 d-flex justify-content-center">
+        <div id="signOn" className="col-xs-1 d-flex justify-content-center">
             <div className="card" style={{ width: '20rem' }}>
                 <div className="card-body">
                     <h5 className="card-title">Sign On</h5>
@@ -57,3 +57,5 @@ export default function signon() {
         </div>
     );
 }
+
+export default SignOn;
