@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'gatsby'
+import { Link, navigate } from 'gatsby'
 import auth from "../js/auth"
 import t27patch from "../../static/t27patch.png"
 import {orderDb} from "../js/ordersdb"
 import {saveCurrentOrder} from "../js/utils"
 
 
-const NavBar = () => {
+const NavBar = (props) => {
 	  const activePathNm = (typeof window !== 'undefined')?window.location.pathname:undefined;
+
+    console.log(`Path Name ${activePathNm}`);
+    console.log(`Props: ${props.pageContext?.layout}`)
+    console.log(`Props page: ${JSON.stringify(props.pageContext)}`)
+
+
     const setIfActive = (srchPath: string) => {
         if (activePathNm===srchPath || `${activePathNm}/`===srchPath) {
             return('nav-item nav-link active');
@@ -24,32 +30,38 @@ const NavBar = () => {
         jQuery(".navbar-collapse").collapse('hide');
     }
 
-    const [userNav, setUserNav] = useState();
+    const handleSignout = ()=>{
+        collapseNav();
+        auth.signOut();
+        if ("/" === activePathNm) {
+            window.location.reload(false);
+        } else {
+            navigate("/");
+        }
+    };
+
+
+    const [userName, setUserName] = useState();
     useEffect(() => {
-        auth.getUserIdAndGroups().then(([userName, userGroups])=>{
-            setUserNav(
-                <span className="navbar-nav nav-item dropdown">
-                    <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown"
-                       data-bs-toggle="dropdown" aria-expanded="false" role="button">
-                        {userName}
-                    </a>
-                    <div className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <Link className='dropdown-item' replace to='/signon/' onClick={collapseNav}>Signout</Link>
-                        <a className='dropdown-item'
-                           href="https://github.com/cch71/T27FundraisingWebApp/issues" onClick={collapseNav}>Report Issue</a>
-                    </div>
-                </span>
-            );
+        const onAsyncView = async ()=>{
+            console.log("!!!!!!!!!!! Nav UseEffect Called");
+            //If this throws then we aren't authenticated so don't show bar anyways
+            const [uid, userGroups] = await auth.getUserIdAndGroups();
 
             if (userGroups && userGroups.includes("FrAdmins")) {
 				        //TODO: Placeholder for the Admin Menu Options
             }
 
-        }).catch((err: any)=>{});
+            setUserName(uid);
+        };
+
+        onAsyncView()
+            .then()
+            .catch((err)=>{});
     }, []);
 
     return (
-        <nav className="navbar sticky-top navbar-expand-sm navbar-light bg-light">
+        <nav className="navbar sticky-top navbar-expand-sm navbar-light bg-light" id="primaryNavBar">
 			      <a className="navbar-brand" href="#">
 				        <span>
 					          <img className="navbar-logo ms-2" src={t27patch} alt="Logo" />
@@ -67,18 +79,35 @@ const NavBar = () => {
 						            <Link className={setIfActive('/')} replace to='/' onClick={collapseNav}>Home</Link>
 					          </li>
 					          <li>
-						            <Link className={setIfActive('/orders/')} replace to='/orders/' onClick={collapseNav}>Reports</Link>
+						            <Link className={setIfActive('/orders/')} replace to='/orders/' onClick={collapseNav}>
+                            Reports
+                        </Link>
 					          </li>
 					          <li style={{display: (orderDb.getActiveOrder()?'block':'none')}} >
-						            <Link className={setIfActive('/order_step_1/')} replace to='/order_step_1/' onClick={collapseNav}>Open Order</Link>
+						            <Link className={setIfActive('/order_step_1/')} replace to='/order_step_1/' onClick={collapseNav}>
+                            Open Order
+                        </Link>
 					          </li>
 					          <li>
-						            <a className='nav-item nav-link'
-						               href='https://cch71.github.io/T27FundraisingWebApp/' target="_blank" onClick={collapseNav}>Help</a>
+						            <a className='nav-item nav-link' href='https://cch71.github.io/T27FundraisingWebApp/'
+                           target="_blank" onClick={collapseNav}>
+                            Help
+                        </a>
 					          </li>
 
 				        </ul>
-				        {userNav}
+                <span className="navbar-nav nav-item dropdown">
+                    <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown"
+                       data-bs-toggle="dropdown" aria-expanded="false" role="button">
+                        {userName}
+                    </a>
+                    <div className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <a className='dropdown-item' href="#" onClick={handleSignout}>Signout</a>
+                        <a className='dropdown-item'
+                           href="https://github.com/cch71/T27FundraisingWebApp/issues"
+                           onClick={collapseNav}>Report Issue</a>
+                    </div>
+                </span>
 			      </div>
 		    </nav>
     );

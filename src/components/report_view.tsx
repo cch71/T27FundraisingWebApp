@@ -161,8 +161,8 @@ class ReportViews {
                 console.log(`Report contains ${this.currentDataset_.length} rows`);
             })
             .catch((err: any)=>{
-                if ('Invalid Session'===err) {
-                    navigate('/signon/')
+                if ('Invalid Session'===err.message) {
+                    navigate('/')
                 } else {
                     const errStr = `Failed creating order list: ${JSON.stringify(err)}`;
                     console.log(errStr);
@@ -337,8 +337,8 @@ class ReportViews {
                         row.data(rowData).draw();
                     }).catch((err:any)=>{
                         document.getElementById('spreadersSaveBtn').disabled = false;
-                        if ('Invalid Session'===err) {
-                            navigate('/signon/')
+                        if ('Invalid Session'===err.message) {
+                            navigate('/')
                         } else {
                             submitSpinner.style.display = "none";
                             const errStr = `Failed submitting order: ${JSON.stringify(err)}`;
@@ -442,8 +442,8 @@ class ReportViews {
                         rowData[verifyIdx] = newVal;
                         row.data(rowData).draw();
                     }).catch((err:any)=>{
-                        if ('Invalid Session'===err) {
-                            navigate('/signon/')
+                        if ('Invalid Session'===err.message) {
+                            navigate('/')
                         } else {
                             submitSpinner.style.display = "none";
                             const errStr = `Failed submitting order: ${JSON.stringify(err)}`;

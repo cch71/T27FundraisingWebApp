@@ -12,9 +12,9 @@ const AddNewOrderWidget = () => {
         navigate('/order_step_1/');
     };
 
-    // float-end me-3 my-1
+
     return (
-        <div className="add-order-widget">
+        <div className="add-order-widget float-end me-3 my-1">
             <label>Add New Order</label>
             <button type="button"
                     className="btn btn-outline-primary add-order-btn"

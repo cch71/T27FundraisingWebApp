@@ -18,12 +18,16 @@ export default function HTML(props) {
                       integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
                       crossOrigin="anonymous" />
                 <link rel="stylesheet"
-                      type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.23/r-2.2.6/datatables.min.css"/>
+                      type="text/css"
+                      href="https://cdn.datatables.net/v/bs4/dt-1.10.23/r-2.2.6/datatables.min.css" />
+                <link rel="stylesheet"
+                      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css" />
 
                 <script src="https://code.jquery.com/jquery-3.5.1.min.js"
                         integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
                         crossOrigin="anonymous"></script>
                 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+
                         integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
                         crossOrigin="anonymous"></script>
                 <script type="text/javascript"

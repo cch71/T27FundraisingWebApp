@@ -5,15 +5,15 @@ import config from '../config';
 
 
 class CognitoAuth {
-    private userPool: any | null = null;
+    private userPool: any | undefined;
+    private isUserAuthenticated: boolean = false;
 
     constructor() {
         if (!(config.cognito.userPoolId &&
             config.cognito.userPoolClientId &&
             config.cognito.region))
         {
-            console.error("Invalid Auth Config Data");
-            return;
+            throw new Error("Invalid Auth Config Data");
         }
 
         const poolData = {
@@ -64,54 +64,53 @@ class CognitoAuth {
         return this.currentUser().getUsername().replace('-at-', '@')
     }
 
-    getAuthToken() : Promise<string> {
-        return new Promise((resolve, reject) => {
-            this.getSession().then(([isValid, session]: [boolean, any])=>{
-                if (isValid && session) {
-                    const idToken = session.getIdToken();
-                    const payload = idToken.decodePayload()
-                    //console.log(`CU: ${JSON.stringify(payload, null, '\t')}`)
-                    resolve(idToken.getJwtToken());
-                } else {
-                    reject(new Error("Invalid Session"));
-                }
-            });
-        });
+    async getAuthToken(): string {
+        const [isValid, session] = await this.getSession();
+        if (!(isValid && session)) {
+            throw(new Error("Invalid Session"));
+        }
+        const idToken = session.getIdToken();
+        const payload = idToken.decodePayload()
+        //console.log(`CU: ${JSON.stringify(payload, null, '\t')}`)
+        return(idToken.getJwtToken());
     }
 
-    getUserIdAndGroups() : Promise<[string, string]> {
-        return new Promise((resolve, reject) => {
-            this.getSession().then(([isValid, session]: [boolean, any])=>{
-                if (isValid && session) {
-                    const cognitoUser = this.userPool.getCurrentUser().getUsername();
-                    const idPayload = session.getIdToken().decodePayload();
-                    resolve([cognitoUser, idPayload['cognito:groups']])
-                } else {
-                    reject(new Error("Invalid Session"));
-                }
-            });
-        });
+    async getUserIdAndGroups() : [string, string] {
+        const [isValid, session] = await this.getSession();
+        if (!(isValid && session)) {
+            throw(new Error("Invalid Session"));
+        }
+        const cognitoUser = this.userPool.getCurrentUser().getUsername();
+        const idPayload = session.getIdToken().decodePayload();
+        return [cognitoUser, idPayload['cognito:groups']]
     }
 
     getSession(): Promise<any> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const cognitoUser = this.userPool.getCurrentUser();
 
-            if (cognitoUser != null) {
+            if (!cognitoUser) {
+                resolve([false, null]);
+                return;
+            }
+
+            try {
                 cognitoUser.getSession((err: any, session: any)=>{
                     if (err) {
                         resolve([false, session]);
                     } else {
+                        this.isUserAuthenticated = session.isValid;
                         resolve([session.isValid(), session]);
                     }
                 });
-            } else {
-                resolve([false, null]);
+            } catch(err) {
+                reject(err);
             }
         });
     }
 
     signOut() {
+        this.isUserAuthenticated = false;
         if (this.userPool) {
             const curUser = this.currentUser();
             if (curUser) {
@@ -133,7 +132,10 @@ class CognitoAuth {
 
         const cognitoUser = this.createCognitoUser(loginId);
         cognitoUser.authenticateUser(authenticationDetails, {
-            onSuccess: onSuccess,
+            onSuccess: (authInfo: any)=>{
+                this.isUserAuthenticated = true;
+                if (onSuccess) { onSuccess(authInfo); }
+            },
             onFailure: onFailure
         });
     }

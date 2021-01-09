@@ -56,7 +56,6 @@ const validateOrderForm = (currentOrder: Order) => {
         return isValid;
     };
 
-
     const validateProducts = async ()=>{
         if (currentOrder.products || currentOrder.donation) {
             document.getElementById('productList').classList.remove('is-invalid');
@@ -116,8 +115,8 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
                                navigate('/');
                            }
                        }).catch((err:any)=>{
-                           if ('Invalid Session'===err) {
-                               navigate('/signon/')
+                           if ('Invalid Session'===err.message) {
+                               navigate('/')
                            } else {
                                reenableSubmitButton();
                                const errStr = `Failed submitting order: ${JSON.stringify(err)}`;
@@ -536,7 +535,8 @@ export default (params: any)=>{
             }
         };
 
-        auth.getUserIdAndGroups().then(async ([_, userGroups]) => {
+        const onAsyncView = async ()=>{
+            const [uid, userGroups] = await auth.getUserIdAndGroups();
             const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
 
             const loadOrder = async ()=>{
@@ -569,20 +569,22 @@ export default (params: any)=>{
                 populateForm(order, setFormFields, isAdmin);
                 if (order.meta?.isReadOnly) { setFormReadOnly(); }
             }
-        }).catch((err: any)=>{
-            if ('Invalid Session'===err) {
-                navigate('/signon/');
-            } else {
-                const errStr = `Failed retrieving order: ${JSON.stringify(err)}`;
-                console.log(errStr);
-                alert(errStr);
-                throw err;
-            }
-        });;
+        };
 
+        onAsyncView()
+            .then()
+            .catch((err)=>{
+                if ('Invalid Session' === err.message) {
+                    navigate('/');
+                } else {
+                    const errStr = `Failed getting order: ${JSON.stringify(err)}`;
+                    console.error(errStr);
+                    //alert(errStr);
+                    throw err;
+                }
+            });
 
-
-    }, [])
+}, [])
 
     return (
         <>

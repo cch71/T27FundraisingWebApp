@@ -217,7 +217,7 @@ export default function orders(params: any) {
             const [isValidSession, session] = await auth.getSession();
             if (!isValidSession) {
                 // If no active user go to login screen
-                navigate('/signon/');
+                navigate('/');
                 return;
             }
 
@@ -249,7 +249,7 @@ export default function orders(params: any) {
             .then(()=>{})
             .catch((err)=>{
                 if ('Invalid Session'===err.message) {
-                    navigate('/signon/');
+                    navigate('/');
                     return;
                 } else {
                     console.error(err);

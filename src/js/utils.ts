@@ -58,8 +58,9 @@ const moneyFloor = (value: string)=>{
 // Save off current order values
 const saveCurrentOrder = ()=>{
     const currentOrder = orderDb.getActiveOrder();
-
     if (!(document.getElementById('newOrEditOrderForm') && currentOrder)) { return; }
+
+    console.log("Saving Order");
     //Required
     currentOrder.orderOwner = (document.getElementById('formOrderOwner') as HTMLInputElement).value;
     currentOrder.firstName = (document.getElementById('formFirstName') as HTMLInputElement).value;

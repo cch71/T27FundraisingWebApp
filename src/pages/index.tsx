@@ -10,7 +10,7 @@ import currency from "currency.js"
 
 const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
-async function enableReady(frConfig: FundraiserConfig, setOrderSummary) {
+async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
     const summaryArr=[];
     orderDb.getOrderSummary().then((summary: LeaderBoardSummaryInfo)=>{
         if (!summary) { return; }
@@ -31,29 +31,29 @@ async function enableReady(frConfig: FundraiserConfig, setOrderSummary) {
         const userSummary = summary.userSummary();
         summaryStats.push(
             <li key={++statIndex} className="list-group-item border-0 py-1">
-                You have collected {USD(userSummary.amountSold).format()} in sales
+                You collected {USD(userSummary.amountSold).format()} in total
             </li>
         );
+        if (0.0 < userSummary.donation.value) {
+            summaryStats.push(
+                <li key={++statIndex} className="list-group-item border-0 py-1">
+                    You collected {USD(userSummary.donation).format()} in donations
+                </li>
+            );
+        }
         if ('mulch' === frConfig.kind()) {
             summaryStats.push(
                 <li key={++statIndex} className="list-group-item border-0 py-1">
-                    You have sold {userSummary.bags} bags of mulch
+                    You sold {userSummary.bags} bags of mulch
                 </li>
             );
             summaryStats.push(
                 <li key={++statIndex} className="list-group-item border-0 py-1">
-                    You have sold {userSummary.spreading} spreading jobs
+                    You sold {userSummary.spreading} spreading jobs
                 </li>
             );
         }
 
-        if (0.0 < userSummary.donation.value) {
-            summaryStats.push(
-                <li key={++statIndex} className="list-group-item border-0 py-1">
-                    You have collected {USD(userSummary.donation).format()} in donations
-                </li>
-            );
-        }
 
         summaryStats.push(
             <li key={++statIndex} className="list-group-item border-0 py-1">
@@ -144,39 +144,119 @@ async function enableReady(frConfig: FundraiserConfig, setOrderSummary) {
     });
 }
 
-const Home = ()=>{
 
-    const [orderSummary, setOrderSummary] = useState();
-    const [isLoading, setIsLoading] = useState(false);
+function showSignOn(setContent) {
+    //If you got here then lets go ahean and sign out if already signed in.
+    orderDb.setActiveOrder(); // Reset active order
+    jQuery('#primaryNavBar').hide();
 
-    const switchToSignOn = ()=>{
-        setIsLoading(false);
-        navigate('/signon/');
+
+    const onFormSubmission = (event: any) => {
+        const form = event.currentTarget;
+        event.preventDefault();
+        event.stopPropagation();
+
+        const loginId = form[0].value;
+        const pw = form[1].value;
+
+        if (!loginId) {
+            form[0].classList.add('is-invalid');
+        } else {
+            form[0].classList.remove('is-invalid');
+        }
+
+        if (!pw) {
+            form[1].classList.add('is-invalid');
+        } else {
+            form[1].classList.remove('is-invalid');
+        }
+
+        if (!pw || !loginId) {
+            form.classList.add('is-invalid');
+            return;
+        }
+
+        //console.log(`Form submttted uid: ${loginId}`)
+
+        const onSuccess=(autoInfo: any)=>{
+            console.log(autoInfo);
+            form.classList.remove('is-invalid');
+            jQuery('#primaryNavBar').hide();
+            window.location.reload(false);
+        };
+        const onFailure=()=>{
+            console.error("authenticaiton Error");
+            form.classList.add('is-invalid');
+        };
+        auth.signIn(loginId, pw, onSuccess, onFailure);
     };
 
+    setContent(
+        <div id="signOn" className="col-xs-1 d-flex justify-content-center">
+            <div className="card my-5">
+                <h4 className="card-header">
+                    Troop 27 Fundraiser Sign On
+                </h4>
+                <div className="card-body">
+                    <form className="needs-validation" noValidate onSubmit={onFormSubmission}>
+                        <div className="row mb-3">
+                            <div className="form-floating">
+                                <input type="text" className="form-control" id="formLoginId"
+                                       aria-describedby="loginIdHelp" placeholder="Enter Login ID"
+                                       required />
+                                <label htmlFor="formLoginId" className="ms-2">Enter Login ID</label>
+                            </div>
+                        </div>
+                        <div className="row mb-3">
+                            <div className="form-floating">
+                                <input type="password" className="form-control"
+                                       id="formPassword" placeholder="Password"
+                                       required/>
+                                <label htmlFor="formPassword" className="ms-2">Enter Password</label>
+                            </div>
+                        </div>
+                        <div className="d-flex justify-content-end">
+                            <button type="submit" className="btn btn-primary">Submit</button>
+                        </div>
+                    </form>
+                    <div className="invalid-feedback">
+                        *Invalid Username or Password
+                    </div>
+                    <small id="loginIdHelp" className="form-text text-muted">
+                        For questions contact the Fundraising Coordinator
+                    </small>
+                </div>
+            </div>
+        </div>
+    );
+};
 
+const Home = ()=>{
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [content, setContent] = useState();
     useEffect(() => {
         setIsLoading(true);
         const onAsyncView = async ()=>{
             const [isValidSession, session] = await auth.getSession();
             if (!isValidSession) {
                 // If no active user go to login screen
-                switchToSignOn();
-                return;
-            }
-            console.log(`Active User: ${auth.getCurrentUserId()}`);
+                showSignOn(setContent);
+            } else {
+                console.log(`Active User: ${auth.getCurrentUserId()}`);
 
-            const authToken = await auth.getAuthToken();
+                const authToken = await auth.getAuthToken();
 
-            try {
-                const frConfig = getFundraiserConfig();
-                await enableReady(frConfig, setOrderSummary);
-            } catch(err: any) {
-                const loadedConfig = await downloadFundraiserConfig(authToken);
-                if (!loadedConfig) {
-                    throw(new Err("Failed to load session fundraising config"));
+                try {
+                    const frConfig = getFundraiserConfig();
+                    await showSummary(frConfig, setContent);
+                } catch(err: any) {
+                    const loadedConfig = await downloadFundraiserConfig(authToken);
+                    if (!loadedConfig) {
+                        throw(new Err("Failed to load session fundraising config"));
+                    }
+                    await showSummary(loadedConfig, setContent);
                 }
-                await enableReady(loadedConfig, setOrderSummary);
             }
             setIsLoading(false);
         };
@@ -185,10 +265,10 @@ const Home = ()=>{
             .then()
             .catch((err)=>{
                 if ('Invalid Session'===err.message) {
-                    switchToSignOn();
-                    return;
+                    showSignOn(setContent);
                 } else {
                     console.error(err);
+                    alert(err);
                 }
             });
     }, []);
@@ -202,7 +282,7 @@ const Home = ()=>{
                     </div>
                 </div>
             ) : (
-                <>{orderSummary}</>
+                <>{content}</>
             )}
         </div>
     );

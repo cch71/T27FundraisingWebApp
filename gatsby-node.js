@@ -6,10 +6,4 @@ exports.onCreatePage = ({ page, actions }) => {
         page.matchPath = `/*`;
         createPage(page);
     }
-
-    if (page.path.match(/signon/)) {
-        page.context.layout = 'signon';
-        createPage(page)
-    }
-
 };
