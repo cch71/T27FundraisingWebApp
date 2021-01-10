@@ -26,7 +26,7 @@ const resetSpreaderDlg = ()=>{
     jQuery(reviewSelections).empty();
 
     for (const cb of jQuery(`#${spreadingDlgRt}SpreaderSelection input:checkbox:checked`)) {
-        console.log(`Removing Checked: ${cb.id}: ${cb.parentNode.innerText}`);
+        //console.log(`Removing Checked: ${cb.id}: ${cb.parentNode.innerText}`);
         cb.parentNode.classList.remove("active");
         cb.checked = false;
     }

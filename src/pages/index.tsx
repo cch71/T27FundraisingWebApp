@@ -152,6 +152,11 @@ function showSignOn(setContent) {
 
 
     const onFormSubmission = (event: any) => {
+        const submitBtn = document.getElementById('loginBtn');
+        const submitSpinner = document.getElementById('loginBtnSpinny');
+        submitBtn.disabled=true;
+        submitSpinner.style.display = "inline-block";
+
         const form = event.currentTarget;
         event.preventDefault();
         event.stopPropagation();
@@ -186,6 +191,8 @@ function showSignOn(setContent) {
         };
         const onFailure=()=>{
             console.error("authenticaiton Error");
+            submitBtn.disabled=false;
+            submitSpinner.style.display = "none";
             form.classList.add('is-invalid');
         };
         auth.signIn(loginId, pw, onSuccess, onFailure);
@@ -216,7 +223,10 @@ function showSignOn(setContent) {
                             </div>
                         </div>
                         <div className="d-flex justify-content-end">
-                            <button type="submit" className="btn btn-primary">Submit</button>
+                            <button type="submit" id="loginBtn" className="btn btn-primary">Submit
+                                <span className="spinner-border spinner-border-sm me-1" role="status"
+                                      aria-hidden="true" id="loginBtnSpinny" style={{display: "none"}} />
+                            </button>
                         </div>
                     </form>
                     <div className="invalid-feedback">
