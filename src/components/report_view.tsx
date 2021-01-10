@@ -24,12 +24,15 @@ const resetSpreaderDlg = ()=>{
     document.getElementById(spreadingDlgRt+"SpreaderNoSelectionReview").style.display='none';
     document.getElementById('spreadingSubmitBtnSpinny').style.display = 'none';
     jQuery(reviewSelections).empty();
-    const selectedOpts = document.getElementById(`${spreadingDlgRt}SpreaderSelection`).options;
-    for (const anOpt of selectedOpts) {
-        anOpt.selected=false;
+
+    for (const cb of jQuery(`#${spreadingDlgRt}SpreaderSelection input:checkbox:checked`)) {
+        console.log(`Removing Checked: ${cb.id}: ${cb.parentNode.innerText}`);
+        cb.parentNode.classList.remove("active");
+        cb.checked = false;
     }
-    document.getElementById('spreadSelectTab').style.display='block';
-    document.getElementById('spreadReviewTab').style.display='none';
+
+    jQuery('#spreadSelectTab').show();
+    jQuery('#spreadReviewTab').hide();
 
     document.getElementById("spreadersSelectBtn").checked = true;
     document.getElementById("spreadersSaveBtn").classList.add("make-disabled");
@@ -180,7 +183,7 @@ class ReportViews {
         if (('mulch' === frConfig.kind()) && order.products?.spreading) {
             htmlStr +=
                 `<button type="button" class="btn btn-outline-info me-1 order-spread-btn"`+
-                ` data-bs-toggle="tooltip" title="Set Spreaders" data-bs-placement="left">` +
+                ` data-bs-toggle="tooltip" title="Select Spreaders" data-bs-placement="left">` +
                 `<svg class="bi" fill="currentColor"><use xlink:href="${spreadImg}" /></svg></button>`;
         }
 
@@ -286,14 +289,13 @@ class ReportViews {
             // Reset so the form comes up pristine
             resetSpreaderDlg();
             // Now populate with existing spreader data.
-            const selectedOpts = document.getElementById(`${spreadingDlgRt}SpreaderSelection`).options;
-            for (const anOpt of selectedOpts) {
-                for(const spreader of rowData[spreadersIdx]) {
-                    if (anOpt.value === spreader) {
-                        anOpt.selected = true;
-                    }
-                }
+
+            for(const spreader of rowData[spreadersIdx]) {
+                const cb = jQuery(`#spreadSelUsr${spreader}`)[0];
+                cb.parentNode.classList.add("active");
+                cb.checked = true;
             }
+
 
             // This works differently from delete dlg as most functionailty is in genDlg
             console.log(`Spreading Dlg order for ${orderId}:${orderOwner}`);
@@ -312,13 +314,10 @@ class ReportViews {
                         throw new Error("Trying to save without orderOwner or orderId");
                     }
 
-                    const selectedSpreaders = document.getElementById(spreadingDlgRt+"SpreaderSelection");
-
                     const spreaders=[];
-                    for (const anOpt of selectedSpreaders.options) {
-                        if (anOpt.selected) {
-                            spreaders.push(anOpt.value);
-                        }
+                    for (const cb of jQuery(`#${spreadingDlgRt}SpreaderSelection input:checkbox:checked`)) {
+                        //console.log(`Found CB: ${cb.dataset.uid}: ${cb.parentNode.innerText}`);
+                        spreaders.push(cb.dataset.uid);
                     }
 
                     // submit order update
@@ -946,18 +945,24 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
     /////////////////////////////////////
     //
     const handleSelection = (evt)=>{
-        evt.preventDefault();
-        evt.currentTarget.selected = !evt.currentTarget.selected;
-        return false;
+        if (evt.currentTarget.checked) {
+            //console.log(`Adding Checked ${evt.currentTarget.checked}`);
+            evt.currentTarget.parentNode.classList.add("active");
+            //evt.currentTarget.parentNode.style.background = "#0d6efd";
+            //evt.currentTarget.parentNode.style.color = "white";
+        } else {
+            //console.log(`Remving Checked ${evt.currentTarget.checked}`);
+            evt.currentTarget.parentNode.classList.remove("active");
+            //evt.currentTarget.parentNode.style.background = "white";
+            //evt.currentTarget.parentNode.style.color = "#0d6efd";
+        }
     };
 
     /////////////////////////////////////
     //
     const onSelect = ()=>{
-        const spreaderSelectTabElm = document.getElementById('spreadSelectTab');
-        spreaderSelectTabElm.style.display='block';
-        const spreaderReviewTabElm = document.getElementById('spreadReviewTab');
-        spreaderReviewTabElm.style.display='none';
+        jQuery('#spreadSelectTab').show();
+        jQuery('#spreadReviewTab').hide();
 
         document.getElementById("spreadersSaveBtn").classList.add("make-disabled");
     };
@@ -965,11 +970,8 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
     /////////////////////////////////////
     //
     const onReview = ()=>{
-        const spreaderSelectTabElm = document.getElementById('spreadSelectTab');
-        spreaderSelectTabElm.style.display='none';
-        const spreaderReviewTabElm = document.getElementById('spreadReviewTab');
-        spreaderReviewTabElm.style.display='block';
-
+        jQuery('#spreadSelectTab').hide();
+        jQuery('#spreadReviewTab').show();
 
         const reviewSelections = document.getElementById(spreadingDlgRt+"SpreaderSelectionReview");
 
@@ -984,19 +986,18 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
         };
 
         //Add new options
-        const selectedOptions = document.getElementById(`${spreadingDlgRt}SpreaderSelection`).options
-        for (const anOpt of selectedOptions) {
-            if (anOpt.selected) {
-                const newOpt = genLi(anOpt.text);
-                reviewSelections.appendChild(newOpt);
-            }
+        for (const cb of jQuery(`#${spreadingDlgRt}SpreaderSelection input:checkbox:checked`)) {
+            //console.log(`Found CB: ${cb.id}: ${cb.parentNode.innerText}`);
+            const newOpt = genLi(cb.parentNode.innerText);
+            reviewSelections.appendChild(newOpt);
         }
+
         if (0===reviewSelections.querySelectorAll("li").length) {
-            reviewSelections.style.display = 'none';
-            document.getElementById(spreadingDlgRt+"SpreaderNoSelectionReview").style.display = 'block';
+            jQuery(reviewSelections).hide();
+            jQuery(`#${spreadingDlgRt}SpreaderNoSelectionReview`).show();
         } else {
-            reviewSelections.style.display = 'block';
-            document.getElementById(spreadingDlgRt+"SpreaderNoSelectionReview").style.display = 'none';
+            jQuery(reviewSelections).show();
+            jQuery(`#${spreadingDlgRt}SpreaderNoSelectionReview`).hide();
         }
 
         document.getElementById("spreadersSaveBtn").classList.remove("make-disabled");
@@ -1004,12 +1005,16 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
 
     /////////////////////////////////////
     //
+    //
     const spreaderCandidates = [];
     for (const userInfo of frConfig.users({doFilterOutAdmins: true})) {
         spreaderCandidates.push(
-            <option key={userInfo[0]} value={userInfo[0]} onMouseDown={handleSelection}>
+            <label key={userInfo[0]} className="btn btn-outline-primary" >
                 {userInfo[1]}
-            </option>);
+                <input type="checkbox" className="btn-check" data-uid={userInfo[0]}
+                       id={`spreadSelUsr${userInfo[0]}`} onChange={handleSelection} autoComplete="off" />
+            </label>
+        );
     }
 
     return(
@@ -1032,10 +1037,10 @@ const genSpreadingDlg = (frConfig: FundraiserConfig) => {
                                     <label htmlFor={spreadingDlgRt+"SpreaderSelection"}>
                                         Select Spreaders
                                     </label>
-                                    <select className="form-select" id={spreadingDlgRt+"SpreaderSelection"}
-                                            multiple size="10" aria-label="Select Spreaders">
+                                    <div className="btn-group-vertical overflow-auto" role="group"
+                                         id={spreadingDlgRt+"SpreaderSelection"} aria-label="Select Spreaders">
                                         {spreaderCandidates}
-                                    </select>
+                                    </div>
                                 </div>
                                 <div className="col-sm" id="spreadReviewTab" style={{display: 'none'}}>
                                     <label htmlFor={spreadingDlgRt+"SpreaderSelectionReview"}>

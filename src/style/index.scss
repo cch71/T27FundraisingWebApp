@@ -192,8 +192,34 @@ html {
             }
         }
 
-        select {
-            height: auto;
+        .btn-group-vertical {
+            display: block;
+            height: 20rem;
+            background: white;
+            color: #0d6efd;
+            border-color:#0d6efd;
+
+            .active {
+                background: #0d6efd !important;
+                color: white !important;
+                border-color:white !important;
+            }
+
+            label:hover {
+                color: inherit;
+                background-color: inherit;
+                border-color: inherit;
+            }
+        }
+
+
+        #spreadReviewTab {
+            li {
+                background:#0d6efd;
+                color: white;
+                border-color:white;
+
+            }
         }
     }
 
