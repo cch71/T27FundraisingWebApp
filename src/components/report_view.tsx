@@ -46,12 +46,14 @@ class ReportViews {
     private currentUserId_: string;
     private currentDataTable_: any = undefined;
     private currentDataset_: Array<any> = undefined;
+    private reportHeaders_: Array<string> = undefined;
+
 
 
     constructor() {
         /* console.log("Constructing...");
          * window.addEventListener('resize', ()=>{
-         *     console.log(`Evt Screen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
+         *     console.log(`Evt Scadreen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
          *     if (this.currentDataTable_) {
          *         if (window.innerHeight
          *             this.currentDataTable_.page.len(10).draw();
@@ -506,6 +508,12 @@ class ReportViews {
                 this.currentDataset_.push(orderDataItem);
             }
 
+            this.reportHeaders_ = ["OrderId", "CustomerName", "DeliveryDate"];
+            if ('mulch' === frConfig.kind()) {
+                this.reportHeaders_.push("Spreaders");
+                this.reportHeaders_.push("BagsToSpread");
+            }
+            this.reportHeaders_.push("orderOwner");
         }
 
 
@@ -616,6 +624,14 @@ class ReportViews {
                 orderDataItem.push(this.getActionButtons(order, frConfig));
                 this.currentDataset_.push(orderDataItem);
             }
+
+            this.reportHeaders_ = ["OrderId", "CustomerName", "DeliveryDate", "SpecialInstructions", "Address"];
+            if ('mulch' === frConfig.kind()) {
+                this.reportHeaders_.push("Neighborhood");
+                this.reportHeaders_.push("Spreaders");
+                this.reportHeaders_.push("BagsToSpread");
+            }
+            this.reportHeaders_.push("orderOwner");
         }
 
         const tableColumns = [
@@ -723,6 +739,9 @@ class ReportViews {
                                        this.getActionButtons(order, frConfig)];
                 this.currentDataset_.push(orderDataItem);
             }
+
+            this.reportHeaders_ = ["OrderId", "CustomerName", "DeliveryDate", "TotalAmount", "CashCollected",
+                                   "ChecksCollected", "CheckNumbers", "OrderOwner", "IsVerified"];
         }
 
         const tableColumns = [
@@ -830,12 +849,23 @@ class ReportViews {
                     USD(order.checkPaid).format(),
                     getVal(order.checkNums),
                     USD(order.totalAmt).format(),
-                    (order.isVerified?"True":"False"),
                     orderOwner,
                     this.getActionButtons(order, frConfig)
                 ]);
                 this.currentDataset_.push(orderDataItem);
             }
+
+            this.reportHeaders_ = ["OrderId", "CustomerName", "Phone", "Email", "Address1", "Address2",
+                                   "DeliveryDate"];
+            if ('mulch' === frConfig.kind()) {
+                this.reportHeaders_ = this.reportHeaders_.concat([
+                    "Neighborhood", "Spreaders", "BagsToSpread", "BagsPurchased"]);
+            }
+
+            this.reportHeaders_ = this.reportHeaders_.concat([
+                "SpecialInstructions", "IsVerified", "IsMoneyCollected", "Donations", "CashCollected",
+                "ChecksCollected", "CheckNumbers", "TotalAmount", "OrderOwner"]);
+
         }
 
 
@@ -878,8 +908,6 @@ class ReportViews {
             { title: "Check" },
             { title: "Check Numbers" },
             { title: "Total Amount" },
-            { title: "IsValidated" },
-
         ]);
 
         tableColumns.push({
@@ -905,33 +933,28 @@ class ReportViews {
 
     ////////////////////////////////////////////////////////////////////
     //
-    genCsvFromCurrent() {
+    genCsvFromCurrent(): string {
         if (!this.currentDataTable_) { throw new Error("Table isn't found"); }
         let csvFileData = [];
 
-        const headerElm = this.currentDataTable_.table().header();
-        let csvRow = []
-        for (const th of jQuery(headerElm).find(`th`)) {
-            if ('Actions'===th.innerText) { continue; }
-            console.log();
-            csvRow.push(th.innerText);
-        };
-        csvRow = ['OrderId', 'OrderOwner'].concat(csvRow);
-        csvFileData.push(csvRow.join('|'));
-
+        //Get Data
         const data = this.currentDataTable_.data().toArray();
-
+        let csvData = [];
         data.forEach((row, _)=>{
-            csvRow = [];
+            let csvRow = [];
             row.forEach((column, _)=>{
                 csvRow.push(column);
             });
             csvRow.splice(-1,1);
-            csvFileData.push(csvRow.join('|'));
+            csvData.push(csvRow);
+        });
+
+        return Papa.unparse({
+	          "fields": this.reportHeaders_,
+	          "data": csvData,
         });
 
         //console.log(`${JSON.stringify(csvFileData, null, '\t')}`);
-        return csvFileData;
     }
 
 }

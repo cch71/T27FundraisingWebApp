@@ -33,7 +33,9 @@ export default function HTML(props) {
                 <script type="text/javascript"
                         src="https://cdn.datatables.net/v/bs4/dt-1.10.23/r-2.2.6/datatables.min.js"></script>
                 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js" ></script>
-
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"
+                        integrity="sha512-rKFvwjvE4liWPlFnvH4ZhRDfNZ9FOpdkD/BU5gAIA3VS3vOQrQ5BjKgbO3kxebKhHdHcNUHLqxQYSoxee9UwgA=="
+                        crossOrigin="anonymous"></script>
 
                 {props.headComponents}
             </head>

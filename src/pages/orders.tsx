@@ -149,7 +149,8 @@ const genCardBody = (frConfig: FundraiserConfig) => {
 
 
     const onDownloadReportClick = ()=>{
-        const csvData = reportViews.genCsvFromCurrent().join('\n');
+
+        const csvData = reportViews.genCsvFromCurrent();
         const hiddenElement = document.createElement('a');
         hiddenElement.href = 'data:text/plain;charset=utf-8,' + encodeURI(csvData);
         hiddenElement.target = '_blank';
