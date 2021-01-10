@@ -8,11 +8,7 @@ import {saveCurrentOrder} from "../js/utils"
 
 const NavBar = (props) => {
 	  const activePathNm = (typeof window !== 'undefined')?window.location.pathname:undefined;
-
     console.log(`Path Name ${activePathNm}`);
-    console.log(`Props: ${props.pageContext?.layout}`)
-    console.log(`Props page: ${JSON.stringify(props.pageContext)}`)
-
 
     const setIfActive = (srchPath: string) => {
         if (activePathNm===srchPath || `${activePathNm}/`===srchPath) {
@@ -44,7 +40,6 @@ const NavBar = (props) => {
     const [userName, setUserName] = useState();
     useEffect(() => {
         const onAsyncView = async ()=>{
-            console.log("!!!!!!!!!!! Nav UseEffect Called");
             //If this throws then we aren't authenticated so don't show bar anyways
             const [uid, userGroups] = await auth.getUserIdAndGroups();
 
