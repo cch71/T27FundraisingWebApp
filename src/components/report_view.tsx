@@ -158,7 +158,7 @@ class ReportViews {
 
         asyncShow()
             .then(()=>{
-                console.log(`Report contains ${this.currentDataset_.length} rows`);
+                console.log(`Report contains ${this.currentDataset_?.length} rows`);
             })
             .catch((err: any)=>{
                 if ('Invalid Session'===err.message) {
@@ -179,19 +179,23 @@ class ReportViews {
 
         if (('mulch' === frConfig.kind()) && order.products?.spreading) {
             htmlStr +=
-                `<button type="button" class="btn btn-outline-info me-1 order-spread-btn">` +
+                `<button type="button" class="btn btn-outline-info me-1 order-spread-btn"`+
+                ` data-bs-toggle="tooltip" title="Set Spreaders" data-bs-placement="left">` +
                 `<svg class="bi" fill="currentColor"><use xlink:href="${spreadImg}" /></svg></button>`;
         }
 
         if (frConfig.isEditableDeliveryDate(order.deliveryId)) {
             htmlStr +=
-                `<button type="button" class="btn btn-outline-info me-1 order-edt-btn">` +
+                `<button type="button" class="btn btn-outline-info me-1 order-edt-btn"` +
+                ` data-bs-toggle="tooltip" title="Edit Order" data-bs-placement="left">` +
                 `<svg class="bi" fill="currentColor"><use xlink:href="${pencilImg}" /></svg></button>` +
-                `<button type="button" class="btn btn-outline-danger order-del-btn">` +
+                `<button type="button" class="btn btn-outline-danger order-del-btn"` +
+                ` data-bs-toggle="tooltip" title="Delete Order" data-bs-placement="left">` +
                 `<svg class="bi" fill="currentColor"><use xlink:href="${trashImg}" /></svg></button>`;
         } else {
             htmlStr +=
-                `<button type="button" class="btn btn-outline-info me-1 order-view-btn">` +
+                `<button type="button" class="btn btn-outline-info me-1 order-view-btn"` +
+                ` data-bs-toggle="tooltip" title="View Order" data-bs-placement="left">` +
                 `<svg class="bi" fill="currentColor"><use xlink:href="${eyeImg}" /></svg></button>`;
         }
 
@@ -452,15 +456,13 @@ class ReportViews {
                             throw err;
                         }
                     });
-
-
-
-
-
                 });
 
             confirmDlg.show();
         });
+
+        //$('[data-bs-toggle="tooltip"]').tooltip();
+
 
     }
     ////////////////////////////////////////////////////////////////////

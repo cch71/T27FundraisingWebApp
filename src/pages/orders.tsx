@@ -172,12 +172,14 @@ const genCardBody = (frConfig: FundraiserConfig) => {
                     </li>
                 </ul>
                 <div id="reportViewSettings" className="float-end">
-                    <button type="button" className="btn reports-view-setting-btn" onClick={onDownloadReportClick}>
+                    <button type="button" className="btn reports-view-setting-btn" onClick={onDownloadReportClick}
+                            data-bs-toggle="tooltip" title="Download Current Report">
                         <svg className="bi" fill="currentColor">
                             <use xlinkHref={exportImg}/>
                         </svg>
                     </button>
-                    <button type="button" className="btn reports-view-setting-btn" onClick={onVewSettingsClick}>
+                    <button type="button" className="btn reports-view-setting-btn" onClick={onVewSettingsClick}
+                            data-bs-toggle="tooltip" data-bs-placement="left" title="Change Report View">
                         <svg className="bi" fill="currentColor">
                             <use xlinkHref={reportSettingsImg}/>
                         </svg>
@@ -195,7 +197,6 @@ const genCardBody = (frConfig: FundraiserConfig) => {
         </div>
     );
 };
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -243,6 +244,14 @@ export default function orders(params: any) {
             const [_, userGroups] = await auth.getUserIdAndGroups();
             const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
             if (!isAdmin) { document.getElementById("orderOwnerLabel").style.display = "none"; }
+
+            // Enable all tooltips
+            /* const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+             * tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+             *     return new bootstrap.Tooltip(tooltipTriggerEl, {
+             *         boundary: 'window'
+             *     });
+             * }) */
         };
 
         onLoadComponent()

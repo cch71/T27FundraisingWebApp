@@ -31,23 +31,12 @@ table.dataTable.dtr-inline.collapsed>tbody>tr.parent>th.dtr-control:before {
     background-color: red;
 }
 
-// @each $breakpoint in map-keys($grid-breakpoints) {
-//   @include media-breakpoint-up($breakpoint) {
-//     $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
-
-//     #orderOwnerSummaryList#{$infix}-owner-summary {
-//         li {
-//             font-size: xx-small;
-//         }
-//     }
-//   }
-// }
-
 html {
     /*background-color: white;*/
     p {
         color: white;
     }
+
 
     .navbar-toggler {
         padding: 0.25rem 0.25rem;
