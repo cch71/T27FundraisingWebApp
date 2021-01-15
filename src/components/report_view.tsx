@@ -72,10 +72,10 @@ class ReportViews {
 
         if (userGroups && userGroups.includes("FrAdmins")) {
             views.push(['Default', undefined]);
+            views.push(['Full', undefined]);
             if ('mulch' === frConfig.kind()) {
                 views.push(['Spreading Jobs', 'SpreadingJobs']);
             }
-            views.push(['Full', undefined]);
             views.push(['Verify Orders', 'VerifyOrders']);
 
             for (const userInfo of frConfig.users()) {
@@ -84,10 +84,10 @@ class ReportViews {
             users.push(['any', 'All']);
         } else {
             views.push(['Default', undefined]);
+            views.push(['Full', undefined]);
             if ('mulch' === frConfig.kind()) {
                 views.push(['Spreading Jobs', 'SpreadingJobs']);
             }
-            views.push(['Full', undefined]);
 
             const fullName = frConfig.getUserNameFromId(auth.getCurrentUserId())
             const uid = auth.getCurrentUserId();
