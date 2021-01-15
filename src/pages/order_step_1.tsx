@@ -11,6 +11,7 @@ import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
 const trashImg = bootstrapIconSprite + "#trash";
 const pencilImg = bootstrapIconSprite + "#pencil";
 const eyeImg = bootstrapIconSprite + "#eye";
+const alertImg = bootstrapIconSprite + "#exclamation-triangle-fill";
 
 const USD = (value) => currency(value, { symbol: "$", precision: 2 });
 
@@ -319,6 +320,17 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
     };
     const ordersByDeliveryBtns = populateOrdersList();
 
+    const onHoodChange = (evt: any)=>{
+        if (evt.currentTarget.value.startsWith("Out of Area")) {
+            //console.log(`Hood is: ${evt.currentTarget.value}`);
+            jQuery(`#outOfHoodDisclaimer`).show();
+        } else {
+            jQuery(`#outOfHoodDisclaimer`).hide();
+        }
+    };
+
+
+
     // Neighborhoods list creation
     let isUsingCustomNeighborhood = false;
     const hoods=[];
@@ -401,12 +413,17 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
 
             <div className="row mb-2 g-2">
                 <div className="form-floating col-md-4">
-                    <select className="form-control" id="formNeighborhood" defaultValue={currentNeighborhood}>
+                    <select className="form-control" id="formNeighborhood" onChange={onHoodChange} defaultValue={currentNeighborhood}>
                         {hoods}
                     </select>
                     <label htmlFor="formNeighborhood">
                         Neighborhood<small className="form-text text-muted ps-1">*required</small>
                     </label>
+                    <small id="outOfHoodDisclaimer" style={{display: 'none'}}>
+                        <i className="bi bi-exclamation-triangle-fill pe-1"></i>
+                        You are responsible for delivery of all out of area orders
+                        <i className="bi bi-exclamation-triangle-fill ps-1"></i>
+                    </small>
                 </div>
                 <div className="form-floating col-md-4" id="formPhoneFloatDiv">
                     <input className="form-control" type="tel" autoComplete="fr-new-cust-info" id="formPhone"
