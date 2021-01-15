@@ -208,10 +208,23 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
             (document.getElementById('formCheckPaid') as HTMLInputElement).value = checks.toString();
         }
 
+        const totPaid = cash.add(checks);
         const totElm = document.getElementById('orderAmountPaid');
         if (null!==totElm) {
-            totElm.innerText = `${USD(cash.add(checks)).format()}`;
+            totElm.innerText = `${USD(totPaid).format()}`;
         }
+
+        const collectLaterElm = (document.getElementById('formCollectLater') as HTMLInputElement);
+        if (0 < totPaid.value) {
+            if (collectLaterElm.checked) {
+                collectLaterElm.checked = false;
+            }
+            collectLaterElm.disabled = true;
+        } else {
+            collectLaterElm.disabled = false;
+        }
+
+
 
     }
 
@@ -320,6 +333,7 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
     };
     const ordersByDeliveryBtns = populateOrdersList();
 
+    // Handle disclaimer when neighborhood changes
     const onHoodChange = (evt: any)=>{
         if (evt.currentTarget.value.startsWith("Out of Area")) {
             //console.log(`Hood is: ${evt.currentTarget.value}`);
