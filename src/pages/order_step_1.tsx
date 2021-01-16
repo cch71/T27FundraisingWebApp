@@ -44,8 +44,9 @@ const validateOrderForm = (currentOrder: Order) => {
 
     const validateRequiredFormFields = async ()=>{
         let isValid = true;
-        const formElms = document.querySelectorAll('[required]');
-        Array.prototype.slice.call(formElms).forEach((aform) => {
+		const formElms = document.querySelector("#newOrEditOrderForm")
+								 .querySelectorAll('[required]');
+		Array.prototype.slice.call(formElms).forEach((aform) => {
             if (!aform.checkValidity()) {
                 aform.classList.add('is-invalid');
                 isValid = false;
@@ -62,7 +63,6 @@ const validateOrderForm = (currentOrder: Order) => {
             document.getElementById('productList').classList.remove('is-invalid');
             return true;
         }
-
         document.getElementById('productList').classList.add('is-invalid');
         return false;
     };
@@ -91,7 +91,7 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
         (document.getElementById('formOrderCancel') as HTMLButtonElement).disabled = true;
 
 
-        //console.log(`Submitting Active Order`);
+        console.log(`Submitting Active Order`);
         saveCurrentOrder();
 
         // Validate Form
@@ -104,6 +104,7 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
         // If everything vlidates then submit
         Promise.all(validateOrderForm(currentOrder))
                .then((results)=>{
+				   console.log(`Results: ${JSON.stringify(results)}`);
                    if (results[0] && results[1] && results[2]) {
                        // If we got here they we are good to submit form
                        currentOrder.isVerified = false;
@@ -127,6 +128,7 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
                            }
                        });
                    } else {
+					   console.log("Not all fields are validated");
                        reenableSubmitButton();
                    }
                });
