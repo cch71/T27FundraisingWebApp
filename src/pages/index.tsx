@@ -268,11 +268,12 @@ const Home = ()=>{
                     await showSummary(loadedConfig, setContent);
                 }
             }
-            setIsLoading(false);
         };
 
         onAsyncView()
-            .then()
+            .then(()=>{
+                setIsLoading(false);
+            })
             .catch((err)=>{
                 if ('Invalid Session'===err.message) {
                     showSignOn(setContent);

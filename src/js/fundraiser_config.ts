@@ -20,11 +20,16 @@ interface DeliveryDate {
     disabledDate: string;
 }
 
+interface NeighborhoodInfo {
+    distPt: string;
+}
+
 interface FundraiserConfigBase {
     kind: string;
     description: string;
     products: Array<Product>;
-    neighborhoods: Array<string>;
+    neighborhoods?: Array<string>; //Deprecated
+    neighborhoodsV2: Record<string, NeighborhoodInfo>
     deliveryDates: Array<DeliveryDate>;
 }
 
@@ -46,7 +51,7 @@ class FundraiserConfig {
                         kind: '',
                         description: '',
                         products: [],
-                        neighborhoods: [],
+                        neighborhoodsV2: [],
                         deliveryDates: []
                     });
                 } // should only hit while building
@@ -93,7 +98,17 @@ class FundraiserConfig {
 
     /////////////////////////////////////////
     //
-    neighborhoods(): Array<string> { return this.loadedFrConfig_.neighborhoods; }
+    neighborhoods(): Array<string> { return [...Object.keys(this.loadedFrConfig_.neighborhoodsV2)]; }
+
+    /////////////////////////////////////////
+    //
+    getDistributionPoint(neighborhood: string): string {
+        const neighborhoodInfo = this.loadedFrConfig_.neighborhoodsV2[neighborhood];
+        if (neighborhoodInfo && neighborhoodInfo.hasOwnProperty('distPt')) {
+            return neighborhoodInfo.distPt;
+        }
+        return "UNKNOWN";
+    }
 
     /////////////////////////////////////////
     //
@@ -149,6 +164,7 @@ class FundraiserConfig {
         if(null===this.deliveryMap_) {
             this.deliveryMap_ = {};
             for (const deliveryDate of this.loadedFrConfig_.deliveryDates) {
+                //console.log(`DeliveryMap id ${deliveryDate.id} = ${deliveryDate.date}`);
                 this.deliveryMap_[deliveryDate.id] = deliveryDate.date;
             }
         }

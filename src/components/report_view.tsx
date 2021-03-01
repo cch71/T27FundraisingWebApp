@@ -77,7 +77,10 @@ class ReportViews {
                 views.push(['Spreading Jobs', 'SpreadingJobs']);
             }
             views.push(['Verify Orders', 'VerifyOrders']);
-
+            if ('mulch' === frConfig.kind()) {
+                views.push(['Distribution Points', 'DistributionPoints']);
+            }
+            
             for (const userInfo of frConfig.users()) {
                 users.push(userInfo);
             }
@@ -466,6 +469,7 @@ class ReportViews {
 
 
     }
+
     ////////////////////////////////////////////////////////////////////
     //
     private async showDefault(frConfig: FundraiserConfig, userId?: string) {
@@ -931,6 +935,73 @@ class ReportViews {
         //this.registerActionButtonHandlers();
     }
 
+    ////////////////////////////////////////////////////////////////////
+    //
+    private async showDistributionPoints(frConfig: FundraiserConfig, userId?: string) {
+
+        if (!this.currentDataset_) {
+            const orders = await orderDb.query({orderOwner: "any"});
+
+            //console.log(`Full Orders Page: ${JSON.stringify(orders)}`);
+
+            const getVal = (fld?: any)=>{
+                if (undefined===fld) {
+                    return 0;
+                }
+                return parseInt(fld);
+            };
+
+            // Fill out rows of data
+            this.currentDataset_ = [];
+            const orderByDate = {};
+            const distPtsSet = new Set();
+
+            for (const order of orders) {
+                if (!order.deliveryId) { continue;}
+                const deliveryDate = frConfig.deliveryDateFromId(order.deliveryId);
+                if (!orderByDate[deliveryDate]) {
+                    orderByDate[deliveryDate] = { "totalBags": 0};
+                }
+                const bags = getVal(order.products?.bags);
+                if (0===bags) { continue; }
+                const distPt = frConfig.getDistributionPoint(order.neighborhood);
+                distPtsSet.add(distPt);
+                if (!orderByDate[deliveryDate][distPt]) {
+                    orderByDate[deliveryDate][distPt] = {"bags": 0};
+                }
+                orderByDate[deliveryDate][distPt].bags += bags;
+                orderByDate[deliveryDate].totalBags += bags;
+            }
+
+            const dPointsArray = Array.from(distPtsSet);
+            this.reportHeaders_ = ["DeliveryDate", "TotalBags"];
+            this.reportHeaders_ = this.reportHeaders_.concat(dPointsArray);
+
+            //console.log(`Calc Report Val:\n${JSON.stringify(orderByDate, null, '\t')}`);
+            // Now normalize to table
+            for (const dDate of Object.keys(orderByDate)){
+                const dataItem=[dDate, orderByDate[dDate].totalBags];
+                for (const dPoint of dPointsArray) {
+                    if (orderByDate[dDate].hasOwnProperty(dPoint)) {
+                        dataItem.push(orderByDate[dDate][dPoint].bags);
+                    } else {
+                        dataItem.push(0);
+                    }
+                }
+                this.currentDataset_.push(dataItem);
+            }
+        }
+
+        const tableColumns =[];
+        for (const header of this.reportHeaders_) {
+            tableColumns.push({title: header, className: 'all'});
+        }
+        //tableColumns[0]['className'] = "all";
+
+        this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
+    }
+
+    
     ////////////////////////////////////////////////////////////////////
     //
     genCsvFromCurrent(): string {
