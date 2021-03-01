@@ -47,9 +47,6 @@ const showTheSelectedView = async (frConfig: FundraiserConfig) => {
 
     // Check to see if Report Views User view has been initialized
     if (0===userSelElm.options.length) {
-        const userSelElm = document.getElementById(`${rprtStngDlgRt}UserSelection`);
-        const viewSelElm = document.getElementById(`${rprtStngDlgRt}ViewSelection`);
-
         const [views, users] = await reportViews.getViewOptions();
         for (const userInfo of users) {
             userSelElm.add(genOption(userInfo[1], userInfo[0]));

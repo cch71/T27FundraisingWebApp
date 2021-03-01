@@ -79,6 +79,7 @@ class ReportViews {
             views.push(['Verify Orders', 'VerifyOrders']);
             if ('mulch' === frConfig.kind()) {
                 views.push(['Distribution Points', 'DistributionPoints']);
+                views.push(['Deliveries', undefined]);
             }
             
             for (const userInfo of frConfig.users()) {
@@ -937,6 +938,87 @@ class ReportViews {
 
     ////////////////////////////////////////////////////////////////////
     //
+    private async showDeliveries(frConfig: FundraiserConfig, userId?: string) {
+
+        "Name	Neighborhood	StreetNumber	StreetName	City	Bags	Phone	Location	Notes	Scout"
+        
+        if (!this.currentDataset_) {
+            const orders = await orderDb.query({orderOwner: "any"});
+
+            //console.log(`Full Orders Page: ${JSON.stringify(orders)}`);
+
+            const getVal = (fld?: any, dflt?: any)=>{
+                if (undefined===fld) {
+                    if (undefined===dflt) {
+                        return '';
+                    } else {
+                        return `${dflt}`;
+                    }
+                } else {
+                    return `${fld}`;
+                }
+            };
+
+            // Fill out rows of data
+            this.currentDataset_ = [];
+            for (const order of orders) {
+                if (!order.deliveryId) { continue;}
+                const deliveryDate = frConfig.deliveryDateFromId(order.deliveryId);
+                const bags = getVal(order.products?.bags, 0);
+                if ('0'===bags) { continue; }
+                const distPt = frConfig.getDistributionPoint(order.neighborhood);
+
+                const nameStr = `${order.firstName}, ${order.lastName}`;
+                const orderOwner = order.orderOwner;
+
+                let orderDataItem = [
+                    deliveryDate,
+                    nameStr,
+                    order.neighborhood,
+                    order.addr1,
+                    getVal(order.addr2),
+                    bags,
+                    order.phone,
+                    distPt,
+                    getVal(order.specialInstructions),
+                    orderOwner
+                ];
+
+                this.currentDataset_.push(orderDataItem);
+            }
+
+            this.currentDataset_.sort((a, b) => {
+                const dDateIdx = 0;
+                const locationIdx = 7;
+                const hoodIdx = 2;
+                if (a[dDateIdx]===b[dDateIdx]) {
+                    if (a[locationIdx] === b[locationIdx]) {
+                        return (a[hoodIdx] > b[hoodIdx]) ? 1 : -1;
+                    }
+                    return (a[locationIdx] > b[locationIdx]) ? 1 : -1;
+                }
+                const atm = Date.parse(a[dDateIdx]);
+                const btm = Date.parse(b[dDateIdx]);
+                return (atm > btm) ? 1 : -1;
+            });
+            
+            this.reportHeaders_ = ["DeliveryDate", "Name", "Neighborhood", "Address1", "Address2","Bags",
+                                   "Phone", "Location", "Notes", "Scout"];
+        }
+
+        const tableColumns =[];
+        for (const header of this.reportHeaders_) {
+            tableColumns.push({title: header, className: 'all'});
+        }
+        tableColumns[0]['className'] = "all";
+
+        this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
+
+        //this.registerActionButtonHandlers();
+    }
+    
+    ////////////////////////////////////////////////////////////////////
+    //
     private async showDistributionPoints(frConfig: FundraiserConfig, userId?: string) {
 
         if (!this.currentDataset_) {
@@ -990,6 +1072,13 @@ class ReportViews {
                 }
                 this.currentDataset_.push(dataItem);
             }
+
+            this.currentDataset_.sort((a, b) => {
+                const dDateIdx = 0;
+                const atm = Date.parse(a[dDateIdx]);
+                const btm = Date.parse(b[dDateIdx]);
+                return (atm > btm) ? 1 : -1;
+            });
         }
 
         const tableColumns =[];
