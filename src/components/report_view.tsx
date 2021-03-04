@@ -81,7 +81,7 @@ class ReportViews {
                 views.push(['Distribution Points', 'DistributionPoints']);
                 views.push(['Deliveries', undefined]);
             }
-            
+
             for (const userInfo of frConfig.users()) {
                 users.push(userInfo);
             }
@@ -940,8 +940,6 @@ class ReportViews {
     //
     private async showDeliveries(frConfig: FundraiserConfig, userId?: string) {
 
-        "Name	Neighborhood	StreetNumber	StreetName	City	Bags	Phone	Location	Notes	Scout"
-        
         if (!this.currentDataset_) {
             const orders = await orderDb.query({orderOwner: "any"});
 
@@ -1001,7 +999,7 @@ class ReportViews {
                 const btm = Date.parse(b[dDateIdx]);
                 return (atm > btm) ? 1 : -1;
             });
-            
+
             this.reportHeaders_ = ["DeliveryDate", "Name", "Neighborhood", "Address1", "Address2","Bags",
                                    "Phone", "Location", "Notes", "Scout"];
         }
@@ -1016,7 +1014,7 @@ class ReportViews {
 
         //this.registerActionButtonHandlers();
     }
-    
+
     ////////////////////////////////////////////////////////////////////
     //
     private async showDistributionPoints(frConfig: FundraiserConfig, userId?: string) {
@@ -1090,7 +1088,7 @@ class ReportViews {
         this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
     }
 
-    
+
     ////////////////////////////////////////////////////////////////////
     //
     genCsvFromCurrent(): string {
@@ -1100,12 +1098,18 @@ class ReportViews {
         //Get Data
         const data = this.currentDataTable_.data().toArray();
         let csvData = [];
+		const headerLen = this.reportHeaders_.length;
         data.forEach((row, _)=>{
             let csvRow = [];
             row.forEach((column, _)=>{
                 csvRow.push(column);
             });
-            csvRow.splice(-1,1);
+			if (headerLen !== row.length) {
+				// This is a simple test in that we dont include actions in the reportHeaders
+				//  and so if they aren't equal then it assumes actiion column is present and
+				// removes it
+				csvRow.splice(-1,1);
+			}
             csvData.push(csvRow);
         });
 
