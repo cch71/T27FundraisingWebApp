@@ -165,7 +165,7 @@ class FundraiserConfig {
             this.deliveryMap_ = {};
             for (const deliveryDate of this.loadedFrConfig_.deliveryDates) {
                 //console.log(`DeliveryMap id ${deliveryDate.id} = ${deliveryDate.date}`);
-                this.deliveryMap_[deliveryDate.id] = deliveryDate.date;
+                this.deliveryMap_[deliveryDate.id] = deliveryDate;
             }
         }
     }
@@ -175,9 +175,10 @@ class FundraiserConfig {
     isEditableDeliveryDate(id?: string): boolean {
         if (!id) { return true; }
         this.loadDeliveryMap();
-        const deliveryEntry = this.deliveryMap_[id];
+		const deliveryEntry = this.deliveryMap_[id];
+        const deliveryDateStr = deliveryEntry.date;
         try {
-            const deliveryDate = Date.parse(deliveryEntry.date);
+            const deliveryDate = Date.parse(deliveryDateStr);
             const nowDate = Date.now();
             if (nowDate >= deliveryDate) { return false; }
 
@@ -198,8 +199,10 @@ class FundraiserConfig {
     // return [id, date]
     *validDeliveryDates(): IterableIterator<[string,string]> {
         for (let deliveryDate of this.loadedFrConfig_.deliveryDates) {
-            //if delivery date < disabledDate
-            yield [deliveryDate.id, deliveryDate.date];
+			if (this.isEditableDeliveryDate(deliveryDate.id)) {
+				//if delivery date < disabledDate
+				yield [deliveryDate.id, deliveryDate.date];
+			}
         }
         yield ['donation', 'Donation'];
     }
@@ -208,7 +211,7 @@ class FundraiserConfig {
     //
     deliveryDateFromId(id: string): string {
         this.loadDeliveryMap();
-        return this.deliveryMap_[id];
+        return this.deliveryMap_[id].date;
     }
 
     /////////////////////////////////////////
