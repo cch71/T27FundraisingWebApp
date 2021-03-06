@@ -159,12 +159,12 @@ const NavBar = (props) => {
     useEffect(() => {
         const onAsyncView = async ()=>{
             //If this throws then we aren't authenticated so don't show bar anyways
-            const [uid, userGroups] = await auth.getUserIdAndGroups();
+            const [uid, _] = await auth.getUserIdAndGroups();
 
-            if (userGroups && userGroups.includes("FrAdmins")) {
-                //TODO: Placeholder for the Admin Menu Options
-            }
-
+            /* if (await auth.isCurrentUserAdmin()) {
+			 *     //TODO: Placeholder for the Admin Menu Options
+			 * }
+			 */
             setUserName(uid);
         };
 

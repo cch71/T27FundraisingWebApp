@@ -72,7 +72,7 @@ const validateOrderForm = (currentOrder: Order) => {
 
 ////////////////////////////////////////////////////////
 //
-const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean): any =>{
+const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: boolean, isOrderReadOnly: boolean): any =>{
 
     const frConfig: FundraiserConfig = getFundraiserConfig();
     if (!frConfig) {
@@ -148,6 +148,8 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
             const deliveryId = btn.dataset.deliveryid;
             console.log(`Add New Fundraising Order for ${deliveryId}`);
             pageState.state['deliveryId'] = deliveryId;
+            pageState.state['isAdmin'] = isAdmin;
+            pageState.state['isOrderReadOnly'] = isOrderReadOnly;
         }
 
         navigate('/add_products_order/', pageState);
@@ -298,38 +300,45 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
             }
         };
 
-        //Add the Add Product Button
-        let addProductStyle = {display: 'block'};
-        if(currentOrder.hasOwnProperty('productsCost')) {
-            addProductStyle = {display: 'none'};
-            addExistingOrderButton('product',
-                                   frConfig.deliveryDateFromId(currentOrder.deliveryId),
-                                   currentOrder.productsCost);
-        }
-        ordersByDeliveryBtns.push(
-            <li className="list-group-item" id="addProductBtnLi" key="addProductBtnLi" style={addProductStyle}>
-                Add Product Order
-                <button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddOrder}>
-                    +
-                </button>
-            </li>
-        );
 
-        //Add the Add Donation Button
-        let addDonationStyle = {display: 'block'};
-        if(currentOrder.hasOwnProperty('donation')) {
-            addDonationStyle = {display: 'none'};
-            addExistingOrderButton('donation', 'Donation', currentOrder.donation);
+		//Add the Add Product Button
+		let addProductStyle = {display: 'block'};
+		if(currentOrder.hasOwnProperty('productsCost')) {
+			addProductStyle = {display: 'none'};
+			addExistingOrderButton('product',
+								   frConfig.deliveryDateFromId(currentOrder.deliveryId),
+								   currentOrder.productsCost);
+		}
 
-        }
-        ordersByDeliveryBtns.push(
-            <li className="list-group-item" id="addDonationBtnLi" key="addDonationBtnLi" style={addDonationStyle}>
-                Add Donations
-                <button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddDonation}>
-                    +
-                </button>
-            </li>
-        );
+		if (!isOrderReadOnly) {
+			ordersByDeliveryBtns.push(
+				<li className="list-group-item" id="addProductBtnLi" key="addProductBtnLi" style={addProductStyle}>
+					Add Product Order
+					<button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddOrder}>
+						+
+					</button>
+				</li>
+			);
+		}
+
+		//Add the Add Donation Button
+		let addDonationStyle = {display: 'block'};
+		if(currentOrder.hasOwnProperty('donation')) {
+			addDonationStyle = {display: 'none'};
+			addExistingOrderButton('donation', 'Donation', currentOrder.donation);
+
+		}
+
+		if (!isOrderReadOnly) {
+			ordersByDeliveryBtns.push(
+				<li className="list-group-item" id="addDonationBtnLi" key="addDonationBtnLi" style={addDonationStyle}>
+					Add Donations
+					<button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddDonation}>
+						+
+					</button>
+				</li>
+			);
+		}
 
         return ordersByDeliveryBtns;
     };
@@ -541,12 +550,13 @@ const populateForm = (currentOrder: Order, setFormFields: any, isAdmin: boolean)
                 <button type="button" className="btn btn-primary" id="formOrderCancel" onClick={onDiscardOrder}>
                     Cancel
                 </button>
-                <button type="submit" className="btn btn-primary float-end"
-                        id="formOrderSubmit">
-                    <span className="spinner-border spinner-border-sm me-1" role="status"
-                          aria-hidden="true" id="formOrderSubmitSpinner" style={{display: "none"}} />
-                    Submit
-                </button>
+                { !isOrderReadOnly &&
+				  <button type="submit" className="btn btn-primary float-end" id="formOrderSubmit">
+                      <span className="spinner-border spinner-border-sm me-1" role="status"
+							aria-hidden="true" id="formOrderSubmitSpinner" style={{display: "none"}} />
+                      Submit
+                  </button>
+				}
             </div>
 
         </form>
@@ -561,29 +571,26 @@ export default (params: any)=>{
     // Calculate Initial total due and amount paid from orders at page load time
     const [formFields, setFormFields] = useState();
     useEffect(() => {
-        const setFormReadOnly = ()=>{
-            const submitBtn = (document.getElementById('formOrderSubmit') as HTMLButtonElement);
-            if (submitBtn) {
-                submitBtn.classList.add('invisible');
-            }
-        };
 
         const onAsyncView = async ()=>{
-            const [uid, userGroups] = await auth.getUserIdAndGroups();
-            const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
+            const isAdmin = await auth.isCurrentUserAdmin();
+
+			const isOrderReadOnly = (order)=>{
+				if (isAdmin) { return false; } //Admins can always edit an order
+				return params?.location?.state?.isOrderReadOnly || order?.meta?.isReadOnly;
+			};
 
             const loadOrder = async ()=>{
                 const dbOrderId = params?.location?.state?.editOrderId;
                 const dbOrderOwner = params?.location?.state?.editOrderOwner;
                 if (dbOrderId) {
-                    const isReadOnly = params?.location?.state?.isOrderReadOnly;
-
                     const order: Order|undefined = await orderDb.getOrderFromId(dbOrderId, dbOrderOwner);
                     console.log(`Returned Order: ${JSON.stringify(order)}`);
+
                     if (order) {
+						const isReadOnly = isOrderReadOnly(order);
                         orderDb.setActiveOrder(order, isReadOnly);
-                        populateForm(order, setFormFields, isAdmin);
-                        if (order.meta?.isReadOnly) { setFormReadOnly(); }
+                        await populateForm(order, setFormFields, isAdmin, isReadOnly);
                     } else {
                         alert(`Order: ${dbOrderId} could not be retrieved`);
                         navigate('/orders/');
@@ -599,8 +606,7 @@ export default (params: any)=>{
             if (undefined===order) {
                 await loadOrder();
             } else {
-                populateForm(order, setFormFields, isAdmin);
-                if (order.meta?.isReadOnly) { setFormReadOnly(); }
+                await populateForm(order, setFormFields, isAdmin, isOrderReadOnly(order));
             }
         };
 
@@ -617,7 +623,7 @@ export default (params: any)=>{
                 }
             });
 
-}, [])
+	}, [])
 
     return (
         <>

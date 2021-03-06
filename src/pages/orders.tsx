@@ -58,8 +58,7 @@ const showTheSelectedView = async (frConfig: FundraiserConfig) => {
         }
         viewSelElm.value = reportViews.getCurrentView();
 
-        const [_, userGroups] = await auth.getUserIdAndGroups();
-        if (userGroups && userGroups.includes("FrAdmins")) {
+        if (await auth.isCurrentUserAdmin()) {
             document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "inline-block";
         } else {
             document.getElementById(`${rprtStngDlgRt}UserSelectionCol`).style.display = "none";
@@ -242,8 +241,9 @@ export default function orders(params: any) {
 
             await showTheSelectedView(frConfig);
             const [_, userGroups] = await auth.getUserIdAndGroups();
-            const isAdmin = (userGroups && userGroups.includes("FrAdmins"));
-            if (!isAdmin) { document.getElementById("orderOwnerLabel").style.display = "none"; }
+            if (await auth.isCurrentUserAdmin()) {
+				document.getElementById("orderOwnerLabel").style.display = "none";
+			}
 
             // Enable all tooltips
             /* const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))

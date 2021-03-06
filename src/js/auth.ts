@@ -84,6 +84,16 @@ class CognitoAuth {
         return [cognitoUser, idPayload['cognito:groups']]
     }
 
+	async isCurrentUserAdmin() : boolean {
+		try {
+			const [_, userGroups] = await auth.getUserIdAndGroups();
+			return (userGroups && userGroups.includes("FrAdmins"));
+		} catch(_err) {
+
+		}
+		return false;
+	}
+
     getSession(): Promise<any> {
         return new Promise((resolve, reject) => {
             const cognitoUser = this.userPool.getCurrentUser();

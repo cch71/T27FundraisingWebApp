@@ -65,12 +65,11 @@ class ReportViews {
     ////////////////////////////////////////////////////////////////////
     //
     async getViewOptions() {
-        const [_, userGroups] = await auth.getUserIdAndGroups();
         const frConfig = getFundraiserConfig();
         const views=[];
         const users=[];
 
-        if (userGroups && userGroups.includes("FrAdmins")) {
+        if (await auth.isCurrentUserAdmin()) {
             views.push(['Default', undefined]);
             views.push(['Full', undefined]);
             if ('mulch' === frConfig.kind()) {
@@ -133,6 +132,10 @@ class ReportViews {
     //}
     showView(view: string, frConfig: FundraiserConfig, params?: any /* ReportsShowViewParams*/) {
         const asyncShow = async () => {
+			// I don't really want to check for isAdmin for every view but it is easiest to do
+			// this at this point.
+            this.isAdmin = await auth.isCurrentUserAdmin();
+
             const userId = params?.userId;
             const spinnerElm = document.getElementById('orderLoadingSpinner');
             if (spinnerElm) {
@@ -193,7 +196,7 @@ class ReportViews {
                 `<svg class="bi" fill="currentColor"><use xlink:href="${spreadImg}" /></svg></button>`;
         }
 
-        if (frConfig.isEditableDeliveryDate(order.deliveryId)) {
+        if (this.isAdmin || frConfig.isEditableDeliveryDate(order.deliveryId)) {
             htmlStr +=
                 `<button type="button" class="btn btn-outline-info me-1 order-edt-btn"` +
                 ` data-bs-toggle="tooltip" title="Edit Order" data-bs-placement="left">` +

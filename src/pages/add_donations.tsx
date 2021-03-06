@@ -75,7 +75,7 @@ export default function addDonation() {
                 <button type="submit" className="btn btn-primary my-2 float-end"
                         style={{display: ((currentOrder.meta?.isReadOnly)?"none":"block")}}
                         disabled={undefined===donationAmt} id="formDonationSubmit">
-                    Add
+                    Submit
                 </button>
             </form>
         );
@@ -86,7 +86,7 @@ export default function addDonation() {
         <div className="col-xs-1 d-flex justify-content-center">
             <div className="card">
                 <div className="card-body">
-                    <h5 className="card-title">Add Donation</h5>
+                    <h5 className="card-title">Donation</h5>
                     {formFields}
                 </div>
             </div>

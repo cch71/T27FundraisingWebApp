@@ -208,6 +208,15 @@ class FundraiserConfig {
     }
 
     /////////////////////////////////////////
+    // return [id, date]
+    *deliveryDates(): IterableIterator<[string,string]> {
+        for (let deliveryDate of this.loadedFrConfig_.deliveryDates) {
+			yield [deliveryDate.id, deliveryDate.date];
+        }
+        yield ['donation', 'Donation'];
+    }
+
+    /////////////////////////////////////////
     //
     deliveryDateFromId(id: string): string {
         this.loadDeliveryMap();

@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import {orderDb, Order} from "../js/ordersdb"
 import { navigate } from "gatsby"
 import currency from "currency.js"
@@ -12,6 +12,8 @@ export default (params: any) => {
 
     // Could be undefined if this is a new order
     const currentDeliveryId = params?.location?.state?.deliveryId;
+    const isAdmin = params?.location?.state?.isAdmin;
+    const isOrderReadOnly = params?.location?.state?.isOrderReadOnly;
     console.log(`Current Delivery ID: ${currentDeliveryId}`);
 
     const currentOrder: Order = orderDb.getActiveOrder();
@@ -27,17 +29,18 @@ export default (params: any) => {
         return(<div/>);
     }
 
-    // TODO: probably better way to do this
-    const deliveryDateOpts = []
-    for (const [frDeliveryId, frDeliveryLabel] of fundraiserConfig.validDeliveryDates()) {
+    const deliveryDateOpts = [];
+	const deliveryDates = (isAdmin || isOrderReadOnly) ?
+						fundraiserConfig.deliveryDates() :
+						fundraiserConfig.validDeliveryDates();
+    for (const [frDeliveryId, frDeliveryLabel] of deliveryDates) {
         if ('donation'===frDeliveryId) { continue; }
         deliveryDateOpts.push(
             <option value={frDeliveryId} key={frDeliveryId}>{frDeliveryLabel}</option>
         );
     }
 
-
-            // Controls when the submit button gets enabled
+    // Controls when the submit button gets enabled
     const doesSubmitGetEnabled = (event: any)=>{
         if (event.currentTarget.value) {
             (document.getElementById('formAddProductsSubmit') as HTMLButtonElement).disabled = false;
@@ -92,6 +95,7 @@ export default (params: any) => {
         navigate('/order_step_1/');
     }
 
+	// Populate form elements
     const productElms=[];
     for (const prod of fundraiserConfig.products()) {
         console.log(`Handling Product: ${JSON.stringify(prod)}`);
@@ -120,33 +124,41 @@ export default (params: any) => {
 
     };
 
-    return (
-        <div className="col-xs-1 d-flex justify-content-center">
-            <div className="card">
-                <div className="card-body">
-                    <h5 className="card-title">Add {fundraiserConfig.description()} Order</h5>
-                    <form onSubmit={onFormSubmission}>
+	useEffect(() => {
+		if (!isAdmin && isOrderReadOnly) {
+			jQuery('#productForm :input').attr('readonly','readonly');
+			jQuery('#formSelectDeliveryDate').attr('disabled','disabled');
+		}
+	}, [])
 
-                        <div className="row mb-3 col-sm-12">
-                            <label htmlFor="formSelectDeliveryDate">Select Delivery Date</label>
-                            <select className="custom-select" id="formSelectDeliveryDate" defaultValue={currentDeliveryId}>
-                                {deliveryDateOpts}
-                            </select>
-                        </div>
 
-                        {productElms}
+	return (
+		<div className="col-xs-1 d-flex justify-content-center">
+			<div className="card">
+				<div className="card-body">
+					<h5 className="card-title">{fundraiserConfig.description()} Order</h5>
+					<form id="productForm" onSubmit={onFormSubmission}>
 
-                        <button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
-                            Cancel
-                        </button>
-                        <button type="submit" className="btn btn-primary my-2 float-end"
-                                style={{display: ((currentOrder.meta?.isReadOnly)?"none":"block")}}
-                        >
-                            Add
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    );
+						<div className="row mb-3 col-sm-12">
+							<label htmlFor="formSelectDeliveryDate">Select Delivery Date</label>
+							<select className="custom-select" id="formSelectDeliveryDate" defaultValue={currentDeliveryId}>
+								{deliveryDateOpts}
+							</select>
+						</div>
+
+						{productElms}
+
+						<button type="button" className="btn btn-primary my-2" onClick={onCancelItem}>
+							Cancel
+						</button>
+						<button type="submit" className="btn btn-primary my-2 float-end"
+							style={{display: ((isAdmin || !isOrderReadOnly)?"block":"none")}}
+						>
+							Submit
+						</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	);
 }
