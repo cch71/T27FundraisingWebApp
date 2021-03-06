@@ -27,7 +27,6 @@ export default function HTML(props) {
                         integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
                         crossOrigin="anonymous"></script>
                 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
-
                         integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
                         crossOrigin="anonymous"></script>
                 <script type="text/javascript"

@@ -473,9 +473,15 @@ class ReportViews {
 
     ////////////////////////////////////////////////////////////////////
     //
-    private async showDefault(frConfig: FundraiserConfig, userId?: string) {
+    private formatName(firstName: string, lastName: string) {
+		return `${lastName}, ${firstName}`;
+	}
 
-        const currentUserId =  auth.getCurrentUserId();
+	////////////////////////////////////////////////////////////////////
+	//
+	private async showDefault(frConfig: FundraiserConfig, userId?: string) {
+
+		const currentUserId =  auth.getCurrentUserId();
         if (!userId) { userId = currentUserId; }
 
         if (!this.currentDataset_) {
@@ -497,7 +503,7 @@ class ReportViews {
             // Fill out rows of data
             this.currentDataset_ = [];
             for (const order of orders) {
-                const nameStr = `${order.firstName}, ${order.lastName}`;
+                const nameStr = this.formatName(order.firstName, order.lastName);
                 const orderOwner = ('any'===userId)?order.orderOwner:userId;
                 const orderDataItem = [order.orderId, nameStr];
                 //only reason to not have a delivery date is if it is a donation
@@ -613,7 +619,7 @@ class ReportViews {
                 {
                     continue;
                 }
-                const nameStr = `${order.firstName}, ${order.lastName}`;
+                const nameStr = this.formatName(order.firstName, order.lastName);
                 const orderOwner = ('any'===userId)?order.orderOwner:userId;
                 const orderDataItem = [order.orderId, nameStr];
                 //only reason to not have a delivery date is if it is a donation
@@ -732,7 +738,7 @@ class ReportViews {
             // Fill out rows of data
             this.currentDataset_ = [];
             for (const order of orders) {
-                const nameStr = `${order.firstName}, ${order.lastName}`;
+                const nameStr = this.formatName(order.firstName, order.lastName);
                 const orderOwner = ('any'===userId)?order.orderOwner:userId;
                 //only reason to not have a delivery date is if it is a donation
                 const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
@@ -822,7 +828,7 @@ class ReportViews {
             // Fill out rows of data
             this.currentDataset_ = [];
             for (const order of orders) {
-                const nameStr = `${order.firstName}, ${order.lastName}`;
+                const nameStr = this.formatName(order.firstName, order.lastName);
                 const orderOwner = ('any'===userId)?order.orderOwner:userId;
                 const deliveryDate = order.deliveryId?frConfig.deliveryDateFromId(order.deliveryId):'donation';
 
@@ -966,7 +972,7 @@ class ReportViews {
                 if ('0'===bags) { continue; }
                 const distPt = frConfig.getDistributionPoint(order.neighborhood);
 
-                const nameStr = `${order.firstName}, ${order.lastName}`;
+                const nameStr = this.formatName(order.firstName, order.lastName);
                 const orderOwner = order.orderOwner;
 
                 let orderDataItem = [

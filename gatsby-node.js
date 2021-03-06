@@ -7,3 +7,13 @@ exports.onCreatePage = ({ page, actions }) => {
         createPage(page);
     }
 };
+
+exports.onCreateWebpackConfig = ({ actions }) => {
+  actions.setWebpackConfig({
+    resolve: {
+       alias: {
+          crypto: false
+       }
+    }
+  })
+}

@@ -3,7 +3,6 @@ import * as AmazonCognitoIdentity from 'amazon-cognito-identity-js';
 
 import config from '../config';
 
-
 class CognitoAuth {
     private userPool: any | undefined;
     private isUserAuthenticated: boolean = false;
