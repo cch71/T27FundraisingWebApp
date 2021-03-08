@@ -13,6 +13,8 @@ const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
     const summaryArr=[];
     orderDb.getOrderSummary().then((summary: LeaderBoardSummaryInfo)=>{
+		//console.log(`LBInfo: ${JSON.stringify(LeaderBoardSummaryInfo, null, '\t')}`)
+
         if (!summary) { return; }
 
         const topSellers = [];

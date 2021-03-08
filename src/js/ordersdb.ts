@@ -152,7 +152,8 @@ class LeaderBoardSummaryInfo {
     *topSellers(): Generator<[number, string, string]> {
         const users = this.summaryResp_.users;
         //console.log(`Sum Resp: ${JSON.stringify(this.summaryResp_, null, '\t')}`);
-        for (let idx=0; idx < users.length; ++idx) {
+		const usersLen = (10 < users.length) ? 10 : users.length;
+        for (let idx=0; idx < usersLen; ++idx) {
             yield [idx+1, users[idx].orderOwner, currency(users[idx].amountSold)]
         }
     }
@@ -205,7 +206,7 @@ class OrderDb {
                 const userId = auth.currentUser().getUsername();
                 const authToken = await auth.getAuthToken();
 
-                //console.log(`OrderDB Query Parms: ${paramStr}`);
+                //console.log(`OrderDB Query Parms: {}`);
                 const resp = await fetch(awsConfig.api.invokeUrl + '/leaderboard', {
                     method: 'post',
                     headers: {
@@ -416,7 +417,7 @@ class OrderDb {
             }
         });
     }
-    
+
     /////////////////////////////////////////
     //
     query(params: any|undefined): Promise<Array<any>> {
