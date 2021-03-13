@@ -82,6 +82,7 @@ class ReportViews {
             }
 
             for (const userInfo of frConfig.users()) {
+				//console.log(`UserInfo ${JSON.stringify(userInfo)}`);
                 users.push(userInfo);
             }
             users.push(['any', 'All']);

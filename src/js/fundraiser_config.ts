@@ -124,12 +124,13 @@ class FundraiserConfig {
 
     /////////////////////////////////////////
     //
-    *users(opts?: boolean): Generator<[string, string]> {
+    *users(opts?: any): Generator<[string, string]> {
         if (!this.usersMap_) {
             this.userMap_ = [];
             for (const [patrolName, namesObj] of  Object.entries(this.loadedPatrolMap_)) {
-                if (opts?.doFilterOutAdmins && patrolName==='Admins') { continue; }
+                if (opts?.doFilterOutAdmins && patrolName==='Admin') { continue; }
                 for (const uid of  Object.keys(namesObj)) {
+					//console.log(`UID: ${uid}  Patrol Name: ${patrolName}`);
                     this.userMap_.push([uid, namesObj[uid]['name']]);
                 }
             }

@@ -156,15 +156,18 @@ const NavBar = (props) => {
 
 
     const [userName, setUserName] = useState();
+    const [adminMenuItems, setAdminMenuItems] = useState();
     useEffect(() => {
         const onAsyncView = async ()=>{
             //If this throws then we aren't authenticated so don't show bar anyways
             const [uid, _] = await auth.getUserIdAndGroups();
 
-            /* if (await auth.isCurrentUserAdmin()) {
-			 *     //TODO: Placeholder for the Admin Menu Options
-			 * }
-			 */
+            if (await auth.isCurrentUserAdmin()) {
+				setAdminMenuItems(
+					<div className='dropdown-item' onClick={ ()=>{navigate("/delivery_time_sheet")} }>Delivery TimeSheet</div>
+				);
+			}
+
             setUserName(uid);
         };
 
@@ -216,7 +219,8 @@ const NavBar = (props) => {
                             {userName}
                         </a>
                         <div className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <a className='dropdown-item' href="#" onClick={handleSignout}>Signout</a>
+                            <div className='dropdown-item' onClick={handleSignout}>Signout</div>
+							{adminMenuItems}
                             <a className='dropdown-item'
                                href="#xmitIssueDlg" data-bs-toggle="modal" onClick={onXmitIssue}>Report Issue</a>
                         </div>
