@@ -45,8 +45,8 @@ const validateOrderForm = (currentOrder: Order) => {
     const validateRequiredFormFields = async ()=>{
         let isValid = true;
 		const formElms = document.querySelector("#newOrEditOrderForm")
-								 .querySelectorAll('[required]');
-		Array.prototype.slice.call(formElms).forEach((aform) => {
+								             .querySelectorAll('[required]');
+		    Array.prototype.slice.call(formElms).forEach((aform) => {
             if (!aform.checkValidity()) {
                 aform.classList.add('is-invalid');
                 isValid = false;

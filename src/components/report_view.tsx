@@ -1108,18 +1108,18 @@ class ReportViews {
         //Get Data
         const data = this.currentDataTable_.data().toArray();
         let csvData = [];
-		const headerLen = this.reportHeaders_.length;
+		    const headerLen = this.reportHeaders_.length;
         data.forEach((row, _)=>{
             let csvRow = [];
             row.forEach((column, _)=>{
                 csvRow.push(column);
             });
-			if (headerLen !== row.length) {
-				// This is a simple test in that we dont include actions in the reportHeaders
-				//  and so if they aren't equal then it assumes actiion column is present and
-				// removes it
-				csvRow.splice(-1,1);
-			}
+			      if (headerLen !== row.length) {
+				        // This is a simple test in that we dont include actions in the reportHeaders
+				        //  and so if they aren't equal then it assumes actiion column is present and
+				        // removes it
+				        csvRow.splice(-1,1);
+			      }
             csvData.push(csvRow);
         });
 

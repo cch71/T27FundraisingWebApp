@@ -121,7 +121,7 @@ class FundraiserConfig {
         }
         return "Unknown";
     }
-
+    
     /////////////////////////////////////////
     //
     *users(opts?: any): Generator<[string, string]> {

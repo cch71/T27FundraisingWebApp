@@ -2,6 +2,9 @@ import React, { useState, useEffect }from "react"
 import { navigate } from "gatsby"
 import auth from "../js/auth"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config";
+import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
+
+const exportImg = bootstrapIconSprite + "#cloud-download";
 
 const isTupleEq = (t1, t2) => {
     if (!t1 && !t2) { return true; }
@@ -283,7 +286,13 @@ export default function deliveryTimeSheet() {
                 return;
             }
 
-            frConfig = getFundraiserConfig();
+            try {
+                frConfig = getFundraiserConfig();
+            } catch(err) {
+                console.error(`Failed loading fundraiser config going to main page`);
+                navigate('/');
+                return;
+            }
 
             const deliveryDates = [];
             for (const [frDeliveryId, frDeliveryLabel] of frConfig.deliveryDates()) {
@@ -312,6 +321,9 @@ export default function deliveryTimeSheet() {
     //
     const onDeliveryChange = async (evt) =>{
         const currentDeliveryId = parseInt(evt.currentTarget.value);
+        const btnElm = document.querySelector(".reports-view-setting-btn");
+        btnElm.classList.remove("invisible");
+
         console.log(`Current Selected DeliveryId: ${currentDeliveryId}`);
 
         const entries = [];
@@ -368,12 +380,57 @@ export default function deliveryTimeSheet() {
         for (const timecard of timeCards) {
             timeCardDb.set(timecard.uid, new UserEntry(timecard));
             const rowElm = document.querySelector(`.row[data-uid="${timecard.uid}"]`);
+            if (!rowElm) {
+                alert(`TimeCard DB contains UID: ${timecard.uid} however not is User DB`);
+                continue;
+            }
             rowElm.querySelector(".time-in").value = timecard.timeIn;
             rowElm.querySelector(".time-out").value = timecard.timeOut;
             rowElm.querySelector(".time-calc").innerHTML = timecard.timeTotal;
         }
     };
 
+
+    ////////////////////////////////////////////////////
+    //
+    const onDownloadTimecardsClick = async ()=> {
+        const currentDeliveryId = parseInt(document.getElementById("timeSheetSelectDeliveryDate").value);
+        const deliveryDate = frConfig.deliveryDateFromId(currentDeliveryId);
+        const timeCardFileName = `TimeCardReport-${deliveryDate}.csv`;
+        console.log(`Generating Report for: ${timeCardFileName}`);
+
+        if (0===timeCardDb.size) {
+            alert("No entries found to download");
+            return;
+        }
+        //Get Data
+        let csvData = [];
+        for (const [uid, entry] of timeCardDb.entries()) {
+            const csvRow = [];
+            csvRow.push(uid);
+            csvRow.push(frConfig.getUserNameFromId(uid));
+            csvRow.push(entry.timeIn);
+            csvRow.push(entry.timeOut);
+            csvRow.push(entry.calcTime);
+            csvData.push(csvRow);
+        }
+        const headers = ["Id", "FullName", "TimeIn", "TimeOut", "TotalTime"];
+        
+        csvData = Papa.unparse({
+	          "fields": headers,
+	          "data": csvData,
+        });
+
+        const hiddenElement = document.createElement('a');
+		    const blob = new Blob([csvData], { type: 'text/plain;charset=utf-8' });
+		    hiddenElement.href = URL.createObjectURL(blob);
+        hiddenElement.target = '_blank';
+        hiddenElement.download = timeCardFileName;
+        hiddenElement.click();
+    };
+
+
+    
     ////////////////////////////////////////////////////
     return (
         <div className="col-xs-1 d-flex justify-content-center">
@@ -387,6 +444,12 @@ export default function deliveryTimeSheet() {
                                 <option disabled value={-1}>Select Date</option>
 								                {deliveryDateOpts}
 							              </select>
+                            <button type="button" className="btn reports-view-setting-btn invisible ms-3"
+                                    onClick={onDownloadTimecardsClick} data-bs-toggle="tooltip" title="Download Timecards">
+                                <svg className="bi" fill="currentColor">
+                                    <use xlinkHref={exportImg}/>
+                                </svg>
+                            </button>
                         </span>
 						        </div>
                     <ul className="list-group" id="timeSheet">
