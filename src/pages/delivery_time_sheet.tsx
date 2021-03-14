@@ -1,5 +1,6 @@
 import React, { useState, useEffect }from "react"
 import { navigate } from "gatsby"
+import awsConfig from "../config"
 import auth from "../js/auth"
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config";
 import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
@@ -9,75 +10,85 @@ const exportImg = bootstrapIconSprite + "#cloud-download";
 const isTupleEq = (t1, t2) => {
     if (!t1 && !t2) { return true; }
     if (!t1 || !t2) { return false; }
-    return(t1[0]===t2[0] && t1[1]===t2[1]); 
+    return(t1[0]===t2[0] && t1[1]===t2[1]);
 }
 
 const pad = (val)=>{return (val<10) ? '0' + val : val };
 
-const testDb1 = [
-    { deliveryId: 1, uid: "aidanh", timeIn: "01:00", timeOut: "18:00", timeTotal: "17:00" }
-];
 
-const testDb2 = [];
+const makeTimeCardsCall = async (body: any)=>{
+    const userId = auth.currentUser().getUsername();
+    const authToken = await auth.getAuthToken();
+
+    const paramStr = JSON.stringify(body);
+
+    //console.log(`OrderDB Query Parms: {}`);
+    const resp = await fetch(awsConfig.api.invokeUrl + '/timecards', {
+        method: 'post',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: authToken
+        },
+		body: paramStr
+    });
+
+    if (!resp.ok) { // if HTTP-status is 200-299
+        const errRespBody = await resp.text();
+        throw new Error(`Timecard API Failed Error: ${resp.status}  ${errRespBody}`);
+    }
+
+	return await resp.json();
+};
 
 ////////////////////////////////////////////////////
 //
 const getSavedTimeCards = async (deliveryId: number) => {
-    if (1===deliveryId) { return testDb1; }
-    if (2===deliveryId) { return testDb2; }
-    return [];
+    try {
+        console.log("Gettting Timecards for delivery id: ${deliveryId}");
+		return await makeTimeCardsCall({
+			cmd: 'query',
+			payload: {
+				deliveryId: deliveryId
+			}
+		});
+    } catch(error) {
+        console.error(error);
+        alert(`Get TimeCards for delivery ${deliveryId} Failed: ${error}`);
+    }
+
+    return undefined;
 };
 
 ////////////////////////////////////////////////////
 //
 const saveTimeCard = async (dbRec: any) => {
-    const updateDb = (db, dbRec)=>{
-        for (const rec of db) {
-            if (rec.uid === dbRec.uid) {
-                rec.timeIn = dbRec.timeIn;
-                rec.timeOut = dbRec.timeOut;
-                rec.timeTotal = dbRec.timeTotal;
-                return;
-            }
-        }
-        // Not Found so push
-        db.push(dbRec);
-
-    };
-    
-    
-    if (1===dbRec.deliveryId) {
-        console.log(`SavingToDB1: ${JSON.stringify(dbRec)}`);
-        updateDb(testDb1, dbRec);
+    try {
+        console.log("Saving Timecard for uid: ${dbRec.uid} delivery id: ${dbRec.deliveryId}");
+		return await makeTimeCardsCall({
+			cmd: 'add_or_update',
+			payload: dbRec
+		});
+    } catch(error) {
+        console.error(error);
+        alert(`Saving TimeCard for ${dbRec.uid} ` +
+			  `delivery id: ${dbRec.deliveryId} Failed: ${error}`);
     }
-    if (2===dbRec.deliveryId) {
-        console.log(`SavingToDB2: ${JSON.stringify(dbRec)}`);
-        updateDb(testDb2, dbRec);
-    }
-    return [];
 };
 
 ////////////////////////////////////////////////////
 //
 const clearTimeCard = async (dbRec: any) => {
-    const updateDb = (db, dbRec)=>{
-        const idx = db.findIndex((rec)=>{
-            return dbRec.uid===rec.uid;
-        });
-        if (-1 !== idx) {
-            console.log(`Deleting: ${JSON.stringify(dbRec)}`);
-            db.splice(idx,1);
-        }
-    };
-    
-    
-    if (1===dbRec.deliveryId) {
-        updateDb(testDb1, dbRec);
+    try {
+        console.log("Erasing Timecard for uid: ${dbRec.uid} delivery id: ${dbRec.deliveryId}");
+		return await makeTimeCardsCall({
+			cmd: 'delete',
+			payload: dbRec
+		});
+    } catch(error) {
+        console.error(error);
+        alert(`Clearing TimeCard for uid: ${dbRec.uid} ` +
+			  `delivery id: ${dbRec.deliveryId} Failed: ${error}`);
     }
-    if (2===dbRec.deliveryId) {
-        updateDb(testDb2, dbRec);
-    }
-    return [];
 };
 
 
@@ -92,7 +103,7 @@ class UserEntry {
     newTimeIn: string;
     newTimeOut: string;
     newCalcTime: string;
-    
+
     ////////////////////////////////////////////////////
     //
     constructor(params: any) {
@@ -129,7 +140,7 @@ class UserEntry {
     }
 
     ////////////////////////////////////////////////////
-    //
+    // Saves to Cloud DB
     async save() {
         this.timeIn = this.newTimeIn;
         this.timeOut = this.newTimeOut;
@@ -154,31 +165,37 @@ type Uid = string;
 const timeCardDb: Map<Uid, UserEntry> = new Map();
 
 ////////////////////////////////////////////////////
-//
+// This basically will record complete times into the local timeCardDb
+// Returns the display value and boolean isDirty flag to indicate it
+// needs saving
 const setNewTime = (uid: string,
                     deliveryId: number,
                     timeInComp: [number, number],
                     timeOutComp: [number, number]): [string, boolean] =>
 {
+    // If the values are essentially being cleared then reset the entry to mark empty
     if (0===timeInComp[0] &&
         0===timeInComp[1] &&
         isTupleEq(timeInComp, timeOutComp))
     {
         const isDirty = timeCardDb.has(uid) ?
-                        timeCardDb.get(uid).setNewTime(undefined, undefined, undefined) : false;
+                        timeCardDb.get(uid).setNewTime(undefined, undefined, undefined) :
+						false;
 
         return ['00:00', isDirty];
     }
 
-    
+    // Convertes times to actual dates to do diff
     const dtIn = new Date(Date.UTC(0, 0, 0, timeInComp[0],timeInComp[1], 0));
     const dtOut = new Date(Date.UTC(0, 0, 0, timeOutComp[0],timeOutComp[1], 0));
 
     // console.log(`In: ${dtIn.getTime()}    Out: ${dtOut.getTime()}`);
     const diffMs = dtOut - dtIn;
     if (0>=diffMs) {
+        // Can't be inverted
         return ["INV", false];
     } else {
+        //Do some math to convert the diff int number back to HH:mm
         const h = Math.floor(diffMs / (1000*60*60));
         const m = Math.round((diffMs - ((1000*60*60) * h)) / (1000*60));
         if (isNaN(h) || isNaN(m)) {
@@ -251,7 +268,7 @@ const onSave = async (evt: any)=>{
 
     const uid = rowElm.dataset.uid;
     const userName = rowElm.dataset.uname;
-    
+
     console.log(`Saving time for: ${uid}`);
     if (!timeCardDb.has(uid)) {
         console.error(`User ${uid} not found in timeCardDb`);
@@ -272,9 +289,11 @@ let frConfig = undefined;
 //
 export default function deliveryTimeSheet() {
 
-    
+
     const [userEntries, setUserEntries] = useState();
     const [deliveryDateOpts, setDeliveryDateOpts] = useState();
+	const [isLoading, setIsLoading] = useState(false);
+
     ////////////////////////////////////////////////////
     //
     useEffect(() => {
@@ -326,6 +345,13 @@ export default function deliveryTimeSheet() {
 
         console.log(`Current Selected DeliveryId: ${currentDeliveryId}`);
 
+		setIsLoading(true);
+        const timeCards = await getSavedTimeCards(currentDeliveryId);
+		setIsLoading(false);
+		if (undefined === timeCards) {
+			return;
+		}
+
         const entries = [];
         for (const [uid, userName] of frConfig.users({doFilterOutAdmins: true})) {
             //console.log(`UserInfo ${JSON.stringify(userInfo)}`);
@@ -376,7 +402,6 @@ export default function deliveryTimeSheet() {
         jQuery(".time-in").val('');
         jQuery(".time-out").val('');
         jQuery(".time-calc").text('00:00');
-        const timeCards = await getSavedTimeCards(currentDeliveryId);
         for (const timecard of timeCards) {
             timeCardDb.set(timecard.uid, new UserEntry(timecard));
             const rowElm = document.querySelector(`.row[data-uid="${timecard.uid}"]`);
@@ -388,6 +413,7 @@ export default function deliveryTimeSheet() {
             rowElm.querySelector(".time-out").value = timecard.timeOut;
             rowElm.querySelector(".time-calc").innerHTML = timecard.timeTotal;
         }
+		setIsLoading(false);
     };
 
 
@@ -415,7 +441,7 @@ export default function deliveryTimeSheet() {
             csvData.push(csvRow);
         }
         const headers = ["Id", "FullName", "TimeIn", "TimeOut", "TotalTime"];
-        
+
         csvData = Papa.unparse({
 	          "fields": headers,
 	          "data": csvData,
@@ -430,31 +456,40 @@ export default function deliveryTimeSheet() {
     };
 
 
-    
+
     ////////////////////////////////////////////////////
     return (
         <div className="col-xs-1 d-flex justify-content-center">
             <div className="card">
                 <div className="card-body">
                     <h5 className="card-title">Delivery Timesheet</h5>
-						        <div className="row mb-2">
-                        <span>Select Delivery Date
-							              <select defaultValue={-1} className="ms-1"
+					<div className="row mb-2">
+						<span>Select Delivery Date
+							<select defaultValue={-1} className="ms-1"
                                     id="timeSheetSelectDeliveryDate" onChange={onDeliveryChange}>
                                 <option disabled value={-1}>Select Date</option>
-								                {deliveryDateOpts}
-							              </select>
+								{deliveryDateOpts}
+							</select>
                             <button type="button" className="btn reports-view-setting-btn invisible ms-3"
-                                    onClick={onDownloadTimecardsClick} data-bs-toggle="tooltip" title="Download Timecards">
+                                    onClick={onDownloadTimecardsClick} data-bs-toggle="tooltip"
+								title="Download Timecards">
                                 <svg className="bi" fill="currentColor">
                                     <use xlinkHref={exportImg}/>
                                 </svg>
                             </button>
                         </span>
-						        </div>
-                    <ul className="list-group" id="timeSheet">
-                        {userEntries}
-                    </ul>
+					</div>
+					{isLoading ? (
+						<div id="notReadyView" className='col-xs-1 d-flex justify-content-center' >
+							<div className="spinner-border" role="status">
+								<span className="visually-hidden">Loading...</span>
+							</div>
+						</div>
+					) : (
+						<ul className="list-group" id="timeSheet">
+							{userEntries}
+						</ul>
+					)}
                 </div>
             </div>
         </div>
