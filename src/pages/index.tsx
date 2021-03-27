@@ -12,6 +12,7 @@ const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 
 async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
     const summaryArr=[];
+
     orderDb.getOrderSummary().then((summary: LeaderBoardSummaryInfo)=>{
         //console.log(`LBInfo: ${JSON.stringify(LeaderBoardSummaryInfo, null, '\t')}`)
 
@@ -56,19 +57,25 @@ async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
             );
         }
 
-
         summaryStats.push(
             <li key={++statIndex} className="list-group-item border-0 py-1">
                 Troop has sold {USD(summary.troopAmountSold()).format()}
             </li>
         );
 
+        const fundraiserOverMsg =
+            frConfig.isAddOrEditOrdersAllowed() ? ''
+            : (<div style={{color:"red"}}><b>(The order phase has concluded.
+                Contact the fundrasier admin for new orders/changes)</b></div>);
+
+
+
         //console.log("Summary ${JSON.stringify(summaryStats)}")
 
         setOrderSummary(
             <div>
                 <div className="justify-content-center text-center">
-                    <h6>{frConfig.description()} Fundraiser</h6>
+                    <h6>{frConfig.description()} Fundraiser {fundraiserOverMsg}</h6>
                     <div className="col-xs-1 d-flex justify-content-center">
                         <div className="row">
 
