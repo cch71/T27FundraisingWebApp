@@ -13,7 +13,7 @@ const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
     const summaryArr=[];
     orderDb.getOrderSummary().then((summary: LeaderBoardSummaryInfo)=>{
-		//console.log(`LBInfo: ${JSON.stringify(LeaderBoardSummaryInfo, null, '\t')}`)
+        //console.log(`LBInfo: ${JSON.stringify(LeaderBoardSummaryInfo, null, '\t')}`)
 
         if (!summary) { return; }
 
@@ -112,7 +112,6 @@ async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
                         </div>
                     </div>
                 </div>
-                <AddNewOrderWidget/>
             </div>
         );
 
@@ -246,6 +245,7 @@ function showSignOn(setContent) {
 const Home = ()=>{
 
     const [isLoading, setIsLoading] = useState(false);
+    const [newOrderButton, setNewOrderButton] = useState();
     const [content, setContent] = useState();
     useEffect(() => {
         setIsLoading(true);
@@ -259,15 +259,20 @@ const Home = ()=>{
 
                 const authToken = await auth.getAuthToken();
 
+                let frConfig;
                 try {
-                    const frConfig = getFundraiserConfig();
-                    await showSummary(frConfig, setContent);
+                    frConfig = getFundraiserConfig();
                 } catch(err: any) {
-                    const loadedConfig = await downloadFundraiserConfig(authToken);
-                    if (!loadedConfig) {
+                    frConfig = await downloadFundraiserConfig(authToken);
+                    if (!frConfig) {
                         throw(new Err("Failed to load session fundraising config"));
                     }
-                    await showSummary(loadedConfig, setContent);
+                }
+
+                await showSummary(frConfig, setContent);
+                const isAdmin = await auth.isCurrentUserAdmin();
+                if (isAdmin || frConfig.isAddOrEditOrdersAllowed()) {
+                    setNewOrderButton(<AddNewOrderWidget/>);
                 }
             }
         };
@@ -288,15 +293,17 @@ const Home = ()=>{
 
     return (
         <div id="indexPage">
-            {isLoading ? (
-                <div id="notReadyView" className='col-xs-1 d-flex justify-content-center' >
-                    <div className="spinner-border" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
+        {isLoading ? (
+            <div id="notReadyView" className='col-xs-1 d-flex justify-content-center' >
+                <div className="spinner-border" role="status">
+                    <span className="visually-hidden">Loading...</span>
                 </div>
-            ) : (
-                <>{content}</>
-            )}
+            </div>
+        ) : (
+            <>{content}</>
+        )}
+        
+        { newOrderButton }
         </div>
     );
 }

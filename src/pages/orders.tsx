@@ -208,6 +208,7 @@ export default function orders(params: any) {
     };
 
     // Client-side Runtime Data Fetching
+    const [newOrderButton, setNewOrderButton] = useState();
     const [cardBody, setCardBody] = useState();
     const [deleteDlg, setDeleteDlg] = useState();
     const [spreadDlg, setSpreadDlg] = useState();
@@ -241,11 +242,16 @@ export default function orders(params: any) {
 
             await showTheSelectedView(frConfig);
             const [_, userGroups] = await auth.getUserIdAndGroups();
-            if (await auth.isCurrentUserAdmin()) {
-				document.getElementById("orderOwnerLabel").style.display = "none";
-			}
+            const isAdmin = await auth.isCurrentUserAdmin();
+            if (isAdmin || frConfig.isAddOrEditOrdersAllowed()) {
+                setNewOrderButton(<AddNewOrderWidget/>);
+            }
 
-            // Enable all tooltips
+            if (isAdmin) {
+				        document.getElementById("orderOwnerLabel").style.display = "none";
+			      }
+
+            // Enable all tooltips TODO: Disabled due to instability
             /* const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
              * tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
              *     return new bootstrap.Tooltip(tooltipTriggerEl, {
@@ -276,7 +282,7 @@ export default function orders(params: any) {
                 </div>
             </div>
 
-            <AddNewOrderWidget/>
+            { newOrderButton }
 
             {deleteDlg}
             {settingsDlg}

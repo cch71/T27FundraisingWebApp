@@ -22,11 +22,11 @@ const validateOrderForm = (currentOrder: Order) => {
     const validatePayment = async ()=>{
         const amountDue = currency(document.getElementById('orderAmountDue').innerText);
         const amountPaid = currency(document.getElementById('orderAmountPaid').innerText);
-        const checksPaid = currency((document.getElementById('formCheckPaid') as HTMLInputElement).value);
-        const checkNumField = document.getElementById('formCheckNumbers') as HTMLInputElement;
+        const checksPaid = currency(document.getElementById('formCheckPaid').value);
+        const checkNumField = document.getElementById('formCheckNumbers');
         const checkNumFieldVal = checkNumField.value;
         const isCheckNumGood = (0.0<checksPaid.value)?(0<checkNumFieldVal.length):true;
-        const isCollectLaterChecked = (document.getElementById('formCollectLater') as HTMLInputElement).checked;
+        const isCollectLaterChecked = document.getElementById('formCollectLater').checked;
         const isPaidChecked = amountDue.value===amountPaid.value;
 
         //console.log(`AD: ${amountDue.value} AP: ${amountPaid.value}`);
@@ -44,9 +44,9 @@ const validateOrderForm = (currentOrder: Order) => {
 
     const validateRequiredFormFields = async ()=>{
         let isValid = true;
-		const formElms = document.querySelector("#newOrEditOrderForm")
-								             .querySelectorAll('[required]');
-		    Array.prototype.slice.call(formElms).forEach((aform) => {
+        const formElms = document.querySelector("#newOrEditOrderForm")
+                                 .querySelectorAll('[required]');
+        Array.prototype.slice.call(formElms).forEach((aform) => {
             if (!aform.checkValidity()) {
                 aform.classList.add('is-invalid');
                 isValid = false;
@@ -104,7 +104,7 @@ const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: bo
         // If everything vlidates then submit
         Promise.all(validateOrderForm(currentOrder))
                .then((results)=>{
-				   console.log(`Results: ${JSON.stringify(results)}`);
+                   console.log(`Results: ${JSON.stringify(results)}`);
                    if (results[0] && results[1] && results[2]) {
                        // If we got here they we are good to submit form
                        currentOrder.isVerified = false;
@@ -128,14 +128,14 @@ const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: bo
                            }
                        });
                    } else {
-					   console.log("Not all fields are validated");
+                       console.log("Not all fields are validated");
                        reenableSubmitButton();
                    }
                });
     }
 
     // Add New Product Order
-    const onAddOrder = (event: any)=>{
+    const onAddOrder = async (event: any)=>{
         event.preventDefault();
         event.stopPropagation();
 
@@ -148,9 +148,9 @@ const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: bo
             const deliveryId = btn.dataset.deliveryid;
             console.log(`Add New Fundraising Order for ${deliveryId}`);
             pageState.state['deliveryId'] = deliveryId;
-            pageState.state['isAdmin'] = isAdmin;
             pageState.state['isOrderReadOnly'] = isOrderReadOnly;
         }
+        pageState.state['isAdmin'] = await auth.isCurrentUserAdmin();
 
         navigate('/add_products_order/', pageState);
     };
@@ -301,44 +301,44 @@ const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: bo
         };
 
 
-		//Add the Add Product Button
-		let addProductStyle = {display: 'block'};
-		if(currentOrder.hasOwnProperty('productsCost')) {
-			addProductStyle = {display: 'none'};
-			addExistingOrderButton('product',
-								   frConfig.deliveryDateFromId(currentOrder.deliveryId),
-								   currentOrder.productsCost);
-		}
+        //Add the Add Product Button
+        let addProductStyle = {display: 'block'};
+        if(currentOrder.hasOwnProperty('productsCost')) {
+            addProductStyle = {display: 'none'};
+            addExistingOrderButton('product',
+                                   frConfig.deliveryDateFromId(currentOrder.deliveryId),
+                                   currentOrder.productsCost);
+        }
 
-		if (!isOrderReadOnly) {
-			ordersByDeliveryBtns.push(
-				<li className="list-group-item" id="addProductBtnLi" key="addProductBtnLi" style={addProductStyle}>
-					Add Product Order
-					<button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddOrder}>
-						+
-					</button>
-				</li>
-			);
-		}
+        if (!isOrderReadOnly) {
+            ordersByDeliveryBtns.push(
+                <li className="list-group-item" id="addProductBtnLi" key="addProductBtnLi" style={addProductStyle}>
+                    Add Product Order
+                    <button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddOrder}>
+                        +
+                    </button>
+                </li>
+            );
+        }
 
-		//Add the Add Donation Button
-		let addDonationStyle = {display: 'block'};
-		if(currentOrder.hasOwnProperty('donation')) {
-			addDonationStyle = {display: 'none'};
-			addExistingOrderButton('donation', 'Donation', currentOrder.donation);
+        //Add the Add Donation Button
+        let addDonationStyle = {display: 'block'};
+        if(currentOrder.hasOwnProperty('donation')) {
+            addDonationStyle = {display: 'none'};
+            addExistingOrderButton('donation', 'Donation', currentOrder.donation);
 
-		}
+        }
 
-		if (!isOrderReadOnly) {
-			ordersByDeliveryBtns.push(
-				<li className="list-group-item" id="addDonationBtnLi" key="addDonationBtnLi" style={addDonationStyle}>
-					Add Donations
-					<button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddDonation}>
-						+
-					</button>
-				</li>
-			);
-		}
+        if (!isOrderReadOnly) {
+            ordersByDeliveryBtns.push(
+                <li className="list-group-item" id="addDonationBtnLi" key="addDonationBtnLi" style={addDonationStyle}>
+                    Add Donations
+                    <button className="btn btn-outline-info float-end order-edt-btn" onClick={onAddDonation}>
+                        +
+                    </button>
+                </li>
+            );
+        }
 
         return ordersByDeliveryBtns;
     };
@@ -438,7 +438,8 @@ const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: bo
 
             <div className="row mb-2 g-2">
                 <div className="form-floating col-md-4">
-                    <select className="form-control" id="formNeighborhood" onChange={onHoodChange} defaultValue={currentNeighborhood}>
+                    <select className="form-control" id="formNeighborhood" onChange={onHoodChange}
+                            defaultValue={currentNeighborhood}>
                         {hoods}
                     </select>
                     <label htmlFor="formNeighborhood">
@@ -504,7 +505,8 @@ const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: bo
                             <div className="input-group-prepend">
                                 <span className="input-group-text">$</span>
                             </div>
-                            <input className="form-control" type="number" min="0" step="any" autoComplete="fr-new-cust-info"
+                            <input className="form-control" type="number" min="0" step="any"
+                                   autoComplete="fr-new-cust-info"
                                    id="formCashPaid" placeholder="0.00"
                                    onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
                                    defaultValue={moniedDefaultValue(currentOrder.cashPaid)}/>
@@ -516,7 +518,8 @@ const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: bo
                             <div className="input-group-prepend">
                                 <span className="input-group-text">$</span>
                             </div>
-                            <input className="form-control" type="number" min="0" step="any" autoComplete="fr-new-cust-info"
+                            <input className="form-control" type="number" min="0" step="any"
+                                   autoComplete="fr-new-cust-info"
                                    id="formCheckPaid" placeholder="0.00"
                                    onInput={recalculateTotalPaid} onKeyPress={onCurrencyFieldKeyPress}
                                    defaultValue={moniedDefaultValue(currentOrder.checkPaid)}/>
@@ -551,12 +554,12 @@ const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: bo
                     Cancel
                 </button>
                 { !isOrderReadOnly &&
-				  <button type="submit" className="btn btn-primary float-end" id="formOrderSubmit">
+                  <button type="submit" className="btn btn-primary float-end" id="formOrderSubmit">
                       <span className="spinner-border spinner-border-sm me-1" role="status"
-							aria-hidden="true" id="formOrderSubmitSpinner" style={{display: "none"}} />
+                      aria-hidden="true" id="formOrderSubmitSpinner" style={{display: "none"}} />
                       Submit
                   </button>
-				}
+                }
             </div>
 
         </form>
@@ -574,11 +577,10 @@ export default (params: any)=>{
 
         const onAsyncView = async ()=>{
             const isAdmin = await auth.isCurrentUserAdmin();
-
-			const isOrderReadOnly = (order)=>{
-				if (isAdmin) { return false; } //Admins can always edit an order
-				return params?.location?.state?.isOrderReadOnly || order?.meta?.isReadOnly;
-			};
+            const isOrderReadOnly = (order)=>{
+                if (isAdmin) { return false; } //Admins can always edit an order
+                return params?.location?.state?.isOrderReadOnly || order?.meta?.isReadOnly;
+            };
 
             const loadOrder = async ()=>{
                 const dbOrderId = params?.location?.state?.editOrderId;
@@ -588,7 +590,7 @@ export default (params: any)=>{
                     console.log(`Returned Order: ${JSON.stringify(order)}`);
 
                     if (order) {
-						const isReadOnly = isOrderReadOnly(order);
+                        const isReadOnly = isOrderReadOnly(order);
                         orderDb.setActiveOrder(order, isReadOnly);
                         await populateForm(order, setFormFields, isAdmin, isReadOnly);
                     } else {
@@ -623,7 +625,7 @@ export default (params: any)=>{
                 }
             });
 
-	}, [])
+    }, [])
 
     return (
         <>

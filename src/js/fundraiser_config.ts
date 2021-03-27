@@ -10,7 +10,7 @@ interface Product {
     id: string;
     label: string;
     unitPrice: number;
-	minUnits?: number;
+    minUnits?: number;
     priceBreaks?: Array<PriceBreak>;
 }
 
@@ -30,7 +30,7 @@ interface FundraiserConfigBase {
     products: Array<Product>;
     neighborhoods?: Array<string>; //Deprecated
     neighborhoodsV2: Record<string, NeighborhoodInfo>
-    deliveryDates: Array<DeliveryDate>;
+        deliveryDates: Array<DeliveryDate>;
 }
 
 /////////////////////////////////////////
@@ -121,7 +121,7 @@ class FundraiserConfig {
         }
         return "Unknown";
     }
-    
+
     /////////////////////////////////////////
     //
     *users(opts?: any): Generator<[string, string]> {
@@ -130,7 +130,7 @@ class FundraiserConfig {
             for (const [patrolName, namesObj] of  Object.entries(this.loadedPatrolMap_)) {
                 if (opts?.doFilterOutAdmins && patrolName==='Admin') { continue; }
                 for (const uid of  Object.keys(namesObj)) {
-					//console.log(`UID: ${uid}  Patrol Name: ${patrolName}`);
+                    //console.log(`UID: ${uid}  Patrol Name: ${patrolName}`);
                     this.userMap_.push([uid, namesObj[uid]['name']]);
                 }
             }
@@ -172,11 +172,11 @@ class FundraiserConfig {
     }
 
     /////////////////////////////////////////
-    //
+    // If new orders are allowed or orders are editable
     isEditableDeliveryDate(id?: string): boolean {
         if (!id) { return true; }
         this.loadDeliveryMap();
-		const deliveryEntry = this.deliveryMap_[id];
+        const deliveryEntry = this.deliveryMap_[id];
         const deliveryDateStr = deliveryEntry.date;
         try {
             const deliveryDate = Date.parse(deliveryDateStr);
@@ -200,19 +200,29 @@ class FundraiserConfig {
     // return [id, date]
     *validDeliveryDates(): IterableIterator<[string,string]> {
         for (let deliveryDate of this.loadedFrConfig_.deliveryDates) {
-			if (this.isEditableDeliveryDate(deliveryDate.id)) {
-				//if delivery date < disabledDate
-				yield [deliveryDate.id, deliveryDate.date];
-			}
+            if (this.isEditableDeliveryDate(deliveryDate.id)) {
+                //if delivery date < disabledDate
+                yield [deliveryDate.id, deliveryDate.date];
+            }
         }
         yield ['donation', 'Donation'];
     }
 
     /////////////////////////////////////////
     // return [id, date]
+    isAddOrEditOrdersAllowed(): bool {
+        const numValidDeliveryDates = [ ...this.validDeliveryDates() ].length;
+        //console.log(`Num Valid Delivery Dates: ${numValidDeliveryDates}`);
+        //The 1 is Donaitions which is not a valid date so exclude it
+        return (1 < numValidDeliveryDates); 
+    }
+
+
+    /////////////////////////////////////////
+    // return [id, date]
     *deliveryDates(): IterableIterator<[string,string]> {
         for (let deliveryDate of this.loadedFrConfig_.deliveryDates) {
-			yield [deliveryDate.id, deliveryDate.date];
+            yield [deliveryDate.id, deliveryDate.date];
         }
         yield ['donation', 'Donation'];
     }
@@ -290,7 +300,7 @@ function downloadFundraiserConfig(authToken: string): Promise<FundraiserConfig |
 //
 function getFundraiserConfig(): FundraiserConfig {
     if (!frConfig) {
-		console.log("Fr Config is NULL");
+        console.log("Fr Config is NULL");
         frConfig = new FundraiserConfig();
     }
     return frConfig;

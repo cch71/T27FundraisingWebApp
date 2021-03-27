@@ -30,9 +30,9 @@ export default (params: any) => {
     }
 
     const deliveryDateOpts = [];
-	const deliveryDates = (isAdmin || isOrderReadOnly) ?
-						fundraiserConfig.deliveryDates() :
-						fundraiserConfig.validDeliveryDates();
+	  const deliveryDates = (isAdmin || isOrderReadOnly) ?
+						              fundraiserConfig.deliveryDates() :
+						              fundraiserConfig.validDeliveryDates();
     for (const [frDeliveryId, frDeliveryLabel] of deliveryDates) {
         if ('donation'===frDeliveryId) { continue; }
         deliveryDateOpts.push(
@@ -60,7 +60,8 @@ export default (params: any) => {
         event.stopPropagation();
 
         let totalDue = currency(0.0);
-        const selectedDeliveryId = (document.getElementById('formSelectDeliveryDate') as HTMLSelectElement).value;
+        const selectedDeliveryId =
+            (document.getElementById('formSelectDeliveryDate') as HTMLSelectElement).value;
         console.log(`Saving For Delivery ID: ${selectedDeliveryId}`);
 
         const items: Record<string, number> = {};
