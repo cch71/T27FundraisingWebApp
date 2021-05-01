@@ -196,7 +196,7 @@ const NavBar = (props) => {
                             <Link className={setIfActive('/')} replace to='/' onClick={collapseNav}>Home</Link>
                         </li>
                         <li>
-                            <Link className={setIfActive('/orders/')} replace to='/orders/' onClick={collapseNav}>
+                            <Link className={setIfActive('/reports/')} replace to='/reports/' onClick={collapseNav}>
                                 Reports
                             </Link>
                         </li>

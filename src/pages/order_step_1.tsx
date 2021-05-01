@@ -112,7 +112,7 @@ const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: bo
                        orderDb.submitActiveOrder().then(()=>{
                            reportViews.dataSetChanged();
                            if (isLoadedFromDb) {
-                               navigate('/orders/');
+                               navigate('/reports/');
                            } else {
                                navigate('/');
                            }
@@ -172,7 +172,7 @@ const populateForm = async (currentOrder: Order, setFormFields: any, isAdmin: bo
         const isLoadedFromDb = currentOrder.meta?.isLoadedFromDb;
         orderDb.setActiveOrder();
         if (isLoadedFromDb) {
-            navigate('/orders/');
+            navigate('/reports/');
         } else {
             navigate('/');
         }
@@ -595,7 +595,7 @@ export default (params: any)=>{
                         await populateForm(order, setFormFields, isAdmin, isReadOnly);
                     } else {
                         alert(`Order: ${dbOrderId} could not be retrieved`);
-                        navigate('/orders/');
+                        navigate('/reports/');
                     }
                 } else {
                     console.error(new Error("Failed to retrieve active order"));

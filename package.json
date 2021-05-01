@@ -14,27 +14,27 @@
     "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing\" && exit 1"
   },
   "dependencies": {
-    "amazon-cognito-identity-js": "^4.5.12",
-    "bootstrap-icons": "^1.4.0",
+    "amazon-cognito-identity-js": "^4.6.0",
+    "bootstrap-icons": "^1.4.1",
     "currency.js": "^2.0.3",
-    "gatsby": "^3.0.3",
-    "gatsby-plugin-layout": "^2.0.0",
-    "gatsby-plugin-manifest": "^3.0.0",
-    "gatsby-plugin-offline": "^4.0.0",
-    "gatsby-plugin-sass": "^4.0.2",
-    "gatsby-plugin-sharp": "^3.0.0",
-    "gatsby-transformer-sharp": "^3.0.0",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
+    "gatsby": "^3.4.0",
+    "gatsby-plugin-layout": "^2.4.0",
+    "gatsby-plugin-manifest": "^3.4.0",
+    "gatsby-plugin-offline": "^4.4.0",
+    "gatsby-plugin-sass": "^4.4.0",
+    "gatsby-plugin-sharp": "^3.4.0",
+    "gatsby-transformer-sharp": "^3.4.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "react-helmet": "^6.1.0",
-    "uuid": "^8.3.0"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@types/node": "^14.14.31",
-    "@types/react": "^17.0.2",
-    "@types/react-dom": "^17.0.1",
-    "prettier": "^2.2.0",
-    "sass": "^1.32.8"
+    "@types/node": "^15.0.1",
+    "@types/react": "^17.0.4",
+    "@types/react-dom": "^17.0.3",
+    "prettier": "^2.2.1",
+    "sass": "^1.32.12"
   },
   "repository": {
     "type": "git",
