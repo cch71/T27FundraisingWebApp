@@ -16,11 +16,11 @@ export default function addDonation() {
         }
         const doesSubmitGetEnabled = (event: any)=>{
 
-			const origAmt = (document.getElementById('formDonationAmount') as HTMLInputElement).value;
-			const [amt, isChanged] = moneyFloor(origAmt);
-			if (isChanged) {
-				(document.getElementById('formDonationAmount') as HTMLInputElement).value = amt.toString();
-			}
+            const origAmt = (document.getElementById('formDonationAmount') as HTMLInputElement).value;
+            const [amt, isChanged] = moneyFloor(origAmt);
+            if (isChanged) {
+                (document.getElementById('formDonationAmount') as HTMLInputElement).value = amt.toString();
+            }
 
             if (event.currentTarget.value) {
                 (document.getElementById('formDonationSubmit') as HTMLButtonElement).disabled = false;

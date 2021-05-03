@@ -163,10 +163,13 @@ const NavBar = (props) => {
             const [uid, _] = await auth.getUserIdAndGroups();
 
             if (await auth.isCurrentUserAdmin()) {
-				setAdminMenuItems(
-					<div className='dropdown-item' onClick={ ()=>{navigate("/delivery_time_sheet")} }>Delivery TimeSheet</div>
-				);
-			}
+				        setAdminMenuItems(
+                    <>
+					              <div className='dropdown-item' onClick={ ()=>{navigate("/delivery_time_sheet")} }>Delivery TimeSheet</div>
+					              <div className='dropdown-item' onClick={ ()=>{navigate("/funds_release")} }>Release Funds</div>
+                    </>
+				        );
+			      }
 
             setUserName(uid);
         };
@@ -220,7 +223,7 @@ const NavBar = (props) => {
                         </a>
                         <div className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                             <div className='dropdown-item' onClick={handleSignout}>Signout</div>
-							{adminMenuItems}
+							              {adminMenuItems}
                             <a className='dropdown-item'
                                href="#xmitIssueDlg" data-bs-toggle="modal" onClick={onXmitIssue}>Report Issue</a>
                         </div>
