@@ -1,0 +1,4699 @@
+{
+  "orders": [
+    {
+      "deliveryId": "2",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 35
+      },
+      "productsCost": 140,
+      "totalAmt": 140
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "orderOwner": "parvg",
+      "totalAmt": 25
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 65
+      },
+      "productsCost": 243.75,
+      "totalAmt": 243.75
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "parvg"
+      ],
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 5,
+        "spreading": 5
+      },
+      "productsCost": 30.75,
+      "totalAmt": 50
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "parvg"
+      ],
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 65,
+        "spreading": 65
+      },
+      "productsCost": 373.75,
+      "totalAmt": 373.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 300
+      },
+      "productsCost": 1125,
+      "totalAmt": 1125
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 24.9
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 50
+      },
+      "productsCost": 192.5,
+      "totalAmt": 192.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 24
+      },
+      "productsCost": 96,
+      "totalAmt": 96
+    },
+    {
+      "orderOwner": "parvg",
+      "totalAmt": 10
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 65
+      },
+      "productsCost": 243.75,
+      "totalAmt": 243.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "parvg"
+      ],
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 20,
+        "spreading": 10
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "parvg"
+      ],
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 45,
+        "spreading": 45
+      },
+      "productsCost": 263.25,
+      "totalAmt": 263.25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 24.9
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 24.9
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 100
+      },
+      "productsCost": 375,
+      "totalAmt": 375
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "parvg"
+      ],
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 30,
+        "spreading": 30
+      },
+      "productsCost": 180,
+      "totalAmt": 180
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 35
+      },
+      "productsCost": 140,
+      "totalAmt": 140
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "parvg"
+      ],
+      "orderOwner": "parvg",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 35
+      },
+      "productsCost": 140,
+      "totalAmt": 140
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 27,
+        "spreading": 27
+      },
+      "productsCost": 162,
+      "totalAmt": 162
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 80
+      },
+      "productsCost": 300,
+      "totalAmt": 300
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "sachint",
+        "spencerf"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 34,
+        "spreading": 34
+      },
+      "productsCost": 204,
+      "totalAmt": 204
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 15,
+        "spreading": 15
+      },
+      "productsCost": 92.25,
+      "totalAmt": 92.25
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 42,
+        "spreading": 42
+      },
+      "productsCost": 245.7,
+      "totalAmt": 245.7
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 51
+      },
+      "productsCost": 196.35,
+      "totalAmt": 196.35
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 200
+      },
+      "productsCost": 750,
+      "totalAmt": 750
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "sachint",
+        "spencerf"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 16,
+        "spreading": 16
+      },
+      "productsCost": 96,
+      "totalAmt": 96
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 22
+      },
+      "productsCost": 88,
+      "totalAmt": 88
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 25
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 100
+      },
+      "productsCost": 375,
+      "totalAmt": 375
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "sachint",
+        "spencerf"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "orderOwner": "sachint",
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 50
+      },
+      "productsCost": 192.5,
+      "totalAmt": 192.5
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 35,
+        "spreading": 35
+      },
+      "productsCost": 210,
+      "totalAmt": 210
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "christianl",
+        "sachint",
+        "spencerf",
+        "williamm"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 50,
+        "spreading": 50
+      },
+      "productsCost": 292.5,
+      "totalAmt": 292.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 16,
+        "spreading": 16
+      },
+      "productsCost": 96,
+      "totalAmt": 96
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 110,
+        "spreading": 110
+      },
+      "productsCost": 632.5,
+      "totalAmt": 632.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 21
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 31,
+        "spreading": 31
+      },
+      "productsCost": 186,
+      "totalAmt": 186
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 7
+      },
+      "productsCost": 29.05,
+      "totalAmt": 30
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 50,
+        "spreading": 50
+      },
+      "productsCost": 292.5,
+      "totalAmt": 292.5
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 75,
+        "spreading": 75
+      },
+      "productsCost": 431.25,
+      "totalAmt": 431.25
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "christianl",
+        "sachint",
+        "spencerf",
+        "williamm"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 91,
+        "spreading": 91
+      },
+      "productsCost": 523.25,
+      "totalAmt": 523.25
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "christianl",
+        "sachint",
+        "spencerf",
+        "williamm"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 47,
+        "spreading": 47
+      },
+      "productsCost": 274.95,
+      "totalAmt": 274.95
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 50,
+        "spreading": 50
+      },
+      "productsCost": 292.5,
+      "totalAmt": 292.5
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 18,
+        "spreading": 18
+      },
+      "productsCost": 108,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 65,
+        "spreading": 65
+      },
+      "productsCost": 373.75,
+      "totalAmt": 373.75
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 8,
+        "spreading": 8
+      },
+      "productsCost": 49.2,
+      "totalAmt": 49.2
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "orderOwner": "sachint",
+      "totalAmt": 25
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "christianl",
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 44,
+        "spreading": 44
+      },
+      "productsCost": 257.4,
+      "totalAmt": 258
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 33.2
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 12
+      },
+      "productsCost": 49.8,
+      "totalAmt": 49.8
+    },
+    {
+      "orderOwner": "sachint",
+      "totalAmt": 30
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 16,
+        "spreading": 16
+      },
+      "productsCost": 96,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 14,
+        "spreading": 8
+      },
+      "productsCost": 74.1,
+      "totalAmt": 74.1
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "christianl",
+        "sachint",
+        "spencerf",
+        "williamm"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 84,
+        "spreading": 84
+      },
+      "productsCost": 483,
+      "totalAmt": 483
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 5,
+        "spreading": 5
+      },
+      "productsCost": 30.75,
+      "totalAmt": 31
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "orderOwner": "sachint",
+      "totalAmt": 25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "christianl",
+        "sachint",
+        "spencerf",
+        "williamm"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 25,
+        "spreading": 25
+      },
+      "productsCost": 150,
+      "totalAmt": 150
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "sachint"
+      ],
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 25,
+        "spreading": 25
+      },
+      "productsCost": 150,
+      "totalAmt": 150
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "sachint",
+      "products": {
+        "bags": 100
+      },
+      "productsCost": 375,
+      "totalAmt": 375
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "coryw",
+      "products": {
+        "bags": 80
+      },
+      "productsCost": 300,
+      "totalAmt": 300
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "coryw",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "orderOwner": "ishans",
+      "totalAmt": 10
+    },
+    {
+      "orderOwner": "ishans",
+      "totalAmt": 3
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 21
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 21
+    },
+    {
+      "orderOwner": "ishans",
+      "totalAmt": 20
+    },
+    {
+      "orderOwner": "ishans",
+      "totalAmt": 15
+    },
+    {
+      "orderOwner": "ishans",
+      "totalAmt": 20
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "elijahh",
+        "ishans"
+      ],
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 45,
+        "spreading": 45
+      },
+      "productsCost": 263.25,
+      "totalAmt": 267.1
+    },
+    {
+      "orderOwner": "ishans",
+      "totalAmt": 5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "elijahh"
+      ],
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "ishans"
+      ],
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 60,
+        "spreading": 60
+      },
+      "productsCost": 351,
+      "totalAmt": 351
+    },
+    {
+      "orderOwner": "ishans",
+      "totalAmt": 20
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 16
+      },
+      "productsCost": 64,
+      "totalAmt": 64
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "ishans"
+      ],
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 9,
+        "spreading": 9
+      },
+      "productsCost": 55.35,
+      "totalAmt": 55.35
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 11
+      },
+      "productsCost": 45.65,
+      "totalAmt": 48
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "ishans"
+      ],
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 14,
+        "spreading": 14
+      },
+      "productsCost": 86.1,
+      "totalAmt": 86.1
+    },
+    {
+      "orderOwner": "ishans",
+      "totalAmt": 25
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "ishans"
+      ],
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 12,
+        "spreading": 12
+      },
+      "productsCost": 73.8,
+      "totalAmt": 73.8
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "ishans"
+      ],
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 24,
+        "spreading": 24
+      },
+      "productsCost": 144,
+      "totalAmt": 144
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 14
+      },
+      "productsCost": 58.1,
+      "totalAmt": 58.1
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "rohanr"
+      ],
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "ishans",
+        "lukek"
+      ],
+      "orderOwner": "ishans",
+      "products": {
+        "bags": 65,
+        "spreading": 65
+      },
+      "productsCost": 373.75,
+      "totalAmt": 400
+    },
+    {
+      "orderOwner": "ishans",
+      "totalAmt": 50
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 16
+      },
+      "productsCost": 64,
+      "totalAmt": 64
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 16
+      },
+      "productsCost": 64,
+      "totalAmt": 64
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "orderOwner": "rohanr",
+      "totalAmt": 10
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "rohanr",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "nathanj",
+        "ryanj"
+      ],
+      "orderOwner": "ryanj",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ryanj",
+      "products": {
+        "bags": 60
+      },
+      "productsCost": 231,
+      "totalAmt": 231
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ryanj",
+      "products": {
+        "bags": 80
+      },
+      "productsCost": 300,
+      "totalAmt": 300
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamm",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "jacobb",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "jacobb",
+      "products": {
+        "bags": 70
+      },
+      "productsCost": 262.5,
+      "totalAmt": 262.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "jacobb",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "jacobb"
+      ],
+      "orderOwner": "jacobb",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "jacobb",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "jacobb",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "jacobb",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "jacobb",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 16,
+        "spreading": 16
+      },
+      "productsCost": 96,
+      "totalAmt": 96
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 50,
+        "spreading": 50
+      },
+      "productsCost": 292.5,
+      "totalAmt": 292.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 15,
+        "spreading": 15
+      },
+      "productsCost": 92.25,
+      "totalAmt": 92.25
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 28,
+        "spreading": 28
+      },
+      "productsCost": 168,
+      "totalAmt": 168
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 65,
+        "spreading": 65
+      },
+      "productsCost": 373.75,
+      "totalAmt": 373.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 16,
+        "spreading": 16
+      },
+      "productsCost": 96,
+      "totalAmt": 96
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 33.2
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 14,
+        "spreading": 14
+      },
+      "productsCost": 86.1,
+      "totalAmt": 86.1
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 12
+      },
+      "productsCost": 49.8,
+      "totalAmt": 49.8
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 50
+      },
+      "productsCost": 192.5,
+      "totalAmt": 192.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 16
+      },
+      "productsCost": 64,
+      "totalAmt": 64
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "ishans",
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 60,
+        "spreading": 60
+      },
+      "productsCost": 351,
+      "totalAmt": 351
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 50,
+        "spreading": 50
+      },
+      "productsCost": 292.5,
+      "totalAmt": 292.5
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 6,
+        "spreading": 6
+      },
+      "productsCost": 36.9,
+      "totalAmt": 36.9
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 16
+      },
+      "productsCost": 64,
+      "totalAmt": 64
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 16,
+        "spreading": 16
+      },
+      "productsCost": 96,
+      "totalAmt": 96
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 12,
+        "spreading": 12
+      },
+      "productsCost": 73.8,
+      "totalAmt": 73.8
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 65,
+        "spreading": 65
+      },
+      "productsCost": 373.75,
+      "totalAmt": 373.75
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "lukek"
+      ],
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 36,
+        "spreading": 36
+      },
+      "productsCost": 210.6,
+      "totalAmt": 210.6
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "lukek",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 24.9
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 24.9
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "orderOwner": "diegos",
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 22.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 16
+      },
+      "productsCost": 64,
+      "totalAmt": 64
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 24.9
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 43
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "orderOwner": "diegos",
+      "totalAmt": 55.7
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 70
+      },
+      "productsCost": 262.5,
+      "totalAmt": 262.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "orderOwner": "diegos",
+      "totalAmt": 20.3
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "christianl",
+        "diegos"
+      ],
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 15,
+        "spreading": 15
+      },
+      "productsCost": 92.25,
+      "totalAmt": 92.25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "christianl",
+        "diegos"
+      ],
+      "orderOwner": "diegos",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "orderOwner": "diegos",
+      "totalAmt": 10
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell",
+        "colbyf"
+      ],
+      "orderOwner": "colbyf",
+      "products": {
+        "bags": 30,
+        "spreading": 30
+      },
+      "productsCost": 180,
+      "totalAmt": 180
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "colbyf",
+      "products": {
+        "bags": 12
+      },
+      "productsCost": 49.8,
+      "totalAmt": 49.8
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "colbyf",
+      "products": {
+        "bags": 12
+      },
+      "productsCost": 49.8,
+      "totalAmt": 49.8
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "colbyf",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "colbyf",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 33.2
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell",
+        "colbyf"
+      ],
+      "orderOwner": "colbyf",
+      "products": {
+        "bags": 35,
+        "spreading": 35
+      },
+      "productsCost": 210,
+      "totalAmt": 210
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "orderOwner": "christianl",
+      "totalAmt": 8.45
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 7
+      },
+      "productsCost": 29.05,
+      "totalAmt": 29.05
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "christianl"
+      ],
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 80
+      },
+      "productsCost": 300,
+      "totalAmt": 300
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "christianl",
+        "diegos"
+      ],
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 32.3
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "christianl",
+      "products": {
+        "bags": 9
+      },
+      "productsCost": 37.35,
+      "totalAmt": 37.35
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 36,
+        "spreading": 36
+      },
+      "productsCost": 210.6,
+      "totalAmt": 210.6
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 110,
+        "spreading": 110
+      },
+      "productsCost": 632.5,
+      "totalAmt": 632.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "lincolnl"
+      ],
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 5,
+        "spreading": 5
+      },
+      "productsCost": 30.75,
+      "totalAmt": 30.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 200,
+        "spreading": 200
+      },
+      "productsCost": 1150,
+      "totalAmt": 1150
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell",
+        "lincolnl",
+        "noahl"
+      ],
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 130,
+        "spreading": 130
+      },
+      "productsCost": 747.5,
+      "totalAmt": 747.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell",
+        "lincolnl",
+        "noahl"
+      ],
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 33.2
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 300
+      },
+      "productsCost": 1125,
+      "totalAmt": 1125
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell",
+        "lincolnl",
+        "noahl"
+      ],
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 50,
+        "spreading": 50
+      },
+      "productsCost": 292.5,
+      "totalAmt": 292.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell",
+        "lincolnl",
+        "tristanh"
+      ],
+      "orderOwner": "lincolnl",
+      "products": {
+        "bags": 65,
+        "spreading": 58
+      },
+      "productsCost": 359.75,
+      "totalAmt": 359.75
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "andrewl"
+      ],
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 60,
+        "spreading": 60
+      },
+      "productsCost": 351,
+      "totalAmt": 351
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "andrewl"
+      ],
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 14
+      },
+      "productsCost": 58.1,
+      "totalAmt": 60
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "orderOwner": "andrewl",
+      "totalAmt": 20
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 50
+      },
+      "productsCost": 192.5,
+      "totalAmt": 192.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 40
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "andrewl"
+      ],
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 25,
+        "spreading": 25
+      },
+      "productsCost": 150,
+      "totalAmt": 150
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "andrewl"
+      ],
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "andrewl"
+      ],
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 45,
+        "spreading": 45
+      },
+      "productsCost": 263.25,
+      "totalAmt": 263.25
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "andrewl",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "shepardm",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "shepardm",
+      "products": {
+        "bags": 35
+      },
+      "productsCost": 140,
+      "totalAmt": 140
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "shepardm",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "shepardm",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "elijahh"
+      ],
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 12
+      },
+      "productsCost": 49.8,
+      "totalAmt": 49.8
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "elijahh"
+      ],
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "orderOwner": "elijahh",
+      "totalAmt": 20
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "elijahh"
+      ],
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 33.2
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "elijahh",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 24.9
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 35
+      },
+      "productsCost": 140,
+      "totalAmt": 140
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 30,
+        "spreading": 30
+      },
+      "productsCost": 180,
+      "totalAmt": 180
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 35
+      },
+      "productsCost": 140,
+      "totalAmt": 140
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 25,
+        "spreading": 25
+      },
+      "productsCost": 150,
+      "totalAmt": 150
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 24.9
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "orderOwner": "williamc",
+      "totalAmt": 103.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 12,
+        "spreading": 12
+      },
+      "productsCost": 73.8,
+      "totalAmt": 80.8
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 80
+      },
+      "productsCost": 300,
+      "totalAmt": 300
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 8,
+        "spreading": 8
+      },
+      "productsCost": 49.2,
+      "totalAmt": 49.2
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 37,
+        "spreading": 37
+      },
+      "productsCost": 216.45,
+      "totalAmt": 216.45
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 30,
+        "spreading": 30
+      },
+      "productsCost": 180,
+      "totalAmt": 180
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 65,
+        "spreading": 65
+      },
+      "productsCost": 373.75,
+      "totalAmt": 373.75
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "williamc"
+      ],
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 20,
+        "spreading": 12
+      },
+      "productsCost": 104,
+      "totalAmt": 104
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "williamc",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ericf",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ericf",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ericf",
+      "products": {
+        "bags": 12
+      },
+      "productsCost": 49.8,
+      "totalAmt": 49.8
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ericf",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ericf",
+      "products": {
+        "bags": 16
+      },
+      "productsCost": 64,
+      "totalAmt": 64
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ericf",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ericf",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ryank",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "ryank"
+      ],
+      "orderOwner": "ryank",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "ryank",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "ryank"
+      ],
+      "orderOwner": "ryank",
+      "products": {
+        "bags": 45,
+        "spreading": 45
+      },
+      "productsCost": 263.25,
+      "totalAmt": 263.25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ryank",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 33.2
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "ryank",
+      "products": {
+        "bags": 65
+      },
+      "productsCost": 243.75,
+      "totalAmt": 243.75
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "ryank",
+      "products": {
+        "bags": 16
+      },
+      "productsCost": 64,
+      "totalAmt": 64
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "ryank",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "ryank",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "ryank",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "aidenb",
+      "products": {
+        "bags": 36
+      },
+      "productsCost": 138.6,
+      "totalAmt": 138.6
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "connorb"
+      ],
+      "orderOwner": "connorb",
+      "products": {
+        "bags": 44,
+        "spreading": 44
+      },
+      "productsCost": 257.4,
+      "totalAmt": 257.4
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "connorb",
+      "products": {
+        "bags": 36
+      },
+      "productsCost": 138.6,
+      "totalAmt": 138.6
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "connorb",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "orderOwner": "spencerf",
+      "totalAmt": 20
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "benjamins",
+        "spencerf"
+      ],
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 30,
+        "spreading": 30
+      },
+      "productsCost": 180,
+      "totalAmt": 180
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "spencerf"
+      ],
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 25,
+        "spreading": 25
+      },
+      "productsCost": 150,
+      "totalAmt": 150
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "benjamins",
+        "spencerf",
+        "tristanh"
+      ],
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 12
+      },
+      "productsCost": 49.8,
+      "totalAmt": 50
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "benjamins",
+        "spencerf",
+        "tristanh"
+      ],
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 7
+      },
+      "productsCost": 29.05,
+      "totalAmt": 29.05
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 6
+      },
+      "productsCost": 24.9,
+      "totalAmt": 24.9
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 22
+      },
+      "productsCost": 88,
+      "totalAmt": 88
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "spencerf",
+        "tristanh"
+      ],
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 50,
+        "spreading": 50
+      },
+      "productsCost": 292.5,
+      "totalAmt": 292.5
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "spencerf"
+      ],
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "spencerf",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "santiagoi",
+      "products": {
+        "bags": 16
+      },
+      "productsCost": 64,
+      "totalAmt": 64
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "santiagoi",
+      "products": {
+        "bags": 70
+      },
+      "productsCost": 262.5,
+      "totalAmt": 262.5
+    },
+    {
+      "orderOwner": "santiagoi",
+      "totalAmt": 10
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "santiagoi",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 21
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "santiagoi"
+      ],
+      "orderOwner": "santiagoi",
+      "products": {
+        "bags": 16,
+        "spreading": 16
+      },
+      "productsCost": 96,
+      "totalAmt": 96
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "santiagoi"
+      ],
+      "orderOwner": "santiagoi",
+      "products": {
+        "bags": 16,
+        "spreading": 16
+      },
+      "productsCost": 96,
+      "totalAmt": 96
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "thomasg",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "thomasg",
+      "products": {
+        "bags": 70
+      },
+      "productsCost": 262.5,
+      "totalAmt": 262.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "thomasg",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "thomasg"
+      ],
+      "orderOwner": "thomasg",
+      "products": {
+        "bags": 50,
+        "spreading": 50
+      },
+      "productsCost": 292.5,
+      "totalAmt": 292.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "thomasg",
+      "products": {
+        "bags": 50
+      },
+      "productsCost": 192.5,
+      "totalAmt": 192.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "thomasg",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "aidanh",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 33.2
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 4
+      },
+      "productsCost": 16.6,
+      "totalAmt": 16.6
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 5
+      },
+      "productsCost": 20.75,
+      "totalAmt": 20.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 4
+      },
+      "productsCost": 16.6,
+      "totalAmt": 16.6
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 2
+      },
+      "productsCost": 8.3,
+      "totalAmt": 8.3
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "srinihiths",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "grants",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 33.2
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "grants",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 35
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "grants",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "grants"
+      ],
+      "orderOwner": "grants",
+      "products": {
+        "bags": 30,
+        "spreading": 30
+      },
+      "productsCost": 180,
+      "totalAmt": 180
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 63.2
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "coltonb"
+      ],
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 10,
+        "spreading": 10
+      },
+      "productsCost": 61.5,
+      "totalAmt": 61.5
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "coltonb"
+      ],
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 25,
+        "spreading": 25
+      },
+      "productsCost": 150,
+      "totalAmt": 150
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "coltonb"
+      ],
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 6,
+        "spreading": 6
+      },
+      "productsCost": 36.9,
+      "totalAmt": 36.9
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "coltonb"
+      ],
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "coltonb"
+      ],
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 25,
+        "spreading": 20
+      },
+      "productsCost": 140,
+      "totalAmt": 140
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "coltonb",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell"
+      ],
+      "orderOwner": "axell",
+      "products": {
+        "bags": 85,
+        "spreading": 85
+      },
+      "productsCost": 488.75,
+      "totalAmt": 488.75
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "axell"
+      ],
+      "orderOwner": "axell",
+      "products": {
+        "bags": 20,
+        "spreading": 20
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell"
+      ],
+      "orderOwner": "axell",
+      "products": {
+        "bags": 100,
+        "spreading": 100
+      },
+      "productsCost": 575,
+      "totalAmt": 575
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell"
+      ],
+      "orderOwner": "axell",
+      "products": {
+        "bags": 24,
+        "spreading": 24
+      },
+      "productsCost": 144,
+      "totalAmt": 144
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "axell"
+      ],
+      "orderOwner": "axell",
+      "products": {
+        "bags": 13,
+        "spreading": 13
+      },
+      "productsCost": 79.95,
+      "totalAmt": 79.95
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 45,
+        "spreading": 45
+      },
+      "productsCost": 263.25,
+      "totalAmt": 263.25
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "axell"
+      ],
+      "orderOwner": "axell",
+      "products": {
+        "bags": 31,
+        "spreading": 31
+      },
+      "productsCost": 186,
+      "totalAmt": 186
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell"
+      ],
+      "orderOwner": "axell",
+      "products": {
+        "bags": 12,
+        "spreading": 12
+      },
+      "productsCost": 73.8,
+      "totalAmt": 73.8
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "axell"
+      ],
+      "orderOwner": "axell",
+      "products": {
+        "bags": 15,
+        "spreading": 15
+      },
+      "productsCost": 92.25,
+      "totalAmt": 92.25
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "axell"
+      ],
+      "orderOwner": "axell",
+      "products": {
+        "bags": 16,
+        "spreading": 16
+      },
+      "productsCost": 96,
+      "totalAmt": 96
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 8
+      },
+      "productsCost": 33.2,
+      "totalAmt": 33.2
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "axell",
+      "products": {
+        "bags": 50
+      },
+      "productsCost": 192.5,
+      "totalAmt": 192.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "noahl",
+      "products": {
+        "bags": 36
+      },
+      "productsCost": 138.6,
+      "totalAmt": 138.6
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "noahl",
+      "products": {
+        "bags": 40
+      },
+      "productsCost": 154,
+      "totalAmt": 154
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "noahl",
+      "products": {
+        "bags": 52
+      },
+      "productsCost": 200.2,
+      "totalAmt": 200.2
+    },
+    {
+      "deliveryId": "1",
+      "spreaders": [
+        "axell",
+        "lincolnl",
+        "noahl"
+      ],
+      "orderOwner": "noahl",
+      "products": {
+        "bags": 150,
+        "spreading": 150
+      },
+      "productsCost": 862.5,
+      "totalAmt": 862.5
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "noahl",
+      "products": {
+        "bags": 10
+      },
+      "productsCost": 41.5,
+      "totalAmt": 41.5
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "noahl",
+      "products": {
+        "bags": 25
+      },
+      "productsCost": 100,
+      "totalAmt": 100
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "noahl"
+      ],
+      "orderOwner": "noahl",
+      "products": {
+        "bags": 26,
+        "spreading": 26
+      },
+      "productsCost": 156,
+      "totalAmt": 156
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "carterm",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "carterm",
+      "products": {
+        "bags": 30
+      },
+      "productsCost": 120,
+      "totalAmt": 120
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "carterm",
+      "products": {
+        "bags": 7
+      },
+      "productsCost": 29.05,
+      "totalAmt": 29.05
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "carterm",
+      "products": {
+        "bags": 50,
+        "spreading": 50
+      },
+      "productsCost": 292.5,
+      "totalAmt": 300
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "carterm"
+      ],
+      "orderOwner": "carterm",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "carterm"
+      ],
+      "orderOwner": "carterm",
+      "products": {
+        "bags": 40,
+        "spreading": 40
+      },
+      "productsCost": 234,
+      "totalAmt": 234
+    },
+    {
+      "deliveryId": "2",
+      "spreaders": [
+        "carterm"
+      ],
+      "orderOwner": "carterm",
+      "products": {
+        "bags": 60,
+        "spreading": 60
+      },
+      "productsCost": 351,
+      "totalAmt": 351
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "carterm",
+      "products": {
+        "bags": 20
+      },
+      "productsCost": 80,
+      "totalAmt": 80
+    },
+    {
+      "deliveryId": "2",
+      "orderOwner": "carterm",
+      "products": {
+        "bags": 15
+      },
+      "productsCost": 62.25,
+      "totalAmt": 62.25
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "bishoph",
+      "products": {
+        "bags": 15,
+        "spreading": 15
+      },
+      "productsCost": 92.25,
+      "totalAmt": 92.25
+    },
+    {
+      "deliveryId": "1",
+      "orderOwner": "bishoph",
+      "products": {
+        "bags": 15,
+        "spreading": 15
+      },
+      "productsCost": 92.25,
+      "totalAmt": 92.25
+    }
+  ],
+  "deliveryMinutes": 24686,
+  "deliveryMinutesPerWorker": {
+    "aidenb": 570,
+    "andrewl": 1087,
+    "axell": 831,
+    "benjamins": 288,
+    "carterm": 970,
+    "christianl": 745,
+    "colbyf": 360,
+    "coltonb": 510,
+    "diegos": 920,
+    "elijahh": 910,
+    "ericf": 300,
+    "grants": 895,
+    "harperf": 748,
+    "ishans": 910,
+    "josephk": 201,
+    "joshuag": 498,
+    "lincolnl": 831,
+    "lukek": 937,
+    "noahl": 831,
+    "parvg": 1040,
+    "rohanr": 720,
+    "ryank": 1040,
+    "santiagoi": 600,
+    "shepardm": 1045,
+    "spencerf": 958,
+    "srinihiths": 463,
+    "thomasg": 834,
+    "williamc": 1155,
+    "williamm": 1045,
+    "bishoph": 355,
+    "ethanf": 445,
+    "jacobb": 135,
+    "matthewp": 336,
+    "nathanj": 409,
+    "ryanj": 409,
+    "sachint": 355
+  },
+  "pricePerBagToSpread": 2
+}
