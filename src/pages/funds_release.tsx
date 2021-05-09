@@ -521,7 +521,9 @@ export default function fundsRelease() {
         ]);
 
         const perScoutReport = [];
-        for (const field of perScoutReportDataFields) {
+        // Skip totals since we do that different but we want it included in downloaded csv
+        for (let idx=0; idx < perScoutReportDataFields.length-1; ++idx) {
+            const field = perScoutReportDataFields[idx];
             perScoutReport.push(
                 <tr key={field[0]}>
                     <td>{field[1]}</td>
@@ -538,45 +540,58 @@ export default function fundsRelease() {
         }
 
         setReportCard(
-            <div className="card">
-                <h5 className="card-header justify-content-center text-center">Allocation Report</h5>
-                <div className="card-body">
-                    <form onSubmit={onReleaseFundsFormSubmission}>
-                        <div className="table-responsive" id="fundsReleaseTables">
-                            <table className="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Name</th>
-                                        <th scope="col"># Bags Sold</th>
-                                        <th scope="col"># Bags to Spread Sold</th>
-                                        <th scope="col"># Delivery Minutes</th>
-                                        <th scope="col">$ Donations</th>
-                                        <th scope="col">$ Allocations from Bags Sold</th>
-                                        <th scope="col">$ Allocations from Spreading</th>
-                                        <th scope="col">$ Allocations from Delivery</th>
-                                        <th scope="col">$ Total Allocations</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {perScoutReport}
-                                </tbody>
-                            </table>
-                        </div>
-                        <button type="submit" className="btn btn-primary invisible my-2 float-end"
-                                id="releaseFundsBtn"
-                                data-bs-toggle="tooltip"
-                                data-report-fields={perScoutReportDataFields}
-                                title="Release Report to Scouts">
-                            Generate Data
+            <div className="col-md-10">
+                <div className="card">
+                    <h5 className="card-header justify-content-center text-center">Allocation Report</h5>
+                    <div className="card-body">
+                        <form onSubmit={onReleaseFundsFormSubmission}>
+                            <div className="table-responsive-xxl" id="fundsReleaseTables">
+                                <table className="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Name</th>
+                                            <th scope="col"># Bags Sold</th>
+                                            <th scope="col"># Bags to Spread Sold</th>
+                                            <th scope="col"># Delivery Minutes</th>
+                                            <th scope="col">$ Donations</th>
+                                            <th scope="col">$ Allocations from Bags Sold</th>
+                                            <th scope="col">$ Allocations from Spreading</th>
+                                            <th scope="col">$ Allocations from Delivery</th>
+                                            <th scope="col">$ Total Allocations</th>
+                                        </tr>
+                                        <tr style={{"backgroundColor": "DarkSeaGreen"}}>
+                                            <td>Scout Alloc Totals</td>
+                                            <td>{savedVals.bagsSold}</td>
+                                            <td>{savedVals.bagsSpread}</td>
+                                            <td>{savedVals.deliveryMinutes}</td>
+                                            <td>{totalDonations.format()}</td>
+                                            <td>{allocationFromBagsSold.format()}</td>
+                                            <td>{allocationFromBagsSpread.format()}</td>
+                                            <td>{allocationsFromDelivery.format()}</td>
+                                            <td>{allocationsTotal.format()}</td>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {perScoutReport}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="submit" className="btn btn-primary invisible my-2 float-end"
+                                    id="releaseFundsBtn"
+                                    data-bs-toggle="tooltip"
+                                    data-report-fields={perScoutReportDataFields}
+                                    title="Release Report to Scouts">
+                                Generate Data
+                            </button>
+                        </form>
+                        <button type="button" className="btn reports-view-setting-btn ms-3"
+                                onClick={onDownloadReport} data-bs-toggle="tooltip"
+                                title="Download Report">
+                            <svg className="bi" fill="currentColor">
+                                <use xlinkHref={exportImg}/>
+                            </svg>
                         </button>
-                    </form>
-                    <button type="button" className="btn reports-view-setting-btn ms-3"
-                            onClick={onDownloadReport} data-bs-toggle="tooltip"
-                            title="Download Report">
-                        <svg className="bi" fill="currentColor">
-                            <use xlinkHref={exportImg}/>
-                        </svg>
-                    </button>
+                    </div>
                 </div>
             </div>
         );
@@ -597,130 +612,132 @@ export default function fundsRelease() {
                     <h4>Funds Release Page</h4>
                 </div>
                 <div className="releaseFundsCards">
-                    <div className="row justify-content-center">
-                        <div className="card mb-3" style={{'maxWidth': '30rem'}}>
-                            <h5 className="card-header justify-content-center text-center">Allocation Calculations</h5>
-                            <div className="card-body">
-                                <form onSubmit={onAllocationFormSubmission}>
-                                    <div className="row mb-2">
-                                        <CurrencyWidget id="formBankDeposited"
-                                                        defaultValue={bankDeposited}
-                                                        label="Amount Deposited in Bank"
-                                                        onInput={onAllocationFormInputsChange}
-                                        />
-                                    </div>
-                                    <div className="row mb-2">
-                                        <CurrencyWidget id="formMulchCost"
-                                                        defaultValue={mulchCost}
-                                                        label="Amount Paid for Mulch"
-                                                        onInput={onAllocationFormInputsChange}
-                                        />
-                                    </div>
-
-                                    <div className="table-responsive" id="fundsReleaseTables">
-                                        <table className="table table-striped caption-top">
-                                            <caption>Sales</caption>
-                                            <thead>
-                                                <tr>
-                                                    <th scope="col"></th>
-                                                    <th scope="col">Num Sold</th>
-                                                    <th scope="col">Sales</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td>Bags of Mulch</td>
-                                                    <td>{bagsSold}</td>
-                                                    <td>{bagsTotalSales}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Spreading Jobs</td>
-                                                    <td>{bagsSpread}</td>
-                                                    <td>{spreadingTotal}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Donations</td>
-                                                    <td></td>
-                                                    <td>{totalDonated}</td>
-                                                </tr>
-                                            </tbody>
-                                            <tfoot>
-                                                <tr>
-                                                    <td>Total Collected</td>
-                                                    <td></td>
-                                                    <td>{scoutTotalCollected}</td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-
-                                        <table className="table table-striped table-responsive caption-top">
-                                            <caption>Allocations</caption>
-                                            <tbody>
-                                                <tr>
-                                                    <td>Gross Profits</td>
-                                                    <td>{mulchSalesGross}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Min Allocations to Troop</td>
-                                                    <td>{troopPercentage}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Max Allocations to Scouts</td>
-                                                    <td>{scoutPercentage}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td colSpan="4">
-                                                        <table className="table table-striped caption-top mb-0">
-                                                            <caption>Scout Allocations</caption>
-                                                            <tbody>
-                                                                <tr>
-                                                                    <td>Allocations to Scouts for Mulch Bag Sales</td>
-                                                                    <td>{scoutSellingPercentage}</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Scouts Avg Allocation per Bag</td>
-                                                                    <td>{perBagAvgEarnings}</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Allocations to Scouts for Delivery</td>
-                                                                    <td>{scoutDeliveryPercentage}</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Total Delivery Minutes</td>
-                                                                    <td>{deliveryMinutes}</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Scout Earnings per Delivery Minute</td>
-                                                                    <td>{deliveryEarnings}</td>
-                                                                </tr>
-                                                            </tbody>
-                                                        </table>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                            <tfoot>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-
-                                    <button type="submit" className="btn btn-primary invisible my-2 float-end"
-                                            id="generateReportsBtn"
-                                            data-bs-toggle="tooltip"
-                                            title="Generate Data">
-                                        Generate Data
-                                    </button>
-                                </form>
-                                <button type="button" className="btn reports-view-setting-btn ms-3"
-                                        onClick={onDownloadRawData} data-bs-toggle="tooltip"
-                                        title="Download RawData">
-                                    <svg className="bi" fill="currentColor">
-                                        <use xlinkHref={exportImg}/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div> {/* End of card */}
-                    </div>
                     <div className="row">
+
+                        <div className="col">
+
+                            <div className="card" style={{'maxWidth': '30rem'}}>
+                                <h5 className="card-header justify-content-center text-center">Allocation Calculations</h5>
+                                <div className="card-body">
+                                    <form onSubmit={onAllocationFormSubmission}>
+                                        <div className="row mb-2">
+                                            <CurrencyWidget id="formBankDeposited"
+                                                            defaultValue={bankDeposited}
+                                                            label="Amount Deposited in Bank"
+                                                            onInput={onAllocationFormInputsChange}
+                                            />
+                                        </div>
+                                        <div className="row mb-2">
+                                            <CurrencyWidget id="formMulchCost"
+                                                            defaultValue={mulchCost}
+                                                            label="Amount Paid for Mulch"
+                                                            onInput={onAllocationFormInputsChange}
+                                            />
+                                        </div>
+
+                                        <div className="table-responsive" id="fundsReleaseTables">
+                                            <table className="table table-striped caption-top">
+                                                <caption>Sales</caption>
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col"></th>
+                                                        <th scope="col">Num Sold</th>
+                                                        <th scope="col">Sales</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>Bags of Mulch</td>
+                                                        <td>{bagsSold}</td>
+                                                        <td>{bagsTotalSales}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Spreading Jobs</td>
+                                                        <td>{bagsSpread}</td>
+                                                        <td>{spreadingTotal}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Donations</td>
+                                                        <td></td>
+                                                        <td>{totalDonated}</td>
+                                                    </tr>
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <td>Total Collected</td>
+                                                        <td></td>
+                                                        <td>{scoutTotalCollected}</td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+
+                                            <table className="table table-striped table-responsive caption-top">
+                                                <caption>Allocations</caption>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>Gross Profits</td>
+                                                        <td>{mulchSalesGross}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Min Allocations to Troop</td>
+                                                        <td>{troopPercentage}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Max Allocations to Scouts</td>
+                                                        <td>{scoutPercentage}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colSpan="4">
+                                                            <table className="table table-striped caption-top mb-0">
+                                                                <caption>Scout Allocations</caption>
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td>For Mulch Bag Sales</td>
+                                                                        <td>{scoutSellingPercentage}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Avg Allocation per Bag</td>
+                                                                        <td>{perBagAvgEarnings}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>For Delivery</td>
+                                                                        <td>{scoutDeliveryPercentage}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Total Delivery Minutes</td>
+                                                                        <td>{deliveryMinutes}</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td>Allocation Per Delivery Minute</td>
+                                                                        <td>{deliveryEarnings}</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                <tfoot>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+
+                                        <button type="submit" className="btn btn-primary invisible my-2 float-end"
+                                                id="generateReportsBtn"
+                                                data-bs-toggle="tooltip"
+                                                title="Generate Data">
+                                            Generate Data
+                                        </button>
+                                    </form>
+                                    <button type="button" className="btn reports-view-setting-btn ms-3"
+                                            onClick={onDownloadRawData} data-bs-toggle="tooltip"
+                                            title="Download RawData">
+                                        <svg className="bi" fill="currentColor">
+                                            <use xlinkHref={exportImg}/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div> {/* End of card */}
+                        </div>
                         {reportCard}
                     </div>
                 </div>
