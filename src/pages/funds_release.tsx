@@ -23,21 +23,22 @@ const USD = (value: currency) => currency(value, { symbol: "$", precision: 2 });
 //
 const savedVals = {
     spreadingTotal: USD(0),
-	bagsSpread: 0,
+    bagsSpread: 0,
     bagsSold: 0,
     deliveryMinutes: 0,
-	totalDonations: USD(0),
+    totalDonations: USD(0),
     bankDeposited: USD("$54,979.90"),
     mulchCost: USD("$22,319.70"),
-	allocationPerDeliveryMin: USD(0),
-	allocationPerBagSpread: USD(0),
+	allocationPerBagAdjustmentRatio: 0.0, // Percentage to adjust from sales price
+    allocationPerDeliveryMinutes: 0.0,
+    allocationsForMulchBagSales: USD(0),
 }
 let dbData = undefined;
 
 
 ////////////////////////////////////////////////////
 //
-const getSpreadingPrice = (frConfig: FundraiserConfig): currency => {
+const getSpreadingPrice = (): currency => {
     for (const product of frConfig.products()) {
         if ("spreading" !== product.id) {
             continue;
@@ -45,6 +46,26 @@ const getSpreadingPrice = (frConfig: FundraiserConfig): currency => {
         return currency(product.unitPrice);
     }
     return currency(0.00);
+}
+
+////////////////////////////////////////////////////
+//
+const getMulchBagUnitPrice = (): [currency, currency, [any]] => {
+    for (const product of frConfig.products()) {
+        if ("bags" !== product.id) {
+            continue;
+        }
+
+        let minUnitPrice = product.unitPrice;
+        for (const priceBreak of product.priceBreaks) {
+            if (minUnitPrice > priceBreak.unitPrice) {
+                minUnitPrice = priceBreak.unitPrice;
+            }
+        }
+
+        return [currency(product.unitPrice), currency(minUnitPrice), product.priceBreaks];
+    }
+    return [currency(0.00), currency(0.00), []];
 }
 
 
@@ -99,16 +120,16 @@ const getDeliveryMinutes = async () => {
     let totalMins = 0;
     const timeCards = await getSavedTimeCards();
     //console.log(`Saved Time Cards:\n${JSON.stringify(timeCards, null, '\t')}`);
-	let totalMinsPerWorker = {}
+    let totalMinsPerWorker = {}
     for (const timeCard of timeCards) {
         if (timeCard.timeTotal) {
             let times = timeCard.timeTotal.split(":");
             const worker_mins = parseInt(times[1]) + (60 * parseInt(times[0]));
-			totalMins += worker_mins;
-			if (!(timeCard.uid in totalMinsPerWorker)) {
-				totalMinsPerWorker[timeCard.uid] = 0;
-			}
-			totalMinsPerWorker[timeCard.uid] += worker_mins;
+            totalMins += worker_mins;
+            if (!totalMinsPerWorker.hasOwnProperty(timeCard.uid)) {
+                totalMinsPerWorker[timeCard.uid] = 0;
+            }
+            totalMinsPerWorker[timeCard.uid] += worker_mins;
         }
     }
     return [totalMins, totalMinsPerWorker];
@@ -118,18 +139,24 @@ const getDeliveryMinutes = async () => {
 //
 const gatherDbData = async (frConfig: FundraiserConfig) => {
 
-	rawDbData.pricePerBagToSpread = currency(rawDbData.pricePerBagToSpread);
-	return rawDbData;
+    rawDbData.pricePerBagToSpread = currency(rawDbData.pricePerBagToSpread);
+	const [maxOrigUnitPrice,minOrigUnitPrice, priceBreaks] = getMulchBagUnitPrice();
+	rawDbData['originalBagCosts'] = {
+		maxUnitPrice: maxOrigUnitPrice,
+		minUnitPrice: minOrigUnitPrice,
+		priceBreaks: priceBreaks
+	};
+    return rawDbData;
     /* const fieldNames = ['orderOwner', 'spreaders', 'products.spreading', 'products.bags', 'productsCost', 'deliveryId', 'totalAmt']
-	   const promises = [ orderDb.query({fields: fieldNames, orderOwner: 'any'}), getDeliveryMinutes()];
-	   const [orders, [deliveryMins, deliveryMinsPerWorker]] = await Promise.all(promises);
+       const promises = [ orderDb.query({fields: fieldNames, orderOwner: 'any'}), getDeliveryMinutes()];
+       const [orders, [deliveryMins, deliveryMinsPerWorker]] = await Promise.all(promises);
 
-	   return {
-	   orders: orders,
-	   deliveryMinutes: deliveryMins,
-	   deliveryMinutesPerWorker: deliveryMinsPerWorker,
-	   pricePerBagToSpread: getSpreadingPrice(frConfig)
-	   }; */
+       return {
+       orders: orders,
+       deliveryMinutes: deliveryMins,
+       deliveryMinutesPerWorker: deliveryMinsPerWorker,
+       pricePerBagToSpread: getSpreadingPrice(frConfig)
+       }; */
 };
 
 ////////////////////////////////////////////////////
@@ -151,7 +178,8 @@ export default function fundsRelease() {
     const [scoutSellingPercentage, setScoutSellingPercentage] = useState();
 
     const [bagsSold, setBagsSold] = useState();
-    const [perBagsEarnings, setPerBagEarnings] = useState();
+    const [perBagMaxEarnings, setPerBagMaxEarnings] = useState();
+    const [perBagMinEarnings, setPerBagMinEarnings] = useState();
     const [deliveryMinutes, setDeliveryMinutes] = useState();
     const [deliveryEarnings, setDeliveryEarnings] = useState();
 
@@ -182,7 +210,7 @@ export default function fundsRelease() {
             //console.log(`Orders:\n${JSON.stringify(orders, null, '\t')}`);
             let scoutCollected = currency(0.0);
             for (const order of orders) {
-				const totAmt = currency(order.totalAmt);
+                const totAmt = currency(order.totalAmt);
                 scoutCollected = scoutCollected.add(totAmt);
 
                 if (order.products?.spreading) {
@@ -193,19 +221,19 @@ export default function fundsRelease() {
                     savedVals.bagsSold += parseInt(order.products.bags);
                 }
 
-				// Donations
-				if (!order.deliveryId) {
-					savedVals.totalDonations = savedVals.totalDonations.add(totAmt);
-				}
-				// Also Donations see bug #70
-				if (order.deliveryId && order.productsCost) {
-					const prodCost = currency(order.productsCost);
-					if (totAmt.intValue > prodCost.intValue) { // This is a donation
-						savedVals.totalDonations = savedVals.totalDonations.add(
-							totAmt.subtract(prodCost)
-						);
-					}
-				}
+                // Donations
+                if (!order.deliveryId) {
+                    savedVals.totalDonations = savedVals.totalDonations.add(totAmt);
+                }
+                // Also Donations see bug #70
+                if (order.deliveryId && order.productsCost) {
+                    const prodCost = currency(order.productsCost);
+                    if (totAmt.intValue > prodCost.intValue) { // This is a donation
+                        savedVals.totalDonations = savedVals.totalDonations.add(
+                            totAmt.subtract(prodCost)
+                        );
+                    }
+                }
             }
 
             savedVals.spreadingTotal = USD(dbData.pricePerBagToSpread.multiply(savedVals.bagsSpread));
@@ -214,9 +242,9 @@ export default function fundsRelease() {
             setScoutTotalCollected(USD(scoutCollected).format());
             setSpreadingTotal(savedVals.spreadingTotal.format());
             setBagsSold(savedVals.bagsSold);
-			setBagsSpread(savedVals.bagsSpread);
+            setBagsSpread(savedVals.bagsSpread);
             setDeliveryMinutes(savedVals.deliveryMinutes);
-			setTotalDonated(USD(savedVals.totalDonations).format())
+            setTotalDonated(USD(savedVals.totalDonations).format())
 
         };
 
@@ -268,9 +296,9 @@ export default function fundsRelease() {
         console.log(`BD: ${bankDeposited}, MS: ${mulchCost}, SP: ${savedVals.spreadingTotal}`);
 
         const totalGross = USD(bankDeposited)
-			.subtract(USD(savedVals.spreadingTotal))
-			.subtract(USD(mulchCost))
-			.subtract(savedVals.totalDonations);
+            .subtract(USD(savedVals.spreadingTotal))
+            .subtract(USD(mulchCost))
+            .subtract(savedVals.totalDonations);
 
         setMulchSalesGross(totalGross.format());
 
@@ -279,30 +307,39 @@ export default function fundsRelease() {
         const scoutPercentage = totalGross.multiply(.80);
         setScoutPercentage(scoutPercentage.format());
         const [sellingPercentage, deliveryPercentage] = scoutPercentage.distribute(2);
-        setScoutSellingPercentage(sellingPercentage.format());
         setScoutDeliveryPercentage(deliveryPercentage.format());
+        savedVals.allocationsForMulchBagSales = sellingPercentage;
+        setScoutSellingPercentage(savedVals.allocationsForMulchBagSales.format());
 
-        setPerBagEarnings(USD(sellingPercentage/savedVals.bagsSold).format());
+        const perBagMaxCanEarn = USD(sellingPercentage/savedVals.bagsSold);
+        setPerBagMaxEarnings(perBagMaxCanEarn.format());
 
-		savedVals.allocationPerDeliveryMin = USD(deliveryPercentage/savedVals.deliveryMinutes);
-        setDeliveryEarnings(savedVals.allocationPerDeliveryMin.format());
+        savedVals.allocationPerBagAdjustmentRatio = perBagMaxCanEarn.value / dbData.originalBagCosts.maxUnitPrice.value;
+		const perBagMinCanEarn = dbData.originalBagCosts.minUnitPrice.multiply(savedVals.allocationPerBagAdjustmentRatio);
+		/* console.log(`OR:(${dbData.originalBagCosts.minUnitPrice.format()},${dbData.originalBagCosts.maxUnitPrice.format()}),` +
+		   ` AdjRatio:${savedVals.allocationPerBagAdjustmentRatio}, ` +
+		   ` AdjR:(${perBagMinCanEarn.format()}, ${perBagMaxCanEarn.format()})`); */
+        setPerBagMinEarnings(perBagMinCanEarn.format());
 
-		const isValid = 0.0 < currency(bankDeposited).value && 0.0 < 0.0 < currency(mulchCost).value;
-		let btnGenReport = document.getElementById('generateReportsBtn');
-		if (isValid) {
-			btnGenReport.classList.remove("invisible");
-		} else {
-			btnGenReport.classList.add("invisible");
-		}
+        savedVals.allocationPerDeliveryMinutes = deliveryPercentage/savedVals.deliveryMinutes;
+        setDeliveryEarnings(USD(savedVals.allocationPerDeliveryMinutes).format());
+
+        const isValid = 0.0 < currency(bankDeposited).value && 0.0 < 0.0 < currency(mulchCost).value;
+        let btnGenReport = document.getElementById('generateReportsBtn');
+        if (isValid) {
+            btnGenReport.classList.remove("invisible");
+        } else {
+            btnGenReport.classList.add("invisible");
+        }
     };
 
 
-	////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
     //
     const onReleaseFundsFormSubmission = (event: any) => {
         event.preventDefault();
         event.stopPropagation();
-		console.log("Releasing Funds");
+        console.log("Releasing Funds");
 
 
 
@@ -316,155 +353,226 @@ export default function fundsRelease() {
     const onAllocationFormSubmission = (event: any) => {
         event.preventDefault();
         event.stopPropagation();
-		console.log("Generating Report");
+        console.log("Generating Report");
+        const perUserReport = {};
 
-		const perUserReport = {};
-		// Helper function for handling spreaders
-		const recordSpreaders = (numSpread, spreaders) => {
-			const numSpreaders = spreaders.length;
-			let allocationDist = USD(dbData.pricePerBagToSpread.multiply(numSpread)).distribute(numSpreaders);
-			for (let idx=0; idx<numSpreaders; ++idx) {
-				const uid = spreaders[idx];
-				if (!perUserReport.hasOwnProperty(uid)) { perUserReport[uid] = {}; }
-				if (!perUserReport[uid].hasOwnProperty('allocationFromBagsSpread')) {
-					perUserReport[uid]['allocationFromBagsSpread'] = USD(0);
+        // Helper function for handling bags sold allocation amount
+		const calcBagSalesAllocation = (bagsSold)=>{
+            let rate = dbData.originalBagCosts.maxUnitPrice;
+            // Handle Price product price breaks if any
+            for (const priceBreak of dbData.originalBagCosts.priceBreaks) {
+				const unitsNeeded = priceBreak.gt;
+				if (bagsSold > unitsNeeded) {
+					rate = currency(priceBreak.unitPrice);
 				}
-				perUserReport[uid]['allocationFromBagsSpread'] =
-					perUserReport[uid]['allocationFromBagsSpread'].add(allocationDist[idx]);
 			}
+			rate = rate.multiply(savedVals.allocationPerBagAdjustmentRatio);
+			return rate.multiply(bagsSold);
 		};
 
-		// Go through timecards for delivery and calculate delivery costs
-		for (const [uid, mins] of Object.entries(dbData.deliveryMinutesPerWorker)) {
-			if (!perUserReport.hasOwnProperty(uid)) { perUserReport[uid] = {}; }
-			perUserReport[uid]['deliveryMins'] = mins;
-			perUserReport[uid]['allocationsFromDelivery'] = savedVals.allocationPerDeliveryMin.multiply(mins);
-		}
+        // Helper function for handling spreaders
+        const recordSpreaders = (numSpread, spreaders) => {
+            const numSpreaders = spreaders.length;
+            let allocationDist = USD(dbData.pricePerBagToSpread.multiply(numSpread)).distribute(numSpreaders);
+            for (let idx=0; idx<numSpreaders; ++idx) {
+                const uid = spreaders[idx];
+                if (!perUserReport.hasOwnProperty(uid)) { perUserReport[uid] = {}; }
+                if (!perUserReport[uid].hasOwnProperty('allocationFromBagsSpread')) {
+                    perUserReport[uid]['allocationFromBagsSpread'] = USD(0);
+                }
+                perUserReport[uid]['allocationFromBagsSpread'] =
+                    perUserReport[uid]['allocationFromBagsSpread'].add(allocationDist[idx]);
+            }
+        };
+
+        // Go through timecards for delivery and calculate delivery costs
+        for (const [uid, mins] of Object.entries(dbData.deliveryMinutesPerWorker)) {
+            if (!perUserReport.hasOwnProperty(uid)) { perUserReport[uid] = {}; }
+            perUserReport[uid]['deliveryMins'] = mins;
+            perUserReport[uid]['allocationsFromDelivery'] = USD(savedVals.allocationPerDeliveryMinutes * mins);
+        }
 
 
-		// Go through orders to get the rest of the information
-		for (const order of dbData.orders) {
-			const totAmt = currency(order.totalAmt);
-			const uid = order.orderOwner;
-			if (!perUserReport.hasOwnProperty(uid)) { perUserReport[uid] = {}; }
+        // Go through orders to get the rest of the information
+        for (const order of dbData.orders) {
+            const totAmt = currency(order.totalAmt);
+            const uid = order.orderOwner;
+            if (!perUserReport.hasOwnProperty(uid)) { perUserReport[uid] = {}; }
 
-			// Add a donation
-			if (!order.deliveryId) {
-				if (!perUserReport[uid].hasOwnProperty('donations')) {
-					perUserReport[uid]['donations'] = USD(0);
-				}
-				perUserReport[uid]['donations'] = perUserReport[uid]['donations'].add(totAmt);
+            // Add a donation
+            if (!order.deliveryId) {
+                if (!perUserReport[uid].hasOwnProperty('donations')) {
+                    perUserReport[uid]['donations'] = USD(0);
+                }
+                perUserReport[uid]['donations'] = perUserReport[uid]['donations'].add(totAmt);
+            }
+
+            // Also Donations see bug #70
+            if (order.deliveryId && order.productsCost) {
+                const prodCost = currency(order.productsCost);
+                if (totAmt.intValue > prodCost.intValue) { // This is a donation
+                    if (!perUserReport[uid].hasOwnProperty('donations')) {
+                        perUserReport[uid]['donations'] = USD(0);
+                    }
+                    perUserReport[uid]['donations'] = perUserReport[uid]['donations'].add(
+                        totAmt.subtract(prodCost)
+                    );
+                }
+            }
+
+            // Calculate spreading/spreaders
+            if (order.products?.spreading) {
+                if (!perUserReport[uid].hasOwnProperty('numBagsSpreadSold')) {
+                    perUserReport[uid]['numBagsSpreadSold'] = 0;
+                }
+                perUserReport[uid]['numBagsSpreadSold'] += order.products.spreading;
+                if (order.spreaders) {
+                    recordSpreaders(order.products.spreading, order.spreaders);
+                }
+            }
+
+            // Calculate Mulch Sales
+            if (order.products?.bags) {
+                if (!perUserReport[uid].hasOwnProperty('numBagsSold')) {
+                    perUserReport[uid]['numBagsSold'] = 0;
+                    perUserReport[uid]['allocationFromBagsSold'] = USD(0);
+                }
+                perUserReport[uid]['numBagsSold'] += order.products.bags;
+                perUserReport[uid]['allocationFromBagsSold'] =
+					perUserReport[uid]['allocationFromBagsSold'].add(calcBagSalesAllocation(order.products.bags));
+            }
+
+
+        }
+
+        ////////////////////////////////////////////////////
+        //
+        const getTotalAllocations = (report)=>{
+            let totalAllocation = USD(0);
+            if (report.hasOwnProperty('allocationFromBagsSold')) {
+                totalAllocation = totalAllocation.add(report['allocationFromBagsSold']);
+            }
+            if (report.hasOwnProperty('allocationFromBagsSpread')) {
+                totalAllocation = totalAllocation.add(report['allocationFromBagsSpread']);
+            }
+            if (report.hasOwnProperty('allocationsFromDelivery')) {
+                totalAllocation = totalAllocation.add(report['allocationsFromDelivery']);
+            }
+            if (report.hasOwnProperty('donations')) {
+                totalAllocation = totalAllocation.add(report['donations']);
+            }
+
+            return totalAllocation;
+        };
+
+        const perScoutReportDataFields = [];
+		let totalDonations = USD(0);
+		let allocationFromBagsSold = USD(0);
+		let allocationFromBagsSpread = USD(0);
+		let allocationsFromDelivery = USD(0);
+		let allocationsTotal = USD(0);
+
+        for (const [uid, report] of Object.entries(perUserReport)) {
+			if (report.hasOwnProperty('donations')) {
+				totalDonations = totalDonations.add(report['donations']);
 			}
-
-			// Also Donations see bug #70
-			if (order.deliveryId && order.productsCost) {
-				const prodCost = currency(order.productsCost);
-				if (totAmt.intValue > prodCost.intValue) { // This is a donation
-					if (!perUserReport[uid].hasOwnProperty('donations')) {
-						perUserReport[uid]['donations'] = USD(0);
-					}
-					perUserReport[uid]['donations'] = perUserReport[uid]['donations'].add(
-						totAmt.subtract(prodCost)
-					);
-				}
-			}
-
-			// Calculate spreading/spreaders
-			if (order.products?.spreading) {
-				if (!perUserReport[uid].hasOwnProperty('numBagsSpreadSold')) {
-					perUserReport[uid]['numBagsSpreadSold'] = 0;
-				}
-				perUserReport[uid]['numBagsSpreadSold'] += order.products.spreading;
-				if (order.spreaders) {
-					recordSpreaders(order.products.spreading, order.spreaders);
-				}
-			}
-
-			// Calculate Mulch Sales
-			if (order.products?.bags) {
-				if (!perUserReport[uid].hasOwnProperty('numBagsSold')) {
-					perUserReport[uid]['numBagsSold'] = 0;
-				}
-				perUserReport[uid]['numBagsSold'] += order.products.bags;
-			}
-
-		}
-
-		const getTotalAllocations = (report)=>{
-			let totalAllocation = USD(0);
 			if (report.hasOwnProperty('allocationFromBagsSold')) {
-				totalAllocation = totalAllocation.add(report['allocationFromBagsSold']);
+				allocationFromBagsSold = allocationFromBagsSold.add(report['allocationFromBagsSold']);
 			}
 			if (report.hasOwnProperty('allocationFromBagsSpread')) {
-				totalAllocation = totalAllocation.add(report['allocationFromBagsSpread']);
+				allocationFromBagsSpread = allocationFromBagsSpread.add(report['allocationFromBagsSpread']);
 			}
 			if (report.hasOwnProperty('allocationsFromDelivery')) {
-				totalAllocation = totalAllocation.add(report['allocationsFromDelivery']);
+				allocationsFromDelivery = allocationsFromDelivery.add(report['allocationsFromDelivery']);
 			}
-			if (report.hasOwnProperty('donations')) {
-				totalAllocation = totalAllocation.add(report['donations']);
-			}
+			report['allocationTotal'] = getTotalAllocations(report);
+			allocationsTotal = allocationsTotal.add(report['allocationTotal'])
 
-			return totalAllocation.format();
-		};
+			perScoutReportDataFields.push([
+				uid,
+				frConfig.getUserNameFromId(uid),
+				report.hasOwnProperty('numBagsSold')?report['numBagsSold'] : undefined,
+				report.hasOwnProperty('numBagsSpreadSold')?report['numBagsSpreadSold'] : undefined,
+				report.hasOwnProperty('deliveryMins')?report['deliveryMins'] : undefined,
+				report.hasOwnProperty('donations')?report['donations'] : undefined,
+				report.hasOwnProperty('allocationFromBagsSold')?report['allocationFromBagsSold'] : undefined,
+				report.hasOwnProperty('allocationFromBagsSpread')?report['allocationFromBagsSpread'] : undefined,
+				report.hasOwnProperty('allocationsFromDelivery')?report['allocationsFromDelivery'] : undefined,
+				report['allocationTotal']
+			]);
+        }
 
-		const perScoutReport = [];
-		for (const [uid, report] of Object.entries(perUserReport)) {
-			perScoutReport.push(
-				<tr key={uid}>
-					<td>{frConfig.getUserNameFromId(uid)}</td>
-					<td>{report.hasOwnProperty('numBagsSold')?report['numBagsSold']:''}</td>
-					<td>{report.hasOwnProperty('numBagsSpreadSold')?report['numBagsSpreadSold']:''}</td>
-					<td>{report.hasOwnProperty('deliveryMins')?report['deliveryMins']:''}</td>
-					<td>{report.hasOwnProperty('donations')?report['donations'].format():''}</td>
-					<td>{report.hasOwnProperty('allocationFromBagsSold')?report['allocationFromBagsSold'].format():''}</td>
-					<td>{report.hasOwnProperty('allocationFromBagsSpread')?report['allocationFromBagsSpread'].format():''}</td>
-					<td>{report.hasOwnProperty('allocationsFromDelivery')?report['allocationsFromDelivery'].format():''}</td>
-					<td>{getTotalAllocations(report)}</td>
-				</tr>
-			);
-		}
+		perScoutReportDataFields.push([
+			'troopTotals',
+			'Trop Totals',
+			savedVals.bagsSold,
+			savedVals.bagsSpread,
+			savedVals.deliveryMinutes,
+			totalDonations, // I could pull all the below from global data but they wanted cross check
+			allocationFromBagsSold,
+			allocationFromBagsSpread,
+			allocationsFromDelivery,
+			allocationsTotal
+		]);
 
-		setReportCard(
-			<div className="card">
-				<div className="card-body">
-					<h5 className="card-title justify-content-center text-center">Allocations Report</h5>
-					<form onSubmit={onReleaseFundsFormSubmission}>
-						<table className="table table-striped">
-							<thead>
-								<tr>
-									<th scope="col">Name</th>
-									<th scope="col">Num Bags Sold</th>
-									<th scope="col">Num Bags to Spread Sold</th>
-									<th scope="col">Delivery Minutes</th>
-									<th scope="col">Donations</th>
-									<th scope="col">Allocations from Bags Sold</th>
-									<th scope="col">Allocations from Spreading</th>
-									<th scope="col">Allocations from Delivery</th>
-									<th scope="col">Total Allocations</th>
-								</tr>
-							</thead>
-							<tbody>
-								{perScoutReport}
-							</tbody>
-						</table>
-						<button type="submit" className="btn btn-primary invisible my-2 float-end"
+        const perScoutReport = [];
+        for (const field of perScoutReportDataFields) {
+            perScoutReport.push(
+                <tr key={field[0]}>
+                    <td>{field[1]}</td>
+                    <td>{field[2] ? field[2] : ''}</td>
+                    <td>{field[3] ? field[3] : ''}</td>
+                    <td>{field[4] ? field[4] : ''}</td>
+                    <td>{field[5] ? field[5].format() : ''}</td>
+                    <td>{field[6] ? field[6].format() : ''}</td>
+                    <td>{field[7] ? field[7].format() : ''}</td>
+                    <td>{field[8] ? field[8].format() : ''}</td>
+                    <td>{field[9] ? field[9].format() : ''}</td>
+                </tr>
+            );
+        }
+
+        setReportCard(
+            <div className="card">
+                <div className="card-body">
+                    <h5 className="card-title justify-content-center text-center">Allocations Report</h5>
+                    <form onSubmit={onReleaseFundsFormSubmission}>
+                        <table className="table table-striped table-responsive">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col"># Bags Sold</th>
+                                    <th scope="col"># Bags to Spread Sold</th>
+                                    <th scope="col"># Delivery Minutes</th>
+                                    <th scope="col">$ Donations</th>
+                                    <th scope="col">$ Allocations from Bags Sold</th>
+                                    <th scope="col">$ Allocations from Spreading</th>
+                                    <th scope="col">$ Allocations from Delivery</th>
+                                    <th scope="col">$ Total Allocations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {perScoutReport}
+                            </tbody>
+                        </table>
+                        <button type="submit" className="btn btn-primary invisible my-2 float-end"
 							id="releaseFundsBtn"
 							data-bs-toggle="tooltip"
+							data-report-fields={perScoutReportDataFields}
 							title="Release Report to Scouts">
-							Generate Data
-						</button>
-					</form>
-					<button type="button" className="btn reports-view-setting-btn ms-3"
+                            Generate Data
+                        </button>
+                    </form>
+                    <button type="button" className="btn reports-view-setting-btn ms-3"
 						onClick={onDownloadReport} data-bs-toggle="tooltip"
 						title="Download Report">
-						<svg className="bi" fill="currentColor">
-							<use xlinkHref={exportImg}/>
-						</svg>
-					</button>
-				</div>
-			</div>
-		);
+                        <svg className="bi" fill="currentColor">
+                            <use xlinkHref={exportImg}/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        );
     }
 
 
@@ -477,77 +585,77 @@ export default function fundsRelease() {
                 </div>
             </div>
         ) : (
-			<>
-				<div className="col-xs-1 d-flex justify-content-center">
-					<h4>Funds Release Page</h4>
-				</div>
-				<div className="col-xs-1 d-flex justify-content-center">
-					<div className="card">
-						<div className="card-body">
-							<h5 className="card-title justify-content-center text-center">Allocation Calculations</h5>
-							<form onSubmit={onAllocationFormSubmission}>
-								<div className="row mb-2">
-									<div>Scout Total Collected: {scoutTotalCollected}</div>
-								</div>
-								<div className="row mb-2">
-									<CurrencyWidget id="formBankDeposited"
-									defaultValue={bankDeposited}
-									label="Amount Deposited in Bank"
-									onInput={onAllocationFormInputsChange}
-									/>
-								</div>
-								<div className="row mb-2">
-									<CurrencyWidget id="formMulchCost"
-									defaultValue={mulchCost}
-									label="Amount Paid for Mulch"
-									onInput={onAllocationFormInputsChange}
-									/>
-								</div>
-								<div className="row mb-2">
-									<div>Number of Bags Spread: {bagsSpread}</div>
-									<div>Amount Collected for Spreading: {spreadingTotal}</div>
-								</div>
-								<div className="row mb-2">
-									<div>Total Donations: {totalDonated}</div>
-								</div>
-								<div className="row mb-2">
-									<div>Gross Mulch Sale Profits: {mulchSalesGross}</div>
-								</div>
-								<div className="row mb-2">
-									<div>Allocations to Troop: {troopPercentage}</div>
-								</div>
-								<div className="row mb-2">
-									<div>Total Allocations to Scouts: {scoutPercentage}</div>
-									<div>  Allocations to Scouts for Delivery: {scoutDeliveryPercentage}</div>
-									<div>  Allocations to Scouts for Selling: {scoutSellingPercentage}</div>
-								</div>
-								<div className="row mb-2">
-									<div>Total Bags of Mulch Sold: {bagsSold}</div>
-									<div>Scouts Average Earnings per Bag Sold: {perBagsEarnings}</div>
-								</div>
-								<div className="row mb-2">
-									<div>Total Delivery Minutes: {deliveryMinutes}</div>
-									<div>Scout Earnings per Delivery Minute: {deliveryEarnings}</div>
-								</div>
-								<button type="submit" className="btn btn-primary invisible my-2 float-end"
-									id="generateReportsBtn"
-									data-bs-toggle="tooltip"
-									title="Generate Data">
-									Generate Data
-								</button>
-							</form>
-							<button type="button" className="btn reports-view-setting-btn ms-3"
-								onClick={onDownloadRawData} data-bs-toggle="tooltip"
-								title="Download RawData">
-								<svg className="bi" fill="currentColor">
-									<use xlinkHref={exportImg}/>
-								</svg>
-							</button>
-						</div>
-					</div>
-					{reportCard}
-				</div>
-			</>
+            <>
+                <div className="col-xs-1 d-flex justify-content-center">
+                    <h4>Funds Release Page</h4>
+                </div>
+                <div className="col-xs-1 d-flex justify-content-center">
+                    <div className="card">
+                        <div className="card-body">
+                            <h5 className="card-title justify-content-center text-center">Allocation Calculations</h5>
+                            <form onSubmit={onAllocationFormSubmission}>
+                                <div className="row mb-2">
+                                    <div>Scout Total Collected: {scoutTotalCollected}</div>
+                                </div>
+                                <div className="row mb-2">
+                                    <CurrencyWidget id="formBankDeposited"
+                                    defaultValue={bankDeposited}
+                                    label="Amount Deposited in Bank"
+                                    onInput={onAllocationFormInputsChange}
+                                    />
+                                </div>
+                                <div className="row mb-2">
+                                    <CurrencyWidget id="formMulchCost"
+                                    defaultValue={mulchCost}
+                                    label="Amount Paid for Mulch"
+                                    onInput={onAllocationFormInputsChange}
+                                    />
+                                </div>
+                                <div className="row mb-2">
+                                    <div>Number of Bags Spread: {bagsSpread}</div>
+                                    <div>Amount Collected for Spreading: {spreadingTotal}</div>
+                                </div>
+                                <div className="row mb-2">
+                                    <div>Total Donations: {totalDonated}</div>
+                                </div>
+                                <div className="row mb-2">
+                                    <div>Gross Mulch Sale Profits: {mulchSalesGross}</div>
+                                </div>
+                                <div className="row mb-2">
+                                    <div>Allocations to Troop: {troopPercentage}</div>
+                                </div>
+                                <div className="row mb-2">
+                                    <div>Total Allocations to Scouts: {scoutPercentage}</div>
+                                    <div>  Allocations to Scouts for Delivery: {scoutDeliveryPercentage}</div>
+                                    <div>  Allocations to Scouts for Mulch Bag Sales: {scoutSellingPercentage}</div>
+                                </div>
+                                <div className="row mb-2">
+                                    <div>Total Bags of Mulch Sold: {bagsSold}</div>
+                                    <div>Scouts Possible Earnings per Bag Sold: {perBagMinEarnings}-{perBagMaxEarnings}</div>
+                                </div>
+                                <div className="row mb-2">
+                                    <div>Total Delivery Minutes: {deliveryMinutes}</div>
+                                    <div>Scout Earnings per Delivery Minute: {deliveryEarnings}</div>
+                                </div>
+                                <button type="submit" className="btn btn-primary invisible my-2 float-end"
+                                    id="generateReportsBtn"
+                                    data-bs-toggle="tooltip"
+                                    title="Generate Data">
+                                    Generate Data
+                                </button>
+                            </form>
+                            <button type="button" className="btn reports-view-setting-btn ms-3"
+                                onClick={onDownloadRawData} data-bs-toggle="tooltip"
+                                title="Download RawData">
+                                <svg className="bi" fill="currentColor">
+                                    <use xlinkHref={exportImg}/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    {reportCard}
+                </div>
+            </>
         )}
     </>);
 }
