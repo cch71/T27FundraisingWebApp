@@ -66,6 +66,19 @@ html {
         }
     }
 
+    .releaseFundsCards {
+        // thead tr th:first-child,
+        // tbody tr td:first-child {
+        //     width: 8em;
+        //     min-width: 8em;
+        //     max-width: 8em;
+        // }
+        .card {
+            padding: 0px;
+            margin: 0 auto;
+        }
+    }
+    
     #orderOwnerSummaryCard {
         //width: 24rem;
     }
