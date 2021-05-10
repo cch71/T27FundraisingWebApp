@@ -54,6 +54,12 @@ const moneyFloor = (value: string)=>{
 	return [amt, isChanged];
 };
 
+////////////////////////////////////////////////////
+//
+const moneyFloorFromDouble = (val: number)=>{
+    return Math.floor(val * 100.0)/100.0;
+}
+
 ////////////////////////////////////////////////////////
 // Save off current order values
 const saveCurrentOrder = ()=>{
@@ -86,4 +92,10 @@ const saveCurrentOrder = ()=>{
     console.log(`Current Order ${JSON.stringify(currentOrder, null, 2)}`);
 }
 
-export {onCurrencyFieldKeyPress, onCheckNumsKeyPress, onNonNumsKeyPress, moneyFloor, saveCurrentOrder}
+export { onCurrencyFieldKeyPress,
+         onCheckNumsKeyPress,
+         onNonNumsKeyPress,
+         moneyFloor,
+         moneyFloorFromDouble,
+         saveCurrentOrder
+       }

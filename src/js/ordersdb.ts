@@ -1,9 +1,8 @@
-import currency from "currency.js"
-import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config"
-import awsConfig from "../config"
-import auth from "../js/auth"
+import currency from "currency.js";
+import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config";
+import awsConfig from "../config";
+import auth from "../js/auth";
 import { v4 as uuidv4 } from 'uuid';
-
 
 /////////////////////////////////////////////
 //
@@ -111,64 +110,96 @@ interface OrderSpradingComplete {
 
 /////////////////////////////////////////////
 //
-interface LeaderBoardUserSummary {
-    amountSold: number;
-    orderOwner: string;
-    donation?: number;
-    spreading?: number;
-    bags?: number;
+class LeaderBoardUserSummary {
+    public amountSold: currency = currency(0);
+    public donations: currency = currency(0);
+    public spreading: number = 0;
+    public bags: number = 0;
+
 }
 
 /////////////////////////////////////////////
 //
 class LeaderBoardSummaryInfo {
-    constructor(private summaryResp_: any, private userId_: string)
-    {}
+    public readonly areFundsReleased: boolean = false;
+    private users_: Array<[string, currency]> = [];
+    private troopSales_: currency = currency(0);
+    private patrolInfo_: Record<string, currency> = {};
+    private userInfo_: LeaderBoardUserSummary = new LeaderBoardUserSummary();
 
-    userId(): string { return this.userId_; }
-    troopAmountSold(): currency {
-        return currency(this.summaryResp_.troop?.amountSold);
-    }
-    userSummary(): LeaderBoardUserSummary {
-        for (const user_summary of this.summaryResp_.users) {
-            if (this.userId() === user_summary.orderOwner) {
-                user_summary.amountSold = currency(user_summary.amountSold);
-                if (user_summary.donation) {
-                    user_summary.donation = currency(user_summary.donation);
+    /////////////////////////////////////////////
+    //
+    constructor(summaryResp: any, private userId_: string, frConfig: FundraiserConfig) {
+        this.areFundsReleased = summaryResp.areFundsReleased;
+
+        for (const [uid, summary] of Object.entries(summaryResp.perUserSummary)) {
+            const totAmt = currency(summary.totalAmtCollected);
+            this.troopSales_ = this.troopSales_.add(totAmt)
+            this.users_.push([uid, totAmt]);
+            const patrolName = frConfig.getPatrolNameFromId(uid);
+            if (!this.patrolInfo_.hasOwnProperty(patrolName)) { 
+                this.patrolInfo_[patrolName] = currency(0);
+            }
+            this.patrolInfo_[patrolName] = this.patrolInfo_[patrolName].add(totAmt);
+            if (uid===userId_) {
+
+                this.userInfo_.amountSold = totAmt;
+                
+                if (summary.hasOwnProperty('donations')) {
+                    this.userInfo_.donations = currency(summary['donations']);
                 }
-                return user_summary;
+
+                if (summary.hasOwnProperty('numBagsSold')) {
+                    this.userInfo_['bags'] = summary['numBagsSold'];
+                }
+
+                if (summary.hasOwnProperty('numBagsSpreadSold')) {
+                    this.userInfo_['spreading'] = currency(summary['numBagsSpreadSold']);
+                }
             }
         }
-        const defaultVal = {
-            amountSold: currency(0),
-            orderOwner: "",
-            donation: currency(0),
-        };
 
-        defaultVal['bags'] = 0;
-        defaultVal['spreading'] = 0;
-        return defaultVal;
-    }
-    *topSellers(): Generator<[number, string, string]> {
-        const users = this.summaryResp_.users;
-        //console.log(`Sum Resp: ${JSON.stringify(this.summaryResp_, null, '\t')}`);
-		const usersLen = (10 < users.length) ? 10 : users.length;
-        for (let idx=0; idx < usersLen; ++idx) {
-            yield [idx+1, users[idx].orderOwner, currency(users[idx].amountSold)]
-        }
+        this.users_.sort((r,l)=>{ return(l[1].value - r[1].value); });
     }
 
+    /////////////////////////////////////////////
+    //
+    userSummary(): LeaderBoardUserSummary {
+        return this.userInfo_;
+    }
+
+    /////////////////////////////////////////////
+    //
     *patrolRankings(): Generator<[string, currency]> {
-        for (const patrol of Object.getOwnPropertyNames(this.summaryResp_.patrols)) {
-            yield [patrol, currency(this.summaryResp_.patrols[patrol].amountSold)];
+        for (const [patrolName, amountSold] of Object.entries(this.patrolInfo_)) {
+            yield [patrolName, amountSold];
         }
+    }
+
+    /////////////////////////////////////////////
+    //
+    *topSellers(): Generator<[number, string, string]> {
+        //console.log(`Sum Resp: ${JSON.stringify(this.summaryResp_, null, '\t')}`);
+		    const usersLen = (10 < this.users_.length) ? 10 : this.users_.length;
+        for (let idx=0; idx < usersLen; ++idx) {
+            yield [idx+1, this.users_[idx][0], this.users_[idx][1]];
+        }
+    }
+
+    /////////////////////////////////////////////
+    //
+    userId(): string { return this.userId_; }
+
+    /////////////////////////////////////////////
+    //
+    troopAmountSold(): currency {
+        return this.troopSales_;
     }
 }
 
 /////////////////////////////////////////////
 //
 class OrderDb {
-    private readonly fundraiserConfig_: any;
     private currentOrder_?: Order;
     private submitOrderPromise_?: Promise<void>;
 
@@ -205,8 +236,9 @@ class OrderDb {
             try {
                 const userId = auth.currentUser().getUsername();
                 const authToken = await auth.getAuthToken();
+                const frConfig = await getFundraiserConfig();
 
-                //console.log(`OrderDB Query Parms: {}`);
+                console.log(`OrderDB Query Parms: {}`);
                 const resp = await fetch(awsConfig.api.invokeUrl + '/leaderboard', {
                     method: 'post',
                     headers: {
@@ -221,7 +253,7 @@ class OrderDb {
                 } else {
                     const summaryInfo = await resp.json();
                     //console.log(`SummaryInfo: ${JSON.stringify(summaryInfo, null, '\t')}`)
-                    resolve(new LeaderBoardSummaryInfo(summaryInfo, userId));
+                    resolve(new LeaderBoardSummaryInfo(summaryInfo, userId, frConfig));
                 }
 
             } catch(error) {

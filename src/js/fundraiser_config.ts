@@ -112,6 +112,18 @@ class FundraiserConfig {
 
     /////////////////////////////////////////
     //
+    getPatrolNameFromId(uid: string): string {
+        if ('fradmin' === uid) { return "Admin"; } //immutable admin id
+        for (const [patrolName, names] of  Object.entries(this.loadedPatrolMap_)) {
+            if (names.hasOwnProperty(uid)) {
+                return patrolName;
+            }
+        }
+        return "Unknown";
+    }
+
+    /////////////////////////////////////////
+    //
     getUserNameFromId(uid: string): string {
         if ('fradmin' === uid) { return "Fundraiser Admin"; } //immutable admin id
         for (const [patrolName, names] of  Object.entries(this.loadedPatrolMap_)) {

@@ -74,6 +74,7 @@ class ReportViews {
             views.push(['Full', undefined]);
             if ('mulch' === frConfig.kind()) {
                 views.push(['Spreading Jobs', 'SpreadingJobs']);
+                views.push(['Unfinished Spreading Jobs By Scouts', 'UnfinishedSpreadingJobsByScouts']);
             }
             views.push(['Verify Orders', 'VerifyOrders']);
             if ('mulch' === frConfig.kind()) {
@@ -597,11 +598,7 @@ class ReportViews {
         if (!this.currentDataset_) {
             // Build query fields
             const fieldNames = ["orderId", "firstName", "lastName", "deliveryId", "addr1", "addr2",
-                                "specialInstructions", "neighborhood"];
-            if ('mulch' === frConfig.kind()) {
-                fieldNames.push("spreaders");
-                fieldNames.push("products.spreading");
-            }
+                                "specialInstructions", "neighborhood", "spreaders", "products.spreading"];
 
             if ('any'===userId) {
                 fieldNames.push("orderOwner");
@@ -710,10 +707,67 @@ class ReportViews {
         });
 
         this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
-
-        //this.registerActionButtonHandlers();
     }
 
+    ////////////////////////////////////////////////////////////////////
+    //
+    private async showUnfinishedSpreadingJobsByScouts(frConfig: FundraiserConfig, userId?: string) {
+
+        const currentUserId =  auth.getCurrentUserId();
+        if (!userId) { userId = currentUserId; }
+        if (!this.currentDataset_) {
+            // Build query fields
+            const fieldNames = ["orderId", "orderOwner", "spreaders", "products.spreading"];
+
+            const orders = await orderDb.query({fields: fieldNames, orderOwner: 'any'});
+
+            // Fill out rows of data
+            const orderPerScout = {};
+            for (const order of orders) {
+
+                if (!order.products?.spreading || !order.spreaders || 0===order.spreaders.length) {
+                    continue;
+                }
+
+                const orderOwner = order.orderOwner;
+                if (!orderPerScout.hasOwnProperty(orderOwner)) {
+                    orderPerScout[orderOwner] = parseInt(order.products.spreading);
+                }
+            }
+
+            this.currentDataset_ = [];
+            for (const [orderOwner, numBags] of Object.entries(orderPerScout)) {
+                this.currentDataset_.push([
+                    orderOwner,
+                    frConfig.getUserNameFromId(orderOwner),
+                    numBags
+                ]);
+            }
+
+            this.reportHeaders_ = ["OrderOwner", "ScoutName", "BagsToSpread"];
+        }
+
+        const tableColumns = [
+            {
+                name: "OrderOwner",
+                className: "all",
+                visible: false
+            },
+            {
+                title: "Scout Name",
+                name: "ScoutName",
+                className: "all"
+            },
+            {
+                title: "Bags Left To Spread",
+                name: "BagsLeftToSpread",
+                className: "all"
+            }
+        ];
+
+        this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
+    }
+    
     ////////////////////////////////////////////////////////////////////
     //
     private async showVerifyOrders(frConfig: FundraiserConfig, userId?: string) {

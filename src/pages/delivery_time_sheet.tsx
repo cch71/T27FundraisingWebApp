@@ -29,7 +29,7 @@ const makeTimeCardsCall = async (body: any)=>{
             'Content-Type': 'application/json',
             Authorization: authToken
         },
-		body: paramStr
+        body: paramStr
     });
 
     if (!resp.ok) { // if HTTP-status is 200-299
@@ -37,7 +37,7 @@ const makeTimeCardsCall = async (body: any)=>{
         throw new Error(`Timecard API Failed Error: ${resp.status}  ${errRespBody}`);
     }
 
-	return await resp.json();
+    return await resp.json();
 };
 
 ////////////////////////////////////////////////////
@@ -45,12 +45,12 @@ const makeTimeCardsCall = async (body: any)=>{
 const getSavedTimeCards = async (deliveryId: number) => {
     try {
         console.log("Gettting Timecards for delivery id: ${deliveryId}");
-		return await makeTimeCardsCall({
-			cmd: 'query',
-			payload: {
-				deliveryId: deliveryId
-			}
-		});
+        return await makeTimeCardsCall({
+            cmd: 'query',
+            payload: {
+                deliveryId: deliveryId
+            }
+        });
     } catch(error) {
         console.error(error);
         alert(`Get TimeCards for delivery ${deliveryId} Failed: ${error}`);
@@ -64,14 +64,14 @@ const getSavedTimeCards = async (deliveryId: number) => {
 const saveTimeCard = async (dbRec: any) => {
     try {
         console.log("Saving Timecard for uid: ${dbRec.uid} delivery id: ${dbRec.deliveryId}");
-		return await makeTimeCardsCall({
-			cmd: 'add_or_update',
-			payload: dbRec
-		});
+        return await makeTimeCardsCall({
+            cmd: 'add_or_update',
+            payload: dbRec
+        });
     } catch(error) {
         console.error(error);
         alert(`Saving TimeCard for ${dbRec.uid} ` +
-			  `delivery id: ${dbRec.deliveryId} Failed: ${error}`);
+              `delivery id: ${dbRec.deliveryId} Failed: ${error}`);
     }
 };
 
@@ -80,14 +80,14 @@ const saveTimeCard = async (dbRec: any) => {
 const clearTimeCard = async (dbRec: any) => {
     try {
         console.log("Erasing Timecard for uid: ${dbRec.uid} delivery id: ${dbRec.deliveryId}");
-		return await makeTimeCardsCall({
-			cmd: 'delete',
-			payload: dbRec
-		});
+        return await makeTimeCardsCall({
+            cmd: 'delete',
+            payload: dbRec
+        });
     } catch(error) {
         console.error(error);
         alert(`Clearing TimeCard for uid: ${dbRec.uid} ` +
-			  `delivery id: ${dbRec.deliveryId} Failed: ${error}`);
+              `delivery id: ${dbRec.deliveryId} Failed: ${error}`);
     }
 };
 
@@ -172,48 +172,48 @@ const setNewTime = (uid: string,
                     deliveryId: number,
                     timeInComp: [number, number],
                     timeOutComp: [number, number]): [string, boolean] =>
-{
-    // If the values are essentially being cleared then reset the entry to mark empty
-    if (0===timeInComp[0] &&
-        0===timeInComp[1] &&
-        isTupleEq(timeInComp, timeOutComp))
-    {
-        const isDirty = timeCardDb.has(uid) ?
-                        timeCardDb.get(uid).setNewTime(undefined, undefined, undefined) :
-						false;
+                        {
+                            // If the values are essentially being cleared then reset the entry to mark empty
+                            if (0===timeInComp[0] &&
+                                0===timeInComp[1] &&
+                                isTupleEq(timeInComp, timeOutComp))
+                            {
+                                const isDirty = timeCardDb.has(uid) ?
+                                                timeCardDb.get(uid).setNewTime(undefined, undefined, undefined) :
+                                                false;
 
-        return ['00:00', isDirty];
-    }
+                                return ['00:00', isDirty];
+                            }
 
-    // Convertes times to actual dates to do diff
-    const dtIn = new Date(Date.UTC(0, 0, 0, timeInComp[0],timeInComp[1], 0));
-    const dtOut = new Date(Date.UTC(0, 0, 0, timeOutComp[0],timeOutComp[1], 0));
+                            // Convertes times to actual dates to do diff
+                            const dtIn = new Date(Date.UTC(0, 0, 0, timeInComp[0],timeInComp[1], 0));
+                            const dtOut = new Date(Date.UTC(0, 0, 0, timeOutComp[0],timeOutComp[1], 0));
 
-    // console.log(`In: ${dtIn.getTime()}    Out: ${dtOut.getTime()}`);
-    const diffMs = dtOut - dtIn;
-    if (0>=diffMs) {
-        // Can't be inverted
-        return ["INV", false];
-    } else {
-        //Do some math to convert the diff int number back to HH:mm
-        const h = Math.floor(diffMs / (1000*60*60));
-        const m = Math.round((diffMs - ((1000*60*60) * h)) / (1000*60));
-        if (isNaN(h) || isNaN(m)) {
-            return ["INV", false];
-        } else {
-            if (!timeCardDb.has(uid)) {
-                timeCardDb.set(uid, new UserEntry({deliveryId: deliveryId, uid: uid}));
-            }
-            const calcTime = `${pad(h)}:${pad(m)}`;
-            const isDirty = timeCardDb.get(uid).setNewTime(
-                `${pad(timeInComp[0])}:${pad(timeInComp[1])}`,
-                `${pad(timeOutComp[0])}:${pad(timeOutComp[1])}`,
-                calcTime);
-            //console.log(`IsDirty ${isDirty}`);
-            return [calcTime, isDirty];
-        }
-    }
-}
+                            // console.log(`In: ${dtIn.getTime()}    Out: ${dtOut.getTime()}`);
+                            const diffMs = dtOut - dtIn;
+                            if (0>=diffMs) {
+                                // Can't be inverted
+                                return ["INV", false];
+                            } else {
+                                //Do some math to convert the diff int number back to HH:mm
+                                const h = Math.floor(diffMs / (1000*60*60));
+                                const m = Math.round((diffMs - ((1000*60*60) * h)) / (1000*60));
+                                if (isNaN(h) || isNaN(m)) {
+                                    return ["INV", false];
+                                } else {
+                                    if (!timeCardDb.has(uid)) {
+                                        timeCardDb.set(uid, new UserEntry({deliveryId: deliveryId, uid: uid}));
+                                    }
+                                    const calcTime = `${pad(h)}:${pad(m)}`;
+                                    const isDirty = timeCardDb.get(uid).setNewTime(
+                                        `${pad(timeInComp[0])}:${pad(timeInComp[1])}`,
+                                        `${pad(timeOutComp[0])}:${pad(timeOutComp[1])}`,
+                                        calcTime);
+                                    //console.log(`IsDirty ${isDirty}`);
+                                    return [calcTime, isDirty];
+                                }
+                            }
+                        }
 
 /////////////////////////////////////////////
 //
@@ -292,7 +292,7 @@ export default function deliveryTimeSheet() {
 
     const [userEntries, setUserEntries] = useState();
     const [deliveryDateOpts, setDeliveryDateOpts] = useState();
-	const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     ////////////////////////////////////////////////////
     //
@@ -345,12 +345,12 @@ export default function deliveryTimeSheet() {
 
         console.log(`Current Selected DeliveryId: ${currentDeliveryId}`);
 
-		setIsLoading(true);
+        setIsLoading(true);
         const timeCards = await getSavedTimeCards(currentDeliveryId);
-		setIsLoading(false);
-		if (undefined === timeCards) {
-			return;
-		}
+        setIsLoading(false);
+        if (undefined === timeCards) {
+            return;
+        }
 
         const entries = [];
         for (const [uid, userName] of frConfig.users({doFilterOutAdmins: true})) {
@@ -386,9 +386,9 @@ export default function deliveryTimeSheet() {
                         </div>
                     </div>
                     <div className="col">
-				                <button type="button" className="btn btn-primary invisible" onClick={onSave}>
+                        <button type="button" className="btn btn-primary invisible" onClick={onSave}>
                             <span className="spinner-border spinner-border-sm me-1" role="status"
-							                    aria-hidden="true" style={{display: "none"}} />
+                                  aria-hidden="true" style={{display: "none"}} />
                             Save
                         </button>
                     </div>
@@ -413,7 +413,7 @@ export default function deliveryTimeSheet() {
             rowElm.querySelector(".time-out").value = timecard.timeOut;
             rowElm.querySelector(".time-calc").innerHTML = timecard.timeTotal;
         }
-		setIsLoading(false);
+        setIsLoading(false);
     };
 
 
@@ -443,13 +443,13 @@ export default function deliveryTimeSheet() {
         const headers = ["Id", "FullName", "TimeIn", "TimeOut", "TotalTime"];
 
         csvData = Papa.unparse({
-	          "fields": headers,
-	          "data": csvData,
+            "fields": headers,
+            "data": csvData,
         });
 
         const hiddenElement = document.createElement('a');
-		    const blob = new Blob([csvData], { type: 'text/plain;charset=utf-8' });
-		    hiddenElement.href = URL.createObjectURL(blob);
+        const blob = new Blob([csvData], { type: 'text/plain;charset=utf-8' });
+        hiddenElement.href = URL.createObjectURL(blob);
         hiddenElement.target = '_blank';
         hiddenElement.download = timeCardFileName;
         hiddenElement.click();
@@ -463,33 +463,33 @@ export default function deliveryTimeSheet() {
             <div className="card">
                 <div className="card-body">
                     <h5 className="card-title">Delivery Timesheet</h5>
-					<div className="row mb-2">
-						<span>Select Delivery Date
-							<select defaultValue={-1} className="ms-1"
+                    <div className="row mb-2">
+                        <span>Select Delivery Date
+                            <select defaultValue={-1} className="ms-1"
                                     id="timeSheetSelectDeliveryDate" onChange={onDeliveryChange}>
                                 <option disabled value={-1}>Select Date</option>
-								{deliveryDateOpts}
-							</select>
+                                {deliveryDateOpts}
+                            </select>
                             <button type="button" className="btn reports-view-setting-btn invisible ms-3"
                                     onClick={onDownloadTimecardsClick} data-bs-toggle="tooltip"
-								title="Download Timecards">
+                                title="Download Timecards">
                                 <svg className="bi" fill="currentColor">
                                     <use xlinkHref={exportImg}/>
                                 </svg>
                             </button>
                         </span>
-					</div>
-					{isLoading ? (
-						<div id="notReadyView" className='col-xs-1 d-flex justify-content-center' >
-							<div className="spinner-border" role="status">
-								<span className="visually-hidden">Loading...</span>
-							</div>
-						</div>
-					) : (
-						<ul className="list-group" id="timeSheet">
-							{userEntries}
-						</ul>
-					)}
+                    </div>
+                    {isLoading ? (
+                        <div id="notReadyView" className='col-xs-1 d-flex justify-content-center' >
+                            <div className="spinner-border" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <ul className="list-group" id="timeSheet">
+                            {userEntries}
+                        </ul>
+                    )}
                 </div>
             </div>
         </div>
