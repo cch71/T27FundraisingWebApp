@@ -28,13 +28,14 @@ const savedVals = {
     salesFromBags: USD(0),
     deliveryMinutes: 0,
     totalDonations: USD(0),
-    bankDeposited: USD("$54,979.90"),
-    mulchCost: USD("$22,319.70"),
+    bankDeposited: /*USD(0), // */ USD("$55,045.40"),
+    mulchCost: /*USD(0), //*/USD("$22,319.70"),
     allocationPerBagAdjustmentRatio: 0.0, // Percentage to adjust from sales price
     allocationPerDeliveryMinutes: 0.0,
     allocationsForMulchBagSales: USD(0),
 }
 let dbData = undefined;
+let perUserReport = undefined;
 
 ////////////////////////////////////////////////////
 //
@@ -282,7 +283,8 @@ export default function fundsRelease() {
 
     ////////////////////////////////////////////////////
     //
-    const onDownloadRawData = async ()=> {
+    const onDownloadSummary = async ()=> {
+        
         const hiddenElement = document.createElement('a');
         const blob = new Blob([JSON.stringify(dbData, null, 2)], { type: 'application/json' });
         hiddenElement.href = URL.createObjectURL(blob);
@@ -293,7 +295,15 @@ export default function fundsRelease() {
 
     ////////////////////////////////////////////////////
     //
-    const onDownloadReport = async ()=> {
+    const onDownloadReport = async (evt: any)=> {
+        const data = JSON.parse(evt.currentTarget.dataset.reportfields);
+        const headers = JSON.parse(evt.currentTarget.dataset.reportheaders);
+        
+        const csvData = Papa.unparse({
+            "fields": headers,
+            "data": data,
+        });
+
         const hiddenElement = document.createElement('a');
         const blob = new Blob([csvData], { type: 'text/plain;charset=utf-8' });
         hiddenElement.href = URL.createObjectURL(blob);
@@ -336,9 +346,9 @@ export default function fundsRelease() {
         const isValid = 0.0 < currency(bankDeposited).value && 0.0 < 0.0 < currency(mulchCost).value;
         let btnGenReport = document.getElementById('generateReportsBtn');
         if (isValid) {
-            btnGenReport.classList.remove("invisible");
+            btnGenReport.disabled = false;
         } else {
-            btnGenReport.classList.add("invisible");
+            btnGenReport.disabled = true;
         }
     };
 
@@ -350,7 +360,32 @@ export default function fundsRelease() {
         event.stopPropagation();
         console.log("Releasing Funds");
 
+        const allocationSummary = {
+            bankDeposited: bankDeposited,
+            mulchCost: mulchCost,
+            bagsSold: bagsSold,
+            bagsTotalSales: bagsTotalSales,
+            bagsSpread: bagsSpread,
+            spreadingTotal: spreadingTotal,
+            totalDonated: totalDonated,
+            totalCollected: scoutTotalCollected,
+            mulchSalesGross: mulchSalesGross,
+            troopMinAllocation: troopPercentage,
+            scoutsMaxAllocation: scoutPercentage,
+            scoutsBadSalesAllocation: scoutSellingPercentage,
+            perBagAvgEarnings: perBagAvgEarnings,
+            scoutDeliveryAllocation: scoutDeliveryPercentage,
+            totalDeliveryMinutes: deliveryMinutes,
+            deliveryAllocation: deliveryEarnings,
+        };
 
+        const reportToSave = {
+            perUserSummary: perUserReport,
+            allcationSummary: allocationSummary,
+            areFundsReleased: false,
+        };
+        
+        console.log(`Allocation Summary: ${JSON.stringify(reportToSave, null, '\t')}`);
 
     }
 
@@ -363,7 +398,7 @@ export default function fundsRelease() {
         event.preventDefault();
         event.stopPropagation();
         console.log("Generating Report");
-        const perUserReport = {};
+        perUserReport = {};
 
         // Helper function for handling spreaders
         const recordSpreaders = (bagsToSpread, spreaders) => {
@@ -395,6 +430,11 @@ export default function fundsRelease() {
             const totAmt = currency(order.totalAmt);
             const uid = order.orderOwner;
             if (!perUserReport.hasOwnProperty(uid)) { perUserReport[uid] = {}; }
+            if (!perUserReport[uid].hasOwnProperty('totalAmtCollected')) { 
+                perUserReport[uid]['totalAmtCollected'] = USD(0);
+            }
+            perUserReport[uid]['totalAmtCollected'] =
+                perUserReport[uid]['totalAmtCollected'].add(totAmt);
 
             // Add a donation
             if (!order.deliveryId) {
@@ -445,6 +485,7 @@ export default function fundsRelease() {
                 perUserReport[uid]['numBagsSold'] += order.products.bags;
                 perUserReport[uid]['allocationFromBagsSold'] =
                     perUserReport[uid]['allocationFromBagsSold'].add(allocatedAmt);
+
             }
 
 
@@ -470,6 +511,16 @@ export default function fundsRelease() {
             return totalAllocation;
         };
 
+        const perScoutReportDataHeaders = [ "UserId", 
+                                            "FullName", 
+                                            "BagsSold", 
+                                            "BagsSpread",
+                                            "DeliveryMinutes", 
+                                            "Donations", 
+                                            "AllocFrmBagsSold", 
+                                            "AllocFrmBagsSpread", 
+                                            "AllocFrmDelivery",
+                                            "AllocTotal" ];
         const perScoutReportDataFields = [];
         let totalDonations = USD(0);
         let allocationFromBagsSold = USD(0);
@@ -496,28 +547,28 @@ export default function fundsRelease() {
             perScoutReportDataFields.push([
                 uid,
                 frConfig.getUserNameFromId(uid),
-                report.hasOwnProperty('numBagsSold')?report['numBagsSold'] : undefined,
-                report.hasOwnProperty('numBagsSpreadSold')?report['numBagsSpreadSold'] : undefined,
-                report.hasOwnProperty('deliveryMins')?report['deliveryMins'] : undefined,
-                report.hasOwnProperty('donations')?report['donations'] : undefined,
-                report.hasOwnProperty('allocationFromBagsSold')?report['allocationFromBagsSold'] : undefined,
-                report.hasOwnProperty('allocationFromBagsSpread')?report['allocationFromBagsSpread'] : undefined,
-                report.hasOwnProperty('allocationsFromDelivery')?report['allocationsFromDelivery'] : undefined,
-                report['allocationTotal']
+                report.hasOwnProperty('numBagsSold')?report['numBagsSold'] : '',
+                report.hasOwnProperty('numBagsSpreadSold')?report['numBagsSpreadSold'] : '',
+                report.hasOwnProperty('deliveryMins')?report['deliveryMins'] : '',
+                report.hasOwnProperty('donations')?report['donations'].format() : '',
+                report.hasOwnProperty('allocationFromBagsSold')?report['allocationFromBagsSold'].format() : '',
+                report.hasOwnProperty('allocationFromBagsSpread')?report['allocationFromBagsSpread'].format() : '',
+                report.hasOwnProperty('allocationsFromDelivery')?report['allocationsFromDelivery'].format() : '',
+                report['allocationTotal'].format()
             ]);
         }
 
         perScoutReportDataFields.push([
-            'scoutTotals',
+            '',
             'Scout Total Allocations',
             savedVals.bagsSold,
             savedVals.bagsSpread,
             savedVals.deliveryMinutes,
-            totalDonations, // I could pull all the below from global data but they wanted cross check
-            allocationFromBagsSold,
-            allocationFromBagsSpread,
-            allocationsFromDelivery,
-            allocationsTotal
+            totalDonations.format(), // I could pull all the below from global data but they wanted cross check
+            allocationFromBagsSold.format(),
+            allocationFromBagsSpread.format(),
+            allocationsFromDelivery.format(),
+            allocationsTotal.format()
         ]);
 
         const perScoutReport = [];
@@ -527,22 +578,33 @@ export default function fundsRelease() {
             perScoutReport.push(
                 <tr key={field[0]}>
                     <td>{field[1]}</td>
-                    <td>{field[2] ? field[2] : ''}</td>
-                    <td>{field[3] ? field[3] : ''}</td>
-                    <td>{field[4] ? field[4] : ''}</td>
-                    <td>{field[5] ? field[5].format() : ''}</td>
-                    <td>{field[6] ? field[6].format() : ''}</td>
-                    <td>{field[7] ? field[7].format() : ''}</td>
-                    <td>{field[8] ? field[8].format() : ''}</td>
-                    <td>{field[9] ? field[9].format() : ''}</td>
+                    <td>{field[2]}</td>
+                    <td>{field[3]}</td>
+                    <td>{field[4]}</td>
+                    <td>{field[5]}</td>
+                    <td>{field[6]}</td>
+                    <td>{field[7]}</td>
+                    <td>{field[8]}</td>
+                    <td>{field[9]}</td>
                 </tr>
             );
         }
 
         setReportCard(
-            <div className="col-md-10">
+            <div className="col-md-9">
                 <div className="card">
-                    <h5 className="card-header justify-content-center text-center">Allocation Report</h5>
+                    <h5 className="card-header justify-content-center text-center">
+                        Allocation Report
+                        <button type="button" className="btn reports-view-setting-btn ms-3"
+                                onClick={onDownloadReport} data-bs-toggle="tooltip"
+                                data-reportfields={JSON.stringify(perScoutReportDataFields)}
+                                data-reportheaders={JSON.stringify(perScoutReportDataHeaders)}
+                                title="Download Report">
+                            <svg className="bi" fill="currentColor">
+                                <use xlinkHref={exportImg}/>
+                            </svg>
+                        </button>
+                    </h5>
                     <div className="card-body">
                         <form onSubmit={onReleaseFundsFormSubmission}>
                             <div className="table-responsive-xxl" id="fundsReleaseTables">
@@ -576,21 +638,13 @@ export default function fundsRelease() {
                                     </tbody>
                                 </table>
                             </div>
-                            <button type="submit" className="btn btn-primary invisible my-2 float-end"
+                            <button type="submit" className="btn btn-primary my-2 float-end"
                                     id="releaseFundsBtn"
                                     data-bs-toggle="tooltip"
-                                    data-report-fields={perScoutReportDataFields}
                                     title="Release Report to Scouts">
-                                Generate Data
+                                Save and Release Funds
                             </button>
                         </form>
-                        <button type="button" className="btn reports-view-setting-btn ms-3"
-                                onClick={onDownloadReport} data-bs-toggle="tooltip"
-                                title="Download Report">
-                            <svg className="bi" fill="currentColor">
-                                <use xlinkHref={exportImg}/>
-                            </svg>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -617,7 +671,16 @@ export default function fundsRelease() {
                         <div className="col">
 
                             <div className="card" style={{'maxWidth': '30rem'}}>
-                                <h5 className="card-header justify-content-center text-center">Allocation Calculations</h5>
+                                <h5 className="card-header justify-content-center text-center">
+                                    Allocation Calculations
+                                    <button type="button" className="btn reports-view-setting-btn ms-3"
+                                            onClick={onDownloadSummary} data-bs-toggle="tooltip"
+                                            title="Download Summary">
+                                        <svg className="bi" fill="currentColor">
+                                            <use xlinkHref={exportImg}/>
+                                        </svg>
+                                    </button>
+                                </h5>
                                 <div className="card-body">
                                     <form onSubmit={onAllocationFormSubmission}>
                                         <div className="row mb-2">
@@ -721,20 +784,13 @@ export default function fundsRelease() {
                                             </table>
                                         </div>
 
-                                        <button type="submit" className="btn btn-primary invisible my-2 float-end"
+                                        <button type="submit" className="btn btn-primary my-2 float-end"
                                                 id="generateReportsBtn"
                                                 data-bs-toggle="tooltip"
                                                 title="Generate Data">
                                             Generate Data
                                         </button>
                                     </form>
-                                    <button type="button" className="btn reports-view-setting-btn ms-3"
-                                            onClick={onDownloadRawData} data-bs-toggle="tooltip"
-                                            title="Download RawData">
-                                        <svg className="bi" fill="currentColor">
-                                            <use xlinkHref={exportImg}/>
-                                        </svg>
-                                    </button>
                                 </div>
                             </div> {/* End of card */}
                         </div>
