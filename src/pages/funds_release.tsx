@@ -28,8 +28,8 @@ const savedVals = {
     salesFromBags: USD(0),
     deliveryMinutes: 0,
     totalDonations: USD(0),
-    bankDeposited: /*USD(0), // */ USD("$55,045.40"),
-    mulchCost: /*USD(0), //*/USD("$22,319.70"),
+    bankDeposited: USD(0), // USD("$55,045.40"),
+    mulchCost: USD(0), //USD("$22,319.70"),
     allocationPerBagAdjustmentRatio: 0.0, // Percentage to adjust from sales price
     allocationPerDeliveryMinutes: 0.0,
     allocationsForMulchBagSales: USD(0),
@@ -140,24 +140,22 @@ const getDeliveryMinutes = async () => {
 //
 const gatherDbData = async (frConfig: FundraiserConfig) => {
 
-    rawDbData.pricePerBagToSpread = currency(rawDbData.pricePerBagToSpread);
     const [maxOrigUnitPrice,minOrigUnitPrice, priceBreaks] = getMulchBagUnitPrice();
-    rawDbData['originalBagCosts'] = {
-        maxUnitPrice: maxOrigUnitPrice,
-        minUnitPrice: minOrigUnitPrice,
-        priceBreaks: priceBreaks
-    };
-    return rawDbData;
-    /* const fieldNames = ['orderOwner', 'spreaders', 'products.spreading', 'products.bags', 'productsCost', 'deliveryId', 'totalAmt']
-       const promises = [ orderDb.query({fields: fieldNames, orderOwner: 'any'}), getDeliveryMinutes()];
-       const [orders, [deliveryMins, deliveryMinsPerWorker]] = await Promise.all(promises);
+    const fieldNames = ['orderOwner', 'spreaders', 'products.spreading', 'products.bags', 'productsCost', 'deliveryId', 'totalAmt']
+    const promises = [ orderDb.query({fields: fieldNames, orderOwner: 'any'}), getDeliveryMinutes()];
+    const [orders, [deliveryMins, deliveryMinsPerWorker]] = await Promise.all(promises);
 
-       return {
-       orders: orders,
-       deliveryMinutes: deliveryMins,
-       deliveryMinutesPerWorker: deliveryMinsPerWorker,
-       pricePerBagToSpread: getSpreadingPrice(frConfig)
-       }; */
+    return {
+        orders: orders,
+        deliveryMinutes: deliveryMins,
+        deliveryMinutesPerWorker: deliveryMinsPerWorker,
+        pricePerBagToSpread: getSpreadingPrice(frConfig),
+        originalBagCosts: {
+            maxUnitPrice: maxOrigUnitPrice,
+            minUnitPrice: minOrigUnitPrice,
+            priceBreaks: priceBreaks
+        }
+    };
 };
 ////////////////////////////////////////////////////
 //
@@ -197,6 +195,31 @@ export default function fundsRelease() {
     const [perBagAvgEarnings, setPerBagAvgEarnings] = useState();
     const [deliveryMinutes, setDeliveryMinutes] = useState();
     const [deliveryEarnings, setDeliveryEarnings] = useState();
+
+
+    ////////////////////////////////////////////////////
+    //
+    const getAllocationSummary = ()=>{
+        return {
+            bankDeposited: bankDeposited,
+            mulchCost: mulchCost,
+            bagsSold: bagsSold,
+            bagsTotalSales: bagsTotalSales,
+            bagsSpread: bagsSpread,
+            spreadingTotal: spreadingTotal,
+            totalDonated: totalDonated,
+            totalCollected: scoutTotalCollected,
+            mulchSalesGross: mulchSalesGross,
+            troopMinAllocation: troopPercentage,
+            scoutsMaxAllocation: scoutPercentage,
+            scoutsBadSalesAllocation: scoutSellingPercentage,
+            perBagAvgEarnings: perBagAvgEarnings,
+            scoutDeliveryAllocation: scoutDeliveryPercentage,
+            totalDeliveryMinutes: deliveryMinutes,
+            deliveryAllocation: deliveryEarnings,
+        };
+    };
+
 
     ////////////////////////////////////////////////////
     //
@@ -284,12 +307,12 @@ export default function fundsRelease() {
     ////////////////////////////////////////////////////
     //
     const onDownloadSummary = async ()=> {
-        
+        const allocationSummary = getAllocationSummary();
         const hiddenElement = document.createElement('a');
-        const blob = new Blob([JSON.stringify(dbData, null, 2)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(allocationSummary, null, 2)], { type: 'application/json' });
         hiddenElement.href = URL.createObjectURL(blob);
         hiddenElement.target = '_blank';
-        hiddenElement.download = `RawFundsReleaseData.json`;
+        hiddenElement.download = `AllocationSummary.json`;
         hiddenElement.click();
     };
 
@@ -298,7 +321,7 @@ export default function fundsRelease() {
     const onDownloadReport = async (evt: any)=> {
         const data = JSON.parse(evt.currentTarget.dataset.reportfields);
         const headers = JSON.parse(evt.currentTarget.dataset.reportheaders);
-        
+
         const csvData = Papa.unparse({
             "fields": headers,
             "data": data,
@@ -355,38 +378,67 @@ export default function fundsRelease() {
 
     ////////////////////////////////////////////////////
     //
-    const onReleaseFundsFormSubmission = (event: any) => {
-        event.preventDefault();
-        event.stopPropagation();
-        console.log("Releasing Funds");
+    const onReleaseFundsFormSubmission = async (event: any) => {
+        ///////////////////////////////
+        //
+        const make_req = async (body: any) => {
+            const params = {
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': await auth.getAuthToken(),
+                }
+            };
 
-        const allocationSummary = {
-            bankDeposited: bankDeposited,
-            mulchCost: mulchCost,
-            bagsSold: bagsSold,
-            bagsTotalSales: bagsTotalSales,
-            bagsSpread: bagsSpread,
-            spreadingTotal: spreadingTotal,
-            totalDonated: totalDonated,
-            totalCollected: scoutTotalCollected,
-            mulchSalesGross: mulchSalesGross,
-            troopMinAllocation: troopPercentage,
-            scoutsMaxAllocation: scoutPercentage,
-            scoutsBadSalesAllocation: scoutSellingPercentage,
-            perBagAvgEarnings: perBagAvgEarnings,
-            scoutDeliveryAllocation: scoutDeliveryPercentage,
-            totalDeliveryMinutes: deliveryMinutes,
-            deliveryAllocation: deliveryEarnings,
-        };
+            if (body) {
+                params['body'] = JSON.stringify(body);
+            }
 
-        const reportToSave = {
-            perUserSummary: perUserReport,
-            allcationSummary: allocationSummary,
-            areFundsReleased: false,
-        };
-        
-        console.log(`Allocation Summary: ${JSON.stringify(reportToSave, null, '\t')}`);
+            //console.log(`Making Request: ${JSON.stringify(body, null, '\t')}`);
 
+            const resp = await fetch(`${awsConfig.api.invokeUrl}/users`, params);
+            if (!resp.ok) {
+                const bodyStr = await resp.text()
+                throw Error(`HTTP Resp Error: ${resp.status} ${bodyStr}`);
+            }
+            return await resp.json();
+        }
+
+        const btn = document.getElementById('releaseFundsBtn');
+        btn.disabled = true;
+        const submitSpinny = document.getElementById('formReleaseFundsSpinner');
+        submitSpinny.style.display = "inline-block";
+        try {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log("Releasing Funds");
+
+            const allocationSummary = getAllocationSummary();
+
+            const reportToSave = {
+                perUserSummary: perUserReport,
+                allcationSummary: allocationSummary,
+                areFundsReleased: true,
+            };
+
+            //console.log(`Allocation Summary: ${JSON.stringify(reportToSave, null, '\t')}`);
+
+            await make_req({cmd: 'UPDATE_LEADERBOARD', summary: reportToSave});
+        } catch(error) {
+            console.error(error);
+            alert(`Failed Saving Allocation Report: ${error}`);
+        }
+
+        submitSpinny.style.display = "none";
+        btn.disabled = false;
+
+        /* const hiddenElement = document.createElement('a');
+         * const blob = new Blob([JSON.stringify(reportToSave, null, 2)], { type: 'application/json' });
+         * hiddenElement.href = URL.createObjectURL(blob);
+         * hiddenElement.target = '_blank';
+         * hiddenElement.download = `LeaderboardSummary.json`;
+         * hiddenElement.click();
+         */
     }
 
 
@@ -430,7 +482,7 @@ export default function fundsRelease() {
             const totAmt = currency(order.totalAmt);
             const uid = order.orderOwner;
             if (!perUserReport.hasOwnProperty(uid)) { perUserReport[uid] = {}; }
-            if (!perUserReport[uid].hasOwnProperty('totalAmtCollected')) { 
+            if (!perUserReport[uid].hasOwnProperty('totalAmtCollected')) {
                 perUserReport[uid]['totalAmtCollected'] = USD(0);
             }
             perUserReport[uid]['totalAmtCollected'] =
@@ -511,14 +563,14 @@ export default function fundsRelease() {
             return totalAllocation;
         };
 
-        const perScoutReportDataHeaders = [ "UserId", 
-                                            "FullName", 
-                                            "BagsSold", 
+        const perScoutReportDataHeaders = [ "UserId",
+                                            "FullName",
+                                            "BagsSold",
                                             "BagsSpread",
-                                            "DeliveryMinutes", 
-                                            "Donations", 
-                                            "AllocFrmBagsSold", 
-                                            "AllocFrmBagsSpread", 
+                                            "DeliveryMinutes",
+                                            "Donations",
+                                            "AllocFrmBagsSold",
+                                            "AllocFrmBagsSpread",
                                             "AllocFrmDelivery",
                                             "AllocTotal" ];
         const perScoutReportDataFields = [];
@@ -642,6 +694,8 @@ export default function fundsRelease() {
                                     id="releaseFundsBtn"
                                     data-bs-toggle="tooltip"
                                     title="Release Report to Scouts">
+                                <span className="spinner-border spinner-border-sm me-1" role="status"
+                                      aria-hidden="true" id="formReleaseFundsSpinner" style={{display: "none"}} />
                                 Save and Release Funds
                             </button>
                         </form>

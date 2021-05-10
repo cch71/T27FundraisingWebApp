@@ -37,10 +37,10 @@ async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
                 You collected {USD(userSummary.amountSold).format()} in total
             </li>
         );
-        if (0.0 < userSummary.donation.value) {
+        if (0.0 < userSummary.donations.value) {
             summaryStats.push(
                 <li key={++statIndex} className="list-group-item border-0 py-1">
-                    You collected {USD(userSummary.donation).format()} in donations
+                    You collected {USD(userSummary.donations).format()} in donations
                 </li>
             );
         }
