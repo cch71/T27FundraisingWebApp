@@ -11,7 +11,6 @@ import CurrencyWidget from "../components/currency_widget";
 import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
 const exportImg = bootstrapIconSprite + "#cloud-download";
 
-import rawDbData from "./RawFundsReleaseData.json"
 let frConfig;
 
 //const exportImg = bootstrapIconSprite + "#cloud-download";
