@@ -74,17 +74,14 @@ const showTheSelectedView = async (frConfig: FundraiserConfig) => {
 //
 const genReportSettingsDlg = ()=>{
     return(
-        <div className="modal fade" id={rprtStngDlgRt}
-             tabIndex="-1" role="dialog" aria-labelledby={rprtStngDlgRt + "Title"} aria-hidden="true">
-            <div className="modal-dialog modal-dialog-centered" role="document">
+        <div className="modal fade" id={rprtStngDlgRt} tabIndex="-1" aria-labelledby={rprtStngDlgRt + "Title"} aria-hidden="true">
+            <div className="modal-dialog modal-dialog-centered">
                 <div className="modal-content">
                     <div className="modal-header">
                         <h5 className="modal-title" id={rprtStngDlgRt + "LongTitle"}>
                             Switch report view settings
                         </h5>
-                        <button type="button" className="close" data-bs-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+                        <button type="button" className="close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div className="modal-body">
                         <div className="container-sm">
@@ -287,9 +284,8 @@ export default function orders(params: any) {
             {deleteDlg}
             {settingsDlg}
             {spreadDlg}
-            <div className="modal fade" id="confirmDlg"
-                 tabIndex="-1" role="dialog" aria-labelledby="deleteOrderDlgTitle" aria-hidden="true">
-                <div className="modal-dialog modal-dialog-centered" role="document">
+            <div className="modal fade" id="confirmDlg" tabIndex="-1" aria-labelledby="deleteOrderDlgTitle" aria-hidden="true">
+                <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content">
                         <div className="modal-header">
                             <h5 className="modal-title" id="deleteOrderDlgLongTitle">
