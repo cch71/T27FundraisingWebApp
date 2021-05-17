@@ -83,7 +83,7 @@ class ReportViews {
             }
 
             for (const userInfo of frConfig.users()) {
-				//console.log(`UserInfo ${JSON.stringify(userInfo)}`);
+                //console.log(`UserInfo ${JSON.stringify(userInfo)}`);
                 users.push(userInfo);
             }
             users.push(['any', 'All']);
@@ -98,6 +98,12 @@ class ReportViews {
             const uid = auth.getCurrentUserId();
             users.push([uid, fullName]);
         }
+
+        if ((await orderDb.getOrderSummary()).areFundsReleased) {
+            console.log(`Alloc Report Available`);
+            views.push(['Allocation Summary', 'AllocationSummary']);
+        }
+
         return [views, users];
     }
 
@@ -134,8 +140,8 @@ class ReportViews {
     //}
     showView(view: string, frConfig: FundraiserConfig, params?: any /* ReportsShowViewParams*/) {
         const asyncShow = async () => {
-			// I don't really want to check for isAdmin for every view but it is easiest to do
-			// this at this point.
+            // I don't really want to check for isAdmin for every view but it is easiest to do
+            // this at this point.
             this.isAdmin = await auth.isCurrentUserAdmin();
 
             const userId = params?.userId;
@@ -144,13 +150,16 @@ class ReportViews {
                 spinnerElm.classList.remove('visually-hidden');
             }
 
-            if (jQuery.fn.dataTable.isDataTable('#reportsTable table')) {
+            // Delete old table so it can be re-created/populated with new data
+            if (jQuery.fn.dataTable.isDataTable('#reportsDataTable table')) {
                 if (view === this.currentView_ && userId === this.currentUserId_) { return; }
 
                 console.log("Resetting Report Data Table");
-                jQuery('#reportsTable table').DataTable().clear();
-                jQuery('#reportsTable table').DataTable().destroy();
-                jQuery('#reportsTable table').empty();
+                jQuery('#reportsDataTable table').DataTable().clear();
+                jQuery('#reportsDataTable table').DataTable().destroy();
+                jQuery('#reportsDataTable table').removeClass('table-striped');
+                jQuery('#reportsDataTable table').empty();
+                jQuery('#reportsRawTable').empty();
                 this.resetToDefault();
             }
 
@@ -221,7 +230,7 @@ class ReportViews {
     //
     private genDataTable(orderDataSet: any, tableColumns: any) {
         //console.log(`Screen Height ${screen.height} window innerHeight: ${window.innerHeight}`);
-        return jQuery('#reportsTable table').DataTable({
+        return jQuery('#reportsDataTable table').DataTable({
             responsive: true,
             data: orderDataSet,
             deferRender: true,
@@ -245,14 +254,14 @@ class ReportViews {
     //
     private registerActionButtonHandlers() {
         //Removing first so it doesn't get doubled loaded
-        jQuery('#reportsTable').find('.order-edt-btn').off('click');
-        jQuery('#reportsTable').find('.order-view-btn').off('click');
-        jQuery('#reportsTable').find('.order-spread-btn').off('click');
-        jQuery('#reportsTable').find('.order-del-btn').off('click');
-        jQuery('#reportsTable').find('.order-vrfy-switch').off('change');
+        jQuery('#reportsDataTable').find('.order-edt-btn').off('click');
+        jQuery('#reportsDataTable').find('.order-view-btn').off('click');
+        jQuery('#reportsDataTable').find('.order-spread-btn').off('click');
+        jQuery('#reportsDataTable').find('.order-del-btn').off('click');
+        jQuery('#reportsDataTable').find('.order-vrfy-switch').off('change');
 
         // Handle on Edit Scenario
-        jQuery('#reportsTable').find('.order-edt-btn').on('click', (event: any)=>{
+        jQuery('#reportsDataTable').find('.order-edt-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
@@ -268,7 +277,7 @@ class ReportViews {
         });
 
         // Handle on View Scenario
-        jQuery('#reportsTable').find('.order-view-btn').on('click', (event: any)=>{
+        jQuery('#reportsDataTable').find('.order-view-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
@@ -285,7 +294,7 @@ class ReportViews {
         });
 
         // Handle on View Scenario
-        jQuery('#reportsTable').find('.order-spread-btn').on('click', (event: any)=>{
+        jQuery('#reportsDataTable').find('.order-spread-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
@@ -368,7 +377,7 @@ class ReportViews {
         });
 
         // Handle On Delete Scenario
-        jQuery('#reportsTable').find('.order-del-btn').on('click', (event: any)=>{
+        jQuery('#reportsDataTable').find('.order-del-btn').on('click', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
@@ -411,7 +420,7 @@ class ReportViews {
             delOrderDlg.show();
         });
 
-        jQuery('#reportsTable').find('.order-vrfy-switch').on('change', (event: any)=>{
+        jQuery('#reportsDataTable').find('.order-vrfy-switch').on('change', (event: any)=>{
             const parentTr = jQuery(event.currentTarget).parents('tr');
             const row = this.currentDataTable_.row(parentTr);
             const rowData = row.data();
@@ -421,7 +430,7 @@ class ReportViews {
             console.log(`Verifiying order for ${orderId}`);
 
             event.preventDefault();
-			      event.stopPropagation();
+            event.stopPropagation();
 
             // Don't allow change to happen here
             const newVal = event.currentTarget.checked;
@@ -479,14 +488,14 @@ class ReportViews {
     ////////////////////////////////////////////////////////////////////
     //
     private formatName(firstName: string, lastName: string) {
-		return `${lastName}, ${firstName}`;
-	}
+        return `${lastName}, ${firstName}`;
+    }
 
-	////////////////////////////////////////////////////////////////////
-	//
-	private async showDefault(frConfig: FundraiserConfig, userId?: string) {
+    ////////////////////////////////////////////////////////////////////
+    //
+    private async showDefault(frConfig: FundraiserConfig, userId?: string) {
 
-		const currentUserId =  auth.getCurrentUserId();
+        const currentUserId =  auth.getCurrentUserId();
         if (!userId) { userId = currentUserId; }
 
         if (!this.currentDataset_) {
@@ -587,6 +596,143 @@ class ReportViews {
         this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
 
         //this.registerActionButtonHandlers();
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    //
+    private async showAllocationSummary(frConfig: FundraiserConfig, userId?: string) {
+
+        const currentUserId =  auth.getCurrentUserId();
+        if (!userId) { userId = currentUserId; }
+
+        if (!this.currentDataset_) {
+            this.reportHeaders_ = [ "UserId",
+                                    "FullName",
+                                    "BagsSold",
+                                    "BagsSpread",
+                                    "DeliveryMinutes",
+                                    "Donations",
+                                    "AllocFrmBagsSold",
+                                    "AllocFrmBagsSpread",
+                                    "AllocFrmDelivery",
+                                    "AllocTotal" ];
+
+            // Fill out rows of data
+            let totalDonations = USD(0);
+            let allocationFromBagsSold = USD(0);
+            let allocationFromBagsSpread = USD(0);
+            let allocationsFromDelivery = USD(0);
+            let allocationsTotal = USD(0);
+            let totalBagsSold = 0;
+            let totalBagsSpreadSold = 0;
+            let totalDeliveryMinutes = 0;
+
+            this.currentDataset_ = [];
+            for (const [uid, report] of Object.entries((await orderDb.getOrderSummary()).allUsersAllocationSummary())) {
+                if (report.hasOwnProperty('donations')) {
+                    totalDonations = totalDonations.add(report['donations']);
+                }
+                if (report.hasOwnProperty('allocationFromBagsSold')) {
+                    allocationFromBagsSold = allocationFromBagsSold.add(report['allocationFromBagsSold']);
+                }
+                if (report.hasOwnProperty('allocationFromBagsSpread')) {
+                    allocationFromBagsSpread = allocationFromBagsSpread.add(report['allocationFromBagsSpread']);
+                }
+                if (report.hasOwnProperty('allocationsFromDelivery')) {
+                    allocationsFromDelivery = allocationsFromDelivery.add(report['allocationsFromDelivery']);
+                }
+                allocationsTotal = allocationsTotal.add(report['allocationTotal']);
+
+                if (report.hasOwnProperty('numBagsSold')) {
+                    totalBagsSold += report['numBagsSold'];
+                }
+
+                if (report.hasOwnProperty('numBagsSpreadSold')) {
+                    totalBagsSpreadSold += report['numBagsSpreadSold'];
+                }
+
+                if (report.hasOwnProperty('deliveryMins')) {
+                    totalDeliveryMinutes += report['deliveryMins'];
+                }
+
+                this.currentDataset_.push([
+                    uid,
+                    frConfig.getUserNameFromId(uid),
+                    report.hasOwnProperty('numBagsSold')?report['numBagsSold'] : '',
+                    report.hasOwnProperty('numBagsSpreadSold')?report['numBagsSpreadSold'] : '',
+                    report.hasOwnProperty('deliveryMins')?report['deliveryMins'] : '',
+                    report.hasOwnProperty('donations')?USD(report['donations']).format() : '',
+                    report.hasOwnProperty('allocationFromBagsSold')?USD(report['allocationFromBagsSold']).format() : '',
+                    report.hasOwnProperty('allocationFromBagsSpread')?USD(report['allocationFromBagsSpread']).format() : '',
+                    report.hasOwnProperty('allocationsFromDelivery')?USD(report['allocationsFromDelivery']).format() : '',
+                    USD(report['allocationTotal']).format()
+                ]);
+            }
+            this.currentDataset_.push([
+                '',
+                'Scout Total Allocations',
+                totalBagsSold,
+                totalBagsSpreadSold,
+                totalDeliveryMinutes,
+                totalDonations.format(), // I could pull all the below from global data but they wanted cross check
+                allocationFromBagsSold.format(),
+                allocationFromBagsSpread.format(),
+                allocationsFromDelivery.format(),
+                allocationsTotal.format()
+            ]);
+        }
+
+        const totalsField = this.currentDataset_[this.currentDataset_.length-1];
+        let tableStr = `<table class='table table-striped'>
+                                 <thead>
+                                    <tr>
+                                        <th scope="col">Name</th>
+                                        <th scope="col"># Bags Sold</th>
+                                        <th scope="col"># Bags to Spread Sold</th>
+                                        <th scope="col"># Delivery Minutes</th>
+                                        <th scope="col">$ Donations</th>
+                                        <th scope="col">$ Allocations from Bags Sold</th>
+                                        <th scope="col">$ Allocations from Spreading</th>
+                                        <th scope="col">$ Allocations from Delivery</th>
+                                        <th scope="col">$ Total Allocations</th>
+                                    </tr>
+                                    <tr style="background-color:DarkSeaGreen;">
+                                        <td>Scout Alloc Totals</td>
+                                        <td>${totalsField[2]}</td>
+                                        <td>${totalsField[3]}</td>
+                                        <td>${totalsField[4]}</td>
+                                        <td>${totalsField[5]}</td>
+                                        <td>${totalsField[6]}</td>
+                                        <td>${totalsField[7]}</td>
+                                        <td>${totalsField[8]}</td>
+                                        <td>${totalsField[9]}</td>
+                                    </tr>
+                                </thead>
+
+        `;
+
+        tableStr = tableStr.concat('<tbody>');
+        for (let idx=0; idx < this.currentDataset_.length-1; ++idx) {
+            const field = this.currentDataset_[idx];
+            tableStr = tableStr.concat(`
+            <tr key='${field[0]}'>
+                <td>${field[1]}</td>
+                <td>${field[2]}</td>
+                <td>${field[3]}</td>
+                <td>${field[4]}</td>
+                <td>${field[5]}</td>
+                <td>${field[6]}</td>
+                <td>${field[7]}</td>
+                <td>${field[8]}</td>
+                <td>${field[9]}</td>
+            </tr>
+            `);
+        }
+        tableStr = tableStr.concat('</tbody></table>');
+
+        jQuery('#reportsRawTable').html(tableStr);
+        
+        
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -767,7 +913,7 @@ class ReportViews {
 
         this.currentDataTable_ = this.genDataTable(this.currentDataset_, tableColumns);
     }
-    
+
     ////////////////////////////////////////////////////////////////////
     //
     private async showVerifyOrders(frConfig: FundraiserConfig, userId?: string) {
@@ -1156,30 +1302,37 @@ class ReportViews {
     ////////////////////////////////////////////////////////////////////
     //
     genCsvFromCurrent(): string {
-        if (!this.currentDataTable_) { throw new Error("Table isn't found"); }
         let csvFileData = [];
 
         //Get Data
-        const data = this.currentDataTable_.data().toArray();
+        const getData = ()=>{
+            if (this.currentDataTable_) {
+                return this.currentDataTable_.data().toArray();
+            } else {
+                return this.currentDataset_;
+            }
+        }
+
+        const data = getData();
         let csvData = [];
-		    const headerLen = this.reportHeaders_.length;
+        const headerLen = this.reportHeaders_.length;
         data.forEach((row, _)=>{
             let csvRow = [];
             row.forEach((column, _)=>{
                 csvRow.push(column);
             });
-			      if (headerLen !== row.length) {
-				        // This is a simple test in that we dont include actions in the reportHeaders
-				        //  and so if they aren't equal then it assumes actiion column is present and
-				        // removes it
-				        csvRow.splice(-1,1);
-			      }
+            if (headerLen !== row.length) {
+                // This is a simple test in that we dont include actions in the reportHeaders
+                //  and so if they aren't equal then it assumes actiion column is present and
+                // removes it
+                csvRow.splice(-1,1);
+            }
             csvData.push(csvRow);
         });
 
         return Papa.unparse({
-	          "fields": this.reportHeaders_,
-	          "data": csvData,
+            "fields": this.reportHeaders_,
+            "data": csvData,
         });
 
         //console.log(`${JSON.stringify(csvFileData, null, '\t')}`);
@@ -1380,4 +1533,45 @@ const genDeleteDlg = ()=>{
     );
 };
 
-export {reportViews, genDeleteDlg, genSpreadingDlg};
+////////////////////////////////////////////////////////////////////
+//
+const genConfirmDlg = ()=>{
+
+    return(
+        <div className="modal fade" id="confirmDlg" tabIndex="-1" aria-labelledby="confirmDlgTitle" aria-hidden="true">
+            <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h5 className="modal-title" id="confirmDlgLongTitle">
+                            Confirmation Requested
+                        </h5>
+                        <button type="button" className="close" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <small id="confirmDeleteOrderHelp" className="form-text text-muted">
+                            Do you wish to continue?
+                        </small>
+
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-secondary"
+                                data-bs-dismiss="modal">Cancel</button>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-primary" id="confirmDlgBtn">
+                                <span className="spinner-border spinner-border-sm me-1" role="status"
+                                      aria-hidden="true" id="confirmDlgBtnSpinny"
+                                      style={{display: "none"}} />
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+export {reportViews, genDeleteDlg, genSpreadingDlg, genConfirmDlg};

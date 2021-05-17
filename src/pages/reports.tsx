@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AddNewOrderWidget from "../components/add_new_order_widget"
-import {reportViews, genDeleteDlg, genSpreadingDlg} from "../components/report_view"
+import {reportViews, genDeleteDlg, genSpreadingDlg, genConfirmDlg} from "../components/report_view"
 import { navigate } from "gatsby";
 import {orderDb, OrderListItem} from "../js/ordersdb";
 import currency from "currency.js";
@@ -183,8 +183,10 @@ const genCardBody = (frConfig: FundraiserConfig) => {
                 </div>
             </h6>
 
-            <div id="reportsTable">
+            <div id="reportsDataTable">
                 <table  className="display responsive nowrap collapsed" role="grid" style={{width:"100%"}}/>
+            </div>
+            <div id="reportsRawTable">
             </div>
 
             <div className="spinner-border" role="status" id="orderLoadingSpinner">
@@ -208,6 +210,7 @@ export default function orders(params: any) {
     const [newOrderButton, setNewOrderButton] = useState();
     const [cardBody, setCardBody] = useState();
     const [deleteDlg, setDeleteDlg] = useState();
+    const [confirmDlg, setConfirmDlg] = useState();
     const [spreadDlg, setSpreadDlg] = useState();
     const [settingsDlg, setReportSettingsDlg] = useState();
     useEffect(() => {
@@ -233,6 +236,7 @@ export default function orders(params: any) {
             console.log("Loading Gen Card Body");
             setCardBody(genCardBody(frConfig));
             setDeleteDlg(genDeleteDlg());
+            setConfirmDlg(genConfirmDlg());
             setSpreadDlg(genSpreadingDlg(frConfig));
             setReportSettingsDlg(genReportSettingsDlg());
 
@@ -273,49 +277,18 @@ export default function orders(params: any) {
 
     return (
         <div>
+            { newOrderButton }
             <div className="col-xs-1 d-flex justify-content-center">
                 <div className="card" style={{width: "100%"}}>
                     {cardBody}
                 </div>
             </div>
 
-            { newOrderButton }
 
             {deleteDlg}
             {settingsDlg}
             {spreadDlg}
-            <div className="modal fade" id="confirmDlg" tabIndex="-1" aria-labelledby="deleteOrderDlgTitle" aria-hidden="true">
-                <div className="modal-dialog modal-dialog-centered">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h5 className="modal-title" id="deleteOrderDlgLongTitle">
-                                Confirmation Requested
-                            </h5>
-                            <button type="button" className="close" data-bs-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <small id="confirmDeleteOrderHelp" className="form-text text-muted">
-                                Do you wish to continue?
-                            </small>
-
-                        </div>
-                        <div className="modal-footer">
-                            <button type="button" className="btn btn-secondary"
-                                    data-bs-dismiss="modal">Cancel</button>
-                            <div className="modal-footer">
-                                <button type="button" className="btn btn-primary" id="confirmDlgBtn">
-                                    <span className="spinner-border spinner-border-sm me-1" role="status"
-                                          aria-hidden="true" id="confirmDlgBtnSpinny"
-                                          style={{display: "none"}} />
-                                    Save
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {confirmDlg}
         </div>
     );
 }

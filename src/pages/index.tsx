@@ -50,12 +50,40 @@ async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
                     You sold {userSummary.bags} bags of mulch
                 </li>
             );
+
             summaryStats.push(
                 <li key={++statIndex} className="list-group-item border-0 py-1">
                     You sold {userSummary.spreading} spreading jobs
                 </li>
             );
         }
+
+        if (summary.areFundsReleased) {
+            if ('mulch' === frConfig.kind()) {
+                summaryStats.push(
+                    <li key={++statIndex} className="list-group-item border-0 py-1">
+                        Allocations from bag sales {USD(userSummary.allocationFromBagsSold).format()}
+                    </li>
+                );
+                summaryStats.push(
+                    <li key={++statIndex} className="list-group-item border-0 py-1">
+                        Allocations from spreading {USD(userSummary.allocationFromSpreading).format()}
+                    </li>
+                );
+                summaryStats.push(
+                    <li key={++statIndex} className="list-group-item border-0 py-1">
+                        Allocations from delivery {USD(userSummary.allocationFromDelivering).format()}
+                    </li>
+                );
+            }
+
+            summaryStats.push(
+                <li key={++statIndex} className="list-group-item border-0 py-1">
+                    Your total allocations are {USD(userSummary.allocationTotal).format()}
+                </li>
+            );
+        }
+
 
         summaryStats.push(
             <li key={++statIndex} className="list-group-item border-0 py-1">

@@ -115,6 +115,10 @@ class LeaderBoardUserSummary {
     public donations: currency = currency(0);
     public spreading: number = 0;
     public bags: number = 0;
+    public allocationFromSpreading: currency = currency(0);
+    public allocationFromBagsSold: currency = currency(0);
+    public allocationFromDelivering: currency = currency(0);
+    public allocationTotal: currency = currency(0);
 
 }
 
@@ -126,13 +130,15 @@ class LeaderBoardSummaryInfo {
     private troopSales_: currency = currency(0);
     private patrolInfo_: Record<string, currency> = {};
     private userInfo_: LeaderBoardUserSummary = new LeaderBoardUserSummary();
+    private nextSync_: number = Date.now() + (15 * 1000 * 60); //nextSync is 15min from now;
 
     /////////////////////////////////////////////
     //
-    constructor(summaryResp: any, private userId_: string, frConfig: FundraiserConfig) {
-        this.areFundsReleased = summaryResp.areFundsReleased;
+    constructor(private summaryResp_: any, private userId_: string, frConfig: FundraiserConfig) {
+        this.areFundsReleased = this.summaryResp_?.areFundsReleased;
+        if (!this.summaryResp_) { return; }
 
-        for (const [uid, summary] of Object.entries(summaryResp.perUserSummary)) {
+        for (const [uid, summary] of Object.entries(this.summaryResp_.perUserSummary)) {
             const totAmt = currency(summary.totalAmtCollected);
             this.troopSales_ = this.troopSales_.add(totAmt)
             this.users_.push([uid, totAmt]);
@@ -156,6 +162,20 @@ class LeaderBoardSummaryInfo {
                 if (summary.hasOwnProperty('numBagsSpreadSold')) {
                     this.userInfo_['spreading'] = currency(summary['numBagsSpreadSold']);
                 }
+                if (this.areFundsReleased) {
+                    if (summary.hasOwnProperty('allocationFromBagsSold')) {
+                        this.userInfo_['allocationFromBagsSold'] = currency(summary['allocationFromBagsSold']);
+                    }
+                    if (summary.hasOwnProperty('allocationFromBagsSpread')) {
+                        this.userInfo_['allocationFromBagsSpread'] = currency(summary['allocationFromBagsSpread']);
+                    }
+                    if (summary.hasOwnProperty('allocationsFromDelivery')) {
+                        this.userInfo_['allocationsFromDelivery'] = currency(summary['allocationsFromDelivery']);
+                    }
+                    if (summary.hasOwnProperty('allocationTotal')) {
+                        this.userInfo_['allocationTotal'] = currency(summary['allocationTotal']);
+                    }
+                }
             }
         }
 
@@ -167,6 +187,13 @@ class LeaderBoardSummaryInfo {
     userSummary(): LeaderBoardUserSummary {
         return this.userInfo_;
     }
+
+    /////////////////////////////////////////////
+    //
+    allUsersAllocationSummary(): any {
+        return this.summaryResp_.perUserSummary;
+    }
+    
 
     /////////////////////////////////////////////
     //
@@ -195,6 +222,12 @@ class LeaderBoardSummaryInfo {
     troopAmountSold(): currency {
         return this.troopSales_;
     }
+
+    /////////////////////////////////////////////
+    //
+    needNewSync(): boolean {
+        return this.nextSync_ < Date.now();
+    }
 }
 
 /////////////////////////////////////////////
@@ -202,6 +235,7 @@ class LeaderBoardSummaryInfo {
 class OrderDb {
     private currentOrder_?: Order;
     private submitOrderPromise_?: Promise<void>;
+    private summary_?: LeaderBoardSummaryInfo;
 
     constructor() {}
 
@@ -233,6 +267,10 @@ class OrderDb {
     // Todo need to define summary type
     getOrderSummary(): Promise<LeaderBoardSummaryInfo>  {
         return new Promise(async (resolve, reject)=>{
+            if (this.summary_ && !this.summary_.needNewSync()) {
+                resolve(this.summary_);
+                return;
+            }
             try {
                 const userId = auth.currentUser().getUsername();
                 const authToken = await auth.getAuthToken();
@@ -253,17 +291,13 @@ class OrderDb {
                 } else {
                     const summaryInfo = await resp.json();
                     //console.log(`SummaryInfo: ${JSON.stringify(summaryInfo, null, '\t')}`)
-                    resolve(new LeaderBoardSummaryInfo(summaryInfo, userId, frConfig));
+                    this.summary_ = new LeaderBoardSummaryInfo(summaryInfo, userId, frConfig);
+                    resolve(this.summary_);
                 }
 
             } catch(error) {
                 console.error(error);
-                const leaderboardDefault = {
-                    'patrols': {},
-                    'troop': {},
-                    'users': []
-                };
-                resolve(new LeaderBoardSummaryInfo(leaderboardDefault, userId));
+                resolve(new LeaderBoardSummaryInfo(undefined, userId));
             }
         });
     }
