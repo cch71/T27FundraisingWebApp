@@ -29,8 +29,8 @@ const savedVals = {
     perBagCost: 0.0,
     deliveryMinutes: 0,
     totalDonations: USD(0),
-    bankDeposited: /*USD(0), //*/ USD("$55,045.40"),
-    mulchCost: /* USD(0), // */ USD("$22,319.70"),
+    bankDeposited: USD(0), // USD("$55,045.40"),
+    mulchCost: USD(0), //USD("$22,319.70"),
     allocationPerBagAdjustmentRatio: 0.0, // Percentage to adjust from sales price
     allocationPerDeliveryMinutes: 0.0,
     allocationsForMulchBagSales: USD(0),
