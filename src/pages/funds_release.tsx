@@ -532,24 +532,28 @@ export default function fundsRelease() {
                 if (!perUserReport[uid].hasOwnProperty('numBagsSold')) {
                     perUserReport[uid]['numBagsSold'] = 0;
                     perUserReport[uid]['allocationFromBagsSold'] = USD(0);
+                    perUserReport[uid]['totalCollectedForBags'] = USD(0);
                 }
 
                 // To get allocation based on break down, get percentage of sales and use that percentage
                 //  to get that percentage from allocation
-                const orderOrigBagSales = calcBagSales(order.products.bags);
-                const troopCostForBags  = savedVals.perBagCost * order.products.bags;
-                const percentageOfSales = 
-                    orderOrigBagSales.subtract(troopCostForBags).value / savedVals.profitsFromBags.value;
-                const allocatedAmt =
-                    USD(moneyFloorFromDouble(percentageOfSales * savedVals.allocationsForMulchBagSales));
+                perUserReport[uid]['totalCollectedForBags'] =  
+                    perUserReport[uid]['totalCollectedForBags'].add(calcBagSales(order.products.bags));
 
                 perUserReport[uid]['numBagsSold'] += order.products.bags;
-                perUserReport[uid]['allocationFromBagsSold'] =
-                    perUserReport[uid]['allocationFromBagsSold'].add(allocatedAmt);
 
             }
+        }
 
+        for (const [uid, report] of Object.entries(perUserReport)) {
+            if (!report.hasOwnProperty('numBagsSold')) { continue; }
 
+            const troopCostForBags = savedVals.perBagCost * report.numBagsSold;
+            const profitFromBags = report.totalCollectedForBags - troopCostForBags;
+            const percentageOfSales = profitFromBags / savedVals.profitsFromBags.value;
+            const allocatedAmt =
+                USD(moneyFloorFromDouble(percentageOfSales * savedVals.allocationsForMulchBagSales));
+            perUserReport[uid]['allocationFromBagsSold'] = allocatedAmt;
         }
 
         ////////////////////////////////////////////////////
