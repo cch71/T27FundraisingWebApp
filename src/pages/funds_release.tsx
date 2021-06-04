@@ -25,10 +25,12 @@ const savedVals = {
     bagsSpread: 0,
     bagsSold: 0,
     salesFromBags: USD(0),
+    profitsFromBags: USD(0),
+    perBagCost: USD(0),
     deliveryMinutes: 0,
     totalDonations: USD(0),
-    bankDeposited: USD(0), // USD("$55,045.40"),
-    mulchCost: USD(0), //USD("$22,319.70"),
+    bankDeposited: /*USD(0), //*/ USD("$55,045.40"),
+    mulchCost: /* USD(0), // */ USD("$22,319.70"),
     allocationPerBagAdjustmentRatio: 0.0, // Percentage to adjust from sales price
     allocationPerDeliveryMinutes: 0.0,
     allocationsForMulchBagSales: USD(0),
@@ -362,6 +364,12 @@ export default function fundsRelease() {
         const perBagAvgCanEarn = USD(sellingPercentage/savedVals.bagsSold);
         setPerBagAvgEarnings(perBagAvgCanEarn.format());
 
+        savedVals.perBagCost = USD(mulchCost).divide(savedVals.bagsSold);
+        savedVals.profitsFromBags = savedVals.salesFromBags.subtract(USD(mulchCost));
+
+        //console.log(`perBagCost: ${savedVals.perBagCost}`);
+        //console.log(`profitsFromBags: ${savedVals.profitsFromBags}`);
+
         savedVals.allocationPerDeliveryMinutes = deliveryPercentage/savedVals.deliveryMinutes;
         setDeliveryEarnings(USD(savedVals.allocationPerDeliveryMinutes).format());
 
@@ -529,7 +537,9 @@ export default function fundsRelease() {
                 // To get allocation based on break down, get percentage of sales and use that percentage
                 //  to get that percentage from allocation
                 const orderOrigBagSales = calcBagSales(order.products.bags);
-                const percentageOfSales = orderOrigBagSales.value / savedVals.salesFromBags.value;
+                const troopCostForBags  = savedVals.perBagCost * order.products.bags;
+                const percentageOfSales = 
+                    orderOrigBagSales.subtract(troopCostForBags).value / savedVals.profitsFromBags.value;
                 const allocatedAmt =
                     USD(moneyFloorFromDouble(percentageOfSales * savedVals.allocationsForMulchBagSales));
 
