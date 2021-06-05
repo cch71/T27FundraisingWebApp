@@ -60,6 +60,12 @@ const moneyFloorFromDouble = (val: number)=>{
     return Math.floor(val * 100.0)/100.0;
 }
 
+////////////////////////////////////////////////////
+//
+const moneyRoundFromDouble = (val: number)=>{
+    return Math.round(val * 100.0)/100.0;
+}
+
 ////////////////////////////////////////////////////////
 // Save off current order values
 const saveCurrentOrder = ()=>{
@@ -97,5 +103,6 @@ export { onCurrencyFieldKeyPress,
          onNonNumsKeyPress,
          moneyFloor,
          moneyFloorFromDouble,
+         moneyRoundFromDouble,
          saveCurrentOrder
        }

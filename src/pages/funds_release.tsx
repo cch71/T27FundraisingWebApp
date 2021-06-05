@@ -5,7 +5,7 @@ import auth from "../js/auth";
 import {orderDb, Order, OrdersForDeliveryDate} from "../js/ordersdb";
 import {FundraiserConfig, getFundraiserConfig} from "../js/fundraiser_config";
 import currency from "currency.js";
-import {onCurrencyFieldKeyPress, moneyFloorFromDouble} from "../js/utils";
+import {onCurrencyFieldKeyPress, moneyRoundFromDouble} from "../js/utils";
 import CurrencyWidget from "../components/currency_widget";
 
 import bootstrapIconSprite from "bootstrap-icons/bootstrap-icons.svg";
@@ -460,18 +460,17 @@ export default function fundsRelease() {
         perUserReport = {};
 
         // Helper function for handling spreaders
+        // TODO:  Sum all the amounts and then do truncing at the end. don't use distribute
         const recordSpreaders = (bagsToSpread, spreaders) => {
             const numSpreaders = spreaders.length;
-            const allocationDist =
-                USD(moneyFloorFromDouble(dbData.pricePerBagToSpread.value * bagsToSpread)).distribute(numSpreaders);
+            const allocationDist = (dbData.pricePerBagToSpread.value * bagsToSpread) / numSpreaders;
             for (let idx=0; idx<numSpreaders; ++idx) {
                 const uid = spreaders[idx];
                 if (!perUserReport.hasOwnProperty(uid)) { perUserReport[uid] = {}; }
-                if (!perUserReport[uid].hasOwnProperty('allocationFromBagsSpread')) {
-                    perUserReport[uid]['allocationFromBagsSpread'] = USD(0);
+                if (!perUserReport[uid].hasOwnProperty('rawAllocationFromBagsSpread')) {
+                    perUserReport[uid]['rawAllocationFromBagsSpread'] = 0.0
                 }
-                perUserReport[uid]['allocationFromBagsSpread'] =
-                    perUserReport[uid]['allocationFromBagsSpread'].add(allocationDist[idx]);
+                perUserReport[uid]['rawAllocationFromBagsSpread'] += allocationDist;
             }
         };
 
@@ -480,7 +479,7 @@ export default function fundsRelease() {
             if (!perUserReport.hasOwnProperty(uid)) { perUserReport[uid] = {}; }
             perUserReport[uid]['deliveryMins'] = mins;
             perUserReport[uid]['allocationsFromDelivery'] =
-                USD(moneyFloorFromDouble(savedVals.allocationPerDeliveryMinutes * mins));
+                USD(moneyRoundFromDouble(savedVals.allocationPerDeliveryMinutes * mins));
         }
 
 
@@ -546,14 +545,20 @@ export default function fundsRelease() {
         }
 
         for (const [uid, report] of Object.entries(perUserReport)) {
-            if (!report.hasOwnProperty('numBagsSold')) { continue; }
+            if (report.hasOwnProperty('numBagsSold')) {
+                const troopCostForBags = savedVals.perBagCost * report.numBagsSold;
+                const profitFromBags = report.totalCollectedForBags - troopCostForBags;
+                const percentageOfSales = profitFromBags / savedVals.profitsFromBags.value;
+                const allocatedAmt =
+                    USD(moneyRoundFromDouble(percentageOfSales * savedVals.allocationsForMulchBagSales));
+                perUserReport[uid]['allocationFromBagsSold'] = allocatedAmt;
+            }
 
-            const troopCostForBags = savedVals.perBagCost * report.numBagsSold;
-            const profitFromBags = report.totalCollectedForBags - troopCostForBags;
-            const percentageOfSales = profitFromBags / savedVals.profitsFromBags.value;
-            const allocatedAmt =
-                USD(moneyFloorFromDouble(percentageOfSales * savedVals.allocationsForMulchBagSales));
-            perUserReport[uid]['allocationFromBagsSold'] = allocatedAmt;
+            if (report.hasOwnProperty('rawAllocationFromBagsSpread')) {
+                report['allocationFromBagsSpread'] = 
+                    USD(moneyRoundFromDouble(report.rawAllocationFromBagsSpread));
+            }
+
         }
 
         ////////////////////////////////////////////////////
@@ -809,11 +814,11 @@ export default function fundsRelease() {
                                                         <td>{mulchSalesGross}</td>
                                                     </tr>
                                                     <tr>
-                                                        <td>Min Allocations to Troop</td>
+                                                        <td>Min Allocations to Troop (est)</td>
                                                         <td>{troopPercentage}</td>
                                                     </tr>
                                                     <tr>
-                                                        <td>Max Allocations to Scouts</td>
+                                                        <td>Max Allocations to Scouts (est)</td>
                                                         <td>{scoutPercentage}</td>
                                                     </tr>
                                                     <tr>
@@ -822,7 +827,7 @@ export default function fundsRelease() {
                                                                 <caption>Scout Allocations</caption>
                                                                 <tbody>
                                                                     <tr>
-                                                                        <td>For Mulch Bag Sales</td>
+                                                                        <td>For Mulch Bag Sales (est)</td>
                                                                         <td>{scoutSellingPercentage}</td>
                                                                     </tr>
                                                                     <tr>
@@ -830,7 +835,7 @@ export default function fundsRelease() {
                                                                         <td>{perBagAvgEarnings}</td>
                                                                     </tr>
                                                                     <tr>
-                                                                        <td>For Delivery</td>
+                                                                        <td>For Delivery (est)</td>
                                                                         <td>{scoutDeliveryPercentage}</td>
                                                                     </tr>
                                                                     <tr>
