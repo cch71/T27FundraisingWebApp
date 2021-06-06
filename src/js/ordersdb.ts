@@ -160,7 +160,7 @@ class LeaderBoardSummaryInfo {
                 }
 
                 if (summary.hasOwnProperty('numBagsSpreadSold')) {
-                    this.userInfo_['spreading'] = currency(summary['numBagsSpreadSold']);
+                    this.userInfo_['spreading'] = summary['numBagsSpreadSold'];
                 }
                 if (this.areFundsReleased) {
                     if (summary.hasOwnProperty('allocationFromBagsSold')) {

@@ -57,7 +57,7 @@ async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
                 </li>
             );
         }
-
+        
         if (summary.areFundsReleased) {
             if ('mulch' === frConfig.kind()) {
                 summaryStats.push(
@@ -67,12 +67,12 @@ async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
                 );
                 summaryStats.push(
                     <li key={++statIndex} className="list-group-item border-0 py-1">
-                        Allocations from spreading {USD(userSummary.allocationFromSpreading).format()}
+                        Allocations from spreading {USD(userSummary.allocationFromBagsSpread).format()}
                     </li>
                 );
                 summaryStats.push(
                     <li key={++statIndex} className="list-group-item border-0 py-1">
-                        Allocations from delivery {USD(userSummary.allocationFromDelivering).format()}
+                        Allocations from delivery {USD(userSummary.allocationsFromDelivery).format()}
                     </li>
                 );
             }
@@ -83,7 +83,7 @@ async function showSummary(frConfig: FundraiserConfig, setOrderSummary) {
                 </li>
             );
         }
-
+        
 
         summaryStats.push(
             <li key={++statIndex} className="list-group-item border-0 py-1">
