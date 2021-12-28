@@ -96,7 +96,36 @@ pub async fn logout() {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
+#[derive(Properties, PartialEq)]
+pub struct AddNewOrderButtonProps {
+    pub userid: String,
+}
 
+#[function_component(AddNewOrderButton)]
+pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html
+{
+    let history = use_history().unwrap();
+    let on_add_new_order = {
+        let history = history.clone();
+        let userid = props.userid.clone();
+        Callback::from(move |_| {
+            log::info!("Starting process to add new order");
+            create_new_active_order(&userid);
+            history.push(AppRoutes::OrderForm);
+        })
+    };
+
+    html! {
+        <div class="add-order-widget float-end me-3 my-1">
+            <label>{"Add New Order"}</label>
+            <button type="button"
+                    class="btn btn-outline-primary add-order-btn"
+                    onclick={on_add_new_order}>
+                <i class="bi bi-plus-square-fill" fill="currentColor"></i>
+            </button>
+        </div>
+    }
+}
 
 
 /////////////////////////////////////////////////
@@ -193,7 +222,7 @@ impl Component for Model {
                     Msg::UpdateRoute
                 });
                 false
-            }
+            },
             Msg::UpdateRoute=>false,
         }
     }
@@ -214,15 +243,17 @@ impl Component for Model {
             // let user_info_ctx = use_state(|| self.user_info.clone());
             // let is_not_authenticated = self.user_id.is_none();
             // let on_auth_complete = ctx.link().callback(|user_info: UserInfo| Msg::Authenticated(user_info));
+
             html! {
-                <>
-                    <BrowserRouter>
-                        { self.app_nav(ctx) }
-                        <main>
-                            <Switch<AppRoutes> render={Switch::render(switch)} />
-                        </main>
-                    </BrowserRouter>
-                </>
+                <BrowserRouter>
+                    { self.app_nav(ctx) }
+                    <main class="flex-shrink-0">
+                        <Switch<AppRoutes> render={Switch::render(switch)} />
+                    </main>
+                    <footer class="footer mt-auto py-3 bg-light">
+                        <AddNewOrderButton userid={self.user_info.as_ref().unwrap().user_id()}/>
+                    </footer>
+                </BrowserRouter>
             }
         }
     }

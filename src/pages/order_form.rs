@@ -1,20 +1,11 @@
 //use yew::{function_component, html, Properties};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use std::fmt::Display;
-use rusty_money::{Money, iso};
 use crate::order_utils::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Event, InputEvent, KeyboardEvent, MouseEvent, HtmlSelectElement};
 use crate::AppRoutes;
 use crate::currency_utils::*;
-
-fn to_money_str(input: Option<&String>) -> String {
-    input.map_or_else(
-        || "".to_string(),
-        |v| Money::from_str(v, iso::USD) .unwrap() .to_string()
-    )
-}
 
 fn recalculate_total_paid(_evt: InputEvent) {
     log::info!("recalced total paid");
@@ -80,7 +71,7 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
             <li class="list-group-item">
                 {format!("Add {}", props.label)}
                 <button class="btn btn-outline-info float-end order-edt-btn" onclick={on_add_edit}>
-                    {"+"}
+                    <i class="bi bi-plus-square" fill="currentColor"></i>
                 </button>
             </li>
         };
@@ -118,20 +109,8 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
 pub fn order_form_fields() -> Html
 {
     let is_admin = false;
-    let order = MulchOrder{
-        order_owner_id: "ablash".to_string(),
-        customer: CustomerInfo {
-            name: "John Stamose".to_string(),
-            addr1: "202 lovers lane".to_string(),
-            neighborhood: "Bear Valley".to_string(),
-            phone: "455-234-4234".to_string(),
-            ..Default::default()
-        },
-        amount_for_donations_collected: Some("200.24".to_string()),
-        amount_total_collected: "200.24".to_string(),
-        ..Default::default()
-    };
     let user_ids = vec!["ablash", "craigh", "fradmin"];
+    let order = get_active_order().unwrap();
     let is_order_readonly = true;
 
     let hoods = vec!["Bear Valley", "Out of Area", "Other..."];
