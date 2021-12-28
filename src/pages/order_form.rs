@@ -1,11 +1,11 @@
 //use yew::{function_component, html, Properties};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::order_utils::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Event, InputEvent, KeyboardEvent, MouseEvent, HtmlSelectElement};
 use crate::AppRoutes;
 use crate::currency_utils::*;
+use crate::order_utils::*;
 
 fn recalculate_total_paid(_evt: InputEvent) {
     log::info!("recalced total paid");
@@ -22,37 +22,33 @@ pub fn required_small() -> Html
         <small class="form-text text-muted ps-1">{"*required"}</small>
     }
 }
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Clone, Debug)]
 pub struct OrderCostItemProps {
     pub label: String,
     pub isreadonly: bool,
     pub amount: Option<String>,
     pub deliveryid: Option<u64>,
+    pub ondelete: Callback<MouseEvent>,
 
 }
 #[function_component(OrderCostItem)]
 pub fn order_cost_item(props: &OrderCostItemProps) -> Html
 {
     let history = use_history().unwrap();
-    let on_add_edit = Callback::from(move |evt: MouseEvent| {
-        evt.prevent_default();
-        evt.stop_propagation();
-        log::info!("OnAdd/Edit Called");
-    });
 
-    let on_del = Callback::from(move |evt: MouseEvent| {
-        evt.prevent_default();
-        evt.stop_propagation();
-        log::info!("OnDel Called");
-    });
+    // let on_del = Callback::from(move |evt: MouseEvent| {
+    //     evt.prevent_default();
+    //     evt.stop_propagation();
+    //     log::info!("OnDel Called");
+    // });
 
-    let on_view = {
+    let on_add_edit_view = {
         let props_label = props.label.clone();
         let history = history.clone();
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("OnView Called");
+            log::info!("On Add/Edit/View Called");
             if props_label=="Donation" {
                 history.push(AppRoutes::OrderDonations);
             } else {
@@ -70,7 +66,7 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
         return html! {
             <li class="list-group-item">
                 {format!("Add {}", props.label)}
-                <button class="btn btn-outline-info float-end order-edt-btn" onclick={on_add_edit}>
+                <button class="btn btn-outline-info float-end order-edt-btn" onclick={on_add_edit_view}>
                     <i class="bi bi-plus-square" fill="currentColor"></i>
                 </button>
             </li>
@@ -88,16 +84,16 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
             {to_money_str(props.amount.as_ref())}
             if props.isreadonly {
                 <button class="btn btn-outline-info float-end order-edt-btn"
-                     data-deliveryid={delivery_id} onclick={on_view}>
+                     data-deliveryid={delivery_id} onclick={on_add_edit_view}>
                     <i class="bi bi-eye" fill="currentColor"></i>
                 </button>
             } else {
                 <button class="btn btn-outline-danger mx-1 float-end order-del-btn"
-                    data-deliveryid={delivery_id.clone()} onclick={on_del}>
+                    data-deliveryid={delivery_id.clone()} onclick={props.ondelete.clone()}>
                     <i class="bi bi-trash" fill="currentColor"></i>
                 </button>
                 <button class="btn btn-outline-info float-end order-edt-btn"
-                    data-deliveryid={delivery_id} onclick={on_add_edit}>
+                    data-deliveryid={delivery_id} onclick={on_add_edit_view}>
                     <i class="bi bi-pencil" fill="currentColor"></i>
                 </button>
             }
@@ -112,8 +108,8 @@ pub fn order_form_fields() -> Html
 
     let is_admin = false;
     let user_ids = vec!["ablash", "craigh", "fradmin"];
-    let order = get_active_order().unwrap();
-    let is_order_readonly = true;
+    let order = use_state_eq(||get_active_order().unwrap());
+    let is_order_readonly = order.is_readonly();
 
     let hoods = vec!["Bear Valley", "Out of Area", "Other..."];
     let on_hood_warning = use_state_eq(|| "display: none;".to_owned());
@@ -146,6 +142,30 @@ pub fn order_form_fields() -> Html
         })
     };
 
+    let on_donations_delete = {
+        let order = order.clone();
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            let mut updated_order = get_active_order().unwrap();
+            updated_order.clear_donations();
+            update_active_order(updated_order.clone());
+            order.set(updated_order);
+        })
+    };
+
+    let on_purchases_delete = {
+        let order = order.clone();
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            let mut updated_order = get_active_order().unwrap();
+            updated_order.clear_purchases();
+            update_active_order(updated_order.clone());
+            order.set(updated_order);
+        })
+    };
+
     html! {
         <form class="needs-validation" id="newOrEditOrderForm" novalidate=true >
 
@@ -167,7 +187,7 @@ pub fn order_form_fields() -> Html
                 <div class="form-floating col-md">
                     <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formFirstName"
                            placeholder="First Name" required=true
-                           value={order.customer.name} />
+                           value={order.customer.name.clone()} />
                     <label for="formCustomerName">
                         {"Customer Name"}<RequiredSmall/>
                     </label>
@@ -178,7 +198,7 @@ pub fn order_form_fields() -> Html
                 <div class="form-floating col-md-6">
                     <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formAddr1"
                            placeholder="Address 1" required=true
-                           value={order.customer.addr1} />
+                           value={order.customer.addr1.clone()} />
                     <label for="formAddr1">
                     {"Address 1"}<RequiredSmall/>
                     </label>
@@ -186,7 +206,7 @@ pub fn order_form_fields() -> Html
                 <div class="form-floating col-md-6">
                     <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formAddr2"
                            placeholder="Address 2"
-                           value={order.customer.addr2}/>
+                           value={order.customer.addr2.clone()}/>
                     <label for="formAddr2">{"Address 2"}</label>
                 </div>
             </div>
@@ -214,7 +234,7 @@ pub fn order_form_fields() -> Html
                     <input class="form-control" type="tel" autocomplete="fr-new-cust-info" id="formPhone"
                            pattern="[0-9]{3}[-|.]{0,1}[0-9]{3}[-|.]{0,1}[0-9]{4}"
                            placeholder="Phone" required=true
-                           value={order.customer.phone} />
+                           value={order.customer.phone.clone()} />
                     <label for="formPhone">
                         {"Phone"}
                         <small class="form-text text-muted ps-1">{"(xxx-xxx-xxxx)"}</small>
@@ -224,7 +244,7 @@ pub fn order_form_fields() -> Html
                 <div class="form-floating col-md-4">
                     <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formEmail"
                            placeholder="Email"
-                           value={order.customer.email}/>
+                           value={order.customer.email.clone()}/>
                     <label for="formEmail">{"Email"}</label>
                 </div>
             </div>
@@ -232,7 +252,7 @@ pub fn order_form_fields() -> Html
             <div class="row mb-2 g-2">
                 <div class="form-floating col-md-12">
                     <textarea class="form-control" id="formSpecialInstructions" rows="2"
-                              value={order.special_instructions}>
+                              value={order.special_instructions.clone()}>
                     </textarea>
                     <label for="formSpecialInstructions">{"Special Delivery Instructions"}</label>
                 </div>
@@ -241,9 +261,13 @@ pub fn order_form_fields() -> Html
             <div class="row mb-2 my-2 g-2" style="display: contents; border: 0;" >
                 <div class="form-control" id="productList">
                     <ul class="list-group">
-                        <OrderCostItem label="Donation" isreadonly={is_order_readonly} amount={order.amount_for_donations_collected.clone()}/>
+                        <OrderCostItem label="Donation"
+                            isreadonly={is_order_readonly}
+                            ondelete={on_donations_delete}
+                            amount={order.amount_for_donations_collected.clone()}/>
                         <OrderCostItem label="Product Order"
                             deliveryid={order.delivery_id.clone()}
+                            ondelete={on_purchases_delete}
                             isreadonly={is_order_readonly}
                             amount={order.amount_for_purchases_collected.clone()}/>
                     </ul>

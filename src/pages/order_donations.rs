@@ -1,23 +1,35 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::currency_utils::*;
-use web_sys::{InputEvent, MouseEvent, FocusEvent};
+use wasm_bindgen::JsCast;
+use web_sys::{InputEvent, MouseEvent, FocusEvent, HtmlInputElement};
 use crate::AppRoutes;
+use crate::currency_utils::*;
+use crate::order_utils::*;
 
 #[function_component(OrderDonations)]
 pub fn order_donations() -> Html
 {
-    let donation_amount = "$20.00";
-    let is_order_readonly = false;
+    let order = get_active_order().unwrap();
+    let is_order_readonly = order.is_readonly();
     let history = use_history().unwrap();
 
     let on_form_submission = {
         let history = history.clone();
-        Callback::from(move |evt: FocusEvent| {
+        let mut updated_order = order.clone();
+        Callback::once(move |evt: FocusEvent| {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_form_submission");
-
+            let document = web_sys::window().unwrap().document().unwrap();
+            let donation_amt = document.get_element_by_id("formDonationAmount")
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                .unwrap()
+                .value();
+            if 0==donation_amt.len() {
+                updated_order.amount_for_donations_collected = None;
+            } else {
+                updated_order.amount_for_donations_collected = Some(donation_amt);
+            }
             //  const amountDue = currency((document.getElementById('formDonationAmount') as HTMLInputElement).value);
             //  if (amountDue) {
             //      currentOrder['donation'] = amountDue;
@@ -25,6 +37,7 @@ pub fn order_donations() -> Html
             //      delete currentOrder['donation'];
             //  }
             //  navigate('/order_step_1/');
+            update_active_order(updated_order).unwrap();
             history.push(AppRoutes::OrderForm);
         })
     };
@@ -68,7 +81,7 @@ pub fn order_donations() -> Html
                                     <span class="input-group-text">{"$"}</span>
                                 </div>
                                 <input type="number" min="0" step="any" class="form-control" id="formDonationAmount"
-                                       value={donation_amount}
+                                       value={order.amount_for_donations_collected.unwrap_or("".to_string())}
                                        placeholder="0.00"
                                        oninput={does_submit_get_enabled} onkeypress={on_currency_field_key_press}/>
                             </div>

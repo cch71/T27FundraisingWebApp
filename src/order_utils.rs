@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use crate::auth_utils::{is_admin};
 
 use std::sync::{RwLock};
 
@@ -6,7 +7,7 @@ lazy_static! {
     static ref ACTIVE_ORDER: RwLock<Option<MulchOrder>> = RwLock::new(None);
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, PartialEq)]
 pub struct MulchOrder {
     pub order_id: String,
     pub order_owner_id: String,
@@ -26,7 +27,7 @@ pub struct MulchOrder {
     pub year_ordered: Option<String>
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, PartialEq)]
 pub struct MulchPurchases {
     pub bags_sold: Option<i64>,
     pub bogs_to_spread: Option<i64>,
@@ -34,7 +35,7 @@ pub struct MulchPurchases {
     pub amount_charged_for_spreading: Option<String>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, PartialEq)]
 pub struct CustomerInfo {
     pub name: String,
     pub addr1: String,
@@ -61,6 +62,21 @@ impl MulchOrder {
             ..Default::default()
         }
     }
+
+    pub fn is_readonly(&self) -> bool {
+        /* if is_system_locked() { return true } */
+        // return !is_admin() /* && now > order.delivery_id.cutoff_date */;
+        false
+    }
+
+    pub fn clear_donations(&mut self) {
+        self.amount_for_donations_collected = None;
+    }
+
+    pub fn clear_purchases(&mut self) {
+        self.amount_for_purchases_collected = None;
+        self.purchases = None;
+    }
 }
 
 pub(crate) fn create_new_active_order(owner_id: &str) {
@@ -81,4 +97,11 @@ pub(crate) fn get_active_order() -> Option<MulchOrder> {
         Some(order)=>Some(order.clone()),
         None=>None,
     }
+}
+
+pub(crate) fn update_active_order(order: MulchOrder)
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    *ACTIVE_ORDER.write().unwrap() = Some(order);
+    Ok(())
 }

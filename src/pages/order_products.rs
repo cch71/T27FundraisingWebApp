@@ -1,14 +1,15 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::currency_utils::*;
 use web_sys::{InputEvent, MouseEvent, FocusEvent};
 use crate::AppRoutes;
+use crate::currency_utils::*;
+use crate::order_utils::*;
 
 #[function_component(OrderProducts)]
 pub fn order_products() -> Html
 {
-    let donation_amount = "$20.00";
-    let is_order_readonly = false;
+    let order = get_active_order().unwrap();
+    let is_order_readonly = order.is_readonly();
     let history = use_history().unwrap();
 
     let on_form_submission = {

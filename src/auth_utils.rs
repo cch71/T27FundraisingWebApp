@@ -76,3 +76,7 @@ pub async fn logout() {
         log::info!("Logged out");
     }
 }
+
+pub fn is_admin() -> bool{
+    false
+}

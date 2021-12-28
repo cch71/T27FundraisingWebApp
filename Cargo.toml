@@ -25,6 +25,7 @@ gloo-dialogs = "0.1"
 version = "0.3"
 features = [
   "Window",
+  "Document",
   "HtmlSelectElement",
   "Event",
   "FocusEvent"
