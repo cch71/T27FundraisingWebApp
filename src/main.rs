@@ -1,5 +1,9 @@
+use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use yew_router::prelude::*;
+
+mod auth_utils;
+use auth_utils::*;
 
 mod order_utils;
 use order_utils::*;
@@ -15,84 +19,11 @@ use pages::{
     order_products::OrderProducts,
 };
 
+use web_sys::{window};
+
 //AWS API URL
 //invokeUrl: 'https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod'
 
-/////////////////////////////////////////////////
-// Auth Comp Stuff
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::*;
-#[wasm_bindgen(module = "/src/js/auth.js")]
-extern "C" {
-    #[wasm_bindgen(catch)]
-    async fn loginUser() -> Result<(), JsValue>;
-
-    #[wasm_bindgen(catch)]
-    async fn logoutUser() -> Result<(), JsValue>;
-
-    #[wasm_bindgen(catch)]
-    async fn isAuthenticated() -> Result<JsValue, JsValue>;
-
-    #[wasm_bindgen(catch)]
-    async fn getUserInfo() -> Result<JsValue, JsValue>;
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct UserInfo {
-    pub email: String,
-    pub token: String,
-}
-
-impl UserInfo {
-    pub fn user_id(&self)->String {
-        // TODO: Do this at creation time
-        let v: Vec<&str> = self.email.split('@').collect();
-        v[0].to_owned()
-    }
-}
-
-pub async fn get_user_info() -> Option<UserInfo> {
-    match getUserInfo().await {
-        Ok(user_info) => {
-            log::info!("User Info: {:#?}", user_info);
-            let user_info: UserInfo = serde_wasm_bindgen::from_value(user_info).unwrap();
-            Some(user_info)
-        },
-        Err(err) => {
-            log::error!("User Info Err: {:#?}", err);
-            gloo_dialogs::alert(&format!("Failed to get User Info: {:#?}", err));
-            None
-        },
-    }
-}
-
-pub async fn is_authenticated() -> bool {
-    match isAuthenticated().await {
-        Ok(is_auth) => {
-            log::info!("Is Authenticated: {:#?}", &is_auth);
-            let is_auth: bool = serde_wasm_bindgen::from_value(is_auth).unwrap();
-            return is_auth;
-        },
-        Err(err) => log::error!("User Info Err: {:#?}", err),
-    };
-    false
-}
-
-pub async fn login() {
-    if let Err(err) = loginUser().await {
-        log::error!("Authentication Err: {:#?}", err);
-    } else {
-        log::info!("Authenticated");
-    }
-}
-
-pub async fn logout() {
-    if let Err(err) = logoutUser().await {
-        log::error!("Error logging out Err: {:#?}", err);
-    } else {
-        log::info!("Logged out");
-    }
-}
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
@@ -127,6 +58,97 @@ pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html
     }
 }
 
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+#[derive(Properties, PartialEq)]
+pub struct AppFooterProps {
+    #[prop_or_default]
+    pub children: Children,
+}
+
+#[function_component(AppFooter)]
+pub fn app_footer(props: &AppFooterProps) -> Html
+{
+    let cur_win_loc = window().unwrap().location().pathname().unwrap();
+    // log::info!("!!!!! WinLoc: {}", cur_win_loc);
+
+    html! {
+        <footer class="footer mt-auto py-3 bg-light">
+            if !cur_win_loc.starts_with("/order") {//TODO this kill every child
+                {for props.children.iter()}
+            }
+        </footer>
+    }
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+#[derive(Properties, PartialEq)]
+pub struct AppNavProps {
+    pub userid: String,
+}
+
+#[function_component(AppNav)]
+pub fn app_nav(props: &AppNavProps) -> Html
+{
+    let _ = use_history().unwrap(); // This forces re-render on path changes
+    let on_logout_click = Callback::from(move |_evt: MouseEvent| {log::info!("Need to impl logout");}); //ctx.link().callback(|_| Msg::Logout);
+    //log::info!("~~~~~~~ Re Rendered ~~~~~~~~~~~~~~");
+
+    html! {
+
+        <nav class="navbar sticky-top navbar-expand-sm navbar-light bg-light" id="primaryNavBar">
+            <a class="navbar-brand" href="#">
+                <span>
+                    <img class="navbar-logo ms-2" src="t27patch.png" alt="Logo" />
+                </span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::Home} >
+                            { "Home" }
+                        </Link<AppRoutes>>
+                    </li>
+                    if is_active_order() {
+                        <li class="nav-item">
+                            <Link<AppRoutes> classes="nav-link" to={AppRoutes::OrderForm} >
+                                { "Order" }
+                            </Link<AppRoutes>>
+                        </li>
+                    }
+                    <li class="nav-item">
+                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::Reports} >
+                            { "Reports" }
+                        </Link<AppRoutes>>
+                    </li>
+                </ul>
+                <span class="navbar-nav nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown"
+                       data-bs-toggle="dropdown" aria-expanded="false" role="button">
+                        {&props.userid}
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="#" data-bs-toggle="modal">
+                          { "Report Issue" }
+                        </a>
+                        <a class="dropdown-item" onclick={on_logout_click} href="#" data-bs-toggle="modal">
+                          { "Logout" }
+                        </a>
+                    </div>
+                </span>
+            </div>
+        </nav>
+    }
+}
 
 /////////////////////////////////////////////////
 // Route Logic
@@ -230,7 +252,6 @@ impl Component for Model {
     fn view(&self, ctx: &Context<Self>) -> Html {
         // let history = ctx.link().history().unwrap();
         // log::info!("!!!! Location: {:#?}", &history.location());
-
         if self.is_loading {
             html! {
                 <div id="notReadyView" class="col-xs-1 d-flex justify-content-center" >
@@ -246,74 +267,21 @@ impl Component for Model {
 
             html! {
                 <BrowserRouter>
-                    { self.app_nav(ctx) }
+                    <AppNav userid={self.user_info.as_ref().map_or_else(||"".to_string(), |v|v.user_id())} />
                     <main class="flex-shrink-0">
                         <Switch<AppRoutes> render={Switch::render(switch)} />
                     </main>
-                    <footer class="footer mt-auto py-3 bg-light">
+                    <AppFooter>
                         <AddNewOrderButton userid={self.user_info.as_ref().unwrap().user_id()}/>
-                    </footer>
+                    </AppFooter>
                 </BrowserRouter>
             }
         }
     }
 }
 
-impl Model {
- fn app_nav(&self, ctx: &Context<Self>) -> Html {
-
-    let on_logout_click = ctx.link().callback(|_| Msg::Logout);
-
-    html! {
-        <nav class="navbar sticky-top navbar-expand-sm navbar-light bg-light" id="primaryNavBar">
-            <a class="navbar-brand" href="#">
-                <span>
-                    <img class="navbar-logo ms-2" src="t27patch.png" alt="Logo" />
-                </span>
-            </a>
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::Home} >
-                            { "Home" }
-                        </Link<AppRoutes>>
-                    </li>
-                    <li class="nav-item">
-                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::OrderForm} >
-                            { "Order" }
-                        </Link<AppRoutes>>
-                    </li>
-                    <li class="nav-item">
-                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::Reports} >
-                            { "Reports" }
-                        </Link<AppRoutes>>
-                    </li>
-                </ul>
-                <span class="navbar-nav nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown"
-                       data-bs-toggle="dropdown" aria-expanded="false" role="button">
-                        { self.user_info.as_ref().map_or_else(||"".to_string(), |v|v.user_id()) }
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="#" data-bs-toggle="modal">
-                          { "Report Issue" }
-                        </a>
-                        <a class="dropdown-item" onclick={on_logout_click} href="#" data-bs-toggle="modal">
-                          { "Logout" }
-                        </a>
-                    </div>
-                </span>
-            </div>
-        </nav>
-    }
-}
-}
+// impl Model {
+// }
 
 
 fn main() {

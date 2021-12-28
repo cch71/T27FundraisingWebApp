@@ -1,6 +1,5 @@
 use lazy_static::lazy_static;
 
-use rusty_money::{Money, iso};
 use std::sync::{RwLock};
 
 lazy_static! {

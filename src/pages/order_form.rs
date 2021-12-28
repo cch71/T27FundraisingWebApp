@@ -108,6 +108,8 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
 #[function_component(OrderFormFields)]
 pub fn order_form_fields() -> Html
 {
+    let history = use_history().unwrap();
+
     let is_admin = false;
     let user_ids = vec!["ablash", "craigh", "fradmin"];
     let order = get_active_order().unwrap();
@@ -133,6 +135,16 @@ pub fn order_form_fields() -> Html
     let amount_due_str = use_state_eq(|| "$0.00".to_owned());
     let amount_paid_str = use_state_eq(|| "$0.00".to_owned());
 
+    let on_cancel_item = {
+        let history = history.clone();
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            log::info!("on_cancel_item");
+            reset_active_order();
+            history.push(AppRoutes::Home);
+        })
+    };
 
     html! {
         <form class="needs-validation" id="newOrEditOrderForm" novalidate=true >
@@ -300,7 +312,7 @@ pub fn order_form_fields() -> Html
             </div>
 
             <div class="pt-4">
-                <button type="button" class="btn btn-primary" id="formOrderCancel">
+                <button type="button" class="btn btn-primary" id="formOrderCancel" onclick={on_cancel_item}>
                     {"Cancel"}
                 </button>
                 if !is_order_readonly {
