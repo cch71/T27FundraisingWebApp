@@ -33,10 +33,9 @@ table.dataTable.dtr-inline.collapsed>tbody>tr.parent>th.dtr-control:before {
 
 html {
     /*background-color: white;*/
-    p {
-        color: white;
-    }
-
+    // p {
+    //     color: white;
+    // }
 
     .navbar-toggler {
         padding: 0.25rem 0.25rem;
@@ -44,7 +43,7 @@ html {
 
         .navbar-toggler-icon {
             width: 1.0em;
-            heigth: 1.0em;
+            // height: 1.0em;
         }
     }
 
@@ -53,8 +52,7 @@ html {
 
         .navbar-logo {
             width: 30px;
-            heigth: 30px;
-
+            // height: 30px;
         }
     }
 
@@ -83,7 +81,7 @@ html {
     }
     
     #orderOwnerSummaryCard {
-        //width: 24rem;
+        // width: 24rem;
     }
     #topSellersCard {
         // width: 18rem;
@@ -146,7 +144,6 @@ html {
             }
         }
     }
-
 
     .add-order-widget {
         z-index: 1;
