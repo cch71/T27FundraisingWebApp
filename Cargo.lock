@@ -602,6 +602,7 @@ dependencies = [
  "js-sys",
  "lazy_static",
  "log",
+ "rust_decimal",
  "rusty-money",
  "serde",
  "serde-wasm-bindgen",

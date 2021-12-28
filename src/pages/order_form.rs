@@ -36,12 +36,6 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
 {
     let history = use_history().unwrap();
 
-    // let on_del = Callback::from(move |evt: MouseEvent| {
-    //     evt.prevent_default();
-    //     evt.stop_propagation();
-    //     log::info!("OnDel Called");
-    // });
-
     let on_add_edit_view = {
         let props_label = props.label.clone();
         let history = history.clone();
@@ -149,7 +143,7 @@ pub fn order_form_fields() -> Html
             evt.stop_propagation();
             let mut updated_order = get_active_order().unwrap();
             updated_order.clear_donations();
-            update_active_order(updated_order.clone());
+            update_active_order(updated_order.clone()).unwrap();
             order.set(updated_order);
         })
     };
@@ -161,7 +155,7 @@ pub fn order_form_fields() -> Html
             evt.stop_propagation();
             let mut updated_order = get_active_order().unwrap();
             updated_order.clear_purchases();
-            update_active_order(updated_order.clone());
+            update_active_order(updated_order.clone()).unwrap();
             order.set(updated_order);
         })
     };

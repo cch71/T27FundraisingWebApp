@@ -1,10 +1,41 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{InputEvent, MouseEvent, FocusEvent, HtmlInputElement};
+use web_sys::{InputEvent, MouseEvent, FocusEvent, HtmlInputElement, HtmlButtonElement};
 use crate::AppRoutes;
 use crate::currency_utils::*;
 use crate::order_utils::*;
+
+fn get_donation_amount() -> Option<String> {
+    let document = web_sys::window().unwrap().document().unwrap();
+    let donation_amt = document.get_element_by_id("formDonationAmount")
+        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+        .unwrap()
+        .value();
+    if 0==donation_amt.len() {
+        None
+    } else {
+        Some(donation_amt)
+    }
+}
+
+fn set_donation_amount(value: &str) {
+    let document = web_sys::window().unwrap().document().unwrap();
+    let donation_amt = document.get_element_by_id("formDonationAmount")
+        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+        .unwrap()
+        .set_value(value);
+}
+
+fn disable_submit_button(value: bool) {
+    web_sys::window().unwrap()
+        .document().unwrap()
+        .get_element_by_id("formDonationSubmit")
+        .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+        .unwrap()
+        .set_disabled(value);
+}
+
 
 #[function_component(OrderDonations)]
 pub fn order_donations() -> Html
@@ -20,23 +51,8 @@ pub fn order_donations() -> Html
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_form_submission");
-            let document = web_sys::window().unwrap().document().unwrap();
-            let donation_amt = document.get_element_by_id("formDonationAmount")
-                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                .unwrap()
-                .value();
-            if 0==donation_amt.len() {
-                updated_order.amount_for_donations_collected = None;
-            } else {
-                updated_order.amount_for_donations_collected = Some(donation_amt);
-            }
-            //  const amountDue = currency((document.getElementById('formDonationAmount') as HTMLInputElement).value);
-            //  if (amountDue) {
-            //      currentOrder['donation'] = amountDue;
-            //  } else {
-            //      delete currentOrder['donation'];
-            //  }
-            //  navigate('/order_step_1/');
+            let donation_amt = get_donation_amount();
+            updated_order.amount_for_donations_collected = donation_amt;
             update_active_order(updated_order).unwrap();
             history.push(AppRoutes::OrderForm);
         })
@@ -52,21 +68,37 @@ pub fn order_donations() -> Html
         })
     };
 
-    let does_submit_get_enabled = Callback::from(move |evt: InputEvent| {
-        evt.prevent_default();
-        evt.stop_propagation();
-        log::info!("does_submit_get_enabled");
-       //  const origAmt = (document.getElementById('formDonationAmount') as HTMLInputElement).value;
-       //  const [amt, isChanged] = moneyFloor(origAmt);
-       //  if (isChanged) {
-       //      (document.getElementById('formDonationAmount') as HTMLInputElement).value = amt.toString();
-       //  }
-       //  if (event.currentTarget.value) {
-       //      (document.getElementById('formDonationSubmit') as HTMLButtonElement).disabled = false;
-       //  } else {
-       //      (document.getElementById('formDonationSubmit') as HTMLButtonElement).disabled = true;
-       //  }
-    });
+    let does_submit_get_enabled = {
+        let order = order.clone();
+        Callback::from(move |evt: InputEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            log::info!("does_submit_get_enabled");
+
+            let mut donation_amt = get_donation_amount();
+
+            if donation_amt.is_some() {
+                let new_donation_amt = on_money_input_filter(donation_amt.as_ref());
+                log::info!("New Donation: {} Old Donation: {}", new_donation_amt, donation_amt.as_ref().unwrap());
+                if &new_donation_amt != donation_amt.as_ref().unwrap() {
+
+                    donation_amt = Some(new_donation_amt);
+                    set_donation_amount(donation_amt.as_ref().unwrap());
+                }
+            }
+
+            disable_submit_button(order.amount_for_donations_collected == donation_amt);
+        })
+    };
+
+    {
+        let order = order.clone();
+        use_effect(move || {
+            let donation_amt = get_donation_amount();
+            disable_submit_button(order.amount_for_donations_collected == donation_amt);
+            ||{}
+        });
+    }
 
     html! {
         <div class="col-xs-1 justify-content-center">

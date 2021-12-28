@@ -17,6 +17,7 @@ wasm-logger = "0.2"
 yew = "0.19"
 yew-router = "0.16"
 # yewtil = "0.4"
+rust_decimal = "1"
 rusty-money = { version = "0.4", features = ["iso"] }
 uuid = { version = "0.8", features = ["serde", "v4", "wasm-bindgen"] }
 gloo-dialogs = "0.1"
@@ -27,6 +28,7 @@ features = [
   "Window",
   "Document",
   "HtmlSelectElement",
+  "HtmlButtonElement",
   "Event",
   "FocusEvent"
 ]
