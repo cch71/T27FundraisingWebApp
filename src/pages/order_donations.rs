@@ -4,7 +4,7 @@ use wasm_bindgen::JsCast;
 use web_sys::{InputEvent, MouseEvent, FocusEvent, HtmlInputElement, HtmlButtonElement};
 use crate::AppRoutes;
 use crate::currency_utils::*;
-use crate::order_utils::*;
+use crate::data_model::*;
 
 fn get_donation_amount() -> Option<String> {
     let document = web_sys::window().unwrap().document().unwrap();
@@ -21,7 +21,7 @@ fn get_donation_amount() -> Option<String> {
 
 fn set_donation_amount(value: &str) {
     let document = web_sys::window().unwrap().document().unwrap();
-    let donation_amt = document.get_element_by_id("formDonationAmount")
+    document.get_element_by_id("formDonationAmount")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
         .set_value(value);
@@ -51,7 +51,10 @@ pub fn order_donations() -> Html
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_form_submission");
-            let donation_amt = get_donation_amount();
+            let mut donation_amt = get_donation_amount();
+            if donation_amt.is_some() {
+                donation_amt = Some(to_money_str_no_symbol(donation_amt.as_ref()));
+            }
             updated_order.amount_for_donations_collected = donation_amt;
             update_active_order(updated_order).unwrap();
             history.push(AppRoutes::OrderForm);
@@ -115,7 +118,7 @@ pub fn order_donations() -> Html
                                 <input type="number" min="0" step="any" class="form-control" id="formDonationAmount"
                                        value={order.amount_for_donations_collected.unwrap_or("".to_string())}
                                        placeholder="0.00"
-                                       oninput={does_submit_get_enabled} onkeypress={on_currency_field_key_press}/>
+                                       oninput={does_submit_get_enabled} />
                             </div>
                         </div>
 

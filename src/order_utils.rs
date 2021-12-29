@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
 use crate::auth_utils::{is_admin};
 
+use std::collections::HashMap;
 use std::sync::{RwLock};
 
 lazy_static! {
@@ -22,17 +23,15 @@ pub struct MulchOrder {
     pub will_collect_money_later: bool,
     pub is_verified: bool,
     pub customer: CustomerInfo,
-    pub purchases: Option<MulchPurchases>,
-    pub delivery_id: Option<u64>,
+    pub purchases: Option<HashMap<String, PurchasedItem>>,
+    pub delivery_id: Option<String>,
     pub year_ordered: Option<String>
 }
 
 #[derive(Default, Clone, PartialEq)]
-pub struct MulchPurchases {
-    pub bags_sold: Option<i64>,
-    pub bogs_to_spread: Option<i64>,
-    pub amount_charged_for_bags: Option<String>,
-    pub amount_charged_for_spreading: Option<String>,
+pub struct PurchasedItem {
+    pub num_sold: u32,
+    pub amount_charged: String,
 }
 
 #[derive(Default, Clone, PartialEq)]
@@ -76,6 +75,13 @@ impl MulchOrder {
     pub fn clear_purchases(&mut self) {
         self.amount_for_purchases_collected = None;
         self.purchases = None;
+    }
+
+    pub fn get_num_sold(&self, product_id: &str) -> Option<u32> {
+        match self.purchases.as_ref() {
+            Some(purchases) => purchases.get(product_id).map_or(None, |v| Some(v.num_sold)),
+            None=>None,
+        }
     }
 }
 

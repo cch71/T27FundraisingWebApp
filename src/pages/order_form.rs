@@ -5,15 +5,15 @@ use wasm_bindgen::JsCast;
 use web_sys::{Event, InputEvent, KeyboardEvent, MouseEvent, HtmlSelectElement};
 use crate::AppRoutes;
 use crate::currency_utils::*;
-use crate::order_utils::*;
+use crate::data_model::*;
 
 fn recalculate_total_paid(_evt: InputEvent) {
     log::info!("recalced total paid");
 }
 
-fn on_check_nums_key_press(_evt: KeyboardEvent) {
-    log::info!("On on_check_nums_key_press");
-}
+// fn on_check_nums_key_press(_evt: KeyboardEvent) {
+//    log::info!("On on_check_nums_key_press");
+//}
 
 #[function_component(RequiredSmall)]
 pub fn required_small() -> Html
@@ -27,7 +27,7 @@ pub struct OrderCostItemProps {
     pub label: String,
     pub isreadonly: bool,
     pub amount: Option<String>,
-    pub deliveryid: Option<u64>,
+    pub deliveryid: Option<String>,
     pub ondelete: Callback<MouseEvent>,
 
 }
@@ -67,9 +67,9 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
         };
     }
 
-    let delivery_id = props.deliveryid.map_or_else(
+    let delivery_id = props.deliveryid.as_ref().map_or_else(
         || "".to_string(),
-        |v| format!("{}", v));
+        |v| v.clone());
 
     // if the order already exists...
     html! {
@@ -105,7 +105,6 @@ pub fn order_form_fields() -> Html
     let order = use_state_eq(||get_active_order().unwrap());
     let is_order_readonly = order.is_readonly();
 
-    let hoods = vec!["Bear Valley", "Out of Area", "Other..."];
     let on_hood_warning = use_state_eq(|| "display: none;".to_owned());
     let on_hood_change = {
         let on_hood_warning = on_hood_warning.clone();
@@ -209,9 +208,9 @@ pub fn order_form_fields() -> Html
                 <div class="form-floating col-md-4">
                     <select class="form-control" id="formNeighborhood" onchange={on_hood_change}>
                         {
-                            hoods.into_iter().map(|hood| {
-                                let is_selected = hood == order.customer.neighborhood;
-                                html!{<option key={hood} selected={is_selected}>{hood}</option>}
+                            get_neighborhoods().iter().map(|hood_info| {
+                                let is_selected = hood_info.name == order.customer.neighborhood;
+                                html!{<option key={hood_info.name.clone()} selected={is_selected}>{hood_info.name.clone()}</option>}
                             }).collect::<Html>()
                         }
                     </select>
@@ -289,7 +288,7 @@ pub fn order_form_fields() -> Html
                             <input class="form-control" type="number" min="0" step="any"
                                    autocomplete="fr-new-cust-info"
                                    id="formCashPaid" placeholder="0.00"
-                                   oninput={recalculate_total_paid} onkeypress={on_currency_field_key_press}
+                                   oninput={recalculate_total_paid}
                                    value={to_money_str(order.amount_cash_collected.as_ref())}/>
                         </div>
                     </div>
@@ -302,7 +301,7 @@ pub fn order_form_fields() -> Html
                             <input class="form-control" type="number" min="0" step="any"
                                    autocomplete="fr-new-cust-info"
                                    id="formCheckPaid" placeholder="0.00"
-                                   oninput={recalculate_total_paid} onkeypress={on_currency_field_key_press}
+                                   oninput={recalculate_total_paid}
                                    value={to_money_str(order.amount_checks_collected.as_ref())}/>
                         </div>
                     </div>
@@ -310,7 +309,6 @@ pub fn order_form_fields() -> Html
                         <label for="formCheckNumbers">{"Enter Check Numbers"}</label>
                         <input class="form-control" autocomplete="fr-new-cust-info"
                                id="formCheckNumbers" placeholder="Enter Check #s"
-                               onkeypress={on_check_nums_key_press}
                                value={order.check_numbers.join(", ")}/>
                     </div>
 

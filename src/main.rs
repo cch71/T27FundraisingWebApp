@@ -1,14 +1,18 @@
+
+mod auth_utils;
+mod order_utils;
+mod data_model;
+mod currency_utils;
+
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-mod auth_utils;
 use auth_utils::*;
 
-mod order_utils;
-use order_utils::*;
 
-mod currency_utils;
+use data_model::*;
+
 
 mod pages;
 use pages::{
@@ -187,7 +191,7 @@ fn switch(routes: &AppRoutes) -> Html {
 pub enum AppMsg {
     NotAuthenticated,
     Authenticated(UserInfo),
-    UpdateRoute,
+    NoOp,
     Logout,
 }
 type Msg = AppMsg;
@@ -207,7 +211,7 @@ impl Component for Model {
                 log::info!("Authenticated");
                 match get_user_info().await {
                     Some(user_info)=> Msg::Authenticated(user_info),
-                    None=>Msg::UpdateRoute,
+                    None=>Msg::NoOp,
                 }
             } else {
                 Msg::NotAuthenticated
@@ -233,7 +237,7 @@ impl Component for Model {
                 log::info!("Not authenticated need to get signed in");
                 ctx.link().send_future(async move {
                     login().await;
-                    Msg::UpdateRoute
+                    Msg::NoOp
                 });
                 false
             },
@@ -241,11 +245,11 @@ impl Component for Model {
                 log::info!("User has asked to logout");
                 ctx.link().send_future(async move {
                     logout().await;
-                    Msg::UpdateRoute
+                    Msg::NoOp
                 });
                 false
             },
-            Msg::UpdateRoute=>false,
+            Msg::NoOp=>false,
         }
     }
 
