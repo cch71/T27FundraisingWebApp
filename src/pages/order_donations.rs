@@ -6,6 +6,8 @@ use crate::AppRoutes;
 use crate::currency_utils::*;
 use crate::data_model::*;
 
+/////////////////////////////////////////////////
+///
 fn get_donation_amount() -> Option<String> {
     let document = web_sys::window().unwrap().document().unwrap();
     let donation_amt = document.get_element_by_id("formDonationAmount")
@@ -19,6 +21,8 @@ fn get_donation_amount() -> Option<String> {
     }
 }
 
+/////////////////////////////////////////////////
+///
 fn set_donation_amount(value: &str) {
     let document = web_sys::window().unwrap().document().unwrap();
     document.get_element_by_id("formDonationAmount")
@@ -27,6 +31,8 @@ fn set_donation_amount(value: &str) {
         .set_value(value);
 }
 
+/////////////////////////////////////////////////
+///
 fn disable_submit_button(value: bool) {
     web_sys::window().unwrap()
         .document().unwrap()
@@ -36,7 +42,8 @@ fn disable_submit_button(value: bool) {
         .set_disabled(value);
 }
 
-
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 #[function_component(OrderDonations)]
 pub fn order_donations() -> Html
 {

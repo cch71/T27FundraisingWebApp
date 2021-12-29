@@ -2,6 +2,8 @@ pub(crate) use crate::order_utils::*;
 use lazy_static::lazy_static;
 use std::sync::Arc;
 use chrono::prelude::*;
+use std::collections::{HashMap};
+use rust_decimal::prelude::*;
 
 lazy_static! {
     static ref NEIGHBORHOODS: Arc<Vec<Neighborhood>> ={
@@ -21,8 +23,8 @@ lazy_static! {
         Arc::new(hoods)
     };
 
-    static ref PRODUCTS: Arc<Vec<ProductInfo>> = {
-        let mut products = Vec::new();
+    static ref PRODUCTS: Arc<HashMap<String, ProductInfo>> = {
+        let mut products = HashMap::new();
         let mut bags_pb = Vec::new();
         bags_pb.push(ProductPriceBreak{
             gt: 15,
@@ -33,18 +35,16 @@ lazy_static! {
             unit_price: "3.85".to_string(),
         });
 
-        products.push(ProductInfo{
-            id: "bags".to_string(),
+        products.insert("bags".to_string(), ProductInfo{
             label: "Bags of Mulch".to_string(),
             unit_price: "4.15".to_string(),
-            min_units: 0,
+            min_units: 5,
             price_breaks: bags_pb,
         });
-        products.push(ProductInfo{
-            id: "spreading".to_string(),
+        products.insert("spreading".to_string(), ProductInfo{
             label: "Bags to Spread".to_string(),
             unit_price: "2.00".to_string(),
-            min_units: 5,
+            min_units: 0,
             price_breaks: Vec::new(),
         });
         Arc::new(products)
@@ -95,7 +95,6 @@ pub(crate) struct ProductPriceBreak {
 }
 
 pub(crate) struct ProductInfo {
-    pub(crate) id: String,
     pub(crate) label: String,
     pub(crate) min_units: u32,
     pub(crate) unit_price: String,
@@ -111,11 +110,34 @@ pub(crate) fn get_neighborhoods() -> Arc<Vec<Neighborhood>>
     NEIGHBORHOODS.clone()
 }
 
-pub(crate) fn get_products() -> Arc<Vec<ProductInfo>>
+pub(crate) fn get_products() -> Arc<HashMap<String, ProductInfo>>
 {
     PRODUCTS.clone()
 }
 
 pub(crate) fn get_fr_config() -> Arc<FrConfig> {
     FRCONFIG.clone()
+}
+
+pub(crate) fn get_purchase_cost_for(product_id: &str, num_sold: u32) -> String {
+    if 0==num_sold { return "0.00".to_string(); }
+    let product_info = PRODUCTS.get(product_id).unwrap();
+
+    let mut price_per_unit = Decimal::from_str(&product_info.unit_price).unwrap();
+    for price_break in &product_info.price_breaks {
+        if price_break.gt < num_sold {
+            price_per_unit = Decimal::from_str(&price_break.unit_price).unwrap();
+        } else {
+            break; //no point in continuing on since price_breaks should be ordered
+        }
+    }
+    let amount = price_per_unit.checked_mul(num_sold.into()).unwrap();
+    amount.to_string()
+}
+
+pub(crate) fn is_purchase_valid(product_id: &str, num_sold: u32) -> bool {
+    match PRODUCTS.get(product_id) {
+        None=>false,
+        Some(product)=>product.min_units <= num_sold,
+    }
 }

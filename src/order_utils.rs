@@ -3,6 +3,7 @@ use crate::auth_utils::{is_admin};
 
 use std::collections::HashMap;
 use std::sync::{RwLock};
+use rust_decimal::prelude::*;
 
 lazy_static! {
     static ref ACTIVE_ORDER: RwLock<Option<MulchOrder>> = RwLock::new(None);
@@ -92,9 +93,16 @@ impl MulchOrder {
 
     pub fn set_purchases(&mut self, delivery_id: String, purchases: HashMap<String, PurchasedItem>)
     {
+        let mut total_purchase_amt = Decimal::ZERO;
+        for purchase in purchases.values() {
+            total_purchase_amt = total_purchase_amt.checked_add(
+                Decimal::from_str(&purchase.amount_charged).unwrap()).unwrap();
+
+        }
+
         self.delivery_id = Some(delivery_id);
         self.purchases = Some(purchases);
-        self.amount_from_purchases = Some("20.00".to_string()); //TODO
+        self.amount_from_purchases = Some(total_purchase_amt.to_string());
     }
 
     pub fn get_num_sold(&self, product_id: &str) -> Option<u32> {
@@ -130,8 +138,4 @@ pub(crate) fn update_active_order(order: MulchOrder)
 {
     *ACTIVE_ORDER.write().unwrap() = Some(order);
     Ok(())
-}
-
-pub(crate) fn get_cost_for(product_id: &str, num_sold: u32) -> String {
-    "20.00".to_string()
 }

@@ -9,36 +9,7 @@ use chrono::prelude::*;
 use std::collections::HashMap;
 
 /////////////////////////////////////////////////
-/////////////////////////////////////////////////
-
-#[derive(Properties, PartialEq)]
-pub struct ProductItemProps {
-    pub id: String,
-    pub productid: String,
-    pub label: String,
-    pub numordered: String,
-    pub oninput: Callback<InputEvent>,
-}
-
-#[function_component(ProductItem)]
-pub fn product_item(props: &ProductItemProps) -> Html
-{
-    html! {
-        <div class="row mb-2 col-sm-12">
-            <label for={props.id.clone()}>{props.label.clone()}</label>
-            <input type="number" min="0" step="any" class="form-control" id={props.id.clone()}
-                   value={props.numordered.clone()}
-                   autocomplete="off"
-                   data-productid={props.productid.clone()}
-                   oninput={props.oninput.clone()}
-                   placeholder={"0"}/>
-        </div>
-    }
-}
-
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-
+///
 fn disable_submit_button(value: bool) {
     web_sys::window().unwrap()
         .document().unwrap()
@@ -48,6 +19,8 @@ fn disable_submit_button(value: bool) {
         .set_disabled(value);
 }
 
+/////////////////////////////////////////////////
+///
 fn get_delivery_id(document: &web_sys::Document) -> Option<String> {
     let value = document.get_element_by_id("formSelectDeliveryDate")
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
@@ -61,6 +34,8 @@ fn get_delivery_id(document: &web_sys::Document) -> Option<String> {
     }
 }
 
+/////////////////////////////////////////////////
+///
 fn get_product_items(document: &web_sys::Document) -> HashMap<String, PurchasedItem> {
     let mut product_map = HashMap::new();
     if let Ok(product_nodes) = document.query_selector_all("input[data-productid]") {
@@ -71,7 +46,7 @@ fn get_product_items(document: &web_sys::Document) -> HashMap<String, PurchasedI
                 if let Some(num_sold) = value.parse::<u32>().ok() {
                     let product_id = element.dataset().get("productid").unwrap();
                     log::info!("Purchase Item: {}: {}", &product_id, num_sold);
-                    let amount_charged = get_cost_for(&product_id, num_sold);
+                    let amount_charged = get_purchase_cost_for(&product_id, num_sold);
                     product_map.insert( product_id, PurchasedItem::new(num_sold, amount_charged));
                 }
             }
@@ -80,6 +55,8 @@ fn get_product_items(document: &web_sys::Document) -> HashMap<String, PurchasedI
     product_map
 }
 
+/////////////////////////////////////////////////
+///
 fn are_product_items_valid(document: &web_sys::Document) -> bool {
     if let Ok(product_nodes) = document.query_selector_all("input[data-productid]") {
         if 0 == product_nodes.length() { return false; }
@@ -88,18 +65,62 @@ fn are_product_items_valid(document: &web_sys::Document) -> bool {
             if let Some(element) = product_nodes.item(idx).and_then(|t| t.dyn_into::<HtmlInputElement>().ok()) {
                 let value = element.value();
                 if value.len() == 0 { continue; }
-                match value.parse::<u32>() {
-                    Ok(value)=> if 0==value { continue; }
+                let num_to_purchase = match value.parse::<u32>() {
+                    Ok(value)=> {
+                        if 0==value { continue; }
+                        value
+                    },
                     Err(_)=>return false,
                 };
                 is_all_0 = false;
-                if None == element.dataset().get("productid") { return false; }
+                let product_id = match element.dataset().get("productid") {
+                    Some(product_id)=>product_id,
+                    None=>return false,
+                };
+                if !is_purchase_valid(&product_id, num_to_purchase) { return false; }
             }
         }
         if is_all_0 { return false; }
     }
     true
 }
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+#[derive(Properties, PartialEq)]
+pub struct ProductItemProps {
+    pub id: String,
+    pub productid: String,
+    pub label: String,
+    pub numordered: String,
+    pub oninput: Callback<InputEvent>,
+    pub minunits: u32,
+}
+
+#[function_component(ProductItem)]
+pub fn product_item(props: &ProductItemProps) -> Html
+{
+    html! {
+        <div class="row mb-2 col-sm-12">
+            <label for={props.id.clone()}>
+                {props.label.clone()}
+                 if props.minunits > 0 {
+                    <small class="form-text text-muted ps-1">{format!("*minimum purchase: {}", props.minunits)}</small>
+                 }
+            </label>
+            <input type="number" min="0" step="any" class="form-control" id={props.id.clone()}
+                   value={props.numordered.clone()}
+                   autocomplete="off"
+                   data-productid={props.productid.clone()}
+                   oninput={props.oninput.clone()}
+                   placeholder={"0"}/>
+        </div>
+    }
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 
 #[function_component(OrderProducts)]
 pub fn order_products() -> Html
@@ -198,14 +219,15 @@ pub fn order_products() -> Html
 				</select>
 			</div>
                         {
-                            get_products().iter().map(|product| {
+                            get_products().iter().map(|(product_id, product)| {
                                 html!{
                                     <ProductItem
-                                        id={format!("formProduct-{}",product.id)}
-                                        productid={product.id.clone()}
+                                        id={format!("formProduct-{}",product_id)}
+                                        productid={product_id.clone()}
                                         label={product.label.clone()}
-                                        numordered={order.get_num_sold(&product.id).map_or("".to_string(), |v| v.to_string())}
+                                        numordered={order.get_num_sold(&product_id).map_or("".to_string(), |v| v.to_string())}
                                         oninput={do_form_validation.clone()}
+                                        minunits={product.min_units}
                                     />}
                             }).collect::<Html>()
                         }
