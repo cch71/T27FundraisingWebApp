@@ -28,8 +28,12 @@ version = "0.3"
 features = [
   "Window",
   "Document",
+  "HtmlElement",
   "HtmlSelectElement",
   "HtmlButtonElement",
   "Event",
-  "FocusEvent"
+  "FocusEvent",
+  "Node",
+  "NodeList",
+  "DomStringMap",
 ]

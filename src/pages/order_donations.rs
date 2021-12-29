@@ -40,9 +40,12 @@ fn disable_submit_button(value: bool) {
 #[function_component(OrderDonations)]
 pub fn order_donations() -> Html
 {
+    let history = use_history().unwrap();
+    if !is_active_order() {
+            history.push(AppRoutes::Home);
+    }
     let order = get_active_order().unwrap();
     let is_order_readonly = order.is_readonly();
-    let history = use_history().unwrap();
 
     let on_form_submission = {
         let history = history.clone();
@@ -50,12 +53,14 @@ pub fn order_donations() -> Html
         Callback::once(move |evt: FocusEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("on_form_submission");
+            // log::info!("on_form_submission");
             let mut donation_amt = get_donation_amount();
             if donation_amt.is_some() {
                 donation_amt = Some(to_money_str_no_symbol(donation_amt.as_ref()));
+                updated_order.set_donations(donation_amt.as_ref().unwrap().clone());
+            } else {
+                updated_order.clear_donations();
             }
-            updated_order.amount_for_donations_collected = donation_amt;
             update_active_order(updated_order).unwrap();
             history.push(AppRoutes::OrderForm);
         })
@@ -66,17 +71,17 @@ pub fn order_donations() -> Html
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("on_cancel_item");
+            //log::info!("on_cancel_item");
             history.push(AppRoutes::OrderForm);
         })
     };
 
-    let does_submit_get_enabled = {
+    let do_form_validation = {
         let order = order.clone();
         Callback::from(move |evt: InputEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("does_submit_get_enabled");
+            log::info!("do_form_validation");
 
             let mut donation_amt = get_donation_amount();
 
@@ -90,7 +95,7 @@ pub fn order_donations() -> Html
                 }
             }
 
-            disable_submit_button(order.amount_for_donations_collected == donation_amt);
+            disable_submit_button(order.amount_from_donations == donation_amt);
         })
     };
 
@@ -98,7 +103,7 @@ pub fn order_donations() -> Html
         let order = order.clone();
         use_effect(move || {
             let donation_amt = get_donation_amount();
-            disable_submit_button(order.amount_for_donations_collected == donation_amt);
+            disable_submit_button(order.amount_from_donations == donation_amt);
             ||{}
         });
     }
@@ -116,9 +121,9 @@ pub fn order_donations() -> Html
                                     <span class="input-group-text">{"$"}</span>
                                 </div>
                                 <input type="number" min="0" step="any" class="form-control" id="formDonationAmount"
-                                       value={order.amount_for_donations_collected.unwrap_or("".to_string())}
+                                       value={order.amount_from_donations.unwrap_or("".to_string())}
                                        placeholder="0.00"
-                                       oninput={does_submit_get_enabled} />
+                                       oninput={do_form_validation} />
                             </div>
                         </div>
 

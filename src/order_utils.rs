@@ -14,8 +14,8 @@ pub struct MulchOrder {
     pub order_owner_id: String,
     pub last_modified_time: String,
     pub special_instructions: Option<String>,
-    pub amount_for_donations_collected: Option<String>,
-    pub amount_for_purchases_collected: Option<String>,
+    pub amount_from_donations: Option<String>,
+    pub amount_from_purchases: Option<String>,
     pub amount_cash_collected: Option<String>,
     pub amount_checks_collected: Option<String>,
     pub amount_total_collected: String,
@@ -32,6 +32,14 @@ pub struct MulchOrder {
 pub struct PurchasedItem {
     pub num_sold: u32,
     pub amount_charged: String,
+}
+impl PurchasedItem {
+    pub fn new(num_sold: u32, amount_charged:String)->Self {
+        Self{
+            num_sold: num_sold,
+            amount_charged: amount_charged,
+        }
+    }
 }
 
 #[derive(Default, Clone, PartialEq)]
@@ -56,7 +64,7 @@ impl MulchOrder {
                 phone: "455-234-4234".to_string(),
                 ..Default::default()
             },
-            amount_for_donations_collected: Some("200.24".to_string()),
+            amount_from_donations: Some("200.24".to_string()),
             amount_total_collected: "200.24".to_string(),
             ..Default::default()
         }
@@ -69,12 +77,24 @@ impl MulchOrder {
     }
 
     pub fn clear_donations(&mut self) {
-        self.amount_for_donations_collected = None;
+        self.amount_from_donations = None;
+    }
+
+    pub fn set_donations(&mut self, donation_amt: String) {
+        self.amount_from_donations = Some(donation_amt);
     }
 
     pub fn clear_purchases(&mut self) {
-        self.amount_for_purchases_collected = None;
+        self.delivery_id = None;
+        self.amount_from_purchases = None;
         self.purchases = None;
+    }
+
+    pub fn set_purchases(&mut self, delivery_id: String, purchases: HashMap<String, PurchasedItem>)
+    {
+        self.delivery_id = Some(delivery_id);
+        self.purchases = Some(purchases);
+        self.amount_from_purchases = Some("20.00".to_string()); //TODO
     }
 
     pub fn get_num_sold(&self, product_id: &str) -> Option<u32> {
@@ -110,4 +130,8 @@ pub(crate) fn update_active_order(order: MulchOrder)
 {
     *ACTIVE_ORDER.write().unwrap() = Some(order);
     Ok(())
+}
+
+pub(crate) fn get_cost_for(product_id: &str, num_sold: u32) -> String {
+    "20.00".to_string()
 }

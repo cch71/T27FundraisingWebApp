@@ -99,6 +99,9 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
 pub fn order_form_fields() -> Html
 {
     let history = use_history().unwrap();
+    if !is_active_order() {
+            history.push(AppRoutes::Home);
+    }
 
     let is_admin = false;
     let user_ids = vec!["ablash", "craigh", "fradmin"];
@@ -257,12 +260,12 @@ pub fn order_form_fields() -> Html
                         <OrderCostItem label="Donation"
                             isreadonly={is_order_readonly}
                             ondelete={on_donations_delete}
-                            amount={order.amount_for_donations_collected.clone()}/>
+                            amount={order.amount_from_donations.clone()}/>
                         <OrderCostItem label="Product Order"
                             deliveryid={order.delivery_id.clone()}
                             ondelete={on_purchases_delete}
                             isreadonly={is_order_readonly}
-                            amount={order.amount_for_purchases_collected.clone()}/>
+                            amount={order.amount_from_purchases.clone()}/>
                     </ul>
                 </div>
                 <div class="invalid-feedback">
