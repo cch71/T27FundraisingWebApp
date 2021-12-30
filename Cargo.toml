@@ -28,12 +28,17 @@ version = "0.3"
 features = [
   "Window",
   "Document",
+  "Element",
   "HtmlElement",
+  "HtmlFormElement",
   "HtmlSelectElement",
   "HtmlButtonElement",
+  "HtmlTextAreaElement",
   "Event",
   "FocusEvent",
   "Node",
   "NodeList",
   "DomStringMap",
+  "DomTokenList",
+  "CssStyleDeclaration",
 ]

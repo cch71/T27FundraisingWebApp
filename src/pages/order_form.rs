@@ -2,21 +2,153 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{Event, InputEvent, KeyboardEvent, MouseEvent, HtmlSelectElement};
+use web_sys::{
+    Event, InputEvent, KeyboardEvent, MouseEvent,
+    Element, HtmlElement, HtmlSelectElement, HtmlInputElement, HtmlFormElement, HtmlButtonElement,
+};
 use crate::AppRoutes;
+use crate::{get_html_input_value, save_to_active_order};
 use crate::currency_utils::*;
 use crate::data_model::*;
+use rust_decimal::prelude::*;
+use rusty_money::{Money, iso};
 
-fn recalculate_total_paid(_evt: InputEvent) {
-    log::info!("recalced total paid");
+
+/////////////////////////////////////////////////
+///
+fn set_html_input_value(id: &str, document: &web_sys::Document, value: &str) {
+    document.get_element_by_id(id)
+        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+        .unwrap()
+        .set_value(value);
 }
 
-// fn on_check_nums_key_press(_evt: KeyboardEvent) {
-//    log::info!("On on_check_nums_key_press");
-//}
+/////////////////////////////////////////////////
+///
+fn get_cash_amount_collected(document: &web_sys::Document) -> Option<String> {
+    get_html_input_value("formCashPaid", document)
+}
+
+/////////////////////////////////////////////////
+///
+fn get_check_amount_collected(document: &web_sys::Document) -> Option<String> {
+    get_html_input_value("formCheckPaid", document)
+}
+
+/////////////////////////////////////////////////
+///
+fn set_cash_amount_collected(document: &web_sys::Document, value: &str) {
+    set_html_input_value("formCashPaid", document, value)
+}
+
+/////////////////////////////////////////////////
+///
+fn set_check_amount_collected(document: &web_sys::Document, value: &str) {
+    set_html_input_value("formCheckPaid", document, value)
+}
+
+/////////////////////////////////////////////////
+///
+fn disable_submit_button(document: &web_sys::Document, value: bool, with_spinner: bool) {
+    document.get_element_by_id("formOrderSubmit")
+        .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+        .unwrap()
+        .set_disabled(value);
+    let spinner_display = if with_spinner { "inline-block" } else { "none" };
+    let _ = document.get_element_by_id("formOrderSubmitSpinner")
+        .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+        .unwrap()
+        .style()
+        .set_property("display", spinner_display);
+}
+
+/////////////////////////////////////////////////
+///
+fn disable_cancel_button(document: &web_sys::Document, value: bool) {
+    document.get_element_by_id("formOrderCancel")
+        .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+        .unwrap()
+        .set_disabled(value);
+}
+
+/////////////////////////////////////////////////
+///
+fn update_order_amount_due_element(order: &MulchOrder, document: &web_sys::Document) {
+    let total_to_collect = order.get_total_to_collect();
+    document.get_element_by_id("orderAmountDue")
+        .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+        .unwrap()
+        .set_inner_text(&Money::from_decimal(total_to_collect, iso::USD).to_string());
+}
+
+fn validate_order_form(document: &web_sys::Document) -> bool {
+    save_to_active_order();
+    let order = get_active_order().unwrap();
+    let mut is_valid = true;
+
+    let check_num_field_element = document.get_element_by_id("formCheckNumbers")
+        .and_then(|t| t.dyn_into::<Element>().ok())
+        .unwrap();
+    let totals_form_row_element = document.get_element_by_id("totalsFormRow")
+        .and_then(|t| t.dyn_into::<Element>().ok())
+        .unwrap();
+    match order.is_payment_valid() {
+        true=>{
+            let _ = totals_form_row_element.class_list().remove_1("is-invalid");
+            let _ = check_num_field_element.class_list().remove_1("is-invalid");
+        },
+        false=>{
+            let _ = totals_form_row_element.class_list().add_1("is-invalid");
+            if !order.is_check_numbers_valid() {
+                let _ = check_num_field_element.class_list().add_1("is-invalid");
+            }
+            is_valid = false;
+        }
+    };
+
+    let form_node_list = document.query_selector("#newOrEditOrderForm")
+        .ok()
+        .flatten()
+        .and_then(|t| t.dyn_into::<Element>().ok())
+        .unwrap()
+        .query_selector_all("[required]")
+        .unwrap();
+    for idx in 0..form_node_list.length() {
+        log::info!("Going through Form List");
+        if let Some(element) = form_node_list.item(idx).and_then(|t| t.dyn_into::<Element>().ok()) {
+            let is_form_element_valid = {
+                if let Some(form_element) = element.clone().dyn_into::<HtmlInputElement>().ok() {
+                    form_element.check_validity()
+                } else if let Some(form_element) = element.clone().dyn_into::<HtmlSelectElement>().ok() {
+                    form_element.check_validity()
+                } else {
+                    false
+                }
+            };
+            if is_form_element_valid {
+                let _ = element.class_list().remove_1("is-invalid");
+            } else {
+                let _ = element.class_list().add_1("is-invalid");
+                is_valid = false;
+            }
+        }
+    }
+
+    let product_list_element = document.get_element_by_id("productList")
+        .and_then(|t| t.dyn_into::<Element>().ok())
+        .unwrap();
+    if order.are_purchases_valid() {
+        let _ = product_list_element.class_list().remove_1("is-invalid");
+    } else {
+        let _ = product_list_element.class_list().add_1("is-invalid");
+        is_valid = false;
+    }
+
+    is_valid
+}
 
 #[function_component(RequiredSmall)]
-pub fn required_small() -> Html
+fn required_small() -> Html
 {
     html! {
         <small class="form-text text-muted ps-1">{"*required"}</small>
@@ -67,15 +199,21 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
         };
     }
 
+    let amount_label = format!("Amount: {}", to_money_str(props.amount.as_ref()));
+    let mut delivery_label = html! {};
     let delivery_id = props.deliveryid.as_ref().map_or_else(
         || "".to_string(),
-        |v| v.clone());
+        |v| {
+            delivery_label = html! {<><br/>{format!("To be delivered on: {}", get_delivery_date(v))}</>};
+            v.clone()
+        });
+
 
     // if the order already exists...
     html! {
          //With Edit/Delete Button
         <li class="list-group-item">
-            {to_money_str(props.amount.as_ref())}
+            {amount_label}{delivery_label}
             if props.isreadonly {
                 <button class="btn btn-outline-info float-end order-edt-btn"
                      data-deliveryid={delivery_id} onclick={on_add_edit_view}>
@@ -107,6 +245,7 @@ pub fn order_form_fields() -> Html
     let user_ids = vec!["ablash", "craigh", "fradmin"];
     let order = use_state_eq(||get_active_order().unwrap());
     let is_order_readonly = order.is_readonly();
+    // log::info!("Loading Order: {:#?}", &*order);
 
     let on_hood_warning = use_state_eq(|| "display: none;".to_owned());
     let on_hood_change = {
@@ -124,17 +263,120 @@ pub fn order_form_fields() -> Html
             });
         })
     };
-    let amount_due_str = use_state_eq(|| "$0.00".to_owned());
-    let amount_paid_str = use_state_eq(|| "$0.00".to_owned());
 
-    let on_cancel_item = {
+    let amount_due_str = use_state_eq(|| "$0.00".to_owned());
+    let amount_collected_str = {
+        if (*order).amount_total_collected.len() == 0 {
+            "$0.00".to_string()
+        } else {
+            to_money_str(Some(&(*order).amount_total_collected))
+        }
+    };
+
+    let on_payment_input = {
+        Callback::from(move |evt: InputEvent| {
+            log::info!("On Payment Due");
+
+            let document = web_sys::window().unwrap().document().unwrap();
+            let mut cash_amt_collected = get_cash_amount_collected(&document);
+            if cash_amt_collected.is_some() {
+                let new_amt = on_money_input_filter(cash_amt_collected.as_ref());
+                if &new_amt != cash_amt_collected.as_ref().unwrap() {
+
+                    cash_amt_collected = Some(new_amt);
+                    set_cash_amount_collected(&document, cash_amt_collected.as_ref().unwrap());
+                }
+            }
+
+            let mut check_amt_collected = get_check_amount_collected(&document);
+            if check_amt_collected.is_some() {
+                let new_amt = on_money_input_filter(check_amt_collected.as_ref());
+                if &new_amt != check_amt_collected.as_ref().unwrap() {
+
+                    check_amt_collected = Some(new_amt);
+                    set_check_amount_collected(&document, check_amt_collected.as_ref().unwrap());
+                }
+            }
+
+            let mut total_collected = Decimal::ZERO;
+            if let Some(payment) = cash_amt_collected {
+                total_collected = total_collected.checked_add(Decimal::from_str(&payment).unwrap()).unwrap();
+            }
+            if let Some(payment) = check_amt_collected {
+                total_collected = total_collected.checked_add(Decimal::from_str(&payment).unwrap()).unwrap();
+            }
+            document.get_element_by_id("orderAmountPaid")
+                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                .unwrap()
+                .set_inner_text(&Money::from_decimal(total_collected, iso::USD).to_string());
+
+            let collect_later_element = document.get_element_by_id("formCollectLater")
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                .unwrap();
+            if total_collected > Decimal::ZERO {
+                if collect_later_element.checked() {
+                    collect_later_element.set_checked(false);
+                }
+                collect_later_element.set_disabled(true);
+            } else {
+                collect_later_element.set_disabled(false);
+            }
+        })
+    };
+
+    let on_form_submission = {
+        let history = history.clone();
+        let mut updated_order = order.clone();
+        Callback::from(move |evt: FocusEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            log::info!("on_form_submission");
+
+            let document = web_sys::window().unwrap().document().unwrap();
+
+            disable_submit_button(&document, true, true);
+            disable_cancel_button(&document, true);
+
+            if !validate_order_form(&document) {
+                log::info!("Form isn't valid refusing submission");
+                disable_submit_button(&document, false, false);
+                disable_cancel_button(&document, false);
+                return;
+            } else {
+                // Send request
+                disable_submit_button(&document, false, false);
+                disable_cancel_button(&document, false);
+            }
+
+            // let document = web_sys::window().unwrap().document().unwrap();
+            // let delivery_id = get_delivery_id(&document).unwrap();
+            // let purchases = get_product_items(&document);
+            // updated_order.set_purchases(delivery_id, purchases);
+            // update_active_order(updated_order).unwrap();
+
+            let was_from_db =  is_active_order_from_db();
+            reset_active_order();
+            if was_from_db {
+                history.push(AppRoutes::Reports);
+            } else {
+                history.push(AppRoutes::Home);
+            }
+        })
+    };
+
+    let on_cancel_order = {
         let history = history.clone();
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("on_cancel_item");
+            log::info!("on_cancel_order");
+            let was_from_db =  is_active_order_from_db();
             reset_active_order();
-            history.push(AppRoutes::Home);
+            if was_from_db {
+                history.push(AppRoutes::Reports);
+            } else {
+                history.push(AppRoutes::Home);
+            }
         })
     };
 
@@ -162,8 +404,20 @@ pub fn order_form_fields() -> Html
         })
     };
 
+    {
+        let order = order.clone();
+        use_effect(move || {
+            let document = web_sys::window().unwrap().document().unwrap();
+            update_order_amount_due_element(&order, &document);
+            // disable_submit_button(
+            //     !are_product_items_valid(&document) || get_delivery_id(&document).is_none()
+            // );
+            ||{}
+        });
+    }
+
     html! {
-        <form class="needs-validation" id="newOrEditOrderForm" novalidate=true >
+        <form class="needs-validation" id="newOrEditOrderForm" novalidate=true onsubmit={on_form_submission}>
 
             <div class="row mb-2 g-2" style={ if !is_admin { "display: none;"} else {"display:block;"} } >
                 <div class="form-floating col-md-4">
@@ -181,8 +435,8 @@ pub fn order_form_fields() -> Html
 
             <div class="row mb-2 g-2">
                 <div class="form-floating col-md">
-                    <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formFirstName"
-                           placeholder="First Name" required=true
+                    <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formCustomerName"
+                           placeholder="Name" required=true
                            value={order.customer.name.clone()} />
                     <label for="formCustomerName">
                         {"Customer Name"}<RequiredSmall/>
@@ -209,13 +463,14 @@ pub fn order_form_fields() -> Html
 
             <div class="row mb-2 g-2">
                 <div class="form-floating col-md-4">
-                    <select class="form-control" id="formNeighborhood" onchange={on_hood_change}>
+                    <select class="form-control" id="formNeighborhood" onchange={on_hood_change} required=true>
                         {
                             get_neighborhoods().iter().map(|hood_info| {
                                 let is_selected = hood_info.name == order.customer.neighborhood;
                                 html!{<option key={hood_info.name.clone()} selected={is_selected}>{hood_info.name.clone()}</option>}
                             }).collect::<Html>()
                         }
+                        <option value="none" selected=true disabled=true hidden=true>{"Select Neighborhood"}</option>
                     </select>
                     <label for="formNeighborhood">
                         {"Neighborhood"}<RequiredSmall/>
@@ -291,8 +546,8 @@ pub fn order_form_fields() -> Html
                             <input class="form-control" type="number" min="0" step="any"
                                    autocomplete="fr-new-cust-info"
                                    id="formCashPaid" placeholder="0.00"
-                                   oninput={recalculate_total_paid}
-                                   value={to_money_str(order.amount_cash_collected.as_ref())}/>
+                                   oninput={on_payment_input.clone()}
+                                   value={order.amount_cash_collected.as_ref().unwrap_or(&"".to_string()).clone()}/>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -304,15 +559,15 @@ pub fn order_form_fields() -> Html
                             <input class="form-control" type="number" min="0" step="any"
                                    autocomplete="fr-new-cust-info"
                                    id="formCheckPaid" placeholder="0.00"
-                                   oninput={recalculate_total_paid}
-                                   value={to_money_str(order.amount_checks_collected.as_ref())}/>
+                                   oninput={on_payment_input.clone()}
+                                   value={order.amount_checks_collected.as_ref().unwrap_or(&"".to_string()).clone()}/>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <label for="formCheckNumbers">{"Enter Check Numbers"}</label>
                         <input class="form-control" autocomplete="fr-new-cust-info"
                                id="formCheckNumbers" placeholder="Enter Check #s"
-                               value={order.check_numbers.join(", ")}/>
+                               value={order.check_numbers.as_ref().map_or("".to_string(), |v|v.clone())}/>
                     </div>
 
                     <div class="row mb-2 my-2 g-2">
@@ -320,7 +575,10 @@ pub fn order_form_fields() -> Html
                             {"Total Due:"}<div id="orderAmountDue" style="display: inline;" >{(*amount_due_str).clone()}</div>
                         </span>
                         <span class="col-md-6 g-2" aria-describedby="orderAmountPaidHelp">
-                             {"Total Paid:"}<div id="orderAmountPaid" style="display: inline;">{(*amount_paid_str).clone()}</div>
+                             {"Total Paid:"}
+                            <div id="orderAmountPaid" style="display: inline;">
+                                {amount_collected_str}
+                            </div>
                         </span>
                     </div>
                 </div>
@@ -331,7 +589,7 @@ pub fn order_form_fields() -> Html
             </div>
 
             <div class="pt-4">
-                <button type="button" class="btn btn-primary" id="formOrderCancel" onclick={on_cancel_item}>
+                <button type="button" class="btn btn-primary" id="formOrderCancel" onclick={on_cancel_order}>
                     {"Cancel"}
                 </button>
                 if !is_order_readonly {

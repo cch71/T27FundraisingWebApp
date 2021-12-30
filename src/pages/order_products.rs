@@ -202,11 +202,11 @@ pub fn order_products() -> Html
                                     required=true
                                     oninput={do_form_validation.clone()}>
                                 {
-                                    get_deliveries().iter().map(|delivery| {
-                                        let is_selected = &delivery.id == order.delivery_id.as_ref().unwrap_or(&"".to_string());
+                                    get_deliveries().iter().map(|(delivery_id, delivery)| {
+                                        let is_selected = delivery_id == order.delivery_id.as_ref().unwrap_or(&"".to_string());
                                         if delivery.new_order_cutoff_date > Utc::now() {
                                             html!{
-                                                <option value={delivery.id.clone()} selected={is_selected}>
+                                                <option value={delivery_id.clone()} selected={is_selected}>
                                                     {delivery.delivery_date.format("%Y-%m-%d").to_string()}
                                                 </option>
                                             }

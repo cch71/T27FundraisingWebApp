@@ -4,13 +4,12 @@ mod order_utils;
 mod data_model;
 mod currency_utils;
 
-use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use yew_router::prelude::*;
+use wasm_bindgen::JsCast;
+use web_sys::{HtmlSelectElement, HtmlInputElement, HtmlTextAreaElement};
 
 use auth_utils::*;
-
-
 use data_model::*;
 
 
@@ -27,6 +26,71 @@ use web_sys::{window};
 
 //AWS API URL
 //invokeUrl: 'https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod'
+
+/////////////////////////////////////////////////
+///
+pub(crate) fn get_html_input_value(id: &str, document: &web_sys::Document) -> Option<String> {
+    let value = document.get_element_by_id(id)
+        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+        .unwrap()
+        .value();
+    if 0==value.len() {
+        None
+    } else {
+        Some(value)
+    }
+}
+
+/////////////////////////////////////////////////
+///
+pub(crate) fn get_html_textarea_value(id: &str, document: &web_sys::Document) -> Option<String> {
+    let value = document.get_element_by_id(id)
+        .and_then(|t| t.dyn_into::<HtmlTextAreaElement>().ok())
+        .unwrap()
+        .value();
+    if 0==value.len() {
+        None
+    } else {
+        Some(value)
+    }
+}
+
+/////////////////////////////////////////////////
+///
+pub(crate) fn save_to_active_order() {
+    if !is_active_order() { return; }
+
+    let document = web_sys::window().unwrap().document().unwrap();
+    let mut order = get_active_order().unwrap();
+
+    order.order_owner_id = document.get_element_by_id("formOrderOwner")
+        .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
+        .unwrap()
+        .value();
+    order.customer.name = get_html_input_value("formCustomerName", &document).unwrap_or("".to_string());
+    order.customer.phone = get_html_input_value("formPhone", &document).unwrap_or("".to_string());
+    order.customer.email = get_html_input_value("formEmail", &document);
+    order.customer.addr1 = get_html_input_value("formAddr1", &document).unwrap_or("".to_string());
+    order.customer.addr2 = get_html_input_value("formAddr2", &document);
+    order.customer.neighborhood = document.get_element_by_id("formNeighborhood")
+        .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
+        .unwrap()
+        .value();
+    order.special_instructions = get_html_textarea_value("formSpecialInstructions", &document);
+    order.amount_cash_collected = get_html_input_value("formCashPaid", &document);
+    order.amount_checks_collected = get_html_input_value("formCheckPaid", &document);
+    order.check_numbers = get_html_input_value("formCheckNumbers", &document);
+    order.will_collect_money_later = document.get_element_by_id("formCollectLater")
+        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+        .unwrap()
+        .checked();
+    // This must come after setting checks/cash collected
+    order.amount_total_collected = order.get_total_collected().to_string();
+
+    log::info!("Saving Order: {:#?}", &order);
+    update_active_order(order).unwrap();
+
+}
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -156,7 +220,7 @@ pub fn app_nav(props: &AppNavProps) -> Html
 
 /////////////////////////////////////////////////
 // Route Logic
-#[derive(Clone, Routable, PartialEq)]
+#[derive(Clone, Routable, PartialEq, Debug)]
 pub enum AppRoutes {
     #[at("/")]
     Home,
@@ -173,8 +237,15 @@ pub enum AppRoutes {
     NotFound,
 }
 
-fn switch(routes: &AppRoutes) -> Html {
-    match routes {
+fn switch(route: &AppRoutes) -> Html {
+    // This is kindof a hack to save order form before we switch away
+    let document = web_sys::window().unwrap().document().unwrap();
+    if document.get_element_by_id("newOrEditOrderForm").is_some() {
+        save_to_active_order();
+    }
+    //log::info!("````````` switcthing ``````````, {:?}  {}", route, is_some);
+
+    match route {
         AppRoutes::Home => html!{<Home/>},
         AppRoutes::OrderForm => html!{<OrderForm/>},
         //TODO: should these be in a seperate routing table?
