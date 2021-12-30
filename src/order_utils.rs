@@ -19,13 +19,13 @@ pub(crate) struct MulchOrder {
     pub(crate) amount_from_purchases: Option<String>,
     pub(crate) amount_cash_collected: Option<String>,
     pub(crate) amount_checks_collected: Option<String>,
-    pub(crate) amount_total_collected: String,
+    pub(crate) amount_total_collected: Option<String>,
     pub(crate) check_numbers: Option<String>,
     pub(crate) will_collect_money_later: bool,
     pub(crate) is_verified: bool,
     pub(crate) customer: CustomerInfo,
     pub(crate) purchases: Option<HashMap<String, PurchasedItem>>,
-    pub(crate) delivery_id: Option<String>,
+    pub(crate) delivery_id: Option<u32>,
     pub(crate) year_ordered: Option<String>
 }
 
@@ -67,7 +67,7 @@ impl MulchOrder {
             },
             amount_from_donations: Some("200.24".to_string()),
             amount_cash_collected: Some("200.24".to_string()),
-            amount_total_collected: "200.24".to_string(),
+            amount_total_collected: Some("200.24".to_string()),
             ..Default::default()
         }
     }
@@ -92,7 +92,7 @@ impl MulchOrder {
         self.purchases = None;
     }
 
-    pub(crate) fn set_purchases(&mut self, delivery_id: String, purchases: HashMap<String, PurchasedItem>)
+    pub(crate) fn set_purchases(&mut self, delivery_id: u32, purchases: HashMap<String, PurchasedItem>)
     {
         let mut total_purchase_amt = Decimal::ZERO;
         for purchase in purchases.values() {
@@ -147,8 +147,8 @@ impl MulchOrder {
     pub(crate) fn is_check_numbers_valid(&self) -> bool {
         if self.amount_checks_collected.is_some() && self.check_numbers.is_some() {
             let check_nums = self.check_numbers.as_ref().unwrap();
-            for check_num in check_nums.split(",").collect::<Vec<&str>>() {
-                if check_num.parse::<u32>().is_err() {
+            for check_num in check_nums.split(&[',', ';' , ' '][..]).collect::<Vec<&str>>() {
+                if check_num.trim().parse::<u32>().is_err() {
                     log::info!("Check Num is invalid: {}", self.check_numbers.as_ref().unwrap());
                     return false;
                 }
@@ -167,7 +167,11 @@ impl MulchOrder {
 
         let is_product_purchase_valid = self.delivery_id.is_some() && self.amount_from_purchases.is_some() && self.purchases.is_some();
         let is_donations_valid = self.amount_from_donations.is_some();
-        let is_total_valid = Decimal::from_str(&self.amount_total_collected).map_or(false, |v|v!=Decimal::ZERO && v.is_positive());
+        let is_total_valid = self.amount_total_collected
+            .as_ref()
+            .map_or(true, |v| {
+                Decimal::from_str(v).map_or(false, |v|v!=Decimal::ZERO && v.is_positive())
+            });
 
         is_total_valid && (is_product_purchase_valid || is_donations_valid)
     }

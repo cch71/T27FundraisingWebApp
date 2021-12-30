@@ -141,7 +141,7 @@ pub fn order_products() -> Html
             log::info!("on_form_submission");
 
             let document = web_sys::window().unwrap().document().unwrap();
-            let delivery_id = get_delivery_id(&document).unwrap();
+            let delivery_id = get_delivery_id(&document).unwrap().parse::<u32>().unwrap();
             let purchases = get_product_items(&document);
             updated_order.set_purchases(delivery_id, purchases);
             update_active_order(updated_order).unwrap();
@@ -203,11 +203,11 @@ pub fn order_products() -> Html
                                     oninput={do_form_validation.clone()}>
                                 {
                                     get_deliveries().iter().map(|(delivery_id, delivery)| {
-                                        let is_selected = delivery_id == order.delivery_id.as_ref().unwrap_or(&"".to_string());
+                                        let is_selected = delivery_id == order.delivery_id.as_ref().unwrap_or(&0);
                                         if delivery.new_order_cutoff_date > Utc::now() {
                                             html!{
-                                                <option value={delivery_id.clone()} selected={is_selected}>
-                                                    {delivery.delivery_date.format("%Y-%m-%d").to_string()}
+                                                <option value={delivery_id.to_string()} selected={is_selected}>
+                                                    {delivery.get_delivery_date_str()}
                                                 </option>
                                             }
                                         } else {

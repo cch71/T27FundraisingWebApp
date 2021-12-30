@@ -81,6 +81,8 @@ fn update_order_amount_due_element(order: &MulchOrder, document: &web_sys::Docum
         .set_inner_text(&Money::from_decimal(total_to_collect, iso::USD).to_string());
 }
 
+/////////////////////////////////////////////////
+///
 fn validate_order_form(document: &web_sys::Document) -> bool {
     save_to_active_order();
     let order = get_active_order().unwrap();
@@ -147,6 +149,8 @@ fn validate_order_form(document: &web_sys::Document) -> bool {
     is_valid
 }
 
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 #[function_component(RequiredSmall)]
 fn required_small() -> Html
 {
@@ -159,10 +163,13 @@ pub struct OrderCostItemProps {
     pub label: String,
     pub isreadonly: bool,
     pub amount: Option<String>,
-    pub deliveryid: Option<String>,
+    pub deliveryid: Option<u32>,
     pub ondelete: Callback<MouseEvent>,
 
 }
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 #[function_component(OrderCostItem)]
 pub fn order_cost_item(props: &OrderCostItemProps) -> Html
 {
@@ -205,7 +212,7 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
         || "".to_string(),
         |v| {
             delivery_label = html! {<><br/>{format!("To be delivered on: {}", get_delivery_date(v))}</>};
-            v.clone()
+            v.to_string()
         });
 
 
@@ -232,6 +239,9 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
         </li>
     }
 }
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 
 #[function_component(OrderFormFields)]
 pub fn order_form_fields() -> Html
@@ -265,12 +275,9 @@ pub fn order_form_fields() -> Html
     };
 
     let amount_due_str = use_state_eq(|| "$0.00".to_owned());
-    let amount_collected_str = {
-        if (*order).amount_total_collected.len() == 0 {
-            "$0.00".to_string()
-        } else {
-            to_money_str(Some(&(*order).amount_total_collected))
-        }
+    let amount_collected_str = match (*order).amount_total_collected.as_ref() {
+        None=>"$0.00".to_string(),
+        Some(v)=>to_money_str(Some(v)),
     };
 
     let on_payment_input = {
@@ -347,12 +354,6 @@ pub fn order_form_fields() -> Html
                 disable_submit_button(&document, false, false);
                 disable_cancel_button(&document, false);
             }
-
-            // let document = web_sys::window().unwrap().document().unwrap();
-            // let delivery_id = get_delivery_id(&document).unwrap();
-            // let purchases = get_product_items(&document);
-            // updated_order.set_purchases(delivery_id, purchases);
-            // update_active_order(updated_order).unwrap();
 
             let was_from_db =  is_active_order_from_db();
             reset_active_order();
@@ -517,7 +518,7 @@ pub fn order_form_fields() -> Html
                             ondelete={on_donations_delete}
                             amount={order.amount_from_donations.clone()}/>
                         <OrderCostItem label="Product Order"
-                            deliveryid={order.delivery_id.clone()}
+                            deliveryid={order.delivery_id}
                             ondelete={on_purchases_delete}
                             isreadonly={is_order_readonly}
                             amount={order.amount_from_purchases.clone()}/>
@@ -604,6 +605,9 @@ pub fn order_form_fields() -> Html
         </form>
     }
 }
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 
 #[function_component(OrderForm)]
 pub fn order_form() -> Html

@@ -50,13 +50,13 @@ lazy_static! {
         Arc::new(products)
     };
 
-    static ref DELIVERIES: Arc<HashMap<String, DeliveryInfo>> = {
+    static ref DELIVERIES: Arc<HashMap<u32, DeliveryInfo>> = {
         let mut deliveries = HashMap::new();
-        deliveries.insert("1".to_string(), DeliveryInfo{
+        deliveries.insert(1, DeliveryInfo{
            delivery_date: Utc.ymd(2022, 3, 13).and_hms(0, 0, 0),
            new_order_cutoff_date: Utc.ymd(2022, 2, 10).and_hms(0, 0, 0),
         });
-        deliveries.insert("2".to_string(), DeliveryInfo{
+        deliveries.insert(2, DeliveryInfo{
            delivery_date: Utc.ymd(2022, 4, 13).and_hms(0, 0, 0),
            new_order_cutoff_date: Utc.ymd(2022, 3, 27).and_hms(0, 0, 0),
         });
@@ -80,6 +80,11 @@ pub(crate) struct DeliveryInfo {
     pub(crate) delivery_date: DateTime<Utc>,
     pub(crate) new_order_cutoff_date: DateTime<Utc>,
 }
+impl DeliveryInfo {
+    pub(crate) fn get_delivery_date_str(&self) -> String {
+        self.delivery_date.format("%Y-%m-%d").to_string()
+    }
+}
 
 pub(crate) struct Neighborhood {
     pub(crate) name: String,
@@ -98,11 +103,11 @@ pub(crate) struct ProductInfo {
     pub(crate) price_breaks: Vec<ProductPriceBreak>,
 }
 
-pub(crate) fn get_deliveries() -> Arc<HashMap<String,DeliveryInfo>> {
+pub(crate) fn get_deliveries() -> Arc<HashMap<u32,DeliveryInfo>> {
     DELIVERIES.clone()
 }
 
-pub(crate) fn get_delivery_date(delivery_id: &str) -> String {
+pub(crate) fn get_delivery_date(delivery_id: &u32) -> String {
     DELIVERIES.get(delivery_id).unwrap()
         .delivery_date.format("%Y-%m-%d").to_string()
 }

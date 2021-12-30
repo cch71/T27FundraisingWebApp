@@ -7,7 +7,8 @@ mod currency_utils;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlSelectElement, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{window, HtmlSelectElement, HtmlInputElement, HtmlTextAreaElement};
+use rust_decimal::prelude::*;
 
 use auth_utils::*;
 use data_model::*;
@@ -21,8 +22,6 @@ use pages::{
     order_donations::OrderDonations,
     order_products::OrderProducts,
 };
-
-use web_sys::{window};
 
 //AWS API URL
 //invokeUrl: 'https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod'
@@ -85,7 +84,12 @@ pub(crate) fn save_to_active_order() {
         .unwrap()
         .checked();
     // This must come after setting checks/cash collected
-    order.amount_total_collected = order.get_total_collected().to_string();
+    let total_collected = order.get_total_collected();
+    if total_collected == Decimal::ZERO {
+        order.amount_total_collected = None;
+    } else {
+        order.amount_total_collected = Some(total_collected.to_string());
+    }
 
     log::info!("Saving Order: {:#?}", &order);
     update_active_order(order).unwrap();
