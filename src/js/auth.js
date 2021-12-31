@@ -15,8 +15,8 @@ const authObj = new Auth0Client(
 const getUserInfo = async () => {
     const token = await authObj.getTokenSilently();
     const userInfo = await authObj.getUser();
-    console.log(`UserInfo: ${JSON.stringify(userInfo, null, '\t')}`);
-    console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
+    // console.log(`UserInfo: ${JSON.stringify(userInfo, null, '\t')}`);
+    // console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
     return {
         "email": userInfo.email,
         "token": token,
@@ -28,7 +28,7 @@ const getUserInfo = async () => {
  * Starts the authentication flow
  */
 const loginUser = async (targetUrl) => {
-    console.log("Starting login");
+    // console.log("Starting login");
 
     const options = {
         redirect_uri: window.location.origin
@@ -45,7 +45,7 @@ const loginUser = async (targetUrl) => {
  * Logs the user out
  */
 const logoutUser = async (targetUrl) => {
-    console.log("Starting logout");
+    // console.log("Starting logout");
     authObj.logout({
         returnTo: window.location.origin
     });
@@ -76,7 +76,7 @@ const isAuthenticated = async () => {
 
         if (isAuthenticated) {
             // show the gated content
-            console.log(`JS2: Is Authenticated: True`);
+            //console.log(`JS2: Is Authenticated: True`);
             //const token = await authObj.getTokenSilently();
             //const userInfo = await authObj.getUser();
             //console.log(`UserInfo: ${JSON.stringify(userInfo, null, '\t')}`);

@@ -161,7 +161,7 @@ pub(crate) async fn load_config() {
         .unwrap();
 
     let mut config = resp.data.config;
-    log::info!("```` Config: \n {:#?}", config);
+    //log::info!("```` Config: \n {:#?}", config);
 
     *FRCONFIG.write().unwrap() = Some(Arc::new(FrConfig {
         kind: config.kind,
@@ -192,6 +192,7 @@ pub(crate) async fn load_config() {
         });
     }
     *PRODUCTS.write().unwrap() = Some(Arc::new(products));
+    log::info!("Fundraising Config retrieved");
 }
 
 pub(crate) fn get_deliveries() -> Arc<HashMap<u32,DeliveryInfo>> {
@@ -218,7 +219,15 @@ pub(crate) fn get_fr_config() -> Arc<FrConfig> {
 }
 
 pub(crate) fn are_sales_still_allowed() -> bool {
-    true
+    let deliveries = get_deliveries();
+    let now = Utc::now();
+    let mut are_any_still_active = false;
+    for delivery_info in deliveries.values() {
+        if delivery_info.new_order_cutoff_date >= now {
+            are_any_still_active = true;
+        }
+    }
+    are_any_still_active
 }
 
 pub(crate) fn get_purchase_cost_for(product_id: &str, num_sold: u32) -> String {

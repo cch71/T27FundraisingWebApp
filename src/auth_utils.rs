@@ -52,7 +52,7 @@ impl UserInfo {
 pub(crate) async fn get_active_user_async() -> Option<Arc<UserInfo>> {
     match getUserInfo().await {
         Ok(user_info) => {
-            log::info!("User Info: {:#?}", user_info);
+            //log::info!("User Info: {:#?}", user_info);
             let user_info: UserInfo = serde_wasm_bindgen::from_value(user_info).unwrap();
             let user_info = Arc::new(user_info);
             *ACTIVE_USER.write().unwrap() = Some(user_info.clone());
@@ -84,9 +84,9 @@ pub(crate) async fn is_authenticated() -> bool {
 
 pub(crate) async fn login() {
     if let Err(err) = loginUser().await {
-        log::error!("Authentication Err: {:#?}", err);
+        log::error!("Error logging in Err: {:#?}", err);
     } else {
-        log::info!("Authenticated");
+        log::info!("Logged In");
     }
 }
 

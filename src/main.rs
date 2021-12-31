@@ -279,11 +279,11 @@ impl Component for Model {
     fn create(ctx: &Context<Self>) -> Self {
         ctx.link().send_future(async move {
             if is_authenticated().await {
-                log::info!("Authenticated");
                 match get_active_user_async().await {
                     Some(_)=> {
                         // We are authenticated so get initial config stuff before we bring up ui
                         load_config().await;
+                        log::info!("Showing UI");
                         Msg::Authenticated
                     },
                     None=>Msg::NoOp,
