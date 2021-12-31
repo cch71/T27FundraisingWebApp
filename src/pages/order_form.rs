@@ -3,8 +3,8 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{
-    Event, InputEvent, KeyboardEvent, MouseEvent,
-    Element, HtmlElement, HtmlSelectElement, HtmlInputElement, HtmlFormElement, HtmlButtonElement,
+    Event, InputEvent, MouseEvent,
+    Element, HtmlElement, HtmlSelectElement, HtmlInputElement, HtmlButtonElement,
 };
 use crate::AppRoutes;
 use crate::{get_html_input_value, save_to_active_order};
@@ -281,7 +281,7 @@ pub fn order_form_fields() -> Html
     };
 
     let on_payment_input = {
-        Callback::from(move |evt: InputEvent| {
+        Callback::from(move |_evt: InputEvent| {
             log::info!("On Payment Due");
 
             let document = web_sys::window().unwrap().document().unwrap();
@@ -333,7 +333,6 @@ pub fn order_form_fields() -> Html
 
     let on_form_submission = {
         let history = history.clone();
-        let mut updated_order = order.clone();
         Callback::from(move |evt: FocusEvent| {
             evt.prevent_default();
             evt.stop_propagation();

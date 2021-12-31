@@ -1,5 +1,10 @@
+use lazy_static::lazy_static;
+use std::sync::{RwLock, Arc};
 
 
+lazy_static! {
+    static ref ACTIVE_USER: RwLock<Option<Arc<UserInfo>>> = RwLock::new(None);
+}
 
 /////////////////////////////////////////////////
 // Auth Comp Stuff
@@ -20,25 +25,37 @@ extern "C" {
     async fn getUserInfo() -> Result<JsValue, JsValue>;
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct UserInfo {
-    pub email: String,
-    pub token: String,
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
+pub(crate) struct UserInfo {
+    pub(crate) email: String,
+    pub(crate) token: String,
+    name: Option<String>,
+    pub(crate) roles: Vec<String>,
 }
 
 impl UserInfo {
-    pub fn user_id(&self)->String {
+    pub(crate) fn get_id(&self)->String {
         // TODO: Do this at creation time
         let v: Vec<&str> = self.email.split('@').collect();
-        v[0].to_owned()
+        v[0].to_string()
+    }
+
+    pub(crate) fn get_name(&self)->String {
+        self.get_id()
+    }
+
+    pub(crate) fn is_admin(&self)->bool {
+        self.roles.contains(&"FrAdmins".to_string())
     }
 }
 
-pub async fn get_user_info() -> Option<UserInfo> {
+pub(crate) async fn get_active_user_async() -> Option<Arc<UserInfo>> {
     match getUserInfo().await {
         Ok(user_info) => {
             log::info!("User Info: {:#?}", user_info);
             let user_info: UserInfo = serde_wasm_bindgen::from_value(user_info).unwrap();
+            let user_info = Arc::new(user_info);
+            *ACTIVE_USER.write().unwrap() = Some(user_info.clone());
             Some(user_info)
         },
         Err(err) => {
@@ -49,7 +66,11 @@ pub async fn get_user_info() -> Option<UserInfo> {
     }
 }
 
-pub async fn is_authenticated() -> bool {
+pub(crate) fn get_active_user() -> Arc<UserInfo> {
+    ACTIVE_USER.read().unwrap().as_ref().unwrap().clone()
+}
+
+pub(crate) async fn is_authenticated() -> bool {
     match isAuthenticated().await {
         Ok(is_auth) => {
             log::info!("Is Authenticated: {:#?}", &is_auth);
@@ -61,7 +82,7 @@ pub async fn is_authenticated() -> bool {
     false
 }
 
-pub async fn login() {
+pub(crate) async fn login() {
     if let Err(err) = loginUser().await {
         log::error!("Authentication Err: {:#?}", err);
     } else {
@@ -69,7 +90,7 @@ pub async fn login() {
     }
 }
 
-pub async fn logout() {
+pub(crate) async fn logout() {
     if let Err(err) = logoutUser().await {
         log::error!("Error logging out Err: {:#?}", err);
     } else {
@@ -77,6 +98,3 @@ pub async fn logout() {
     }
 }
 
-pub fn is_admin() -> bool{
-    false
-}

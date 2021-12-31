@@ -1,51 +1,87 @@
 use yew::prelude::*;
+use wasm_bindgen::prelude::*;
+// use web_sys::{
+//     MouseEvent, HtmlButtonElement,
+// };
+use crate::data_model::*;
+//use crate::currency_utils::*;
 
-pub enum HomeMsg {
-    AddOne,
-}
-type Msg = HomeMsg;
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 
-pub struct Home{
-    value: i64,
-}
+#[function_component(Home)]
+pub fn home_page() -> Html
+{
+    let fr_config = get_fr_config();
+    let active_user = get_active_user();
 
-
-impl Component for Home {
-    type Message = Msg;
-    type Properties = ();
-
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self {
-            value: 0,
-        }
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            Msg::AddOne => {
-                self.value += 1;
-                log::info!("Adding 1");
-                // the value has changed so we need to
-                // re-render for it to appear on the page
-                true
-            }
-        }
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let on_addone_click = ctx.link().callback(|_| Msg::AddOne);
+    let fundraiser_sales_finished_msg = if are_sales_still_allowed() {
+        html!{}
+    } else {
         html! {
-            <div class="tile is-ancestor is-vertical">
-                <div class="tile is-child hero">
-                    <div class="hero-body container pb-0">
-                        <h1 class="title is-1">{ "Welcome..." }</h1>
-                        <h2 class="subtitle">{ "...to the best yew content" }</h2>
-                    </div>
-                </div>
-
-                <button onclick={on_addone_click}>{ "+1" }</button>
-                <p>{ self.value }</p>
+            <div style="color: red;">
+                <b>{"(The order phase has concluded. Contact the fundrasier admin for new orders/changes)"}</b>
             </div>
         }
+    };
+
+    let on_get_order = {
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            log::info!("on_get_order");
+        })
+    };
+
+    html! {
+        <div>
+            <div class="justify-content-center text-center">
+                <h6>{format!("{} Fundraiser", &fr_config.description)} {fundraiser_sales_finished_msg}</h6>
+                <div class="col-xs-1 d-flex justify-content-center">
+                    <div class="row">
+
+                        <button class="btn btn-primary float-end" onclick={on_get_order}>
+                            {"Button btn who has the button"}
+                        </button>
+
+                        <div class="col-lg-4">
+                            <div class="card" id="orderOwnerSummaryCard">
+                                <div class="card-header">
+                                {format!("Summary for: {}", active_user.get_name())}
+                                </div>
+                                <div class="card-body text-start">
+                                    <small muted=true>{"*updates may take up to 15 minutes"}</small>
+                                    <ul class="list-group list-group-flush sm-owner-summary" id="orderOwnerSummaryList">
+                                        //{summaryStats}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="card" id="topSellersCard">
+                                <div class="card-header">{"Top Sellers:"}</div>
+                                <div class="card-body text-start">
+                                    <table class="table table-sm table-borderless table-responsive" id="topSellersTable">
+                                        <tbody>
+                                            //{topSellers}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="card" id="patrolStandingsChartCard">
+                                <div class="card-header">{"Sales by Patrol:"}</div>
+                                <div class="card-body">
+                                    <div id="patrolStandingsChart"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
 }

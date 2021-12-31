@@ -11,7 +11,8 @@ lazy_static = "1"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 serde-wasm-bindgen = "0.3"
-serde = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 js-sys = "0.3"
 log = "0.4"
 wasm-logger = "0.2"
@@ -22,6 +23,7 @@ rust_decimal = "1"
 rusty-money = { version = "0.4", features = ["iso"] }
 uuid = { version = "0.8", features = ["serde", "v4", "wasm-bindgen"] }
 gloo-dialogs = "0.1"
+reqwasm = {version = "0.4", default-features = false, features = ["json", "http"] }
 
 [dependencies.web-sys]
 version = "0.3"

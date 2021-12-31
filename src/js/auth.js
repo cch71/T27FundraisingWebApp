@@ -2,10 +2,12 @@
 /**
  *  Creates an auth object
  */
-const authObj = new Auth0Client({
-    domain: 'dev-pmq2q476.us.auth0.com',
-    client_id: 'AewxkIRU4ckn5GcNH32qkTU1AYgdKKMn'
-});
+const authObj = new Auth0Client(
+    {
+        domain: 'dev-pmq2q476.us.auth0.com',
+        client_id: 'AewxkIRU4ckn5GcNH32qkTU1AYgdKKMn',
+        audience: 'https://fundraiser.bsatroop27.us/api'
+    });
 
 /**
  *  Retrieves user information
@@ -13,11 +15,12 @@ const authObj = new Auth0Client({
 const getUserInfo = async () => {
     const token = await authObj.getTokenSilently();
     const userInfo = await authObj.getUser();
-    // console.log(`UserInfo: ${JSON.stringify(userInfo, null, '\t')}`);
-    // console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
+    console.log(`UserInfo: ${JSON.stringify(userInfo, null, '\t')}`);
+    console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
     return {
         "email": userInfo.email,
-        "token": token
+        "token": token,
+        "roles": userInfo["https://www.bsatroop27.us/roles"]
     };
 }
 
@@ -74,12 +77,12 @@ const isAuthenticated = async () => {
         if (isAuthenticated) {
             // show the gated content
             console.log(`JS2: Is Authenticated: True`);
-            const token = await authObj.getTokenSilently();
-            const userInfo = await authObj.getUser();
-            console.log(`UserInfo: ${JSON.stringify(userInfo, null, '\t')}`);
-            console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
-            const claims = await authObj.getIdTokenClaims();
-            console.log(`Claims: ${JSON.stringify(claims, null, '\t')}`);
+            //const token = await authObj.getTokenSilently();
+            //const userInfo = await authObj.getUser();
+            //console.log(`UserInfo: ${JSON.stringify(userInfo, null, '\t')}`);
+            //console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
+            //const claims = await authObj.getIdTokenClaims();
+            //console.log(`Claims: ${JSON.stringify(claims, null, '\t')}`);
         }
         window.history.replaceState({}, document.title, "/");
     }

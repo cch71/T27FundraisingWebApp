@@ -3,7 +3,6 @@ use yew_router::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{InputEvent, MouseEvent, FocusEvent, HtmlSelectElement, HtmlInputElement, HtmlButtonElement};
 use crate::AppRoutes;
-use crate::currency_utils::*;
 use crate::data_model::*;
 use chrono::prelude::*;
 use std::collections::HashMap;

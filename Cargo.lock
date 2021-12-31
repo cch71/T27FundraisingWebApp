@@ -343,6 +343,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "reqwasm"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34b9b71430c0b3f076a806c389b5a8f806171a1b9365692b86e9878ad1312879"
+dependencies = [
+ "gloo-utils",
+ "js-sys",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "route-recognizer"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -660,10 +676,12 @@ dependencies = [
  "js-sys",
  "lazy_static",
  "log",
+ "reqwasm",
  "rust_decimal",
  "rusty-money",
  "serde",
  "serde-wasm-bindgen",
+ "serde_json",
  "uuid",
  "wasm-bindgen",
  "wasm-bindgen-futures",

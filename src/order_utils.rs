@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use crate::auth_utils::{is_admin};
+// use crate::data_model::{get_active_user};
 
 use std::collections::HashMap;
 use std::sync::{RwLock};
@@ -170,7 +170,7 @@ impl MulchOrder {
         let is_total_valid = self.amount_total_collected
             .as_ref()
             .map_or(true, |v| {
-                Decimal::from_str(v).map_or(false, |v|v!=Decimal::ZERO && v.is_positive())
+                Decimal::from_str(v).map_or(false, |v|v!=Decimal::ZERO && v.is_sign_positive())
             });
 
         is_total_valid && (is_product_purchase_valid || is_donations_valid)

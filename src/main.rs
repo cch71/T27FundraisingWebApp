@@ -10,7 +10,7 @@ use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlSelectElement, HtmlInputElement, HtmlTextAreaElement};
 use rust_decimal::prelude::*;
 
-use auth_utils::*;
+use auth_utils::{login, logout, is_authenticated};
 use data_model::*;
 
 
@@ -22,9 +22,6 @@ use pages::{
     order_donations::OrderDonations,
     order_products::OrderProducts,
 };
-
-//AWS API URL
-//invokeUrl: 'https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod'
 
 /////////////////////////////////////////////////
 ///
@@ -265,14 +262,13 @@ fn switch(route: &AppRoutes) -> Html {
 
 pub enum AppMsg {
     NotAuthenticated,
-    Authenticated(UserInfo),
+    Authenticated,
     NoOp,
     Logout,
 }
 type Msg = AppMsg;
 
 struct Model {
-    user_info: Option<UserInfo>,
     is_loading: bool,
 }
 
@@ -284,8 +280,12 @@ impl Component for Model {
         ctx.link().send_future(async move {
             if is_authenticated().await {
                 log::info!("Authenticated");
-                match get_user_info().await {
-                    Some(user_info)=> Msg::Authenticated(user_info),
+                match get_active_user_async().await {
+                    Some(_)=> {
+                        // We are authenticated so get initial config stuff before we bring up ui
+                        load_config().await;
+                        Msg::Authenticated
+                    },
                     None=>Msg::NoOp,
                 }
             } else {
@@ -294,18 +294,14 @@ impl Component for Model {
         });
 
         Self {
-            user_info: None,
             is_loading: true,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Authenticated(user_info) => {
-                self.user_info = Some(user_info);
+            Msg::Authenticated => {
                 self.is_loading = false;
-                //let history = ctx.link().history().unwrap();
-                //history.replace(AppRoutes::Home);
                 true
             },
             Msg::NotAuthenticated => {
@@ -329,8 +325,6 @@ impl Component for Model {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        // let history = ctx.link().history().unwrap();
-        // log::info!("!!!! Location: {:#?}", &history.location());
         if self.is_loading {
             html! {
                 <div id="notReadyView" class="col-xs-1 d-flex justify-content-center" >
@@ -340,18 +334,16 @@ impl Component for Model {
                 </div>
             }
         } else {
-            // let user_info_ctx = use_state(|| self.user_info.clone());
-            // let is_not_authenticated = self.user_id.is_none();
-            // let on_auth_complete = ctx.link().callback(|user_info: UserInfo| Msg::Authenticated(user_info));
+            let user_id = get_active_user().get_id();
 
             html! {
                 <BrowserRouter>
-                    <AppNav userid={self.user_info.as_ref().map_or_else(||"".to_string(), |v|v.user_id())} />
+                    <AppNav userid={user_id.clone()} />
                     <main class="flex-shrink-0">
                         <Switch<AppRoutes> render={Switch::render(switch)} />
                     </main>
                     <AppFooter>
-                        <AddNewOrderButton userid={self.user_info.as_ref().unwrap().user_id()}/>
+                        <AddNewOrderButton userid={user_id}/>
                     </AppFooter>
                 </BrowserRouter>
             }
