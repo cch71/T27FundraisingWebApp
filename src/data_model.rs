@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
-pub(crate) use crate::order_utils::*;
-pub(crate) use crate::auth_utils::{get_active_user, get_active_user_async, UserInfo};
 use lazy_static::lazy_static;
 use std::sync::{RwLock, Arc};
 use chrono::prelude::*;
-use std::collections::{HashMap};
+use std::collections::{BTreeMap};
 use rust_decimal::prelude::*;
+
+pub(crate) use crate::order_utils::*;
+pub(crate) use crate::auth_utils::{get_active_user, get_active_user_async, UserInfo};
+use crate::gql_utils::{make_gql_request, GraphQlReq};
 
 static CONFIG_GQL:&'static str =
 r#"
@@ -37,15 +39,11 @@ r#"
   }
 }"#;
 
-#[derive(Serialize, Deserialize, Debug)]
-struct GqlReq {
-    query: String,
-}
 
 lazy_static! {
     static ref NEIGHBORHOODS: RwLock<Option<Arc<Vec<Neighborhood>>>> = RwLock::new(None);
-    static ref PRODUCTS: RwLock<Option<Arc<HashMap<String, ProductInfo>>>> = RwLock::new(None);
-    static ref DELIVERIES: RwLock<Option<Arc<HashMap<u32, DeliveryInfo>>>> = RwLock::new(None);
+    static ref PRODUCTS: RwLock<Option<Arc<BTreeMap<String, ProductInfo>>>> = RwLock::new(None);
+    static ref DELIVERIES: RwLock<Option<Arc<BTreeMap<u32, DeliveryInfo>>>> = RwLock::new(None);
     static ref FRCONFIG: RwLock<Option<Arc<FrConfig>>> = RwLock::new(None);
 }
 
@@ -87,22 +85,11 @@ pub(crate) struct ProductInfo {
     pub(crate) price_breaks: Vec<ProductPriceBreak>,
 }
 
-
-fn get_cloud_api_url() -> &'static str {
-    //AWS API URL
-    //invokeUrl: 'https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod'
-    "https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod"
-}
-
 pub(crate) async fn load_config() {
 
-    #[derive(Serialize, Deserialize, Debug)]
-    struct DataWrapper<T> {
-        data: T,
-    }
 
     #[derive(Serialize, Deserialize, Debug)]
-    struct ConfigWrapper {
+    struct ConfigApi {
         config: FrConfigApi,
     }
 
@@ -140,27 +127,15 @@ pub(crate) async fn load_config() {
         new_order_cutoff_date: String,
     }
 
-    let req_url = format!("{}/graphql", get_cloud_api_url());
-    // wasm_bindgen_futures::spawn_local(async move {
-    // });
     log::info!("Getting Fundraising Config");
-    let req = GqlReq {
-        query: CONFIG_GQL.to_string(),
-    };
+    let req = GraphQlReq::new(CONFIG_GQL.to_string());
+    let rslt = make_gql_request::<ConfigApi>(&req).await;
+    if let Err(err) = rslt {
+        gloo_dialogs::alert(&format!("Failed to retrieve config: {:#?}", err));
+        return;
+    }
 
-    use reqwasm::http::Request;
-    let mut resp: DataWrapper<ConfigWrapper> = Request::post(&req_url)
-        .header("Content-Type", "application/json")
-        .header("Authorization", &format!("Bearer {}", &get_active_user().token))
-        .body(serde_json::to_string(&req).unwrap())
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
-
-    let mut config = resp.data.config;
+    let mut config = rslt.unwrap().config;
     //log::info!("```` Config: \n {:#?}", config);
 
     *FRCONFIG.write().unwrap() = Some(Arc::new(FrConfig {
@@ -171,7 +146,7 @@ pub(crate) async fn load_config() {
     }));
     *NEIGHBORHOODS.write().unwrap() = Some(Arc::new(config.neighborhoods));
 
-    let mut deliveries = HashMap::new();
+    let mut deliveries = BTreeMap::new();
     for delivery in config.mulch_delivery_configs {
         let delivery_date = NaiveDate::parse_from_str(&delivery.delivery_date, "%m/%d/%Y").unwrap();
         let cutoff_date = NaiveDate::parse_from_str(&delivery.new_order_cutoff_date, "%m/%d/%Y").unwrap();
@@ -182,7 +157,7 @@ pub(crate) async fn load_config() {
     }
     *DELIVERIES.write().unwrap() = Some(Arc::new(deliveries));
 
-    let mut products = HashMap::new();
+    let mut products = BTreeMap::new();
     for product in config.products {
         products.insert(product.id, ProductInfo{
             label: product.label,
@@ -195,7 +170,7 @@ pub(crate) async fn load_config() {
     log::info!("Fundraising Config retrieved");
 }
 
-pub(crate) fn get_deliveries() -> Arc<HashMap<u32,DeliveryInfo>> {
+pub(crate) fn get_deliveries() -> Arc<BTreeMap<u32,DeliveryInfo>> {
     DELIVERIES.read().unwrap().as_ref().unwrap().clone()
 }
 
@@ -209,7 +184,7 @@ pub(crate) fn get_neighborhoods() -> Arc<Vec<Neighborhood>>
     NEIGHBORHOODS.read().unwrap().as_ref().unwrap().clone()
 }
 
-pub(crate) fn get_products() -> Arc<HashMap<String, ProductInfo>>
+pub(crate) fn get_products() -> Arc<BTreeMap<String, ProductInfo>>
 {
     PRODUCTS.read().unwrap().as_ref().unwrap().clone()
 }

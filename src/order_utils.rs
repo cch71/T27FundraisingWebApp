@@ -1,12 +1,20 @@
 use lazy_static::lazy_static;
-// use crate::data_model::{get_active_user};
-
 use std::collections::HashMap;
 use std::sync::{RwLock};
 use rust_decimal::prelude::*;
 
+// use crate::data_model::{get_active_user};
+use crate::gql_utils::{make_gql_request, GraphQlReq};
+
 lazy_static! {
-    static ref ACTIVE_ORDER: RwLock<Option<MulchOrder>> = RwLock::new(None);
+    static ref ACTIVE_ORDER: RwLock<Option<ActiveOrderState>> = RwLock::new(None);
+}
+
+#[derive(Default, Clone, PartialEq, Debug)]
+pub(crate) struct ActiveOrderState {
+    order: MulchOrder,
+    is_new_order: bool,
+    is_dirty: bool,
 }
 
 #[derive(Default, Clone, PartialEq, Debug)]
@@ -22,7 +30,7 @@ pub(crate) struct MulchOrder {
     pub(crate) amount_total_collected: Option<String>,
     pub(crate) check_numbers: Option<String>,
     pub(crate) will_collect_money_later: bool,
-    pub(crate) is_verified: bool,
+    pub(crate) is_verified: Option<bool>,
     pub(crate) customer: CustomerInfo,
     pub(crate) purchases: Option<HashMap<String, PurchasedItem>>,
     pub(crate) delivery_id: Option<u32>,
@@ -179,8 +187,13 @@ impl MulchOrder {
 }
 
 pub(crate) fn create_new_active_order(owner_id: &str) {
-    let new_order = MulchOrder::new(owner_id);
-    *ACTIVE_ORDER.write().unwrap() = Some(new_order.clone());
+    let new_active_order_state = ActiveOrderState {
+        order: MulchOrder::new(owner_id),
+        is_new_order: true,
+        is_dirty: true,
+    };
+
+    *ACTIVE_ORDER.write().unwrap() = Some(new_active_order_state);
 }
 
 pub(crate) fn is_active_order() -> bool {
@@ -188,7 +201,7 @@ pub(crate) fn is_active_order() -> bool {
 }
 
 pub(crate) fn is_active_order_from_db() -> bool {
-    is_active_order() && false //TODO: false should be a check from db
+    ACTIVE_ORDER.read().unwrap().as_ref().map_or(false, |v| !v.is_new_order)
 }
 
 pub(crate) fn reset_active_order() {
@@ -197,7 +210,7 @@ pub(crate) fn reset_active_order() {
 
 pub(crate) fn get_active_order() -> Option<MulchOrder> {
     match &*ACTIVE_ORDER.read().unwrap() {
-        Some(order)=>Some(order.clone()),
+        Some(order_state)=>Some(order_state.order.clone()),
         None=>None,
     }
 }
@@ -205,6 +218,106 @@ pub(crate) fn get_active_order() -> Option<MulchOrder> {
 pub(crate) fn update_active_order(order: MulchOrder)
     -> std::result::Result<(),Box<dyn std::error::Error>>
 {
-    *ACTIVE_ORDER.write().unwrap() = Some(order);
+    let mut order_state_opt = ACTIVE_ORDER.write()?;
+    let mut order_state = order_state_opt.as_mut().unwrap();
+    if !order_state.is_dirty && order_state.order != order {
+        order_state.is_dirty = true;
+    }
+    order_state.order = order;
     Ok(())
+}
+
+pub(crate) async fn submit_active_order()
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    let order_state_opt = ACTIVE_ORDER.write()?;
+    let order_state = order_state_opt.as_ref().unwrap();
+    if !order_state.is_dirty {
+        log::info!("Order doesn't need updating so not submitting");
+        return Ok(());
+    }
+
+    let order = &order_state.order;
+
+    let mut query = String::with_capacity(1024*32);
+    query.push_str("mutation {\n");
+    query.push_str("\tcreateMulchOrder(order: {\n");
+    query.push_str(&format!("\t\t orderId: \"{}\"\n", &order.order_id));
+    query.push_str(&format!("\t\t ownerId: \"{}\"\n", &order.order_owner_id));
+
+    if let Some(value) = order.special_instructions.as_ref() {
+        query.push_str(&format!("\t\t specialInstructions: \"{}\"\n", value));
+    }
+
+    if let Some(value) = order.is_verified.as_ref() {
+        query.push_str(&format!("\t\t isVerified: \"{}\"\n", value));
+    }
+
+    if let Some(value) = order.amount_total_collected.as_ref() {
+        query.push_str(&format!("\t\t amountTotalCollected: \"{}\"\n", &value));
+    } else {
+        if !order.will_collect_money_later {
+            log::error!("Total collected is zero. will collect later should be true");
+        }
+        query.push_str("\t\t willCollectMoneyLater: true\n");
+    }
+
+    if let Some(value) = order.amount_from_donations.as_ref() {
+        query.push_str(&format!("\t\t amountFromDonations: \"{}\"\n", value));
+    }
+
+    if let Some(value) = order.amount_from_purchases.as_ref() {
+        query.push_str(&format!("\t\t amountFromPurchases: \"{}\"\n", value));
+
+        let mut purchases = Vec::new();
+        for (product_id, info) in order.purchases.as_ref().unwrap() {
+            let mut purchase_str = String::new();
+            purchase_str.push_str("\t\t\t {\n");
+            purchase_str.push_str(&format!("\t\t\t\t productId: \"{}\"\n", product_id));
+            purchase_str.push_str(&format!("\t\t\t\t numSold: {}\n", info.num_sold));
+            purchase_str.push_str(&format!("\t\t\t\t amountCharged: \"{}\"\n", info.amount_charged));
+            purchase_str.push_str("\t\t\t }\n");
+            purchases.push(purchase_str);
+        }
+
+        query.push_str("\t\t purchases [\n");
+        query.push_str(&purchases.join(","));
+        query.push_str("\t\t ]\n");
+
+        query.push_str(&format!("\t\t deliveryId: {}\n", order.delivery_id.as_ref().unwrap()));
+    }
+
+    if let Some(value) = order.amount_cash_collected.as_ref() {
+        query.push_str(&format!("\t\t amountFromCashCollected: \"{}\"\n", value));
+    }
+
+    if let Some(value) = order.amount_checks_collected.as_ref() {
+        query.push_str(&format!("\t\t amountFromChecksCollected: \"{}\"\n", value));
+        query.push_str(&format!("\t\t checkNumbers: \"{}\"\n", order.check_numbers.as_ref().unwrap()));
+    }
+
+
+    query.push_str("\t\t customer {\n");
+    query.push_str(&format!("\t\t\t name: \"{}\"\n", &order.customer.name));
+    query.push_str(&format!("\t\t\t addr1: \"{}\"\n", &order.customer.addr1));
+    if let Some(value) = order.customer.addr2.as_ref() {
+        query.push_str(&format!("\t\t addr2: \"{}\"\n", value));
+    }
+    query.push_str(&format!("\t\t\t phone: \"{}\"\n", &order.customer.phone));
+    if let Some(value) = order.customer.email.as_ref() {
+        query.push_str(&format!("\t\t email: \"{}\"\n", value));
+    }
+    query.push_str(&format!("\t\t\t neighborhood: \"{}\"\n", &order.customer.neighborhood));
+    query.push_str("\t\t }\n");
+
+    query.push_str("\t})\n");
+    query.push_str("}");
+
+    log::info!("Submitting Request:\n{}", &query);
+
+    Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "TODO Issue")))
+    //let req = GraphQlReq::new(CONFIG_GQL.to_string());
+    //let _ = make_gql_request::<ConfigApi>(&req).await?;
+
+    //Ok(())
 }

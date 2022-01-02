@@ -331,9 +331,20 @@ pub fn order_form_fields() -> Html
         })
     };
 
+
     let on_form_submission = {
         let history = history.clone();
+        let on_form_submitted = Callback::once(move |_was_submitted_ok: bool| {
+            let was_from_db =  is_active_order_from_db();
+            reset_active_order();
+            if was_from_db {
+                history.push(AppRoutes::Reports);
+            } else {
+                history.push(AppRoutes::Home);
+            }
+        });
         Callback::from(move |evt: FocusEvent| {
+            let on_form_submitted = on_form_submitted.clone();
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_form_submission");
@@ -347,19 +358,19 @@ pub fn order_form_fields() -> Html
                 log::info!("Form isn't valid refusing submission");
                 disable_submit_button(&document, false, false);
                 disable_cancel_button(&document, false);
-                return;
             } else {
                 // Send request
-                disable_submit_button(&document, false, false);
-                disable_cancel_button(&document, false);
-            }
-
-            let was_from_db =  is_active_order_from_db();
-            reset_active_order();
-            if was_from_db {
-                history.push(AppRoutes::Reports);
-            } else {
-                history.push(AppRoutes::Home);
+                wasm_bindgen_futures::spawn_local(async move {
+                    log::info!("Submitting Order");
+                    let rslt = submit_active_order().await;
+                    disable_submit_button(&document, false, false);
+                    disable_cancel_button(&document, false);
+                    if let Err(err) = rslt {
+                        gloo_dialogs::alert(&format!("Failed to submit order: {:#?}", err));
+                    } else {
+                        on_form_submitted.emit(true);
+                    }
+                });
             }
         })
     };
