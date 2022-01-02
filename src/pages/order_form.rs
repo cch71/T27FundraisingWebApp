@@ -281,8 +281,10 @@ pub fn order_form_fields() -> Html
     };
 
     let on_payment_input = {
-        Callback::from(move |_evt: InputEvent| {
+        Callback::from(move |evt: InputEvent| {
             log::info!("On Payment Due");
+            evt.prevent_default();
+            evt.stop_propagation();
 
             let document = web_sys::window().unwrap().document().unwrap();
             let mut cash_amt_collected = get_cash_amount_collected(&document);
@@ -315,7 +317,7 @@ pub fn order_form_fields() -> Html
             document.get_element_by_id("orderAmountPaid")
                 .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                 .unwrap()
-                .set_inner_text(&Money::from_decimal(total_collected, iso::USD).to_string());
+                .set_inner_text(&to_money_str(Some(&total_collected.to_string())));
 
             let collect_later_element = document.get_element_by_id("formCollectLater")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())

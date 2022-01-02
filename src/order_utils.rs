@@ -2,12 +2,14 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::sync::{RwLock};
 use rust_decimal::prelude::*;
+use regex::Regex;
 
 // use crate::data_model::{get_active_user};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 
 lazy_static! {
     static ref ACTIVE_ORDER: RwLock<Option<ActiveOrderState>> = RwLock::new(None);
+    static ref CHECKNUM_RE_DELIMETERS: Regex = Regex::new(r"[ ,;.]+").unwrap();
 }
 
 #[derive(Default, Clone, PartialEq, Debug)]
@@ -66,16 +68,6 @@ impl MulchOrder {
         Self{
             order_owner_id: owner_id.to_owned(),
             order_id: uuid::Uuid::new_v4().to_string(),
-            customer: CustomerInfo {
-                name: "John Stamose".to_string(),
-                addr1: "202 lovers lane".to_string(),
-                neighborhood: "Bear Valley".to_string(),
-                phone: "455-234-4234".to_string(),
-                ..Default::default()
-            },
-            amount_from_donations: Some("200.24".to_string()),
-            amount_cash_collected: Some("200.24".to_string()),
-            amount_total_collected: Some("200.24".to_string()),
             ..Default::default()
         }
     }
@@ -154,10 +146,11 @@ impl MulchOrder {
 
     pub(crate) fn is_check_numbers_valid(&self) -> bool {
         if self.amount_checks_collected.is_some() && self.check_numbers.is_some() {
-            let check_nums = self.check_numbers.as_ref().unwrap();
-            for check_num in check_nums.split(&[',', ';' , ' '][..]).collect::<Vec<&str>>() {
+            let check_nums_str = self.check_numbers.as_ref().unwrap();
+            let check_nums: Vec<&str> = CHECKNUM_RE_DELIMETERS.split(check_nums_str).collect();
+            for check_num in check_nums {
                 if check_num.trim().parse::<u32>().is_err() {
-                    log::info!("Check Num is invalid: {}", self.check_numbers.as_ref().unwrap());
+                    log::info!("Check Num: {} in: {} is invalid", check_num, check_nums_str);
                     return false;
                 }
             }
@@ -241,12 +234,17 @@ pub(crate) async fn submit_active_order()
 
     let mut query = String::with_capacity(1024*32);
     query.push_str("mutation {\n");
-    query.push_str("\tcreateMulchOrder(order: {\n");
-    query.push_str(&format!("\t\t orderId: \"{}\"\n", &order.order_id));
-    query.push_str(&format!("\t\t ownerId: \"{}\"\n", &order.order_owner_id));
+    if order_state.is_new_order {
+        query.push_str("\t createMulchOrder(order: {\n");
+    } else {
+        query.push_str("\t updateMulchOrder(order: {\n");
+    }
+
+    query.push_str(&format!("\t\t orderId: \"{}\"\n", order.order_id.trim()));
+    query.push_str(&format!("\t\t ownerId: \"{}\"\n", order.order_owner_id.trim()));
 
     if let Some(value) = order.special_instructions.as_ref() {
-        query.push_str(&format!("\t\t specialInstructions: \"{}\"\n", value));
+        query.push_str(&format!("\t\t specialInstructions: \"{}\"\n", value.trim()));
     }
 
     if let Some(value) = order.is_verified.as_ref() {
@@ -254,7 +252,7 @@ pub(crate) async fn submit_active_order()
     }
 
     if let Some(value) = order.amount_total_collected.as_ref() {
-        query.push_str(&format!("\t\t amountTotalCollected: \"{}\"\n", &value));
+        query.push_str(&format!("\t\t amountTotalCollected: \"{}\"\n", value.trim()));
     } else {
         if !order.will_collect_money_later {
             log::error!("Total collected is zero. will collect later should be true");
@@ -263,24 +261,24 @@ pub(crate) async fn submit_active_order()
     }
 
     if let Some(value) = order.amount_from_donations.as_ref() {
-        query.push_str(&format!("\t\t amountFromDonations: \"{}\"\n", value));
+        query.push_str(&format!("\t\t amountFromDonations: \"{}\"\n", value.trim()));
     }
 
     if let Some(value) = order.amount_from_purchases.as_ref() {
-        query.push_str(&format!("\t\t amountFromPurchases: \"{}\"\n", value));
+        query.push_str(&format!("\t\t amountFromPurchases: \"{}\"\n", value.trim()));
 
         let mut purchases = Vec::new();
         for (product_id, info) in order.purchases.as_ref().unwrap() {
             let mut purchase_str = String::new();
             purchase_str.push_str("\t\t\t {\n");
-            purchase_str.push_str(&format!("\t\t\t\t productId: \"{}\"\n", product_id));
+            purchase_str.push_str(&format!("\t\t\t\t productId: \"{}\"\n", product_id.trim()));
             purchase_str.push_str(&format!("\t\t\t\t numSold: {}\n", info.num_sold));
-            purchase_str.push_str(&format!("\t\t\t\t amountCharged: \"{}\"\n", info.amount_charged));
+            purchase_str.push_str(&format!("\t\t\t\t amountCharged: \"{}\"\n", info.amount_charged.trim()));
             purchase_str.push_str("\t\t\t }\n");
             purchases.push(purchase_str);
         }
 
-        query.push_str("\t\t purchases [\n");
+        query.push_str("\t\t purchases: [\n");
         query.push_str(&purchases.join(","));
         query.push_str("\t\t ]\n");
 
@@ -288,26 +286,26 @@ pub(crate) async fn submit_active_order()
     }
 
     if let Some(value) = order.amount_cash_collected.as_ref() {
-        query.push_str(&format!("\t\t amountFromCashCollected: \"{}\"\n", value));
+        query.push_str(&format!("\t\t amountFromCashCollected: \"{}\"\n", value.trim()));
     }
 
     if let Some(value) = order.amount_checks_collected.as_ref() {
-        query.push_str(&format!("\t\t amountFromChecksCollected: \"{}\"\n", value));
-        query.push_str(&format!("\t\t checkNumbers: \"{}\"\n", order.check_numbers.as_ref().unwrap()));
+        query.push_str(&format!("\t\t amountFromChecksCollected: \"{}\"\n", value.trim()));
+        query.push_str(&format!("\t\t checkNumbers: \"{}\"\n", order.check_numbers.as_ref().unwrap().trim()));
     }
 
 
-    query.push_str("\t\t customer {\n");
-    query.push_str(&format!("\t\t\t name: \"{}\"\n", &order.customer.name));
-    query.push_str(&format!("\t\t\t addr1: \"{}\"\n", &order.customer.addr1));
+    query.push_str("\t\t customer: {\n");
+    query.push_str(&format!("\t\t\t name: \"{}\"\n", order.customer.name.trim()));
+    query.push_str(&format!("\t\t\t addr1: \"{}\"\n", order.customer.addr1.trim()));
     if let Some(value) = order.customer.addr2.as_ref() {
-        query.push_str(&format!("\t\t addr2: \"{}\"\n", value));
+        query.push_str(&format!("\t\t addr2: \"{}\"\n", value.trim()));
     }
-    query.push_str(&format!("\t\t\t phone: \"{}\"\n", &order.customer.phone));
+    query.push_str(&format!("\t\t\t phone: \"{}\"\n", order.customer.phone.trim()));
     if let Some(value) = order.customer.email.as_ref() {
-        query.push_str(&format!("\t\t email: \"{}\"\n", value));
+        query.push_str(&format!("\t\t email: \"{}\"\n", value.trim()));
     }
-    query.push_str(&format!("\t\t\t neighborhood: \"{}\"\n", &order.customer.neighborhood));
+    query.push_str(&format!("\t\t\t neighborhood: \"{}\"\n", order.customer.neighborhood.trim()));
     query.push_str("\t\t }\n");
 
     query.push_str("\t})\n");
@@ -315,9 +313,7 @@ pub(crate) async fn submit_active_order()
 
     log::info!("Submitting Request:\n{}", &query);
 
-    Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "TODO Issue")))
-    //let req = GraphQlReq::new(CONFIG_GQL.to_string());
-    //let _ = make_gql_request::<ConfigApi>(&req).await?;
-
-    //Ok(())
+    //Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "TODO Issue")))
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
 }

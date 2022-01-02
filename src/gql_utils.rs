@@ -37,7 +37,7 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         error: Option<serde_json::Value>,
     }
 
-    let mut resp: DataWrapper<T> = Request::post(&*GQLURL)
+    let mut raw_resp: serde_json::Value = Request::post(&*GQLURL)
         .header("Content-Type", "application/json")
         .header("Authorization", &format!("Bearer {}", &get_active_user().token))
         .body(serde_json::to_string(req).unwrap())
@@ -46,6 +46,8 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         .json()
         .await?;
 
+    log::info!("GQL Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
+    let resp: DataWrapper<T> = serde_json::from_value(raw_resp).unwrap();
     if let Some(err) = resp.error {
         use std::io::{Error, ErrorKind};
         Err(Box::new(
