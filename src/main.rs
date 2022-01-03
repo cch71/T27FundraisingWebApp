@@ -1,7 +1,9 @@
 
 mod bootstrap;
+mod datatable;
 mod auth_utils;
-mod order_utils;
+mod data_model_orders;
+mod data_model_reports;
 mod data_model;
 mod currency_utils;
 mod gql_utils;

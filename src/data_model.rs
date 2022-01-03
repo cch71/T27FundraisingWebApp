@@ -5,7 +5,8 @@ use chrono::prelude::*;
 use std::collections::{BTreeMap};
 use rust_decimal::prelude::*;
 
-pub(crate) use crate::order_utils::*;
+pub(crate) use crate::data_model_reports::*;
+pub(crate) use crate::data_model_orders::*;
 pub(crate) use crate::auth_utils::{get_active_user, get_active_user_async, UserInfo};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 
@@ -304,4 +305,9 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
     // reports.push(ReportViews::AllocationSummary);
 
     reports
+}
+
+pub(crate) fn is_order_readonly(delivery_id: Option<u32>) -> bool {
+    //if none then check for all delivery dates because it is donation order
+    false
 }

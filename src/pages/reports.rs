@@ -4,9 +4,141 @@ use web_sys::{ MouseEvent, HtmlSelectElement, HtmlButtonElement};
 
 use crate::data_model::*;
 use crate::bootstrap;
+use crate::datatable::*;
 use std::str::FromStr;
 
 static ALL_USERS_TAG: &'static str = "doShowAllUsers";
+
+enum ReportViewState {
+    IsLoading,
+    ReportHtmlGenerated(Vec<serde_json::Value>),
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+#[derive(Properties, PartialEq, Clone, Debug)]
+pub struct ReportActionButtonsProps {
+    pub spreading: String,
+    pub isreadonly: bool
+}
+#[function_component(ReportActionButtons)]
+pub fn report_action_buttons(_props: &ReportActionButtonsProps) -> Html {
+    html!{}
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+#[function_component(ReportLoadingSpinny)]
+fn report_loading_spinny() -> Html {
+    html! {
+        <div class="justify-content-center text-center">
+            <h2>{"Loading Report Data..."}</h2>
+            <span role="status" class="spinner-border ms-1"/>
+        </div>
+    }
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+#[derive(Properties, PartialEq, Clone, Debug)]
+pub struct QuickReportViewProps {
+    pub seller: String,
+}
+#[function_component(QuickReportView)]
+pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
+    let report_state = use_state(||ReportViewState::IsLoading);
+
+    {
+        let report_state = report_state.clone();
+        let seller = props.seller.to_string();
+        use_effect(move || {
+            match &*report_state {
+                ReportViewState::IsLoading=>{
+                    wasm_bindgen_futures::spawn_local(async move {
+                        log::info!("Downloading Quick Report View Data");
+                        // Load Data from network
+                        // Generate Html
+                        let seller = if &seller == ALL_USERS_TAG {
+                            None
+                        } else {
+                            Some(seller)
+                        };
+                        let resp = get_quick_report_data(seller.as_ref()).await.unwrap();
+                        log::info!("Report Data has been downloaded");
+                        report_state.set(ReportViewState::ReportHtmlGenerated(resp));
+                    });
+                },
+                ReportViewState::ReportHtmlGenerated(_) => {
+                    log::info!("Setting DataTable");
+                    let _ = get_quick_view_report_datatable(".data-table-report table");
+                },
+            };
+
+            ||{}
+        });
+    }
+
+    match &*report_state {
+        ReportViewState::IsLoading => html! { <ReportLoadingSpinny/> },
+        ReportViewState::ReportHtmlGenerated(orders) => {
+            let header_footer = html! {
+                <tr>
+                    <th>{"OrderId"}</th>
+                    <th>{"Name"}</th>
+                    <th>{"Delivery Date"}</th>
+                    <th>{"Spreaders"}</th>
+                    <th>{"Spreading"}</th>
+                    <th>{"Order Owner"}</th>
+                    <th>{"Actions"}</th>
+                </tr>
+            };
+            html!{
+                <div class="data-table-report">
+                    <table class="display responsive nowrap collapsed" role="grid" style="width: 100%;">
+                        <thead>
+                            {header_footer.clone()}
+                        </thead>
+                        <tbody>
+                        {
+                            orders.iter().map(|v|{
+                                let mut spreading = "".to_string();
+                                for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
+                                    if purchase["productId"].as_str().unwrap() == "spreading" {
+                                        spreading = purchase["numSold"].as_u64().unwrap().to_string();
+                                        break;
+                                    }
+                                }
+                                let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
+                                    Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
+                                    None => ("Donation".to_string(), "Donation".to_string()),
+                                };
+                                let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
+                                html!{
+                                    <tr>
+                                        <td>{v["orderId"].as_str().unwrap()}</td>
+                                        <td>{v["customer"]["name"].as_str().unwrap()}</td>
+                                        <td data-deliveryid={delivery_id}>{delivery_date}</td>
+                                        <td>{v["spreaders"].as_str().unwrap_or("")}</td>
+                                        <td>{&spreading}</td>
+                                        <td>{v["ownerId"].as_str().unwrap()}</td>
+                                        <td>
+                                            <ReportActionButtons spreading={spreading} isreadonly={is_readonly}/>
+                                        </td>
+                                    </tr>
+                                }
+                            }).collect::<Html>()
+                        }
+                        </tbody>
+                        <tfoot>
+                            {header_footer}
+                        </tfoot>
+                    </table>
+                </div>
+            }
+        },
+    }
+
+}
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -194,14 +326,16 @@ pub fn reports_page() -> Html {
                             </div>
                         </h6>
 
-                        <div id="reportsDataTable">
-                            <table  class="display responsive nowrap collapsed" role="grid" style="width: 100%;"/>
-                        </div>
-                        <div id="reportsRawTable">
-                        </div>
+                        {
+                            match (*current_settings).current_view {
+                                ReportViews::Quick=>html!{<QuickReportView seller={(*current_settings).seller_id_filter.clone()}/>},
+                                _=>html!{<h6>{"Not Yet Implemented"}</h6>},
+                            }
+                        }
 
-                        <div class="spinner-border" role="status" id="orderLoadingSpinner">
-                            <span class="visually-hidden">{"Loading..."}</span>
+                        <div class="visually-hidden" id="orderLoadingSpinner">
+                            <h2>{"Loading Report Data..."}</h2>
+                            <span role="status" class="spinner-border ms-1"/>
                         </div>
                     </div>
 
