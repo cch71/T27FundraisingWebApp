@@ -158,6 +158,9 @@ fn required_small() -> Html
         <small class="form-text text-muted ps-1">{"*required"}</small>
     }
 }
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 #[derive(Properties, PartialEq, Clone, Debug)]
 pub struct OrderCostItemProps {
     pub label: String,
@@ -168,8 +171,6 @@ pub struct OrderCostItemProps {
 
 }
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
 #[function_component(OrderCostItem)]
 pub fn order_cost_item(props: &OrderCostItemProps) -> Html
 {
@@ -286,7 +287,7 @@ pub fn order_form_fields() -> Html
             evt.prevent_default();
             evt.stop_propagation();
 
-            let document = web_sys::window().unwrap().document().unwrap();
+            let document = gloo_utils::document();
             let mut cash_amt_collected = get_cash_amount_collected(&document);
             if cash_amt_collected.is_some() {
                 let new_amt = on_money_input_filter(cash_amt_collected.as_ref());
@@ -351,7 +352,7 @@ pub fn order_form_fields() -> Html
             evt.stop_propagation();
             log::info!("on_form_submission");
 
-            let document = web_sys::window().unwrap().document().unwrap();
+            let document = gloo_utils::document();
 
             disable_submit_button(&document, true, true);
             disable_cancel_button(&document, true);
@@ -420,7 +421,7 @@ pub fn order_form_fields() -> Html
     {
         let order = order.clone();
         use_effect(move || {
-            let document = web_sys::window().unwrap().document().unwrap();
+            let document = gloo_utils::document();
             update_order_amount_due_element(&order, &document);
             // disable_submit_button(
             //     !are_product_items_valid(&document) || get_delivery_id(&document).is_none()

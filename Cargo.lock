@@ -705,6 +705,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "gloo-dialogs",
+ "gloo-utils",
  "js-sys",
  "lazy_static",
  "log",

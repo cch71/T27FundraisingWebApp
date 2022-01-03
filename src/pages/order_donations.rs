@@ -9,7 +9,7 @@ use crate::data_model::*;
 /////////////////////////////////////////////////
 ///
 fn get_donation_amount() -> Option<String> {
-    let document = web_sys::window().unwrap().document().unwrap();
+    let document = gloo_utils::document();
     let donation_amt = document.get_element_by_id("formDonationAmount")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
@@ -24,7 +24,7 @@ fn get_donation_amount() -> Option<String> {
 /////////////////////////////////////////////////
 ///
 fn set_donation_amount(value: &str) {
-    let document = web_sys::window().unwrap().document().unwrap();
+    let document = gloo_utils::document();
     document.get_element_by_id("formDonationAmount")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()

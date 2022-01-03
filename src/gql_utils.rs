@@ -37,7 +37,7 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         error: Option<serde_json::Value>,
     }
 
-    let mut raw_resp: serde_json::Value = Request::post(&*GQLURL)
+    let raw_resp: serde_json::Value = Request::post(&*GQLURL)
         .header("Content-Type", "application/json")
         .header("Authorization", &format!("Bearer {}", &get_active_user().token))
         .body(serde_json::to_string(req).unwrap())

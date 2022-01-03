@@ -139,7 +139,7 @@ pub fn order_products() -> Html
             evt.stop_propagation();
             log::info!("on_form_submission");
 
-            let document = web_sys::window().unwrap().document().unwrap();
+            let document = gloo_utils::document();
             let delivery_id = get_delivery_id(&document).unwrap().parse::<u32>().unwrap();
             let purchases = get_product_items(&document);
             updated_order.set_purchases(delivery_id, purchases);
@@ -165,7 +165,7 @@ pub fn order_products() -> Html
             evt.stop_propagation();
             log::info!("do_form_validation");
 
-            let document = web_sys::window().unwrap().document().unwrap();
+            let document = gloo_utils::document();
 
             if !are_product_items_valid(&document) || get_delivery_id(&document).is_none() {
                 disable_submit_button(true);
@@ -179,7 +179,7 @@ pub fn order_products() -> Html
 
     {
         use_effect(move || {
-            let document = web_sys::window().unwrap().document().unwrap();
+            let document = gloo_utils::document();
             disable_submit_button(
                 !are_product_items_valid(&document) || get_delivery_id(&document).is_none()
             );
