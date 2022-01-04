@@ -6,7 +6,7 @@ frontend:
         - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         - $HOME/.cargo/bin/cargo install --locked trunk
         - $HOME/.cargo/bin/trunk --version
-        - $HOME/.cargo/bin/ustc --version
+        - $HOME/.cargo/bin/rustc --version
     build:
       commands:
         - $HOME/.cargo/bin/trunk build --release
