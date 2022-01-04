@@ -25,9 +25,18 @@ extern "C" {
 #[wasm_bindgen(module = "/src/js/datatable.js")]
 extern "C" {
     #[wasm_bindgen(catch)]
-    fn getQuickViewReportDataTable(id: &str) -> Result<DataTable, JsValue>;
+    fn getDataTable(params: &JsValue) -> Result<DataTable, JsValue>;
+
+    #[wasm_bindgen(catch)]
+    fn removeRowWithTr(dt: &JsValue, tr: &web_sys::Node) -> Result<(), JsValue>;
 }
 
-pub(crate) fn get_quick_view_report_datatable(id: &str) -> Option<DataTable> {
-    getQuickViewReportDataTable(id).ok()
+pub(crate) fn get_datatable(params: &serde_json::Value) -> Option<DataTable> {
+    getDataTable(&JsValue::from_serde(params).unwrap()).ok()
+}
+
+pub(crate) fn remove_row_with_tr(dt: &JsValue, tr: &web_sys::Node)
+    -> Result<(), JsValue>
+{
+    removeRowWithTr(dt, tr)
 }

@@ -290,7 +290,7 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
         ReportViews::Full,
     ];
 
-    if &*FRCONFIG.read().unwrap().as_ref().unwrap().kind == "mulch" {
+    if get_fr_config().kind == "mulch" {
         reports.push(ReportViews::SpreadingJobs);
 
         if get_active_user().is_admin() {
@@ -310,4 +310,8 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
 pub(crate) fn is_order_readonly(delivery_id: Option<u32>) -> bool {
     //if none then check for all delivery dates because it is donation order
     false
+}
+
+pub(crate) fn is_fundraiser_locked() -> bool {
+    get_fr_config().is_locked
 }

@@ -1,13 +1,24 @@
 use yew::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::{ MouseEvent, HtmlSelectElement, HtmlButtonElement};
+use wasm_bindgen::{JsValue, JsCast};
+use web_sys::{ MouseEvent, InputEvent, Element, HtmlElement, HtmlSelectElement, HtmlInputElement, HtmlButtonElement};
 
 use crate::data_model::*;
 use crate::bootstrap;
 use crate::datatable::*;
 use std::str::FromStr;
+use std::cell::RefCell;
 
 static ALL_USERS_TAG: &'static str = "doShowAllUsers";
+
+thread_local! {
+    static CHOPPING_BLOCK: RefCell<Option<OrderToDelete>> = RefCell::new(None);
+}
+
+struct OrderToDelete {
+    datatable: JsValue,
+    tr_node: web_sys::Node,
+    order_id: String,
+}
 
 enum ReportViewState {
     IsLoading,
@@ -16,14 +27,118 @@ enum ReportViewState {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
+#[function_component(DeleteOrderDlg)]
+fn delete_order_confirmation_dlg() -> Html {
+
+    let on_confirm_input = {
+        Callback::from(move |evt: InputEvent|{
+            let value = evt.target()
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                .unwrap()
+                .value();
+            if "delete" == &value {
+                gloo_utils::document().get_element_by_id("deleteDlgBtn")
+                    .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+                    .unwrap().set_disabled(false);
+            } else {
+                gloo_utils::document().get_element_by_id("deleteDlgBtn")
+                    .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+                    .unwrap().set_disabled(true);
+            }
+        })
+    };
+
+    let on_submit = {
+        Callback::from(move |evt: MouseEvent|{
+            CHOPPING_BLOCK.with(|f|{
+                if let Some(to_delete) = &*f.borrow() {
+                    remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node);
+                }
+                *f.borrow_mut() = None;
+            });
+        })
+    };
+
+    html! {
+        <div class="modal fade" id="deleteOrderDlg"
+             tabIndex="-1" role="dialog" aria-labelledby="deleteOrderDlgTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteOrderDlgLongTitle">
+                            {"Confirm Order Deletion"}
+                        </h5>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" class="form-control" id="confirmDeleteOrderInput"
+                               placeholder="type delete to confirm" autocomplete="fr-new-cust-info"
+                               oninput={on_confirm_input.clone()} aria-describedby="confirmDeleteOrderHelp" />
+                        <small id="confirmDeleteOrderHelp" class="form-text text-muted">
+                            {"Enter \"delete\" to confirm order deletion."}
+                        </small>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            {"Cancel"}
+                        </button>
+                        <button type="button" disabled=true class="btn btn-primary" onclick={on_submit}
+                            data-bs-dismiss="modal" id="deleteDlgBtn">
+                            {"Delete Order"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 #[derive(Properties, PartialEq, Clone, Debug)]
 pub struct ReportActionButtonsProps {
-    pub spreading: String,
-    pub isreadonly: bool
+    pub showspreading: bool,
+    pub isreadonly: bool,
+    pub orderid: String,
+    pub ondeleteorder: Callback<MouseEvent>,
+    pub onvieworder: Callback<MouseEvent>,
+    pub oneditorder: Callback<MouseEvent>,
+    pub oneditspreading: Callback<MouseEvent>,
 }
+
 #[function_component(ReportActionButtons)]
-pub fn report_action_buttons(_props: &ReportActionButtonsProps) -> Html {
-    html!{}
+pub fn report_action_buttons(props: &ReportActionButtonsProps) -> Html {
+    html!{
+        <>
+        if props.showspreading && false /* TOOD: Enable Later */ {
+            <button type="button" class="btn btn-outline-info me-1 order-spread-btn"
+                onclick={props.oneditspreading.clone()} data-orderid={props.orderid.clone()}
+                data-bs-toggle="tooltip" title="Select Spreaders" data-bs-placement="left">
+                 <i class="bi bi-layout-wtf" fill="currentColor" />
+            </button>
+        }
+
+        if props.isreadonly {
+            <button type="button" class="btn btn-outline-info me-1 order-view-btn"
+                onclick={props.onvieworder.clone()} data-orderid={props.orderid.clone()}
+                data-bs-toggle="tooltip" title="View Order" data-bs-placement="left">
+                 <i class="bi bi-eye" fill="currentColor" />
+            </button>
+        } else {
+            <button type="button" class="btn btn-outline-info me-1 order-edt-btn"
+                onclick={props.oneditorder.clone()} data-orderid={props.orderid.clone()}
+                data-bs-toggle="tooltip" title="Edit Order" data-bs-placement="left">
+                 <i class="bi bi-pencil" fill="currentColor" />
+            </button>
+            <button type="button" class="btn btn-outline-danger order-del-btn"
+                onclick={props.ondeleteorder.clone()} data-orderid={props.orderid.clone()}
+                data-bs-toggle="tooltip" title="Delete Order" data-bs-placement="left">
+                <i class="bi bi-trash" fill="currentColor" />
+            </button>
+        }
+
+        </>
+    }
 }
 
 /////////////////////////////////////////////////
@@ -47,6 +162,87 @@ pub struct QuickReportViewProps {
 #[function_component(QuickReportView)]
 pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
     let report_state = use_state(||ReportViewState::IsLoading);
+    let is_fr_locked = is_fundraiser_locked();
+    let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
+
+    let on_delete_order = {
+        let datatable = datatable.clone();
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            let btn_elm = evt.target()
+                .and_then(|t| t.dyn_into::<Element>().ok())
+                .and_then(|t| t.parent_element())
+                .unwrap();
+            let tr_node = btn_elm.parent_node()
+                .and_then(|t| t.parent_node())
+                .unwrap();
+            let order_id = btn_elm.dyn_into::<HtmlElement>()
+                .ok()
+                .and_then(|t| t.dataset().get("orderid"))
+                .unwrap();
+            log::info!("on_delete_order: {}", order_id);
+
+            // gloo_utils::document().get_element_by_id("deleteDlgBtn")
+            //     .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+            //     .unwrap().set_disabled(true);
+
+            CHOPPING_BLOCK.with(|f|{
+                *f.borrow_mut() = Some(OrderToDelete{
+                    datatable: (*datatable.borrow().as_ref().unwrap()).clone(),
+                    tr_node: tr_node,
+                    order_id: order_id,
+                });
+            });
+
+            let dlg = bootstrap::get_modal_by_id("deleteOrderDlg").unwrap();
+            dlg.show();
+
+            //remove_row_with_tr(datatable.borrow().as_ref().unwrap(), &tr_node);
+
+            // for idx in 0..btn_elm.attributes().length() {
+            //     if let Some(attr) = btn_elm.attributes().get_with_index(idx) {
+            //         log::info!("{}: {}: {}", idx, attr.name(), attr.value());
+            //     }
+            // }
+        })
+    };
+    let on_view_order = {
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            let btn_elm = evt.target()
+                .and_then(|t| t.dyn_into::<Element>().ok())
+                .and_then(|t| t.parent_element())
+                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                .unwrap();
+            log::info!("on_view_order: {}", btn_elm.dataset().get("orderid").unwrap());
+        })
+    };
+    let on_edit_order = {
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            let btn_elm = evt.target()
+                .and_then(|t| t.dyn_into::<Element>().ok())
+                .and_then(|t| t.parent_element())
+                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                .unwrap();
+            log::info!("on_edit_order: {}", btn_elm.dataset().get("orderid").unwrap());
+        })
+    };
+    let on_edit_spreading = {
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            let btn_elm = evt.target()
+                .and_then(|t| t.dyn_into::<Element>().ok())
+                .and_then(|t| t.parent_element())
+                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                .unwrap();
+            log::info!("on_edit_spreading: {}", btn_elm.dataset().get("orderid").unwrap());
+        })
+    };
 
     {
         let report_state = report_state.clone();
@@ -56,8 +252,6 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
                 ReportViewState::IsLoading=>{
                     wasm_bindgen_futures::spawn_local(async move {
                         log::info!("Downloading Quick Report View Data");
-                        // Load Data from network
-                        // Generate Html
                         let seller = if &seller == ALL_USERS_TAG {
                             None
                         } else {
@@ -70,7 +264,13 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
                 },
                 ReportViewState::ReportHtmlGenerated(_) => {
                     log::info!("Setting DataTable");
-                    let _ = get_quick_view_report_datatable(".data-table-report table");
+                    *datatable.borrow_mut() = get_datatable(&serde_json::json!({
+                        "reportType": "quick",
+                        "id": ".data-table-report table",
+                        "showOrderOwner": &seller != &get_active_user().get_id(),
+                        "isMulchOrder": true
+                    }));
+
                 },
             };
 
@@ -100,7 +300,7 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
                         </thead>
                         <tbody>
                         {
-                            orders.iter().map(|v|{
+                            orders.into_iter().map(|v|{
                                 let mut spreading = "".to_string();
                                 for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
                                     if purchase["productId"].as_str().unwrap() == "spreading" {
@@ -108,6 +308,7 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
                                         break;
                                     }
                                 }
+                                let enable_spreading_button = spreading.len()!=0 && !is_fr_locked;
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("Donation".to_string(), "Donation".to_string()),
@@ -122,7 +323,15 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
                                         <td>{&spreading}</td>
                                         <td>{v["ownerId"].as_str().unwrap()}</td>
                                         <td>
-                                            <ReportActionButtons spreading={spreading} isreadonly={is_readonly}/>
+                                            <ReportActionButtons
+                                                orderid={v["orderId"].as_str().unwrap().to_string()}
+                                                showspreading={enable_spreading_button}
+                                                isreadonly={is_readonly}
+                                                ondeleteorder={on_delete_order.clone()}
+                                                onvieworder={on_view_order.clone()}
+                                                oneditorder={on_edit_order.clone()}
+                                                oneditspreading={on_edit_spreading.clone()}
+                                            />
                                         </td>
                                     </tr>
                                 }
@@ -343,7 +552,7 @@ pub fn reports_page() -> Html {
             </div>
 
 
-            // {deleteDlg}
+            <DeleteOrderDlg />
             <ReportsSettingsDlg id="reportViewSettingsDlg"
                 onsave={on_save_settings} currentview={(*current_settings).current_view.to_string()}/>
             // {spreadDlg}
