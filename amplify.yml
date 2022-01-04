@@ -4,13 +4,14 @@ frontend:
     preBuild:
       commands:
         - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        - echo $PATH
+        - PATH=/root/.cargo/bin:$PATH rustc --version
         - $HOME/.cargo/bin/cargo install --locked trunk
         - $HOME/.cargo/bin/rustup target add wasm32-unknown-unknown
-        - $HOME/.cargo/bin/trunk --version
-        - $HOME/.cargo/bin/rustc --version
+        - PATH=/root/.cargo/bin:$PATH trunk --version
     build:
       commands:
-        - $HOME/.cargo/bin/trunk build --release
+        - PATH=/root/.cargo/bin:$PATH trunk build --release
   artifacts:
     baseDirectory: /dist
     files:
