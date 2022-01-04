@@ -3,15 +3,16 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm install
+        - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        - cargo install --locked trunk
+        - trunk --version
+        - rustc --version
     build:
       commands:
-        - npm run build
+        - trunk build --release
   artifacts:
-    baseDirectory: public
+    baseDirectory: /dist
     files:
       - '**/*'
   cache:
-    paths:
-      - node_modules/**/*
-
+    paths: []
