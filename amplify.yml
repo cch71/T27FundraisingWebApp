@@ -17,4 +17,6 @@ frontend:
     files:
       - '**/*'
   cache:
-    paths: []
+    paths:
+      - /root/.cargo/registry/**/*
+      - /target/**/*

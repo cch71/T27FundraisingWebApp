@@ -24,24 +24,12 @@ pub fn home_page() -> Html
         }
     };
 
-    let on_get_order = {
-        Callback::from(move |evt: MouseEvent| {
-            evt.prevent_default();
-            evt.stop_propagation();
-            log::info!("on_get_order");
-        })
-    };
-
     html! {
         <div>
             <div class="justify-content-center text-center">
                 <h6>{format!("{} Fundraiser", &fr_config.description)} {fundraiser_sales_finished_msg}</h6>
                 <div class="col-xs-1 d-flex justify-content-center">
                     <div class="row">
-
-                        <button class="btn btn-primary float-end" onclick={on_get_order}>
-                            {"Button btn who has the button"}
-                        </button>
 
                         <div class="col-lg-4">
                             <div class="card" id="orderOwnerSummaryCard">

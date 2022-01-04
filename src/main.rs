@@ -11,7 +11,7 @@ mod gql_utils;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{window, HtmlSelectElement, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{window, MouseEvent, HtmlSelectElement, HtmlInputElement, HtmlTextAreaElement};
 use rust_decimal::prelude::*;
 
 use auth_utils::{login, logout, is_authenticated};
@@ -161,13 +161,13 @@ pub fn app_footer(props: &AppFooterProps) -> Html
 #[derive(Properties, PartialEq)]
 pub struct AppNavProps {
     pub userid: String,
+    pub onlogoff: Callback<MouseEvent>,
 }
 
 #[function_component(AppNav)]
 pub fn app_nav(props: &AppNavProps) -> Html
 {
     let _ = use_history().unwrap(); // This forces re-render on path changes
-    let on_logout_click = Callback::from(move |_evt: MouseEvent| {log::info!("Need to impl logout");}); //ctx.link().callback(|_| Msg::Logout);
     //log::info!("~~~~~~~ Re Rendered ~~~~~~~~~~~~~~");
 
     html! {
@@ -188,19 +188,19 @@ pub fn app_nav(props: &AppNavProps) -> Html
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <Link<AppRoutes> classes="nav-link" to={AppRoutes::Home} >
-                            { "Home" }
+                            {"Home"}
                         </Link<AppRoutes>>
                     </li>
                     if is_active_order() {
                         <li class="nav-item">
                             <Link<AppRoutes> classes="nav-link" to={AppRoutes::OrderForm} >
-                                { "Order" }
+                                {"Order"}
                             </Link<AppRoutes>>
                         </li>
                     }
                     <li class="nav-item">
                         <Link<AppRoutes> classes="nav-link" to={AppRoutes::Reports} >
-                            { "Reports" }
+                            {"Reports"}
                         </Link<AppRoutes>>
                     </li>
                 </ul>
@@ -210,11 +210,11 @@ pub fn app_nav(props: &AppNavProps) -> Html
                         {&props.userid}
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="#" data-bs-toggle="modal">
-                          { "Report Issue" }
-                        </a>
-                        <a class="dropdown-item" onclick={on_logout_click} href="#" data-bs-toggle="modal">
-                          { "Logout" }
+                        // <a class="dropdown-item" href="#" data-bs-toggle="modal">
+                        //     {"Report Issue"}
+                        // </a>
+                        <a class="dropdown-item" onclick={props.onlogoff.clone()} href="#" data-bs-toggle="modal">
+                            {"Logout"}
                         </a>
                     </div>
                 </span>
@@ -328,7 +328,9 @@ impl Component for Model {
         }
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let on_logoff = ctx.link().callback(|_| Msg::Logout);
+
         if self.is_loading {
             html! {
                 <div id="notReadyView" class="col-xs-1 d-flex justify-content-center" >
@@ -342,7 +344,7 @@ impl Component for Model {
 
             html! {
                 <BrowserRouter>
-                    <AppNav userid={user_id.clone()} />
+                    <AppNav userid={user_id.clone()} onlogoff={on_logoff} />
                     <main class="flex-shrink-0">
                         <Switch<AppRoutes> render={Switch::render(switch)} />
                     </main>

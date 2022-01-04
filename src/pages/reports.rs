@@ -199,8 +199,21 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
             evt.stop_propagation();
             let btn_elm = evt.target()
                 .and_then(|t| t.dyn_into::<Element>().ok())
-                .and_then(|t| t.parent_element())
+                .and_then(|t| {
+                    // log::info!("Node Name: {}", t.node_name());
+                    if t.node_name() == "I" {
+                        t.parent_element()
+                    } else {
+                        Some(t)
+                    }
+                })
                 .unwrap();
+
+            // for idx in 0..btn_elm.attributes().length() {
+            //     if let Some(attr) = btn_elm.attributes().get_with_index(idx) {
+            //         log::info!("{}: {}: {}", idx, attr.name(), attr.value());
+            //     }
+            // }
             let tr_node = btn_elm.parent_node()
                 .and_then(|t| t.parent_node())
                 .unwrap();
@@ -224,11 +237,6 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
             dlg.show();
 
 
-            // for idx in 0..btn_elm.attributes().length() {
-            //     if let Some(attr) = btn_elm.attributes().get_with_index(idx) {
-            //         log::info!("{}: {}: {}", idx, attr.name(), attr.value());
-            //     }
-            // }
         })
     };
     let on_view_or_edit_order = {
@@ -238,7 +246,13 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
             evt.stop_propagation();
             let btn_elm = evt.target()
                 .and_then(|t| t.dyn_into::<Element>().ok())
-                .and_then(|t| t.parent_element())
+                .and_then(|t| {
+                    if t.node_name() == "I" {
+                        t.parent_element()
+                    } else {
+                        Some(t)
+                    }
+                })
                 .unwrap();
             let order_id = btn_elm.dyn_into::<HtmlElement>()
                 .ok()
