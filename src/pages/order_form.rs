@@ -430,6 +430,8 @@ pub fn order_form_fields() -> Html
         });
     }
 
+    let mut did_find_selected_hood = false;
+    let mut did_find_selected_order_owner = false;
     html! {
         <form class="needs-validation" id="newOrEditOrderForm" novalidate=true onsubmit={on_form_submission}>
 
@@ -439,8 +441,21 @@ pub fn order_form_fields() -> Html
                     {
                         user_ids.into_iter().map(|user_id| {
                             let is_selected = user_id == order.order_owner_id;
+                            if !did_find_selected_order_owner && is_selected { did_find_selected_order_owner=true; }
                             html!{<option key={user_id} selected={is_selected}>{user_id}</option>}
                         }).collect::<Html>()
+                    }
+                    if !did_find_selected_order_owner {
+                        if order.order_owner_id.len() == 0 {
+                            <option value="none" selected=true disabled=true hidden=true>{
+                                "Select Order Owner (DNE. Report Issue)"}
+                            </option>
+                        } else {
+                            <option value={order.order_owner_id.clone()}
+                                    selected=true disabled=true hidden=true>
+                                {format!("{} (DNE. Report Issue)", &order.order_owner_id)}
+                            </option>
+                        }
                     }
                     </select>
                     <label for="formOrderOwner">{"Order Owner"}</label>
@@ -481,10 +496,22 @@ pub fn order_form_fields() -> Html
                         {
                             get_neighborhoods().iter().map(|hood_info| {
                                 let is_selected = hood_info.name == order.customer.neighborhood;
+                                if !did_find_selected_hood && is_selected { did_find_selected_hood=true; }
                                 html!{<option key={hood_info.name.clone()} selected={is_selected}>{hood_info.name.clone()}</option>}
                             }).collect::<Html>()
                         }
-                        <option value="none" selected=true disabled=true hidden=true>{"Select Neighborhood"}</option>
+                        if !did_find_selected_hood {
+                            if order.customer.neighborhood.len() == 0 {
+                                <option value="none" selected=true disabled=true hidden=true>
+                                    {"Select Neighborhood"}
+                                </option>
+                            } else {
+                                <option value={order.customer.neighborhood.clone()}
+                                        selected=true disabled=true hidden=true>
+                                    {format!("{} (DNE. Report Issue)", &order.customer.neighborhood)}
+                                </option>
+                            }
+                        }
                     </select>
                     <label for="formNeighborhood">
                         {"Neighborhood"}<RequiredSmall/>

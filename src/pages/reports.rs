@@ -402,6 +402,9 @@ pub fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
     let tag = props.id.clone();
     let active_user_id = get_active_user().get_id();
 
+    let mut did_find_selected_view = false;
+    let mut did_find_selected_seller = false;
+
     html! {
         <div class="modal fade" id={tag.to_string()} tabIndex="-1" aria-labelledby={format!("{}Title", &tag)} aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -421,12 +424,18 @@ pub fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
                                         {
                                             get_allowed_report_views().iter().map(|v|{
                                                 let is_selected = &ReportViews::from_str(&props.currentview).unwrap() == v;
+                                                if !did_find_selected_view && is_selected { did_find_selected_view=true; }
                                                 html! {
                                                     <option value={v.to_string()} selected={is_selected}>
                                                        {v.to_string()}
                                                     </option>
                                                 }
                                             }).collect::<Html>()
+                                        }
+                                        if !did_find_selected_view {
+                                            <option value="none" selected=true disabled=true hidden=true>
+                                                {"Select Report View (DNE. Report Issue)"}
+                                            </option>
                                         }
                                         </select>
                                         <label for={format!("{}ViewSelection", &tag)}>
@@ -441,6 +450,7 @@ pub fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
                                             {
                                                 get_active_sellers().iter().map(|v|{
                                                     let is_selected = &active_user_id == v;
+                                                    if !did_find_selected_seller && is_selected { did_find_selected_seller=true; }
                                                     html! {
                                                         <option value={v.clone()} selected={is_selected}>
                                                            {v.clone()}
@@ -448,7 +458,13 @@ pub fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
                                                     }
                                                 }).collect::<Html>()
                                             }
-                                                <option value={ALL_USERS_TAG} selected=true>{"Show All Users"}</option>
+                                                <option value={ALL_USERS_TAG}>{"Show All Users"}</option>
+
+                                            if !did_find_selected_seller {
+                                                <option value="none" selected=true disabled=true hidden=true>
+                                                   {"Select Seller (DNE. Report Issue)"}
+                                                </option>
+                                            }
                                             </select>
                                             <label for={format!("{}UserSelection", &tag)}>
                                                 {"Select Active Sellers"}
