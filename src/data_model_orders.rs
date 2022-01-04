@@ -1,7 +1,9 @@
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{RwLock};
 use rust_decimal::prelude::*;
+use crate::currency_utils::*;
 use regex::Regex;
 
 // use crate::data_model::{get_active_user};
@@ -53,7 +55,7 @@ impl PurchasedItem {
     }
 }
 
-#[derive(Default, Clone, PartialEq, Debug)]
+#[derive(Default, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub(crate) struct CustomerInfo {
     pub(crate) name: String,
     pub(crate) addr1: String,
@@ -333,5 +335,130 @@ pub(crate) async fn delete_order(order_id: &str)
     let req = GraphQlReq::new(query);
     log::info!("Delete GraphQL: {}", &req.query);
     //make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+    Ok(())
+}
+
+static LOAD_ORDER_GQL:& 'static str = r"
+{
+  mulchOrder(***ORDER_ID_PARAM***) {
+    orderId
+    ownerId
+    amountFromPurchases
+    amountFromDonations
+    amountFromCashCollected
+    amountFromChecksCollected
+    checkNumbers
+    amountTotalCollected
+    willCollectMoneyLater
+    isVerified
+    customer {
+        name
+        addr1
+        addr2
+        phone
+        email
+        neighborhood
+    }
+    specialInstructions
+    deliveryId
+    purchases {
+        productId
+        numSold
+        amountCharged
+    }
+  }
+}
+";
+
+pub(crate) async fn load_active_order_from_db(order_id: &str)
+    -> std::result::Result<(), Box<dyn std::error::Error>>
+{
+
+    #[derive(Deserialize, Debug)]
+    struct RespWrapper {
+        #[serde(alias = "mulchOrder")]
+        mulch_order: MulchOrderApi,
+    }
+
+    #[derive(Deserialize, Debug)]
+    pub(crate) struct MulchOrderApi {
+        #[serde(alias = "orderId")]
+        pub(crate) order_id: String,
+        #[serde(alias = "ownerId")]
+        pub(crate) order_owner_id: String,
+        #[serde(alias = "specialInstructions")]
+        pub(crate) special_instructions: Option<String>,
+        #[serde(alias = "amountFromDonations")]
+        pub(crate) amount_from_donations: Option<String>,
+        #[serde(alias = "amountFromPurchases")]
+        pub(crate) amount_from_purchases: Option<String>,
+        #[serde(alias = "amountFromCashCollected")]
+        pub(crate) amount_cash_collected: Option<String>,
+        #[serde(alias = "amountFromChecksCollected")]
+        pub(crate) amount_checks_collected: Option<String>,
+        #[serde(alias = "amountTotalCollected")]
+        pub(crate) amount_total_collected: Option<String>,
+        #[serde(alias = "checkNumbers")]
+        pub(crate) check_numbers: Option<String>,
+        #[serde(alias = "willCollectMoneyLater")]
+        pub(crate) will_collect_money_later: Option<bool>,
+        #[serde(alias = "isVerified")]
+        pub(crate) is_verified: Option<bool>,
+        pub(crate) customer: CustomerInfo,
+        pub(crate) purchases: Option<Vec<PurchasedItemApi>>,
+        #[serde(alias = "deliveryId")]
+        pub(crate) delivery_id: Option<u32>,
+    }
+
+    #[derive(Deserialize, Debug)]
+    pub(crate) struct PurchasedItemApi {
+        #[serde(alias = "productId")]
+        pub(crate) product_id: String,
+        #[serde(alias = "numSold")]
+        pub(crate) num_sold: u32,
+        #[serde(alias = "amountCharged")]
+        pub(crate) amount_charged: String,
+    }
+
+    let query = LOAD_ORDER_GQL.replace("***ORDER_ID_PARAM***", &format!("orderId: \"{}\"", order_id));
+
+    let req = GraphQlReq::new(query);
+    log::info!("Load GraphQL: {}", &req.query);
+    let resp = make_gql_request::<RespWrapper>(&req).await?;
+    let order = resp.mulch_order;
+
+    let new_active_order_state = ActiveOrderState {
+        order: MulchOrder{
+            order_id: order.order_id,
+            order_owner_id: order.order_owner_id,
+            special_instructions: order.special_instructions,
+            amount_from_donations: from_cloud_to_money_str(order.amount_from_donations),
+            amount_from_purchases: from_cloud_to_money_str(order.amount_from_purchases),
+            amount_cash_collected: from_cloud_to_money_str(order.amount_cash_collected),
+            amount_checks_collected: from_cloud_to_money_str(order.amount_checks_collected),
+            check_numbers: order.check_numbers,
+            amount_total_collected: from_cloud_to_money_str(order.amount_total_collected),
+            will_collect_money_later: order.will_collect_money_later.unwrap_or(false),
+            is_verified: order.is_verified,
+            customer: order.customer,
+            delivery_id: order.delivery_id,
+            purchases: order.purchases.and_then(|v| {
+                let purchases = v.into_iter()
+                    .map(|i|{
+                        (
+                            i.product_id,
+                            PurchasedItem{num_sold:i.num_sold, amount_charged: to_money_str_no_symbol(Some(&i.amount_charged))}
+                        )
+                    })
+                    .collect();
+                Some(purchases)
+            }),
+            ..Default::default()
+        },
+        is_new_order: false,
+        is_dirty: false,
+    };
+
+    *ACTIVE_ORDER.write().unwrap() = Some(new_active_order_state);
     Ok(())
 }

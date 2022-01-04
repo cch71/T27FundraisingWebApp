@@ -1,4 +1,5 @@
 use yew::prelude::*;
+use yew_router::prelude::*;
 use wasm_bindgen::{JsValue, JsCast};
 use web_sys::{ MouseEvent, InputEvent, Element, HtmlElement, HtmlSelectElement, HtmlInputElement, HtmlButtonElement};
 
@@ -8,6 +9,7 @@ use crate::datatable::*;
 use std::str::FromStr;
 use std::cell::RefCell;
 use std::rc::Rc;
+use crate::AppRoutes;
 
 static ALL_USERS_TAG: &'static str = "doShowAllUsers";
 
@@ -51,7 +53,11 @@ fn delete_order_confirmation_dlg() -> Html {
     };
 
     let on_submit = {
-        Callback::from(move |_evt: MouseEvent|{
+        Callback::from(move |evt: MouseEvent|{
+            evt.target()
+                .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+                .unwrap().set_disabled(true);
+                //.and_then(|t| t.set_disabled(true));
             CHOPPING_BLOCK.with(|f|{
                 let f=f.clone();
                 wasm_bindgen_futures::spawn_local(async move {
@@ -71,6 +77,10 @@ fn delete_order_confirmation_dlg() -> Html {
                             .set_value("");
                     }
                     *f.borrow_mut() = None;
+
+                    evt.target()
+                        .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+                        .unwrap().set_disabled(false);
                 });
             });
         })
@@ -178,6 +188,7 @@ pub struct QuickReportViewProps {
 #[function_component(QuickReportView)]
 pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
     let report_state = use_state(||ReportViewState::IsLoading);
+    let history = use_history().unwrap();
     let is_fr_locked = is_fundraiser_locked();
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
 
@@ -220,30 +231,30 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
             // }
         })
     };
-    let on_view_order = {
-        Callback::from(move |evt: MouseEvent| {
+    let on_view_or_edit_order = {
+        let history = history.clone();
+        Callback::once(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
             let btn_elm = evt.target()
                 .and_then(|t| t.dyn_into::<Element>().ok())
                 .and_then(|t| t.parent_element())
-                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                 .unwrap();
-            log::info!("on_view_order: {}", btn_elm.dataset().get("orderid").unwrap());
+            let order_id = btn_elm.dyn_into::<HtmlElement>()
+                .ok()
+                .and_then(|t| t.dataset().get("orderid"))
+                .unwrap();
+            wasm_bindgen_futures::spawn_local(async move {
+                log::info!("on_view_or_edit_order: {}", order_id);
+                if let Err(err) = load_active_order_from_db(&order_id).await {
+                    gloo_dialogs::alert(&format!("Failed to load order: {}: Err: {:#?}", order_id, err));
+                }
+                history.push(AppRoutes::OrderForm);
+            });
+
         })
     };
-    let on_edit_order = {
-        Callback::from(move |evt: MouseEvent| {
-            evt.prevent_default();
-            evt.stop_propagation();
-            let btn_elm = evt.target()
-                .and_then(|t| t.dyn_into::<Element>().ok())
-                .and_then(|t| t.parent_element())
-                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
-                .unwrap();
-            log::info!("on_edit_order: {}", btn_elm.dataset().get("orderid").unwrap());
-        })
-    };
+
     let on_edit_spreading = {
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
@@ -341,8 +352,8 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
                                                 showspreading={enable_spreading_button}
                                                 isreadonly={is_readonly}
                                                 ondeleteorder={on_delete_order.clone()}
-                                                onvieworder={on_view_order.clone()}
-                                                oneditorder={on_edit_order.clone()}
+                                                onvieworder={on_view_or_edit_order.clone()}
+                                                oneditorder={on_view_or_edit_order.clone()}
                                                 oneditspreading={on_edit_spreading.clone()}
                                             />
                                         </td>
