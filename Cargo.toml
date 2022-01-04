@@ -1,0 +1,48 @@
+[package]
+name = "yew-app"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = { version = "0.4", features = ["wasmbind"] }
+lazy_static = "1"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+serde-wasm-bindgen = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+js-sys = "0.3"
+log = "0.4"
+wasm-logger = "0.2"
+yew = "0.19"
+yew-router = "0.16"
+# yewtil = "0.4"
+rust_decimal = "1"
+rusty-money = { version = "0.4", features = ["iso"] }
+uuid = { version = "0.8", features = ["serde", "v4", "wasm-bindgen"] }
+gloo-utils = "0.1"
+gloo-dialogs = "0.1"
+reqwasm = {version = "0.4", default-features = false, features = ["json", "http"] }
+regex = "1"
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+  "Window",
+  "Document",
+  "Element",
+  "HtmlElement",
+  "HtmlFormElement",
+  "HtmlSelectElement",
+  "HtmlButtonElement",
+  "HtmlTextAreaElement",
+  "Event",
+  "FocusEvent",
+  "Node",
+  "NodeList",
+  "DomStringMap",
+  "DomTokenList",
+  "CssStyleDeclaration",
+]
