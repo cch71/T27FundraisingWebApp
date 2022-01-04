@@ -317,3 +317,21 @@ pub(crate) async fn submit_active_order()
     let req = GraphQlReq::new(query);
     make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
 }
+
+
+static DELETE_ORDER_GQL: &'static str = r"
+mutation {
+  deleteMulchOrder(***ORDER_ID_PARAM***)
+}
+";
+
+pub(crate) async fn delete_order(order_id: &str)
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    let query = DELETE_ORDER_GQL.replace("***ORDER_ID_PARAM***", &format!("orderId: \"{}\"", order_id));
+
+    let req = GraphQlReq::new(query);
+    log::info!("Delete GraphQL: {}", &req.query);
+    //make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+    Ok(())
+}

@@ -7,15 +7,17 @@ use crate::bootstrap;
 use crate::datatable::*;
 use std::str::FromStr;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 static ALL_USERS_TAG: &'static str = "doShowAllUsers";
 
 thread_local! {
-    static CHOPPING_BLOCK: RefCell<Option<OrderToDelete>> = RefCell::new(None);
+    static CHOPPING_BLOCK: Rc<RefCell<Option<OrderToDelete>>> = Rc::new(RefCell::new(None));
 }
 
 struct OrderToDelete {
     datatable: JsValue,
+    delete_dlg: bootstrap::Modal,
     tr_node: web_sys::Node,
     order_id: String,
 }
@@ -49,12 +51,27 @@ fn delete_order_confirmation_dlg() -> Html {
     };
 
     let on_submit = {
-        Callback::from(move |evt: MouseEvent|{
+        Callback::from(move |_evt: MouseEvent|{
             CHOPPING_BLOCK.with(|f|{
-                if let Some(to_delete) = &*f.borrow() {
-                    remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node);
-                }
-                *f.borrow_mut() = None;
+                let f=f.clone();
+                wasm_bindgen_futures::spawn_local(async move {
+                    if let Some(to_delete) = &*f.borrow() {
+                        if let Err(err) = delete_order(&to_delete.order_id).await {
+                            gloo_dialogs::alert(&format!("Failed to delete order in the cloud: {:#?}", err));
+                        } else {
+                            if let Err(err) = remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node) {
+                                gloo_dialogs::alert(&format!("Order was deleted from the cloud but not the local table: {:#?}", err));
+                            }
+                        }
+
+                        to_delete.delete_dlg.hide();
+                        gloo_utils::document().get_element_by_id("confirmDeleteOrderInput")
+                            .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                            .unwrap()
+                            .set_value("");
+                    }
+                    *f.borrow_mut() = None;
+                });
             });
         })
     };
@@ -82,8 +99,7 @@ fn delete_order_confirmation_dlg() -> Html {
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             {"Cancel"}
                         </button>
-                        <button type="button" disabled=true class="btn btn-primary" onclick={on_submit}
-                            data-bs-dismiss="modal" id="deleteDlgBtn">
+                        <button type="button" disabled=true class="btn btn-primary" onclick={on_submit} id="deleteDlgBtn">
                             {"Delete Order"}
                         </button>
                     </div>
@@ -183,22 +199,19 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
                 .unwrap();
             log::info!("on_delete_order: {}", order_id);
 
-            // gloo_utils::document().get_element_by_id("deleteDlgBtn")
-            //     .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
-            //     .unwrap().set_disabled(true);
+            let dlg = bootstrap::get_modal_by_id("deleteOrderDlg").unwrap();
 
             CHOPPING_BLOCK.with(|f|{
                 *f.borrow_mut() = Some(OrderToDelete{
                     datatable: (*datatable.borrow().as_ref().unwrap()).clone(),
+                    delete_dlg: dlg.clone().dyn_into::<bootstrap::Modal>().unwrap(),
                     tr_node: tr_node,
                     order_id: order_id,
                 });
             });
 
-            let dlg = bootstrap::get_modal_by_id("deleteOrderDlg").unwrap();
             dlg.show();
 
-            //remove_row_with_tr(datatable.borrow().as_ref().unwrap(), &tr_node);
 
             // for idx in 0..btn_elm.attributes().length() {
             //     if let Some(attr) = btn_elm.attributes().get_with_index(idx) {
