@@ -4,12 +4,12 @@ frontend:
     preBuild:
       commands:
         - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        - cargo install --locked trunk
-        - trunk --version
-        - rustc --version
+        - $HOME/.cargo/bin/cargo install --locked trunk
+        - $HOME/.cargo/bin/trunk --version
+        - $HOME/.cargo/bin/ustc --version
     build:
       commands:
-        - trunk build --release
+        - $HOME/.cargo/bin/trunk build --release
   artifacts:
     baseDirectory: /dist
     files:
