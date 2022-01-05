@@ -1,6 +1,7 @@
 
 mod bootstrap;
 mod datatable;
+mod google_charts;
 mod auth_utils;
 mod data_model_orders;
 mod data_model_reports;
@@ -161,6 +162,7 @@ pub fn app_footer(props: &AppFooterProps) -> Html
 #[derive(Properties, PartialEq)]
 pub struct AppNavProps {
     pub userid: String,
+    pub username: String,
     pub onlogoff: Callback<MouseEvent>,
 }
 
@@ -169,9 +171,13 @@ pub fn app_nav(props: &AppNavProps) -> Html
 {
     let _ = use_history().unwrap(); // This forces re-render on path changes
     //log::info!("~~~~~~~ Re Rendered ~~~~~~~~~~~~~~");
+    let userlabel = if props.username != props.userid {
+        format!("{} ({})", props.username, props.userid)
+    } else {
+        props.userid.clone()
+    };
 
     html! {
-
         <nav class="navbar sticky-top navbar-expand-sm navbar-light bg-light" id="primaryNavBar">
             <a class="navbar-brand" href="#">
                 <span>
@@ -207,7 +213,7 @@ pub fn app_nav(props: &AppNavProps) -> Html
                 <span class="navbar-nav nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown"
                        data-bs-toggle="dropdown" aria-expanded="false" role="button">
-                        {&props.userid}
+                        {userlabel}
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         // <a class="dropdown-item" href="#" data-bs-toggle="modal">
@@ -284,9 +290,11 @@ impl Component for Model {
         ctx.link().send_future(async move {
             if is_authenticated().await {
                 match get_active_user_async().await {
-                    Some(_)=> {
+                    Some(user_info)=> {
                         // We are authenticated so get initial config stuff before we bring up ui
                         load_config().await;
+                        // Preload summary_report data TODO: this is goofy
+                        let _ = get_summary_report_data(&user_info.get_id(), 10).await;
                         log::info!("Showing UI");
                         Msg::Authenticated
                     },
@@ -340,11 +348,13 @@ impl Component for Model {
                 </div>
             }
         } else {
-            let user_id = get_active_user().get_id();
+            let active_user = get_active_user();
+            let user_id = active_user.get_id();
+            let user_name = active_user.get_name();
 
             html! {
                 <BrowserRouter>
-                    <AppNav userid={user_id.clone()} onlogoff={on_logoff} />
+                    <AppNav userid={user_id.clone()} username={user_name} onlogoff={on_logoff} />
                     <main class="flex-shrink-0">
                         <Switch<AppRoutes> render={Switch::render(switch)} />
                     </main>

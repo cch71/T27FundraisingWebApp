@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{RwLock};
 use rust_decimal::prelude::*;
+use rusty_money::{Money, iso};
 use crate::currency_utils::*;
 use regex::Regex;
 
@@ -85,6 +86,7 @@ impl MulchOrder {
     }
 
     pub(crate) fn set_donations(&mut self, donation_amt: String) {
+        log::info!("!!!! Setting Donations to: {}", donation_amt);
         self.amount_from_donations = Some(donation_amt);
     }
 
@@ -119,11 +121,11 @@ impl MulchOrder {
         let mut total = Decimal::ZERO;
         if let Some(amt) = self.amount_from_donations.as_ref() {
             total = total.checked_add(
-                Decimal::from_str(amt).unwrap()).unwrap();
+                *Money::from_str(amt, iso::USD).unwrap().amount()).unwrap();
         }
         if let Some(amt) = self.amount_from_purchases.as_ref() {
             total = total.checked_add(
-                Decimal::from_str(amt).unwrap()).unwrap();
+                *Money::from_str(amt, iso::USD).unwrap().amount()).unwrap();
         }
         total
     }
@@ -132,11 +134,11 @@ impl MulchOrder {
         let mut total = Decimal::ZERO;
         if let Some(amt) = self.amount_cash_collected.as_ref() {
             total = total.checked_add(
-                Decimal::from_str(amt).unwrap()).unwrap();
+                *Money::from_str(amt, iso::USD).unwrap().amount()).unwrap();
         }
         if let Some(amt) = self.amount_checks_collected.as_ref() {
             total = total.checked_add(
-                Decimal::from_str(amt).unwrap()).unwrap();
+                *Money::from_str(amt, iso::USD).unwrap().amount()).unwrap();
         }
         total
     }

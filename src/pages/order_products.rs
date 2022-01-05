@@ -186,7 +186,7 @@ pub fn order_products() -> Html
             ||{}
         });
     }
-
+    let mut found_selected_delivery = false;
     html! {
         <div class="col-xs-1 justify-content-center">
             <div class="card">
@@ -203,6 +203,9 @@ pub fn order_products() -> Html
                                 {
                                     get_deliveries().iter().map(|(delivery_id, delivery)| {
                                         let is_selected = delivery_id == order.delivery_id.as_ref().unwrap_or(&0);
+                                        if is_selected && !found_selected_delivery {
+                                            found_selected_delivery = true;
+                                        }
                                         if delivery.new_order_cutoff_date > Utc::now() {
                                             html!{
                                                 <option value={delivery_id.to_string()} selected={is_selected}>
@@ -214,7 +217,9 @@ pub fn order_products() -> Html
                                         }
                                     }).collect::<Html>()
                                 }
+                                if !found_selected_delivery {
                                     <option value="none" selected=true disabled=true hidden=true>{"Select delivery date"}</option>
+                                }
 				</select>
 			</div>
                         {

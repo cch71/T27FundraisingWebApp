@@ -64,7 +64,8 @@ pub fn order_donations() -> Html
             let mut donation_amt = get_donation_amount();
             if donation_amt.is_some() {
                 donation_amt = Some(to_money_str_no_symbol(donation_amt.as_ref()));
-                updated_order.set_donations(donation_amt.as_ref().unwrap().clone());
+                let dec_donation_amt = parse_money_str_as_decimal(donation_amt.as_ref().unwrap()).unwrap();
+                updated_order.set_donations(dec_donation_amt.to_string());
             } else {
                 updated_order.clear_donations();
             }

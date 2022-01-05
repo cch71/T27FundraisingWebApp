@@ -1,11 +1,14 @@
 use rusty_money::{Money, Formatter, Params, Position, Round, iso};
-//use rust_decimal::prelude::*;
+use rust_decimal::prelude::*;
 
 pub(crate) fn to_money_str(input: Option<&String>) -> String {
     input.map_or_else(
         || "".to_string(),
         |v| Money::from_str(v, iso::USD).unwrap().to_string()
     )
+}
+pub(crate) fn str_to_money_str(input: &str) -> String {
+    Money::from_str(input, iso::USD).unwrap().to_string()
 }
 
 pub(crate) fn to_money_str_no_symbol(input: Option<&String>) -> String {
@@ -34,6 +37,10 @@ pub(crate) fn from_cloud_to_money_str(input: Option<String>) -> Option<String>{
         Some(Formatter::money(&money, params))
     })
 
+}
+
+pub(crate) fn parse_money_str_as_decimal(input: &str) -> Option<Decimal>{
+    Some(Money::from_str(input, iso::USD).unwrap().amount().clone())
 }
 
 pub(crate) fn on_money_input_filter(input: Option<&String>) -> String {

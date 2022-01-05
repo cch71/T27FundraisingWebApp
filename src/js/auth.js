@@ -17,11 +17,17 @@ const getUserInfo = async () => {
     const userInfo = await authObj.getUser();
     // console.log(`UserInfo: ${JSON.stringify(userInfo, null, '\t')}`);
     // console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
-    return {
+    const resp = {
         "email": userInfo.email,
         "token": token,
-        "roles": userInfo["https://www.bsatroop27.us/roles"]
+        "roles": userInfo["https://www.bsatroop27.us/roles"],
+        "id": userInfo.nickname
     };
+
+    if (userInfo["https://www.bsatroop27.us/app_metadata"].hasOwnProperty("full_name")) {
+        resp["name"] = userInfo["https://www.bsatroop27.us/app_metadata"]["full_name"];
+    }
+    return resp;
 }
 
 /**
