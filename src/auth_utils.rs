@@ -30,18 +30,23 @@ pub(crate) struct UserInfo {
     pub(crate) email: String,
     pub(crate) token: String,
     name: Option<String>,
+    id: Option<String>,
     pub(crate) roles: Vec<String>,
 }
 
 impl UserInfo {
     pub(crate) fn get_id(&self)->String {
         // TODO: Do this at creation time
-        let v: Vec<&str> = self.email.split('@').collect();
-        v[0].to_string()
+        self.id.as_ref().map_or_else(||{
+            let v: Vec<&str> = self.email.split('@').collect();
+            v[0].to_string()
+        },|v|{
+            v.clone()
+        })
     }
 
     pub(crate) fn get_name(&self)->String {
-        self.get_id()
+        self.name.as_ref().unwrap_or(&self.get_id()).clone()
     }
 
     pub(crate) fn is_admin(&self)->bool {

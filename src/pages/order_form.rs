@@ -497,12 +497,12 @@ pub fn order_form_fields() -> Html
                             get_neighborhoods().iter().map(|hood_info| {
                                 let is_selected = hood_info.name == order.customer.neighborhood;
                                 if !did_find_selected_hood && is_selected { did_find_selected_hood=true; }
-                                html!{<option key={hood_info.name.clone()} selected={is_selected}>{hood_info.name.clone()}</option>}
+                                html!{<option value={hood_info.name.clone()} selected={is_selected}>{hood_info.name.clone()}</option>}
                             }).collect::<Html>()
                         }
                         if !did_find_selected_hood {
                             if order.customer.neighborhood.len() == 0 {
-                                <option value="none" selected=true disabled=true hidden=true>
+                                <option value="" selected=true disabled=true hidden=true>
                                     {"Select Neighborhood"}
                                 </option>
                             } else {

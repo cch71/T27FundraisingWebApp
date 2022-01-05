@@ -1,5 +1,5 @@
 use rusty_money::{Money, Formatter, Params, Position, Round, iso};
-//use rust_decimal::prelude::*;
+use rust_decimal::prelude::*;
 
 pub(crate) fn to_money_str(input: Option<&String>) -> String {
     input.map_or_else(
@@ -34,6 +34,10 @@ pub(crate) fn from_cloud_to_money_str(input: Option<String>) -> Option<String>{
         Some(Formatter::money(&money, params))
     })
 
+}
+
+pub(crate) fn parse_money_str_as_decimal(input: &str) -> Option<Decimal>{
+    Some(Money::from_str(input, iso::USD).unwrap().amount().clone())
 }
 
 pub(crate) fn on_money_input_filter(input: Option<&String>) -> String {
