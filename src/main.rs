@@ -1,6 +1,7 @@
 
 mod bootstrap;
 mod datatable;
+mod google_charts;
 mod auth_utils;
 mod data_model_orders;
 mod data_model_reports;
@@ -289,9 +290,11 @@ impl Component for Model {
         ctx.link().send_future(async move {
             if is_authenticated().await {
                 match get_active_user_async().await {
-                    Some(_)=> {
+                    Some(user_info)=> {
                         // We are authenticated so get initial config stuff before we bring up ui
                         load_config().await;
+                        // Preload summary_report data TODO: this is goofy
+                        let _ = get_summary_report_data(&user_info.get_id(), 10).await;
                         log::info!("Showing UI");
                         Msg::Authenticated
                     },

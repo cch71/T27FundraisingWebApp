@@ -7,6 +7,9 @@ pub(crate) fn to_money_str(input: Option<&String>) -> String {
         |v| Money::from_str(v, iso::USD).unwrap().to_string()
     )
 }
+pub(crate) fn str_to_money_str(input: &str) -> String {
+    Money::from_str(input, iso::USD).unwrap().to_string()
+}
 
 pub(crate) fn to_money_str_no_symbol(input: Option<&String>) -> String {
     input.map_or_else(
