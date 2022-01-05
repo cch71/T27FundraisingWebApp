@@ -7,13 +7,39 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, ie=edge">
         <meta name="description" content="Troop 27 Fundraising App">
 
+
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/clocklet@0.3.0/css/clocklet.min.css" />
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/jq-3.6.0/jszip-2.5.0/dt-1.11.3/b-2.1.1/b-html5-2.1.1/b-print-2.1.1/r-2.2.9/sc-2.0.5/sb-1.3.0/sp-1.4.0/datatables.min.css"/>
+        
         <link data-trunk rel="sass" href="index.scss" />
         <link data-trunk rel="icon" href="src/static/t27patch.png"/>
+        <link data-trunk rel="icon" href="src/static/favicon-32x32.png">
+        <link data-trunk rel="copy-file" href="src/static/sw.js">
+        <link data-trunk rel="copy-file" href="src/static/manifest.webmanifest">
+        <link data-trunk rel="copy-file" href="src/static/icons/icon-48x48.png">
+        <link data-trunk rel="copy-file" href="src/static/icons/icon-72x72.png">
+        <link data-trunk rel="copy-file" href="src/static/icons/icon-96x96.png">
+        <link data-trunk rel="copy-file" href="src/static/icons/icon-144x144.png">
+        <link data-trunk rel="copy-file" href="src/static/icons/icon-192x192.png">
+        <link data-trunk rel="copy-file" href="src/static/icons/icon-256x256.png">
+        <link data-trunk rel="copy-file" href="src/static/icons/icon-384x384.png">
+        <link data-trunk rel="copy-file" href="src/static/icons/icon-512x512.png">
 
+        
+        <link rel="manifest" href="./manifest.webmanifest">
+        <script>
+            // register ServiceWorker
+            window.onload = () => {
+                            'use strict';
+
+                            if ('serviceWorker' in navigator) {
+                                            navigator.serviceWorker
+                                                .register('./sw.js');
+                                        }
+                        }
+        </script>
     </head>
     <body class="d-flex flex-column h-100">
         <link data-trunk rel="copy-file" href="src/static/t27patch.png"/>
