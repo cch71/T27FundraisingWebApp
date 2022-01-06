@@ -244,3 +244,7 @@ pub(crate) fn is_order_readonly(delivery_id: Option<u32>) -> bool {
 pub(crate) fn is_fundraiser_locked() -> bool {
     get_fr_config().is_locked
 }
+
+pub(crate) fn get_user_list() -> Vec<String> {
+    Vec::new()
+}

@@ -64,10 +64,13 @@ pub(crate) fn save_to_active_order() {
     let document = web_sys::window().unwrap().document().unwrap();
     let mut order = get_active_order().unwrap();
 
-    order.order_owner_id = document.get_element_by_id("formOrderOwner")
+    if let Some(order_owner_element) = document.get_element_by_id("formOrderOwner")
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
-        .unwrap()
-        .value();
+    {
+        // If it isn't there then it is because we aren't in admin mode
+        order.order_owner_id = order_owner_element.value();
+    }
+
     order.customer.name = get_html_input_value("formCustomerName", &document).unwrap_or("".to_string());
     order.customer.phone = get_html_input_value("formPhone", &document).unwrap_or("".to_string());
     order.customer.email = get_html_input_value("formEmail", &document);

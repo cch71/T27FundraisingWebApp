@@ -244,8 +244,8 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(OrderFormFields)]
-pub fn order_form_fields() -> Html
+#[function_component(HoodSelector)]
+pub fn hood_selector() -> Html
 {
     let history = use_history().unwrap();
     if !is_active_order() {
@@ -253,7 +253,6 @@ pub fn order_form_fields() -> Html
     }
 
     let is_admin = false;
-    let user_ids = vec!["ablash", "craigh", "fradmin"];
     let order = use_state_eq(||get_active_order().unwrap());
     let is_order_readonly = order.is_readonly();
     // log::info!("Loading Order: {:#?}", &*order);
@@ -274,6 +273,60 @@ pub fn order_form_fields() -> Html
             });
         })
     };
+
+    let mut did_find_selected_hood = false;
+
+    html! {
+
+                <div class="form-floating col-md-4">
+                    <select class="form-control" id="formNeighborhood" onchange={on_hood_change} required=true>
+                        {
+                            get_neighborhoods().iter().map(|hood_info| {
+                                let is_selected = hood_info.name == order.customer.neighborhood;
+                                if !did_find_selected_hood && is_selected { did_find_selected_hood=true; }
+                                html!{<option value={hood_info.name.clone()} selected={is_selected}>{hood_info.name.clone()}</option>}
+                            }).collect::<Html>()
+                        }
+                        if !did_find_selected_hood {
+                            if order.customer.neighborhood.len() == 0 {
+                                <option value="" selected=true disabled=true hidden=true>
+                                    {"Select Neighborhood"}
+                                </option>
+                            } else {
+                                <option value={order.customer.neighborhood.clone()}
+                                        selected=true disabled=true hidden=true>
+                                    {format!("{} (DNE. Report Issue)", &order.customer.neighborhood)}
+                                </option>
+                            }
+                        }
+                    </select>
+                    <label for="formNeighborhood">
+                        {"Neighborhood"}<RequiredSmall/>
+                    </label>
+                    <small id="outOfHoodDisclaimer" style={(*on_hood_warning).clone()}>
+                        <i class="bi bi-exclamation-triangle-fill pe-1"></i>
+                        {"You are responsible for delivery of all out of area orders"}
+                        <i class="bi bi-exclamation-triangle-fill ps-1"></i>
+                    </small>
+                </div>
+    }
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+#[function_component(OrderFormFields)]
+pub fn order_form_fields() -> Html
+{
+    let history = use_history().unwrap();
+    if !is_active_order() {
+            history.push(AppRoutes::Home);
+    }
+
+    let is_admin = false;
+    let order = use_state_eq(||get_active_order().unwrap());
+    let is_order_readonly = order.is_readonly();
+    // log::info!("Loading Order: {:#?}", &*order);
 
     let amount_due_str = use_state_eq(|| "$0.00".to_owned());
     let amount_collected_str = match (*order).amount_total_collected.as_ref() {
@@ -430,37 +483,41 @@ pub fn order_form_fields() -> Html
         });
     }
 
-    let mut did_find_selected_hood = false;
     let mut did_find_selected_order_owner = false;
+    let amt_cash_paid = order.amount_cash_collected.as_ref().unwrap_or(&"".to_string()).to_string();
+    let amt_checks_paid = order.amount_checks_collected.as_ref().unwrap_or(&"".to_string()).to_string();
+
     html! {
         <form class="needs-validation" id="newOrEditOrderForm" novalidate=true onsubmit={on_form_submission}>
 
-            <div class="row mb-2 g-2" style={ if !is_admin { "display: none;"} else {"display:block;"} } >
-                <div class="form-floating col-md-4">
-                    <select class="form-control" id="formOrderOwner" >
-                    {
-                        user_ids.into_iter().map(|user_id| {
-                            let is_selected = user_id == order.order_owner_id;
-                            if !did_find_selected_order_owner && is_selected { did_find_selected_order_owner=true; }
-                            html!{<option key={user_id} selected={is_selected}>{user_id}</option>}
-                        }).collect::<Html>()
-                    }
-                    if !did_find_selected_order_owner {
-                        if order.order_owner_id.len() == 0 {
-                            <option value="none" selected=true disabled=true hidden=true>{
-                                "Select Order Owner (DNE. Report Issue)"}
-                            </option>
-                        } else {
-                            <option value={order.order_owner_id.clone()}
-                                    selected=true disabled=true hidden=true>
-                                {format!("{} (DNE. Report Issue)", &order.order_owner_id)}
-                            </option>
-                        }
-                    }
-                    </select>
-                    <label for="formOrderOwner">{"Order Owner"}</label>
-                </div>
-            </div>
+            if is_admin {
+                 <div class="row mb-2 g-2">
+                     <div class="form-floating col-md-4">
+                         <select class="form-control" id="formOrderOwner" >
+                         {
+                             get_user_list().iter().map(|user_id| {
+                                 let is_selected = user_id == &order.order_owner_id;
+                                 if !did_find_selected_order_owner && is_selected { did_find_selected_order_owner=true; }
+                                 html!{<option value={user_id.to_string()} selected={is_selected}>{user_id.to_string()}</option>}
+                             }).collect::<Html>()
+                         }
+                         if !did_find_selected_order_owner {
+                             if order.order_owner_id.len() == 0 {
+                                 <option value="none" selected=true disabled=true hidden=true>{
+                                     "Select Order Owner (DNE. Report Issue)"}
+                                 </option>
+                             } else {
+                                 <option value={order.order_owner_id.clone()}
+                                         selected=true disabled=true hidden=true>
+                                     {format!("{} (DNE. Report Issue)", &order.order_owner_id)}
+                                 </option>
+                             }
+                         }
+                         </select>
+                         <label for="formOrderOwner">{"Order Owner"}</label>
+                     </div>
+                 </div>
+            }
 
             <div class="row mb-2 g-2">
                 <div class="form-floating col-md">
@@ -491,37 +548,7 @@ pub fn order_form_fields() -> Html
             </div>
 
             <div class="row mb-2 g-2">
-                <div class="form-floating col-md-4">
-                    <select class="form-control" id="formNeighborhood" onchange={on_hood_change} required=true>
-                        {
-                            get_neighborhoods().iter().map(|hood_info| {
-                                let is_selected = hood_info.name == order.customer.neighborhood;
-                                if !did_find_selected_hood && is_selected { did_find_selected_hood=true; }
-                                html!{<option value={hood_info.name.clone()} selected={is_selected}>{hood_info.name.clone()}</option>}
-                            }).collect::<Html>()
-                        }
-                        if !did_find_selected_hood {
-                            if order.customer.neighborhood.len() == 0 {
-                                <option value="" selected=true disabled=true hidden=true>
-                                    {"Select Neighborhood"}
-                                </option>
-                            } else {
-                                <option value={order.customer.neighborhood.clone()}
-                                        selected=true disabled=true hidden=true>
-                                    {format!("{} (DNE. Report Issue)", &order.customer.neighborhood)}
-                                </option>
-                            }
-                        }
-                    </select>
-                    <label for="formNeighborhood">
-                        {"Neighborhood"}<RequiredSmall/>
-                    </label>
-                    <small id="outOfHoodDisclaimer" style={(*on_hood_warning).clone()}>
-                        <i class="bi bi-exclamation-triangle-fill pe-1"></i>
-                        {"You are responsible for delivery of all out of area orders"}
-                        <i class="bi bi-exclamation-triangle-fill ps-1"></i>
-                    </small>
-                </div>
+            <HoodSelector/>
                 <div class="form-floating col-md-4" id="formPhoneFloatDiv">
                     <input class="form-control" type="tel" autocomplete="fr-new-cust-info" id="formPhone"
                            pattern="[0-9]{3}[-|.]{0,1}[0-9]{3}[-|.]{0,1}[0-9]{4}"
@@ -587,8 +614,7 @@ pub fn order_form_fields() -> Html
                             <input class="form-control" type="number" min="0" step="any"
                                    autocomplete="fr-new-cust-info"
                                    id="formCashPaid" placeholder="0.00"
-                                   oninput={on_payment_input.clone()}
-                                   value={order.amount_cash_collected.as_ref().unwrap_or(&"".to_string()).clone()}/>
+                                   value={amt_cash_paid}/>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -601,7 +627,7 @@ pub fn order_form_fields() -> Html
                                    autocomplete="fr-new-cust-info"
                                    id="formCheckPaid" placeholder="0.00"
                                    oninput={on_payment_input.clone()}
-                                   value={order.amount_checks_collected.as_ref().unwrap_or(&"".to_string()).clone()}/>
+                                   value={amt_checks_paid}/>
                         </div>
                     </div>
                     <div class="col-md-4">

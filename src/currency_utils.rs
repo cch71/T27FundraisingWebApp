@@ -33,11 +33,7 @@ pub(crate) fn from_cloud_to_money_str(input: Option<String>) -> Option<String>{
     input.and_then(|v|{
         let mut money = Money::from_str(&v, iso::USD).unwrap();
         money = money.round(2, Round::HalfEven);
-        let params = Params {
-            positions: vec![Position::Amount],
-            ..Default::default()
-        };
-        Some(Formatter::money(&money, params))
+        Some(money.amount().to_string())
     })
 
 }
