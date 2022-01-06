@@ -2,8 +2,6 @@ use yew::prelude::*;
 // use web_sys::{
 //     MouseEvent, HtmlButtonElement,
 // };
-use std::cell::RefCell;
-use std::rc::Rc;
 
 use crate::data_model::*;
 use crate::currency_utils::*;

@@ -3,6 +3,95 @@ use serde::{Deserialize, Serialize};
 use chrono::prelude::*;
 use gloo_storage::{LocalStorage, Storage};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
+use crate::auth_utils::{get_active_user};
+use crate::data_model::{get_fr_config};
+
+#[derive(PartialEq, Debug)]
+pub(crate) enum ReportViews {
+    // Reports available to sellers
+    Quick,
+    Full,
+    SpreadingJobs,
+    AllocationSummary,
+
+    // Admin Only Reports
+    UnfinishedSpreadingJobs,
+    OrderVerification,
+    DistributionPoints,
+    Deliveries,
+}
+
+impl std::fmt::Display for ReportViews {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+       match *self {
+           ReportViews::Quick => write!(f, "Default"),
+           ReportViews::Full => write!(f, "Full"),
+           ReportViews::SpreadingJobs => write!(f, "Spreading Jobs"),
+           ReportViews::UnfinishedSpreadingJobs => write!(f, "Unfinished Spreading Jobs"),
+           ReportViews::OrderVerification => write!(f, "Order Verfication"),
+           ReportViews::DistributionPoints => write!(f, "Distribution Point"),
+           ReportViews::Deliveries => write!(f, "Deliveries"),
+           ReportViews::AllocationSummary => write!(f, "Allocation Summary"),
+       }
+    }
+}
+
+impl std::str::FromStr for ReportViews {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Default" => Ok(ReportViews::Quick),
+            "Full" => Ok(ReportViews::Full),
+            "Spreading Jobs" => Ok(ReportViews::SpreadingJobs),
+            "Unfinished Spreading Jobs" => Ok(ReportViews::UnfinishedSpreadingJobs),
+            "Order Verfication" => Ok(ReportViews::OrderVerification),
+            "Distribution Point" => Ok(ReportViews::DistributionPoints),
+            "Deliveriesl" => Ok(ReportViews::Deliveries),
+            "Allocation Summary" => Ok(ReportViews::AllocationSummary),
+            _ => Err(format!("'{}' is not a valid value for ReportViews", s)),
+        }
+    }
+}
+
+pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
+    let mut reports = vec![
+        ReportViews::Quick,
+        ReportViews::Full,
+    ];
+
+    if get_fr_config().kind == "mulch" {
+        //     reports.push(ReportViews::SpreadingJobs);
+
+        if get_active_user().is_admin() {
+            //         reports.push(ReportViews::UnfinishedSpreadingJobs);
+            //         reports.push(ReportViews::OrderVerification);
+            //         reports.push(ReportViews::DistributionPoints);
+            //         reports.push(ReportViews::Deliveries);
+        }
+
+    }
+
+    // if allocation_summary availalble add allocation summary {
+    //      reports.push(ReportViews::AllocationSummary);
+    // }
+
+    reports
+}
+
+async fn make_report_query(query: String)
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    #[derive(Serialize, Deserialize, Debug)]
+    struct GqlResp {
+        #[serde(alias = "mulchOrders")]
+        mulch_orders: Vec<serde_json::Value>,
+    }
+
+    let req = GraphQlReq::new(query);
+    let rslts = make_gql_request::<GqlResp>(&req).await?;
+    Ok(rslts.mulch_orders)
+}
 
 static QUICK_RPT_GRAPHQL: &'static str = r"
 {
@@ -32,16 +121,51 @@ pub(crate) async fn get_quick_report_data(order_owner_id: Option<&String>)
     } else {
         QUICK_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", "")
     };
+    make_report_query(query).await
+}
 
-    #[derive(Serialize, Deserialize, Debug)]
-    struct GqlResp {
-        #[serde(alias = "mulchOrders")]
-        mulch_orders: Vec<serde_json::Value>,
+static FULL_RPT_GRAPHQL: &'static str = r"
+{
+  mulchOrders(***ORDER_OWNER_PARAM***) {
+    orderId
+    ownerId
+    amountFromDonations
+    amountFromCashCollected
+    amountFromChecksCollected
+    checkNumbers
+    amountTotalCollected
+    willCollectMoneyLater
+    isVerified
+    customer {
+        name
+        addr1
+        addr2
+        phone
+        email
+        neighborhood
     }
+    specialInstructions
+    purchases {
+        productId
+        numSold
+        amountCharged
+    }
+    deliveryId
+    spreaders
+  }
+}
+";
 
-    let req = GraphQlReq::new(query);
-    let rslts = make_gql_request::<GqlResp>(&req).await?;
-    Ok(rslts.mulch_orders)
+pub(crate) async fn get_full_report_data(order_owner_id: Option<&String>)
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    let query = if let Some(order_owner_id) = order_owner_id {
+        FULL_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", &format!("ownerId: \"{}\"", order_owner_id))
+    } else {
+        FULL_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", "")
+    };
+
+    make_report_query(query).await
 }
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -336,8 +336,7 @@ pub(crate) async fn delete_order(order_id: &str)
 
     let req = GraphQlReq::new(query);
     log::info!("Delete GraphQL: {}", &req.query);
-    //make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
-    Ok(())
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
 }
 
 static LOAD_ORDER_GQL:& 'static str = r"
