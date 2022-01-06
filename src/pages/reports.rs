@@ -2,13 +2,14 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen::{JsValue, JsCast};
 use web_sys::{ MouseEvent, InputEvent, Element, HtmlElement, HtmlSelectElement, HtmlInputElement, HtmlButtonElement};
+use std::str::FromStr;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::data_model::*;
 use crate::bootstrap;
 use crate::datatable::*;
-use std::str::FromStr;
-use std::cell::RefCell;
-use std::rc::Rc;
+use crate::currency_utils::*;
 use crate::AppRoutes;
 
 static ALL_USERS_TAG: &'static str = "doShowAllUsers";
@@ -27,6 +28,95 @@ struct OrderToDelete {
 enum ReportViewState {
     IsLoading,
     ReportHtmlGenerated(Vec<serde_json::Value>),
+}
+
+/////////////////////////////////////////////////
+///
+fn on_delete_order_from_rpt( evt: MouseEvent, datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>>)
+{
+    evt.prevent_default();
+    evt.stop_propagation();
+    let btn_elm = evt.target()
+        .and_then(|t| t.dyn_into::<Element>().ok())
+        .and_then(|t| {
+            // log::info!("Node Name: {}", t.node_name());
+            if t.node_name() == "I" {
+                t.parent_element()
+            } else {
+                Some(t)
+            }
+        })
+    .unwrap();
+
+    // for idx in 0..btn_elm.attributes().length() {
+    //     if let Some(attr) = btn_elm.attributes().get_with_index(idx) {
+    //         log::info!("{}: {}: {}", idx, attr.name(), attr.value());
+    //     }
+    // }
+    let tr_node = btn_elm.parent_node()
+        .and_then(|t| t.parent_node())
+        .unwrap();
+    let order_id = btn_elm.dyn_into::<HtmlElement>()
+        .ok()
+        .and_then(|t| t.dataset().get("orderid"))
+        .unwrap();
+    log::info!("on_delete_order: {}", order_id);
+
+    let dlg = bootstrap::get_modal_by_id("deleteOrderDlg").unwrap();
+
+    CHOPPING_BLOCK.with(|f|{
+        *f.borrow_mut() = Some(OrderToDelete{
+            datatable: (*datatable.borrow().as_ref().unwrap()).clone(),
+            delete_dlg: dlg.clone().dyn_into::<bootstrap::Modal>().unwrap(),
+            tr_node: tr_node,
+            order_id: order_id,
+        });
+    });
+
+    dlg.show();
+}
+
+/////////////////////////////////////////////////
+///
+fn on_view_or_edit_from_rpt( evt: MouseEvent, history: AnyHistory)
+{
+    evt.prevent_default();
+    evt.stop_propagation();
+    let btn_elm = evt.target()
+        .and_then(|t| t.dyn_into::<Element>().ok())
+        .and_then(|t| {
+            if t.node_name() == "I" {
+                t.parent_element()
+            } else {
+                Some(t)
+            }
+        })
+    .unwrap();
+    let order_id = btn_elm.dyn_into::<HtmlElement>()
+        .ok()
+        .and_then(|t| t.dataset().get("orderid"))
+        .unwrap();
+    wasm_bindgen_futures::spawn_local(async move {
+        log::info!("on_view_or_edit_order: {}", order_id);
+        if let Err(err) = load_active_order_from_db(&order_id).await {
+            gloo_dialogs::alert(&format!("Failed to load order: {}: Err: {:#?}", order_id, err));
+        }
+        history.push(AppRoutes::OrderForm);
+    });
+}
+
+/////////////////////////////////////////////////
+///
+fn on_edit_spreading_from_rpt( evt: MouseEvent)
+{
+    evt.prevent_default();
+    evt.stop_propagation();
+    let btn_elm = evt.target()
+        .and_then(|t| t.dyn_into::<Element>().ok())
+        .and_then(|t| t.parent_element())
+        .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+        .unwrap();
+    log::info!("on_edit_spreading: {}", btn_elm.dataset().get("orderid").unwrap());
 }
 
 /////////////////////////////////////////////////
@@ -195,90 +285,19 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
     let on_delete_order = {
         let datatable = datatable.clone();
         Callback::from(move |evt: MouseEvent| {
-            evt.prevent_default();
-            evt.stop_propagation();
-            let btn_elm = evt.target()
-                .and_then(|t| t.dyn_into::<Element>().ok())
-                .and_then(|t| {
-                    // log::info!("Node Name: {}", t.node_name());
-                    if t.node_name() == "I" {
-                        t.parent_element()
-                    } else {
-                        Some(t)
-                    }
-                })
-                .unwrap();
-
-            // for idx in 0..btn_elm.attributes().length() {
-            //     if let Some(attr) = btn_elm.attributes().get_with_index(idx) {
-            //         log::info!("{}: {}: {}", idx, attr.name(), attr.value());
-            //     }
-            // }
-            let tr_node = btn_elm.parent_node()
-                .and_then(|t| t.parent_node())
-                .unwrap();
-            let order_id = btn_elm.dyn_into::<HtmlElement>()
-                .ok()
-                .and_then(|t| t.dataset().get("orderid"))
-                .unwrap();
-            log::info!("on_delete_order: {}", order_id);
-
-            let dlg = bootstrap::get_modal_by_id("deleteOrderDlg").unwrap();
-
-            CHOPPING_BLOCK.with(|f|{
-                *f.borrow_mut() = Some(OrderToDelete{
-                    datatable: (*datatable.borrow().as_ref().unwrap()).clone(),
-                    delete_dlg: dlg.clone().dyn_into::<bootstrap::Modal>().unwrap(),
-                    tr_node: tr_node,
-                    order_id: order_id,
-                });
-            });
-
-            dlg.show();
-
-
+            on_delete_order_from_rpt(evt, datatable.clone());
         })
     };
     let on_view_or_edit_order = {
         let history = history.clone();
         Callback::once(move |evt: MouseEvent| {
-            evt.prevent_default();
-            evt.stop_propagation();
-            let btn_elm = evt.target()
-                .and_then(|t| t.dyn_into::<Element>().ok())
-                .and_then(|t| {
-                    if t.node_name() == "I" {
-                        t.parent_element()
-                    } else {
-                        Some(t)
-                    }
-                })
-                .unwrap();
-            let order_id = btn_elm.dyn_into::<HtmlElement>()
-                .ok()
-                .and_then(|t| t.dataset().get("orderid"))
-                .unwrap();
-            wasm_bindgen_futures::spawn_local(async move {
-                log::info!("on_view_or_edit_order: {}", order_id);
-                if let Err(err) = load_active_order_from_db(&order_id).await {
-                    gloo_dialogs::alert(&format!("Failed to load order: {}: Err: {:#?}", order_id, err));
-                }
-                history.push(AppRoutes::OrderForm);
-            });
-
+            on_view_or_edit_from_rpt(evt, history.clone());
         })
     };
 
     let on_edit_spreading = {
         Callback::from(move |evt: MouseEvent| {
-            evt.prevent_default();
-            evt.stop_propagation();
-            let btn_elm = evt.target()
-                .and_then(|t| t.dyn_into::<Element>().ok())
-                .and_then(|t| t.parent_element())
-                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
-                .unwrap();
-            log::info!("on_edit_spreading: {}", btn_elm.dataset().get("orderid").unwrap());
+            on_edit_spreading_from_rpt(evt);
         })
     };
 
@@ -384,7 +403,174 @@ pub fn report_quick_view(props: &QuickReportViewProps) -> Html {
             }
         },
     }
+}
 
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+#[derive(Properties, PartialEq, Clone, Debug)]
+pub struct FullReportViewProps {
+    pub seller: String,
+}
+#[function_component(FullReportView)]
+pub fn report_full_view(props: &FullReportViewProps) -> Html {
+    let report_state = use_state(||ReportViewState::IsLoading);
+    let history = use_history().unwrap();
+    let is_fr_locked = is_fundraiser_locked();
+    let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
+
+    let on_delete_order = {
+        let datatable = datatable.clone();
+        Callback::from(move |evt: MouseEvent| {
+            on_delete_order_from_rpt(evt, datatable.clone());
+        })
+    };
+    let on_view_or_edit_order = {
+        let history = history.clone();
+        Callback::once(move |evt: MouseEvent| {
+            on_view_or_edit_from_rpt(evt, history.clone());
+        })
+    };
+
+    let on_edit_spreading = {
+        Callback::from(move |evt: MouseEvent| {
+            on_edit_spreading_from_rpt(evt);
+        })
+    };
+
+    {
+        let report_state = report_state.clone();
+        let seller = props.seller.to_string();
+        use_effect(move || {
+            match &*report_state {
+                ReportViewState::IsLoading=>{
+                    wasm_bindgen_futures::spawn_local(async move {
+                        log::info!("Downloading Full Report View Data");
+                        let seller = if &seller == ALL_USERS_TAG {
+                            None
+                        } else {
+                            Some(seller)
+                        };
+                        let resp = get_full_report_data(seller.as_ref()).await.unwrap();
+                        log::info!("Report Data has been downloaded");
+                        report_state.set(ReportViewState::ReportHtmlGenerated(resp));
+                    });
+                },
+                ReportViewState::ReportHtmlGenerated(_) => {
+                    log::info!("Setting DataTable");
+                    *datatable.borrow_mut() = get_datatable(&serde_json::json!({
+                        "reportType": "full",
+                        "id": ".data-table-report table",
+                        "showOrderOwner": &seller != &get_active_user().get_id(),
+                        "isMulchOrder": true
+                    }));
+
+                },
+            };
+
+            ||{}
+        });
+    }
+
+    match &*report_state {
+        ReportViewState::IsLoading => html! { <ReportLoadingSpinny/> },
+        ReportViewState::ReportHtmlGenerated(orders) => {
+            let header_footer = html! {
+                <tr>
+                    <th>{"OrderId"}</th>
+                    <th>{"Name"}</th>
+                    <th>{"Phone"}</th>
+                    <th>{"Email"}</th>
+                    <th>{"Address 1"}</th>
+                    <th>{"Address 2"}</th>
+                    <th>{"Neighborhood"}</th>
+                    <th>{"Delivery Date"}</th>
+                    <th>{"Spreaders"}</th>
+                    <th>{"Spreading"}</th>
+                    <th>{"Bags"}</th>
+                    <th>{"Special Instructions"}</th>
+                    <th>{"Verified"}</th>
+                    <th>{"Money Collected"}</th>
+                    <th>{"Donations"}</th>
+                    <th>{"Cash"}</th>
+                    <th>{"Check"}</th>
+                    <th>{"Check Numbers"}</th>
+                    <th>{"Total Amount"}</th>
+                    <th>{"Order Owner"}</th>
+                    <th>{"Actions"}</th>
+                </tr>
+            };
+            html!{
+                <div class="data-table-report">
+                    <table class="display responsive nowrap collapsed" role="grid" style="width: 100%;">
+                        <thead>
+                            {header_footer.clone()}
+                        </thead>
+                        <tbody>
+                        {
+                            orders.into_iter().map(|v|{
+                                let mut spreading = "".to_string();
+                                let mut bags = "".to_string();
+                                for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
+                                    if purchase["productId"].as_str().unwrap() == "spreading" {
+                                        spreading = purchase["numSold"].as_u64().unwrap().to_string();
+                                        break;
+                                    } else if purchase["productId"].as_str().unwrap() == "bags" {
+                                        bags = purchase["numSold"].as_u64().unwrap().to_string();
+                                        break;
+                                    }
+                                }
+                                let enable_spreading_button = spreading.len()!=0 && !is_fr_locked;
+                                let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
+                                    Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
+                                    None => ("Donation".to_string(), "Donation".to_string()),
+                                };
+                                let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
+                                html!{
+                                    <tr>
+                                        <td>{v["orderId"].as_str().unwrap()}</td>
+                                        <td>{v["customer"]["name"].as_str().unwrap()}</td>
+                                        <td>{v["customer"]["phone"].as_str().unwrap()}</td>
+                                        <td>{v["customer"]["email"].as_str().unwrap_or("")}</td>
+                                        <td>{v["customer"]["addr1"].as_str().unwrap()}</td>
+                                        <td>{v["customer"]["addr2"].as_str().unwrap_or("")}</td>
+                                        <td>{v["customer"]["neighborhood"].as_str().unwrap()}</td>
+                                        <td data-deliveryid={delivery_id}>{delivery_date}</td>
+                                        <td>{v["spreaders"].as_str().unwrap_or("")}</td>
+                                        <td>{&spreading}</td>
+                                        <td>{&bags}</td>
+                                        <td>{v["specialInstructions"].as_str().unwrap_or("")}</td>
+                                        <td>{v["isVerified"].as_bool().unwrap_or(false).to_string()}</td>
+                                        <td>{v["willCollectMoneyLater"].as_bool().unwrap_or(false).to_string()}</td>
+                                        <td>{to_money_str(v["amountFromDonations"].as_str())}</td>
+                                        <td>{to_money_str(v["amountFromCashCollected"].as_str())}</td>
+                                        <td>{to_money_str(v["amountFromChecksCollected"].as_str())}</td>
+                                        <td>{v["checkNumbers"].as_str().unwrap_or("")}</td>
+                                        <td>{to_money_str(v["amountTotalCollected"].as_str())}</td>
+                                        <td>{v["ownerId"].as_str().unwrap()}</td>
+                                        <td>
+                                            <ReportActionButtons
+                                                orderid={v["orderId"].as_str().unwrap().to_string()}
+                                                showspreading={enable_spreading_button}
+                                                isreadonly={is_readonly}
+                                                ondeleteorder={on_delete_order.clone()}
+                                                onvieworder={on_view_or_edit_order.clone()}
+                                                oneditorder={on_view_or_edit_order.clone()}
+                                                oneditspreading={on_edit_spreading.clone()}
+                                            />
+                                        </td>
+                                    </tr>
+                                }
+                            }).collect::<Html>()
+                        }
+                        </tbody>
+                        <tfoot>
+                            {header_footer}
+                        </tfoot>
+                    </table>
+                </div>
+            }
+        },
+    }
 }
 
 /////////////////////////////////////////////////
@@ -506,14 +692,14 @@ pub fn reports_page() -> Html {
     });
 
 
-    let on_download_report = {
-        Callback::from(move |evt: MouseEvent| {
-            evt.prevent_default();
-            evt.stop_propagation();
-            log::info!("on_download_report");
+    // let on_download_report = {
+    //     Callback::from(move |evt: MouseEvent| {
+    //         evt.prevent_default();
+    //         evt.stop_propagation();
+    //         log::info!("on_download_report");
 
-        })
-    };
+    //     })
+    // };
 
     let on_view_settings = {
         Callback::from(move |evt: MouseEvent| {
@@ -536,10 +722,14 @@ pub fn reports_page() -> Html {
                 .unwrap()
                 .value();
 
-            let seller_id = gloo_utils::document().get_element_by_id("reportViewSettingsDlgUserSelection")
-                .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
-                .unwrap()
-                .value();
+            let seller_id: String = if get_active_user().is_admin() {
+                gloo_utils::document().get_element_by_id("reportViewSettingsDlgUserSelection")
+                    .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
+                    .unwrap()
+                    .value()
+            } else {
+                get_active_user().get_id()
+            };
 
             let updated_settings = ReportViewSettings{
                 current_view: ReportViews::from_str(&report_view).unwrap(),
@@ -578,10 +768,10 @@ pub fn reports_page() -> Html {
                                 </li>
                             </ul>
                             <div id="reportViewSettings" class="float-end">
-                                <button type="button" class="btn reports-view-setting-btn" onclick={on_download_report}
-                                        data-bs-toggle="tooltip" title="Download Current Report">
-                                    <i class="bi bi-cloud-download" fill="currentColor"></i>
-                                </button>
+                                // <button type="button" class="btn reports-view-setting-btn" onclick={on_download_report}
+                                //         data-bs-toggle="tooltip" title="Download Current Report">
+                                //     <i class="bi bi-cloud-download" fill="currentColor"></i>
+                                // </button>
                                 <button type="button" class="btn reports-view-setting-btn" onclick={on_view_settings}
                                         data-bs-toggle="tooltip" data-bs-placement="left" title="Change Report View">
                                     <i class="bi bi-gear" fill="currentColor"></i>
@@ -592,6 +782,7 @@ pub fn reports_page() -> Html {
                         {
                             match (*current_settings).current_view {
                                 ReportViews::Quick=>html!{<QuickReportView seller={(*current_settings).seller_id_filter.clone()}/>},
+                                ReportViews::Full=>html!{<FullReportView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 _=>html!{<h6>{"Not Yet Implemented"}</h6>},
                             }
                         }

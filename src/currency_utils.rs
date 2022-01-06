@@ -1,10 +1,13 @@
 use rusty_money::{Money, Formatter, Params, Position, Round, iso};
 use rust_decimal::prelude::*;
 
-pub(crate) fn to_money_str(input: Option<&String>) -> String {
+pub(crate) fn to_money_str<T>(input: Option<T>) -> String
+    where
+        T: Into<String>
+{
     input.map_or_else(
         || "".to_string(),
-        |v| Money::from_str(v, iso::USD).unwrap().to_string()
+        |v| Money::from_str(&v.into(), iso::USD).unwrap().to_string()
     )
 }
 pub(crate) fn str_to_money_str(input: &str) -> String {

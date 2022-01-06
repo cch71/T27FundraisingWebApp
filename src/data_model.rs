@@ -7,7 +7,7 @@ use rust_decimal::prelude::*;
 
 pub(crate) use crate::data_model_reports::*;
 pub(crate) use crate::data_model_orders::*;
-pub(crate) use crate::auth_utils::{get_active_user, get_active_user_async, UserInfo};
+pub(crate) use crate::auth_utils::{get_active_user, get_active_user_async};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 
 static CONFIG_GQL:&'static str =
@@ -235,77 +235,6 @@ pub(crate) fn get_active_sellers() -> Vec<String> {
     vec![get_active_user().get_id()]
 }
 
-
-#[derive(PartialEq, Debug)]
-pub(crate) enum ReportViews {
-    // Reports available to sellers
-    Quick,
-    Full,
-    SpreadingJobs,
-    AllocationSummary,
-
-    // Admin Only Reports
-    UnfinishedSpreadingJobs,
-    OrderVerification,
-    DistributionPoints,
-    Deliveries,
-}
-
-impl std::fmt::Display for ReportViews {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-       match *self {
-           ReportViews::Quick => write!(f, "Default"),
-           ReportViews::Full => write!(f, "Full"),
-           ReportViews::SpreadingJobs => write!(f, "Spreading Jobs"),
-           ReportViews::UnfinishedSpreadingJobs => write!(f, "Unfinished Spreading Jobs"),
-           ReportViews::OrderVerification => write!(f, "Order Verfication"),
-           ReportViews::DistributionPoints => write!(f, "Distribution Point"),
-           ReportViews::Deliveries => write!(f, "Deliveries"),
-           ReportViews::AllocationSummary => write!(f, "Allocation Summary"),
-       }
-    }
-}
-
-impl std::str::FromStr for ReportViews {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Default" => Ok(ReportViews::Quick),
-            "Full" => Ok(ReportViews::Full),
-            "Spreading Jobs" => Ok(ReportViews::SpreadingJobs),
-            "Unfinished Spreading Jobs" => Ok(ReportViews::UnfinishedSpreadingJobs),
-            "Order Verfication" => Ok(ReportViews::OrderVerification),
-            "Distribution Point" => Ok(ReportViews::DistributionPoints),
-            "Deliveriesl" => Ok(ReportViews::Deliveries),
-            "Allocation Summary" => Ok(ReportViews::AllocationSummary),
-            _ => Err(format!("'{}' is not a valid value for ReportViews", s)),
-        }
-    }
-}
-
-pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
-    let mut reports = vec![
-        ReportViews::Quick,
-        ReportViews::Full,
-    ];
-
-    if get_fr_config().kind == "mulch" {
-        reports.push(ReportViews::SpreadingJobs);
-
-        if get_active_user().is_admin() {
-            reports.push(ReportViews::UnfinishedSpreadingJobs);
-            reports.push(ReportViews::OrderVerification);
-            reports.push(ReportViews::DistributionPoints);
-            reports.push(ReportViews::Deliveries);
-        }
-
-    }
-    // if allocation_summary availalble add allocation summary {
-    // reports.push(ReportViews::AllocationSummary);
-
-    reports
-}
 
 pub(crate) fn is_order_readonly(delivery_id: Option<u32>) -> bool {
     //if none then check for all delivery dates because it is donation order
