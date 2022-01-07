@@ -614,6 +614,7 @@ pub fn order_form_fields() -> Html
                             <input class="form-control" type="number" min="0" step="any"
                                    autocomplete="fr-new-cust-info"
                                    id="formCashPaid" placeholder="0.00"
+                                   oninput={on_payment_input.clone()}
                                    value={amt_cash_paid}/>
                         </div>
                     </div>
