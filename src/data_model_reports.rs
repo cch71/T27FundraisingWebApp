@@ -6,6 +6,8 @@ use crate::gql_utils::{make_gql_request, GraphQlReq};
 use crate::auth_utils::{get_active_user};
 use crate::data_model::{get_fr_config};
 
+pub(crate) static ALL_USERS_TAG: &'static str = "doShowAllUsers";
+
 #[derive(PartialEq, Debug)]
 pub(crate) enum ReportViews {
     // Reports available to sellers
@@ -297,3 +299,10 @@ pub(crate) async fn get_summary_report_data(seller_id: &str, num_top_sellers: u3
     })?;
     Ok(rslts)
 }
+
+pub(crate) enum ReportViewState {
+    IsLoading,
+    ReportHtmlGenerated(Vec<serde_json::Value>),
+}
+
+

@@ -270,3 +270,4 @@ pub(crate) async fn report_new_issue(reporting_id: &str, title: &str, body: &str
     let req = GraphQlReq::new(query);
     make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
 }
+
