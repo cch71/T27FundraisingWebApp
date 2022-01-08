@@ -11,8 +11,10 @@ mod gql_utils;
 
 use yew::prelude::*;
 use yew_router::prelude::*;
+use std::rc::Rc;
+use std::cell::RefCell;
 use wasm_bindgen::JsCast;
-use web_sys::{window, MouseEvent, HtmlSelectElement, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{window, MouseEvent, HtmlSelectElement, HtmlButtonElement, HtmlInputElement, HtmlTextAreaElement};
 use rust_decimal::prelude::*;
 
 use auth_utils::{login, logout, is_authenticated};
@@ -61,7 +63,7 @@ pub(crate) fn get_html_textarea_value(id: &str, document: &web_sys::Document) ->
 pub(crate) fn save_to_active_order() {
     if !is_active_order() { return; }
 
-    let document = web_sys::window().unwrap().document().unwrap();
+    let document = gloo_utils::document();
     let mut order = get_active_order().unwrap();
 
     if let Some(order_owner_element) = document.get_element_by_id("formOrderOwner")
@@ -137,6 +139,138 @@ pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
+thread_local! {
+    static REPORT_ISSUE_DLG: Rc<RefCell<Option<bootstrap::Modal>>> = Rc::new(RefCell::new(None));
+}
+
+fn show_report_issue_dlg(do_show: bool) {
+    let document = gloo_utils::document();
+
+    document.get_element_by_id("formSummary")
+        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+        .unwrap()
+        .set_value("");
+
+    document.get_element_by_id("formDescription")
+        .and_then(|t| t.dyn_into::<HtmlTextAreaElement>().ok())
+        .unwrap()
+        .set_value("");
+
+    REPORT_ISSUE_DLG.with(|v|{
+        if (*v).borrow().is_none() {
+            *v.borrow_mut() = Some(bootstrap::get_modal_by_id("xmitIssueDlg").unwrap());
+        };
+
+        if do_show {
+            v.borrow().as_ref().unwrap().show();
+        } else {
+            v.borrow().as_ref().unwrap().hide();
+            *v.borrow_mut() = None;
+        }
+    });
+}
+
+#[function_component(ReportIssueDlg)]
+pub fn report_issue() -> Html
+{
+    let spinner_state = use_state_eq(||"d-none");
+    let on_submit_issue = {
+        let spinner_state = spinner_state.clone();
+
+        Callback::from(move |evt: MouseEvent|{
+            evt.prevent_default();
+            evt.stop_propagation();
+            let document = gloo_utils::document();
+            let btn_elm = evt.target()
+                .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+                .unwrap();
+            let summary_elm = document.get_element_by_id("formSummary")
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                .unwrap();
+            let desc_elm = document.get_element_by_id("formDescription")
+                .and_then(|t| t.dyn_into::<HtmlTextAreaElement>().ok())
+                .unwrap();
+
+            spinner_state.set("d-inline-block");
+            btn_elm.set_disabled(true);
+
+            let desc = desc_elm.value();
+            let summary = summary_elm.value();
+            if 0==desc.len() || 0==summary.len() {
+                if 0==desc.len() {
+                    let _ = desc_elm.class_list().add_1("is-invalid");
+                } else {
+                    let _ = desc_elm.class_list().remove_1("is-invalid");
+                }
+                if 0==summary.len() {
+                    let _ = summary_elm.class_list().add_1("is-invalid");
+                } else {
+                    let _ = summary_elm.class_list().remove_1("is-invalid");
+                }
+                spinner_state.set("d-none");
+                return;
+            }
+
+            let reporting_user = get_active_user().get_id();
+            let spinner_state = spinner_state.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                    let rslt = report_new_issue(&reporting_user, &summary, &desc).await;
+                spinner_state.set("d-none");
+                btn_elm.set_disabled(false);
+                if let Err(err) = rslt {
+                    gloo_dialogs::alert(&format!("Failed to submit report: {:#?}", err));
+                } else {
+                    show_report_issue_dlg(false);
+                }
+            });
+        })
+    };
+
+    html! {
+        <div class="modal fade" id="xmitIssueDlg"
+             tabIndex="-1" role="dialog" aria-labelledby="xmitIssueDlgTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="xmitIssueDlgLongTitle">
+                            {"Report a issue with Fundraiser App"}
+                        </h5>
+                    </div>
+                    <div class="modal-body">
+                        <form class="needs-validation" id="formXmitIssue" novalidate=true>
+                            <div class="row mb-2 g-2">
+                                <div class="form-floating">
+                                    <input class="form-control" type="text" autocomplete="fr-new-issue" id="formSummary"
+                                           placeholder="Summary" required=true maxlength="255"/>
+                                    <label for="formSummary">
+                                        {"Summary (255 Max Chars)"}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row mb-2 g-2">
+                                <div class="form-floating">
+                                    <textarea class="form-control" rows="10" required=true id="formDescription"/>
+                                    <label for="formDescription">{"Description of problem"}</label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{"Cancel"}</button>
+                        <button type="button" class="btn btn-primary" onclick={on_submit_issue}>
+                            <span class={format!("spinner-border spinner-border-sm me-1 {}",*spinner_state)} role="status"
+                                  aria-hidden="true" id="formXmitIssueSpinner" />
+                                  {"Submit"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 
 #[derive(Properties, PartialEq)]
 pub struct AppFooterProps {
@@ -167,6 +301,7 @@ pub struct AppNavProps {
     pub userid: String,
     pub username: String,
     pub onlogoff: Callback<MouseEvent>,
+    pub onreportissue: Callback<MouseEvent>,
 }
 
 #[function_component(AppNav)]
@@ -219,9 +354,9 @@ pub fn app_nav(props: &AppNavProps) -> Html
                         {userlabel}
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        // <a class="dropdown-item" href="#" data-bs-toggle="modal">
-                        //     {"Report Issue"}
-                        // </a>
+                        <a class="dropdown-item" onclick={props.onreportissue.clone()} href="#" data-bs-toggle="modal">
+                            {"Report Issue"}
+                        </a>
                         <a class="dropdown-item" onclick={props.onlogoff.clone()} href="#" data-bs-toggle="modal">
                             {"Logout"}
                         </a>
@@ -231,6 +366,7 @@ pub fn app_nav(props: &AppNavProps) -> Html
         </nav>
     }
 }
+
 
 /////////////////////////////////////////////////
 // Route Logic
@@ -278,6 +414,7 @@ pub enum AppMsg {
     Authenticated,
     NoOp,
     Logout,
+    ReportIssue,
 }
 type Msg = AppMsg;
 
@@ -335,12 +472,19 @@ impl Component for Model {
                 });
                 false
             },
+            Msg::ReportIssue=>{
+                log::info!("Bringing up Report Issue Dlg");
+                show_report_issue_dlg(true);
+                // I could trigger this to bring up dlg by returning true but shutting it down would be harder
+                false
+            },
             Msg::NoOp=>false,
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let on_logoff = ctx.link().callback(|_| Msg::Logout);
+        let on_reportissue = ctx.link().callback(|_| Msg::ReportIssue);
 
         if self.is_loading {
             html! {
@@ -357,9 +501,10 @@ impl Component for Model {
 
             html! {
                 <BrowserRouter>
-                    <AppNav userid={user_id.clone()} username={user_name} onlogoff={on_logoff} />
+                    <AppNav userid={user_id.clone()} username={user_name} onlogoff={on_logoff} onreportissue={on_reportissue}/>
                     <main class="flex-shrink-0">
                         <Switch<AppRoutes> render={Switch::render(switch)} />
+                        <ReportIssueDlg/>
                     </main>
                     <AppFooter>
                         <AddNewOrderButton userid={user_id}/>
@@ -369,9 +514,6 @@ impl Component for Model {
         }
     }
 }
-
-// impl Model {
-// }
 
 
 fn main() {

@@ -248,3 +248,25 @@ pub(crate) fn is_fundraiser_locked() -> bool {
 pub(crate) fn get_user_list() -> Vec<String> {
     Vec::new()
 }
+
+static CREATE_ISSUE_GQL:&'static str =
+r#"
+mutation {
+  createIssue(input: {
+    id: "***USERID***",
+    title: "***TITLE***",
+    body: "***BODY***"
+  })
+}"#;
+
+pub(crate) async fn report_new_issue(reporting_id: &str, title: &str, body: &str)
+    -> std::result::Result<() ,Box<dyn std::error::Error>>
+{
+    let query = CREATE_ISSUE_GQL
+        .replace("***USERID***", &reporting_id)
+        .replace("***TITLE***", &title)
+        .replace("***BODY***", &body);
+
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+}
