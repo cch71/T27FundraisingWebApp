@@ -46,6 +46,14 @@ lazy_static! {
     static ref PRODUCTS: RwLock<Option<Arc<BTreeMap<String, ProductInfo>>>> = RwLock::new(None);
     static ref DELIVERIES: RwLock<Option<Arc<BTreeMap<u32, DeliveryInfo>>>> = RwLock::new(None);
     static ref FRCONFIG: RwLock<Option<Arc<FrConfig>>> = RwLock::new(None);
+    static ref USER_MAP: RwLock<Option<Arc<BTreeMap<String,String>>>> = {
+        let mut users = BTreeMap::new();
+        users.insert("fruser1".to_string(), "User One".to_string());
+        users.insert("fruser2".to_string(), "User Two".to_string());
+        users.insert("fruser3".to_string(), "User Three".to_string());
+        users.insert("fruser4".to_string(), "User Four".to_string());
+        RwLock::new(Some(Arc::new(users)))
+    };//RwLock::new(None);
 }
 
 pub(crate) struct FrConfig {
@@ -245,8 +253,8 @@ pub(crate) fn is_fundraiser_locked() -> bool {
     get_fr_config().is_locked
 }
 
-pub(crate) fn get_user_list() -> Vec<String> {
-    Vec::new()
+pub(crate) fn get_users() -> Arc<BTreeMap<String, String>> {
+    USER_MAP.read().unwrap().as_ref().unwrap().clone()
 }
 
 static CREATE_ISSUE_GQL:&'static str =

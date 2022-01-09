@@ -6,7 +6,9 @@ use std::str::FromStr;
 use crate::data_model::*;
 use crate::bootstrap;
 use crate::components::delete_report_order_dlg::{DeleteOrderDlg};
+use crate::components::report_spreaders_dlg::{ChooseSpreadersDlg};
 use crate::components::report_quick::{QuickReportView};
+use crate::components::report_spreading_jobs::{SpreadingJobsReportView};
 use crate::components::report_full::{FullReportView};
 
 
@@ -223,6 +225,7 @@ pub fn reports_page() -> Html {
                             match (*current_settings).current_view {
                                 ReportViews::Quick=>html!{<QuickReportView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 ReportViews::Full=>html!{<FullReportView seller={(*current_settings).seller_id_filter.clone()}/>},
+                                ReportViews::SpreadingJobs=>html!{<SpreadingJobsReportView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 _=>html!{<h6>{"Not Yet Implemented"}</h6>},
                             }
                         }
@@ -240,7 +243,7 @@ pub fn reports_page() -> Html {
             <DeleteOrderDlg />
             <ReportsSettingsDlg id="reportViewSettingsDlg"
                 onsave={on_save_settings} currentview={(*current_settings).current_view.to_string()}/>
-            // {spreadDlg}
+            <ChooseSpreadersDlg />
             // {confirmDlg}
         </div>
     }

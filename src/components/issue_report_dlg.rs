@@ -83,7 +83,7 @@ pub(crate) fn report_issue() -> Html
             let reporting_user = get_active_user().get_id();
             let spinner_state = spinner_state.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                    let rslt = report_new_issue(&reporting_user, &summary, &desc).await;
+                let rslt = report_new_issue(&reporting_user, &summary, &desc).await;
                 spinner_state.set("d-none");
                 btn_elm.set_disabled(false);
                 if let Err(err) = rslt {

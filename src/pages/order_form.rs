@@ -495,7 +495,7 @@ pub fn order_form_fields() -> Html
                      <div class="form-floating col-md-4">
                          <select class="form-control" id="formOrderOwner" >
                          {
-                             get_user_list().iter().map(|user_id| {
+                             get_users().keys().into_iter().map(|user_id| {
                                  let is_selected = user_id == &order.order_owner_id;
                                  if !did_find_selected_order_owner && is_selected { did_find_selected_order_owner=true; }
                                  html!{<option value={user_id.to_string()} selected={is_selected}>{user_id.to_string()}</option>}
