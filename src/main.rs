@@ -12,12 +12,18 @@ mod gql_utils;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{window, MouseEvent, HtmlSelectElement, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{HtmlSelectElement, HtmlInputElement, HtmlTextAreaElement};
 use rust_decimal::prelude::*;
 
 use auth_utils::{login, logout, is_authenticated};
 use data_model::*;
 
+mod components;
+use components::{
+    issue_report_dlg::{ReportIssueDlg, show_report_issue_dlg},
+    navbar::{AppNav},
+    add_new_order_button::{AddNewOrderButton},
+};
 
 mod pages;
 use pages::{
@@ -61,7 +67,7 @@ pub(crate) fn get_html_textarea_value(id: &str, document: &web_sys::Document) ->
 pub(crate) fn save_to_active_order() {
     if !is_active_order() { return; }
 
-    let document = web_sys::window().unwrap().document().unwrap();
+    let document = gloo_utils::document();
     let mut order = get_active_order().unwrap();
 
     if let Some(order_owner_element) = document.get_element_by_id("formOrderOwner")
@@ -105,40 +111,6 @@ pub(crate) fn save_to_active_order() {
 /////////////////////////////////////////////////
 
 #[derive(Properties, PartialEq)]
-pub struct AddNewOrderButtonProps {
-    pub userid: String,
-}
-
-#[function_component(AddNewOrderButton)]
-pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html
-{
-    let history = use_history().unwrap();
-    let on_add_new_order = {
-        let history = history.clone();
-        let userid = props.userid.clone();
-        Callback::from(move |_| {
-            log::info!("Starting process to add new order");
-            create_new_active_order(&userid);
-            history.push(AppRoutes::OrderForm);
-        })
-    };
-
-    html! {
-        <div class="add-order-widget float-end me-3 my-1">
-            <label>{"Add New Order"}</label>
-            <button type="button"
-                    class="btn btn-outline-primary add-order-btn"
-                    onclick={on_add_new_order}>
-                <i class="bi bi-plus-square-fill" fill="currentColor"></i>
-            </button>
-        </div>
-    }
-}
-
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-
-#[derive(Properties, PartialEq)]
 pub struct AppFooterProps {
     #[prop_or_default]
     pub children: Children,
@@ -147,7 +119,7 @@ pub struct AppFooterProps {
 #[function_component(AppFooter)]
 pub fn app_footer(props: &AppFooterProps) -> Html
 {
-    let cur_win_loc = window().unwrap().location().pathname().unwrap();
+    let cur_win_loc = gloo_utils::window().location().pathname().unwrap();
     // log::info!("!!!!! WinLoc: {}", cur_win_loc);
 
     html! {
@@ -162,75 +134,6 @@ pub fn app_footer(props: &AppFooterProps) -> Html
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[derive(Properties, PartialEq)]
-pub struct AppNavProps {
-    pub userid: String,
-    pub username: String,
-    pub onlogoff: Callback<MouseEvent>,
-}
-
-#[function_component(AppNav)]
-pub fn app_nav(props: &AppNavProps) -> Html
-{
-    let _ = use_history().unwrap(); // This forces re-render on path changes
-    //log::info!("~~~~~~~ Re Rendered ~~~~~~~~~~~~~~");
-    let userlabel = if props.username != props.userid {
-        format!("{} ({})", props.username, props.userid)
-    } else {
-        props.userid.clone()
-    };
-
-    html! {
-        <nav class="navbar sticky-top navbar-expand-sm navbar-light bg-light" id="primaryNavBar">
-            <a class="navbar-brand" href="#">
-                <span>
-                    <img class="navbar-logo ms-2" src="t27patch.png" alt="Logo" />
-                </span>
-            </a>
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::Home} >
-                            {"Home"}
-                        </Link<AppRoutes>>
-                    </li>
-                    if is_active_order() {
-                        <li class="nav-item">
-                            <Link<AppRoutes> classes="nav-link" to={AppRoutes::OrderForm} >
-                                {"Order"}
-                            </Link<AppRoutes>>
-                        </li>
-                    }
-                    <li class="nav-item">
-                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::Reports} >
-                            {"Reports"}
-                        </Link<AppRoutes>>
-                    </li>
-                </ul>
-                <span class="navbar-nav nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown"
-                       data-bs-toggle="dropdown" aria-expanded="false" role="button">
-                        {userlabel}
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        // <a class="dropdown-item" href="#" data-bs-toggle="modal">
-                        //     {"Report Issue"}
-                        // </a>
-                        <a class="dropdown-item" onclick={props.onlogoff.clone()} href="#" data-bs-toggle="modal">
-                            {"Logout"}
-                        </a>
-                    </div>
-                </span>
-            </div>
-        </nav>
-    }
-}
 
 /////////////////////////////////////////////////
 // Route Logic
@@ -278,6 +181,7 @@ pub enum AppMsg {
     Authenticated,
     NoOp,
     Logout,
+    ReportIssue,
 }
 type Msg = AppMsg;
 
@@ -335,12 +239,19 @@ impl Component for Model {
                 });
                 false
             },
+            Msg::ReportIssue=>{
+                log::info!("Bringing up Report Issue Dlg");
+                show_report_issue_dlg(true);
+                // I could trigger this to bring up dlg by returning true but shutting it down would be harder
+                false
+            },
             Msg::NoOp=>false,
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let on_logoff = ctx.link().callback(|_| Msg::Logout);
+        let on_reportissue = ctx.link().callback(|_| Msg::ReportIssue);
 
         if self.is_loading {
             html! {
@@ -357,9 +268,10 @@ impl Component for Model {
 
             html! {
                 <BrowserRouter>
-                    <AppNav userid={user_id.clone()} username={user_name} onlogoff={on_logoff} />
+                    <AppNav userid={user_id.clone()} username={user_name} onlogoff={on_logoff} onreportissue={on_reportissue}/>
                     <main class="flex-shrink-0">
                         <Switch<AppRoutes> render={Switch::render(switch)} />
+                        <ReportIssueDlg/>
                     </main>
                     <AppFooter>
                         <AddNewOrderButton userid={user_id}/>
@@ -369,9 +281,6 @@ impl Component for Model {
         }
     }
 }
-
-// impl Model {
-// }
 
 
 fn main() {

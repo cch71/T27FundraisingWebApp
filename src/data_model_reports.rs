@@ -6,6 +6,8 @@ use crate::gql_utils::{make_gql_request, GraphQlReq};
 use crate::auth_utils::{get_active_user};
 use crate::data_model::{get_fr_config};
 
+pub(crate) static ALL_USERS_TAG: &'static str = "doShowAllUsers";
+
 #[derive(PartialEq, Debug)]
 pub(crate) enum ReportViews {
     // Reports available to sellers
@@ -61,7 +63,7 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
     ];
 
     if get_fr_config().kind == "mulch" {
-        //     reports.push(ReportViews::SpreadingJobs);
+        reports.push(ReportViews::SpreadingJobs);
 
         if get_active_user().is_admin() {
             //         reports.push(ReportViews::UnfinishedSpreadingJobs);
@@ -163,6 +165,42 @@ pub(crate) async fn get_full_report_data(order_owner_id: Option<&String>)
         FULL_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", &format!("ownerId: \"{}\"", order_owner_id))
     } else {
         FULL_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", "")
+    };
+
+    make_report_query(query).await
+}
+
+static SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
+{
+  mulchOrders(***ORDER_OWNER_PARAM***) {
+    orderId
+    ownerId
+    customer {
+        name
+        phone
+        addr1
+        addr2
+        neighborhood
+    }
+    specialInstructions
+    purchases {
+        productId
+        numSold
+        amountCharged
+    }
+    deliveryId
+    spreaders
+  }
+}
+";
+
+pub(crate) async fn get_spreading_jobs_report_data(order_owner_id: Option<&String>)
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    let query = if let Some(order_owner_id) = order_owner_id {
+        SPREADING_JOBS_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", &format!("ownerId: \"{}\"", order_owner_id))
+    } else {
+        SPREADING_JOBS_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", "")
     };
 
     make_report_query(query).await
@@ -297,3 +335,30 @@ pub(crate) async fn get_summary_report_data(seller_id: &str, num_top_sellers: u3
     })?;
     Ok(rslts)
 }
+
+use wasm_bindgen::prelude::*;
+#[wasm_bindgen]
+pub fn sleep(ms: i32) -> js_sys::Promise {
+    js_sys::Promise::new(&mut |resolve, _| {
+        web_sys::window()
+            .unwrap()
+            .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms)
+            .unwrap();
+    })
+}
+
+pub(crate) async fn set_spreaders(order_id: &str, spreaders: Vec<String>)
+    -> std::result::Result<(), Box<dyn std::error::Error>>
+{
+    log::info!("Setting Spreaders for orderid: {}:{:#?}", order_id, &spreaders);
+    let _ = wasm_bindgen_futures::JsFuture::from(sleep(5000)).await;
+    Ok(())
+}
+
+
+pub(crate) enum ReportViewState {
+    IsLoading,
+    ReportHtmlGenerated(Vec<serde_json::Value>),
+}
+
+
