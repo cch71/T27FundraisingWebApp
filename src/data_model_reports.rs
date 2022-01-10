@@ -121,8 +121,9 @@ pub(crate) async fn get_quick_report_data(order_owner_id: Option<&String>)
     let query = if let Some(order_owner_id) = order_owner_id {
         QUICK_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", &format!("ownerId: \"{}\"", order_owner_id))
     } else {
-        QUICK_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", "")
+        QUICK_RPT_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
     };
+    log::info!("Running Query: {}", &query);
     make_report_query(query).await
 }
 
@@ -164,7 +165,7 @@ pub(crate) async fn get_full_report_data(order_owner_id: Option<&String>)
     let query = if let Some(order_owner_id) = order_owner_id {
         FULL_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", &format!("ownerId: \"{}\"", order_owner_id))
     } else {
-        FULL_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", "")
+        FULL_RPT_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
     };
 
     make_report_query(query).await
@@ -200,7 +201,7 @@ pub(crate) async fn get_spreading_jobs_report_data(order_owner_id: Option<&Strin
     let query = if let Some(order_owner_id) = order_owner_id {
         SPREADING_JOBS_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", &format!("ownerId: \"{}\"", order_owner_id))
     } else {
-        SPREADING_JOBS_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", "")
+        SPREADING_JOBS_RPT_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
     };
 
     make_report_query(query).await

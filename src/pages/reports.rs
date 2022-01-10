@@ -74,12 +74,12 @@ pub fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
                                         <div class="form-floating">
                                             <select class="form-select" id={format!("{}UserSelection", &tag)}>
                                             {
-                                                get_active_sellers().iter().map(|v|{
-                                                    let is_selected = &active_user_id == v;
+                                                get_users().iter().map(|(uid,uname)|{
+                                                    let is_selected = &active_user_id == uid;
                                                     if !did_find_selected_seller && is_selected { did_find_selected_seller=true; }
                                                     html! {
-                                                        <option value={v.clone()} selected={is_selected}>
-                                                           {v.clone()}
+                                                        <option value={uid.clone()} selected={is_selected}>
+                                                           {uname.clone()}
                                                         </option>
                                                     }
                                                 }).collect::<Html>()

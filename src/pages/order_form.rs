@@ -323,7 +323,7 @@ pub fn order_form_fields() -> Html
             history.push(AppRoutes::Home);
     }
 
-    let is_admin = false;
+    let is_admin = get_active_user().is_admin();
     let order = use_state_eq(||get_active_order().unwrap());
     let is_order_readonly = order.is_readonly();
     // log::info!("Loading Order: {:#?}", &*order);

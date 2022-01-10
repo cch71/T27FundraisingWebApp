@@ -176,11 +176,13 @@ fn process_config_data(config: FrConfigApi) {
         });
     }
     *PRODUCTS.write().unwrap() = Some(Arc::new(products));
+
     {
         let mut new_map: BTreeMap<String, String> =
             config.users.into_iter().map(|v| (v.id.clone(), v.name.clone())).collect::<_>();
         if let Ok(mut arc_umap) = USER_MAP.write() {
             Arc::get_mut(&mut *arc_umap).unwrap().append(&mut new_map);
+            Arc::get_mut(&mut *arc_umap).unwrap().insert("fradmin".to_string(), "Super User".to_string());
         }
     }
 
@@ -294,10 +296,10 @@ pub(crate) fn is_purchase_valid(product_id: &str, num_sold: u32) -> bool {
     }
 }
 
-pub(crate) fn get_active_sellers() -> Vec<String> {
-    //TOOD: Need to add GraphQL to get list of active sellers
-    vec![get_active_user().get_id()]
-}
+// pub(crate) fn get_active_sellers() -> Vec<String> {
+//    //TOOD: Need to add GraphQL to get list of active sellers
+//    vec![get_active_user().get_id()]
+//}
 
 
 pub(crate) fn is_order_readonly(delivery_id: Option<u32>) -> bool {
