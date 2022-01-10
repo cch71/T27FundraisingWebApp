@@ -4,11 +4,21 @@ use std::sync::{RwLock, Arc};
 use chrono::prelude::*;
 use std::collections::{BTreeMap};
 use rust_decimal::prelude::*;
+use gloo_storage::{LocalStorage, Storage};
 
 pub(crate) use crate::data_model_reports::*;
 pub(crate) use crate::data_model_orders::*;
 pub(crate) use crate::auth_utils::{get_active_user, get_active_user_async};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
+
+static ALWAYS_CONFIG_GQL:&'static str =
+r#"
+{
+  config {
+    isLocked
+    lastModifiedTime
+  }
+}"#;
 
 static CONFIG_GQL:&'static str =
 r#"
@@ -37,6 +47,10 @@ r#"
         unitPrice
       }
     }
+    users {
+      id
+      name
+    }
   }
 }"#;
 
@@ -46,14 +60,7 @@ lazy_static! {
     static ref PRODUCTS: RwLock<Option<Arc<BTreeMap<String, ProductInfo>>>> = RwLock::new(None);
     static ref DELIVERIES: RwLock<Option<Arc<BTreeMap<u32, DeliveryInfo>>>> = RwLock::new(None);
     static ref FRCONFIG: RwLock<Option<Arc<FrConfig>>> = RwLock::new(None);
-    static ref USER_MAP: RwLock<Option<Arc<BTreeMap<String,String>>>> = {
-        let mut users = BTreeMap::new();
-        users.insert("fruser1".to_string(), "User One".to_string());
-        users.insert("fruser2".to_string(), "User Two".to_string());
-        users.insert("fruser3".to_string(), "User Three".to_string());
-        users.insert("fruser4".to_string(), "User Four".to_string());
-        RwLock::new(Some(Arc::new(users)))
-    };//RwLock::new(None);
+    static ref USER_MAP: RwLock<Arc<BTreeMap<String,String>>> = RwLock::new(Arc::new(BTreeMap::new()));
 }
 
 pub(crate) struct FrConfig {
@@ -73,14 +80,14 @@ impl DeliveryInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct Neighborhood {
     pub(crate) name: String,
     #[serde(alias = "distributionPoint")]
     pub(crate) distribution_point: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct ProductPriceBreak {
     pub(crate) gt: u32,
     #[serde(alias = "unitPrice")]
@@ -94,59 +101,52 @@ pub(crate) struct ProductInfo {
     pub(crate) price_breaks: Vec<ProductPriceBreak>,
 }
 
-pub(crate) async fn load_config() {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct ConfigApi {
+    config: FrConfigApi,
+}
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct FrConfigApi {
+    kind: String,
+    description: String,
+    #[serde(alias = "lastModifiedTime")]
+    last_modified_time: String,
+    #[serde(alias = "isLocked")]
+    is_locked: bool,
+    neighborhoods: Vec<Neighborhood>,
+    products: Vec<ProductsApi>,
+    #[serde(alias = "mulchDeliveryConfigs")]
+    mulch_delivery_configs: Vec<MulchDeliveryConfigApi>,
+    users: Vec<UsersConfigApi>,
+}
 
-    #[derive(Serialize, Deserialize, Debug)]
-    struct ConfigApi {
-        config: FrConfigApi,
-    }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct UsersConfigApi {
+    id: String,
+    name: String,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct ProductsApi {
+    id: String,
+    label: String,
+    #[serde(alias = "minUnits")]
+    min_units: u32,
+    #[serde(alias = "unitPrice")]
+    unit_price: String,
+    #[serde(alias = "priceBreaks")]
+    price_breaks: Vec<ProductPriceBreak>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct MulchDeliveryConfigApi {
+    id: u32,
+    #[serde(alias = "date")]
+    delivery_date: String,
+    #[serde(alias = "newOrderCutoffDate")]
+    new_order_cutoff_date: String,
+}
 
-    #[derive(Serialize, Deserialize, Debug)]
-    struct FrConfigApi {
-        kind: String,
-        description: String,
-        #[serde(alias = "lastModifiedTime")]
-        last_modified_time: String,
-        #[serde(alias = "isLocked")]
-        is_locked: bool,
-        neighborhoods: Vec<Neighborhood>,
-        products: Vec<ProductsApi>,
-        #[serde(alias = "mulchDeliveryConfigs")]
-        mulch_delivery_configs: Vec<MulchDeliveryConfigApi>,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    struct ProductsApi {
-        id: String,
-        label: String,
-        #[serde(alias = "minUnits")]
-        min_units: u32,
-        #[serde(alias = "unitPrice")]
-        unit_price: String,
-        #[serde(alias = "priceBreaks")]
-        price_breaks: Vec<ProductPriceBreak>,
-    }
-    #[derive(Serialize, Deserialize, Debug)]
-    struct MulchDeliveryConfigApi {
-        id: u32,
-        #[serde(alias = "date")]
-        delivery_date: String,
-        #[serde(alias = "newOrderCutoffDate")]
-        new_order_cutoff_date: String,
-    }
-
-    log::info!("Getting Fundraising Config");
-    let req = GraphQlReq::new(CONFIG_GQL.to_string());
-    let rslt = make_gql_request::<ConfigApi>(&req).await;
-    if let Err(err) = rslt {
-        gloo_dialogs::alert(&format!("Failed to retrieve config: {:#?}", err));
-        return;
-    }
-
-    let config = rslt.unwrap().config;
-    //log::info!("```` Config: \n {:#?}", config);
-
+fn process_config_data(config: FrConfigApi) {
     *FRCONFIG.write().unwrap() = Some(Arc::new(FrConfig {
         kind: config.kind,
         description: config.description,
@@ -176,7 +176,63 @@ pub(crate) async fn load_config() {
         });
     }
     *PRODUCTS.write().unwrap() = Some(Arc::new(products));
+    {
+        let mut new_map: BTreeMap<String, String> =
+            config.users.into_iter().map(|v| (v.id.clone(), v.name.clone())).collect::<_>();
+        if let Ok(mut arc_umap) = USER_MAP.write() {
+            Arc::get_mut(&mut *arc_umap).unwrap().append(&mut new_map);
+        }
+    }
+
     log::info!("Fundraising Config retrieved");
+}
+
+pub(crate) async fn load_config() {
+    log::info!("Getting Fundraising Config: Loading From LocalStorage");
+    let rslt = LocalStorage::get("FrConfig");
+    if rslt.is_ok() {
+        let stored_config: ConfigApi = rslt.unwrap();
+
+        let req = GraphQlReq::new(ALWAYS_CONFIG_GQL.to_string());
+        if let Ok(val) = make_gql_request::<serde_json::Value>(&req).await {
+            if val["config"]["lastModifiedTime"].as_str().unwrap() == stored_config.config.last_modified_time {
+                log::info!("Using stored config data");
+                process_config_data(stored_config.config);
+                return;
+            } else {
+                log::info!("Config lastModifiedTime doesn't match forcing cache refresh");
+            }
+        } else {
+            log::error!("Error reading lastModifiedTime config from network");
+        }
+    } else {
+        log::info!("No stored config loading from network...");
+    }
+
+    let req = GraphQlReq::new(CONFIG_GQL.to_string());
+    let rslt = make_gql_request::<ConfigApi>(&req).await;
+    if let Err(err) = rslt {
+        gloo_dialogs::alert(&format!("Failed to retrieve config: {:#?}", err));
+        return;
+    }
+
+    let config = {
+        let frconfig = rslt.unwrap();
+        if let Err(err) = LocalStorage::set("FrConfig", frconfig.clone()) {
+            log::error!("Failed to cache config to storage: {:#?}", err);
+        } else {
+            log::info!("Config cached to storage");
+        }
+        frconfig.config
+    };
+
+    process_config_data(config);
+    //log::info!("```` Config: \n {:#?}", config);
+
+}
+
+pub(crate) fn get_users() -> Arc<BTreeMap<String, String>> {
+    USER_MAP.read().unwrap().clone()
 }
 
 pub(crate) fn get_deliveries() -> Arc<BTreeMap<u32,DeliveryInfo>> {
@@ -251,10 +307,6 @@ pub(crate) fn is_order_readonly(delivery_id: Option<u32>) -> bool {
 
 pub(crate) fn is_fundraiser_locked() -> bool {
     get_fr_config().is_locked
-}
-
-pub(crate) fn get_users() -> Arc<BTreeMap<String, String>> {
-    USER_MAP.read().unwrap().as_ref().unwrap().clone()
 }
 
 static CREATE_ISSUE_GQL:&'static str =

@@ -118,7 +118,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html
 
     let on_submit = {
         let dlg_state = dlg_state.clone();
-        Callback::from(move |evt: MouseEvent|{
+        Callback::from(move |_evt: MouseEvent|{
             // evt.prevent_default();
             // evt.stop_propagation();
 
@@ -134,7 +134,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html
                             gloo_dialogs::alert(&format!("Failed to submit spreaders: {:#?}", err));
                         } else {
                             let spreaders = spreaders.join(",");
-                            meta.dataset_elm.dataset().set("spreaders", &spreaders);
+                            let _ = meta.dataset_elm.dataset().set("spreaders", &spreaders);
                             if let Err(err) = set_spreaders_with_tr(&meta.datatable, &meta.tr_node, &spreaders) {
                                 gloo_dialogs::alert(&format!("Order was set in the cloud db but not the local table: {:#?}", err));
                             }
