@@ -25,6 +25,15 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
     let history = use_history().unwrap();
     let is_fr_locked = is_fundraiser_locked();
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
+    let current_view_seller = use_mut_ref(|| props.seller.clone());
+
+    if &*current_view_seller.borrow() != &props.seller {
+        log::info!("Current Seller doesn't match original seller: {}:{}", *current_view_seller.borrow(), &props.seller);
+        *current_view_seller.borrow_mut() = props.seller.clone();
+        report_state.set(ReportViewState::IsLoading);
+    } else {
+        log::info!("Current Seller: {}", &props.seller);
+    }
 
     let on_delete_order = {
         let datatable = datatable.clone();
@@ -53,7 +62,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
             match &*report_state {
                 ReportViewState::IsLoading=>{
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!("Downloading Full Report View Data");
+                        log::info!("Downloading Full Report View Data for {}", &seller);
                         let seller = if &seller == ALL_USERS_TAG {
                             None
                         } else {
