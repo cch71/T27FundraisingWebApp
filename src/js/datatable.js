@@ -166,4 +166,15 @@ const removeRowWithTr = (dt, tr) => {
     row.remove().draw();
 };
 
-export {getDataTable, removeRowWithTr}
+/////////////////////////////////////////////////////////////////////
+//
+const setSpreadersWithTr = (dt, tr, spreaders) => {
+    const row = dt.row(tr);
+    //const rowData = row.data();
+    const spreadersIdx = dt.column('Spreaders:name').index();
+    //rowData[spreadersIdx] = spreaders;
+    dt.cell(row.index(), spreadersIdx).data(spreaders).draw();
+    //row.data(rowData).draw();
+};
+
+export {getDataTable, removeRowWithTr, setSpreadersWithTr}

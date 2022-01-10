@@ -336,26 +336,6 @@ pub(crate) async fn get_summary_report_data(seller_id: &str, num_top_sellers: u3
     Ok(rslts)
 }
 
-use wasm_bindgen::prelude::*;
-#[wasm_bindgen]
-pub fn sleep(ms: i32) -> js_sys::Promise {
-    js_sys::Promise::new(&mut |resolve, _| {
-        web_sys::window()
-            .unwrap()
-            .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms)
-            .unwrap();
-    })
-}
-
-pub(crate) async fn set_spreaders(order_id: &str, spreaders: Vec<String>)
-    -> std::result::Result<(), Box<dyn std::error::Error>>
-{
-    log::info!("Setting Spreaders for orderid: {}:{:#?}", order_id, &spreaders);
-    let _ = wasm_bindgen_futures::JsFuture::from(sleep(5000)).await;
-    Ok(())
-}
-
-
 pub(crate) enum ReportViewState {
     IsLoading,
     ReportHtmlGenerated(Vec<serde_json::Value>),

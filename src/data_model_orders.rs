@@ -463,3 +463,42 @@ pub(crate) async fn load_active_order_from_db(order_id: &str)
     *ACTIVE_ORDER.write().unwrap() = Some(new_active_order_state);
     Ok(())
 }
+
+// use wasm_bindgen::prelude::*;
+// #[wasm_bindgen]
+// pub fn sleep(ms: i32) -> js_sys::Promise {
+//     js_sys::Promise::new(&mut |resolve, _| {
+//         web_sys::window()
+//             .unwrap()
+//             .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms)
+//             .unwrap();
+//     })
+// }
+
+static SET_SPREADERS_GQL: &'static str = r"
+mutation {
+  setSpreaders(
+    ***ORDER_ID_PARAM***,
+    spreaders: [***SPREADERS_PARAM***]
+  )
+}
+";
+
+
+pub(crate) async fn set_spreaders(order_id: &str, spreaders: &Vec<String>)
+    -> std::result::Result<(), Box<dyn std::error::Error>>
+{
+    //log::info!("Setting Spreaders for orderid: {}:{:#?}", order_id, &spreaders);
+    let spreaders = spreaders.into_iter()
+        .map(|v|format!("\"{}\"",v)).collect::<Vec<String>>()
+        .join(",");
+    let query = SET_SPREADERS_GQL
+        .replace("***ORDER_ID_PARAM***", &format!("orderId: \"{}\"", order_id))
+        .replace("***SPREADERS_PARAM***", &spreaders);
+
+    let req = GraphQlReq::new(query);
+    log::info!("Setting Spreaders GraphQL: {}", &req.query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+}
+
+

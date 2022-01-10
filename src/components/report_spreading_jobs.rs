@@ -38,8 +38,9 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
     };
 
     let on_edit_spreading = {
+        let datatable = datatable.clone();
         Callback::from(move |evt: MouseEvent| {
-            on_edit_spreading_from_rpt(evt);
+            on_edit_spreading_from_rpt(evt, datatable.clone());
         })
     };
 
@@ -123,6 +124,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                     v["customer"]["addr1"].as_str().unwrap(),
                                     v["customer"]["addr2"].as_str().unwrap_or("")).trim().to_string();
                                 let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
+                                let spreaders: Vec<String> = serde_json::from_value(v["spreaders"].clone()).unwrap_or(Vec::new());
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>
@@ -132,7 +134,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                         <td>{v["specialInstructions"].as_str().unwrap_or("")}</td>
                                         <td>{&address}</td>
                                         <td>{v["customer"]["neighborhood"].as_str().unwrap_or("")}</td>
-                                        <td>{v["spreaders"].as_str().unwrap_or("")}</td>
+                                        <td>{spreaders.join(",")}</td>
                                         <td>{&spreading}</td>
                                         <td>{v["ownerId"].as_str().unwrap()}</td>
                                         <td>

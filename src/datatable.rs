@@ -29,6 +29,9 @@ extern "C" {
 
     #[wasm_bindgen(catch)]
     fn removeRowWithTr(dt: &JsValue, tr: &web_sys::Node) -> Result<(), JsValue>;
+
+    #[wasm_bindgen(catch)]
+    fn setSpreadersWithTr(dt: &JsValue, tr: &web_sys::Node, spreaders: &str) -> Result<(), JsValue>;
 }
 
 pub(crate) fn get_datatable(params: &serde_json::Value) -> Option<DataTable> {
@@ -39,4 +42,10 @@ pub(crate) fn remove_row_with_tr(dt: &JsValue, tr: &web_sys::Node)
     -> Result<(), JsValue>
 {
     removeRowWithTr(dt, tr)
+}
+
+pub(crate) fn set_spreaders_with_tr(dt: &JsValue, tr: &web_sys::Node, spreaders: &str)
+    -> Result<(), JsValue>
+{
+    setSpreadersWithTr(dt, tr, spreaders)
 }

@@ -38,8 +38,9 @@ pub(crate) fn report_quick_view(props: &QuickReportViewProps) -> Html {
     };
 
     let on_edit_spreading = {
+        let datatable = datatable.clone();
         Callback::from(move |evt: MouseEvent| {
-            on_edit_spreading_from_rpt(evt);
+            on_edit_spreading_from_rpt(evt, datatable.clone());
         })
     };
 
@@ -113,12 +114,15 @@ pub(crate) fn report_quick_view(props: &QuickReportViewProps) -> Html {
                                     None => ("Donation".to_string(), "Donation".to_string()),
                                 };
                                 let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
+                                let spreaders: String = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
+                                    .unwrap_or(Vec::new())
+                                    .join(",");
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>
                                         <td>{v["customer"]["name"].as_str().unwrap()}</td>
                                         <td data-deliveryid={delivery_id}>{delivery_date}</td>
-                                        <td>{v["spreaders"].as_str().unwrap_or("")}</td>
+                                        <td>{spreaders.clone()}</td>
                                         <td>{&spreading}</td>
                                         <td>{v["ownerId"].as_str().unwrap()}</td>
                                         <td>
@@ -130,6 +134,7 @@ pub(crate) fn report_quick_view(props: &QuickReportViewProps) -> Html {
                                                 onvieworder={on_view_or_edit_order.clone()}
                                                 oneditorder={on_view_or_edit_order.clone()}
                                                 oneditspreading={on_edit_spreading.clone()}
+                                                spreaders={spreaders}
                                             />
                                         </td>
                                     </tr>

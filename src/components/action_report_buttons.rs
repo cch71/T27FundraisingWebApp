@@ -38,30 +38,6 @@ pub(crate) fn on_view_or_edit_from_rpt( evt: MouseEvent, history: AnyHistory)
 }
 
 /////////////////////////////////////////////////
-///
-pub(crate) fn on_edit_spreading_from_rpt( evt: MouseEvent)
-{
-    evt.prevent_default();
-    evt.stop_propagation();
-    let btn_elm = evt.target()
-        .and_then(|t| t.dyn_into::<Element>().ok())
-        .and_then(|t| {
-            if t.node_name() == "I" {
-                t.parent_element()
-            } else {
-                Some(t)
-            }
-        })
-    .unwrap();
-    let order_id = btn_elm.dyn_into::<HtmlElement>()
-        .ok()
-        .and_then(|t| t.dataset().get("orderid"))
-        .unwrap();
-    log::info!("on_edit_spreading: {}", order_id);
-    show_report_spreader_chooser_dlg(true, Some(order_id));
-}
-
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 #[derive(Properties, PartialEq, Clone, Debug)]
 pub(crate) struct ReportActionButtonsProps {
@@ -72,6 +48,7 @@ pub(crate) struct ReportActionButtonsProps {
     pub(crate) onvieworder: Callback<MouseEvent>,
     pub(crate) oneditorder: Callback<MouseEvent>,
     pub(crate) oneditspreading: Callback<MouseEvent>,
+    pub(crate) spreaders: Option<String>,
 }
 
 #[function_component(ReportActionButtons)]
@@ -80,7 +57,9 @@ pub(crate) fn report_action_buttons(props: &ReportActionButtonsProps) -> Html {
         <>
         if props.showspreading {
             <button type="button" class="btn btn-outline-info me-1 order-spread-btn"
-                onclick={props.oneditspreading.clone()} data-orderid={props.orderid.clone()}
+                onclick={props.oneditspreading.clone()}
+                data-orderid={props.orderid.clone()}
+                data-spreaders={props.spreaders.as_ref().unwrap_or(&"".to_string()).clone()}
                 data-bs-toggle="tooltip" title="Select Spreaders" data-bs-placement="left">
                  <i class="bi bi-layout-wtf" fill="currentColor" />
             </button>

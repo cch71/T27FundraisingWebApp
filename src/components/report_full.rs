@@ -40,8 +40,9 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
     };
 
     let on_edit_spreading = {
+        let datatable = datatable.clone();
         Callback::from(move |evt: MouseEvent| {
-            on_edit_spreading_from_rpt(evt);
+            on_edit_spreading_from_rpt(evt, datatable.clone());
         })
     };
 
@@ -133,6 +134,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                     None => ("Donation".to_string(), "Donation".to_string()),
                                 };
                                 let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
+                                let spreaders: Vec<String> = serde_json::from_value(v["spreaders"].clone()).unwrap_or(Vec::new());
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>
@@ -143,7 +145,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                         <td>{v["customer"]["addr2"].as_str().unwrap_or("")}</td>
                                         <td>{v["customer"]["neighborhood"].as_str().unwrap()}</td>
                                         <td data-deliveryid={delivery_id}>{delivery_date}</td>
-                                        <td>{v["spreaders"].as_str().unwrap_or("")}</td>
+                                        <td>{spreaders.join(",")}</td>
                                         <td>{&spreading}</td>
                                         <td>{&bags}</td>
                                         <td>{v["specialInstructions"].as_str().unwrap_or("")}</td>
