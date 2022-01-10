@@ -55,7 +55,7 @@ const getFullViewReportDataTable = (params) => {
         { title: "Address 2" },
         { title: "Neighborhood" },
         { title: "Delivery Date" },
-        { title: "Spreaders", name: "Spreaders", visible: false},
+        { title: "Spreaders", name: "Spreaders", visible: false },
         {
             title: "Spreading",
             render: (data, _, row, meta) => {

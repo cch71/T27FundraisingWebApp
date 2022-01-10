@@ -63,7 +63,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                     });
                 },
                 ReportViewState::ReportHtmlGenerated(_) => {
-                    log::info!("Setting DataTable");
+                    // log::info!("Setting DataTable");
                     *datatable.borrow_mut() = get_datatable(&serde_json::json!({
                         "reportType": "spreadingJobs",
                         "id": ".data-table-report table",
@@ -124,7 +124,9 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                     v["customer"]["addr1"].as_str().unwrap(),
                                     v["customer"]["addr2"].as_str().unwrap_or("")).trim().to_string();
                                 let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
-                                let spreaders: Vec<String> = serde_json::from_value(v["spreaders"].clone()).unwrap_or(Vec::new());
+                                let spreaders: String = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
+                                    .unwrap_or(Vec::new())
+                                    .join(",");
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>
@@ -134,7 +136,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                         <td>{v["specialInstructions"].as_str().unwrap_or("")}</td>
                                         <td>{&address}</td>
                                         <td>{v["customer"]["neighborhood"].as_str().unwrap_or("")}</td>
-                                        <td>{spreaders.join(",")}</td>
+                                        <td>{spreaders.clone()}</td>
                                         <td>{&spreading}</td>
                                         <td>{v["ownerId"].as_str().unwrap()}</td>
                                         <td>
@@ -146,6 +148,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                                 onvieworder={on_view_or_edit_order.clone()}
                                                 oneditorder={on_view_or_edit_order.clone()}
                                                 oneditspreading={on_edit_spreading.clone()}
+                                                spreaders={spreaders}
                                             />
                                         </td>
                                     </tr>

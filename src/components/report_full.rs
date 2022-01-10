@@ -65,7 +65,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                     });
                 },
                 ReportViewState::ReportHtmlGenerated(_) => {
-                    log::info!("Setting DataTable");
+                    // log::info!("Setting DataTable");
                     *datatable.borrow_mut() = get_datatable(&serde_json::json!({
                         "reportType": "full",
                         "id": ".data-table-report table",
@@ -122,10 +122,10 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                 for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
                                     if purchase["productId"].as_str().unwrap() == "spreading" {
                                         spreading = purchase["numSold"].as_u64().unwrap().to_string();
-                                        break;
+                                        continue;
                                     } else if purchase["productId"].as_str().unwrap() == "bags" {
                                         bags = purchase["numSold"].as_u64().unwrap().to_string();
-                                        break;
+                                        continue;
                                     }
                                 }
                                 let enable_spreading_button = spreading.len()!=0 && !is_fr_locked;
@@ -134,7 +134,9 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                     None => ("Donation".to_string(), "Donation".to_string()),
                                 };
                                 let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
-                                let spreaders: Vec<String> = serde_json::from_value(v["spreaders"].clone()).unwrap_or(Vec::new());
+                                let spreaders: String = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
+                                    .unwrap_or(Vec::new())
+                                    .join(",");
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>
@@ -145,7 +147,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                         <td>{v["customer"]["addr2"].as_str().unwrap_or("")}</td>
                                         <td>{v["customer"]["neighborhood"].as_str().unwrap()}</td>
                                         <td data-deliveryid={delivery_id}>{delivery_date}</td>
-                                        <td>{spreaders.join(",")}</td>
+                                        <td>{spreaders.clone()}</td>
                                         <td>{&spreading}</td>
                                         <td>{&bags}</td>
                                         <td>{v["specialInstructions"].as_str().unwrap_or("")}</td>
@@ -166,6 +168,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                                 onvieworder={on_view_or_edit_order.clone()}
                                                 oneditorder={on_view_or_edit_order.clone()}
                                                 oneditspreading={on_edit_spreading.clone()}
+                                                spreaders={spreaders}
                                             />
                                         </td>
                                     </tr>

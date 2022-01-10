@@ -46,7 +46,7 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         .json()
         .await?;
 
-    log::info!("GQL Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
+    // log::info!("GQL Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
     let resp: DataWrapper<T> = serde_json::from_value(raw_resp).unwrap();
     if let Some(err) = resp.error {
         use std::io::{Error, ErrorKind};
