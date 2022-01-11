@@ -598,7 +598,7 @@ pub fn order_form_fields() -> Html
 
             <div class="mb-2 my-2 g-2 form-control" style="display: flex;" id="totalsFormRow">
                 <div class="row">
-                    <div class="col-md-2">
+                    <div class="col-md-2 d-none">
                         <label class="form-check-label" for="formCollectLater">{"Collect Later"}</label>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="formCollectLater"

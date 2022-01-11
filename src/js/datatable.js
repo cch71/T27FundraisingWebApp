@@ -26,7 +26,7 @@ const getQuickViewReportDataTable = (params) => {
         {
             dom: 'Bfrtip', //https://datatables.net/reference/option/dom
             buttons: [
-                "csv", "copy", "excel", "pdf", "print", 'colvis'
+                "csv", "copy", "excel", "print", 'colvis'
             ],
             responsive: true,
             deferRender: true,
@@ -84,7 +84,7 @@ const getFullViewReportDataTable = (params) => {
         {
             dom: 'Bfrtip', //https://datatables.net/reference/option/dom
             buttons: [
-                "csv", "copy", "excel", "pdf", "print", 'colvis'
+                "csv", "copy", "excel", "print", 'colvis'
             ],
             responsive: true,
             deferRender: true,
@@ -131,7 +131,7 @@ const getSpreadingJobsViewReportDataTable = (params) => {
         {
             dom: 'Bfrtip', //https://datatables.net/reference/option/dom
             buttons: [
-                "csv", "copy", "excel", "pdf", "print", 'colvis'
+                "csv", "copy", "excel", "print", 'colvis'
             ],
             responsive: true,
             deferRender: true,
