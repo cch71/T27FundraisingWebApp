@@ -63,7 +63,7 @@ pub(crate) struct CustomerInfo {
     pub(crate) addr2: Option<String>,
     pub(crate) phone: String,
     pub(crate) email: Option<String>,
-    pub(crate) neighborhood: String,
+    pub(crate) neighborhood: Option<String>,
 }
 
 impl MulchOrder {
@@ -145,7 +145,11 @@ impl MulchOrder {
 
     pub(crate) fn is_payment_valid(&self) -> bool {
         self.is_check_numbers_valid() &&
-            ((self.get_total_to_collect() == self.get_total_collected()) || self.will_collect_money_later)
+            ((
+                self.get_total_to_collect()!=Decimal::ZERO &&
+                (self.get_total_to_collect() == self.get_total_collected())
+            )
+            || self.will_collect_money_later)
     }
 
     pub(crate) fn is_check_numbers_valid(&self) -> bool {
@@ -309,7 +313,8 @@ pub(crate) async fn submit_active_order()
     if let Some(value) = order.customer.email.as_ref() {
         query.push_str(&format!("\t\t email: \"{}\"\n", value.trim()));
     }
-    query.push_str(&format!("\t\t\t neighborhood: \"{}\"\n", order.customer.neighborhood.trim()));
+    query.push_str(&format!("\t\t\t neighborhood: \"{}\"\n",
+            order.customer.neighborhood.as_ref().unwrap_or(&"".to_string()).trim()));
     query.push_str("\t\t }\n");
 
     query.push_str("\t})\n");

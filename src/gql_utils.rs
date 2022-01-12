@@ -34,7 +34,7 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
     #[derive(Serialize, Deserialize, Debug)]
     struct DataWrapper<T> {
         data: Option<T>,
-        error: Option<serde_json::Value>,
+        errors: Option<Vec<serde_json::Value>>,
     }
 
     let raw_resp: serde_json::Value = Request::post(&*GQLURL)
@@ -48,12 +48,13 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
 
     // log::info!("GQL Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
     let resp: DataWrapper<T> = serde_json::from_value(raw_resp).unwrap();
-    if let Some(err) = resp.error {
+    if let Some(errs) = resp.errors {
+        let err_str = serde_json::to_string(&errs).unwrap_or("Failed to parse error resp".to_string());
         use std::io::{Error, ErrorKind};
         Err(Box::new(
                 Error::new(
                     ErrorKind::Other,
-                    format!("GQL request returned and error: {:#?}", err).as_str())))
+                    format!("GQL request returned and error:\n {}", err_str).as_str())))
     } else {
         Ok(resp.data.unwrap())
     }

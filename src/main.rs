@@ -82,10 +82,10 @@ pub(crate) fn save_to_active_order() {
     order.customer.email = get_html_input_value("formEmail", &document);
     order.customer.addr1 = get_html_input_value("formAddr1", &document).unwrap_or("".to_string());
     order.customer.addr2 = get_html_input_value("formAddr2", &document);
-    order.customer.neighborhood = document.get_element_by_id("formNeighborhood")
+    order.customer.neighborhood = Some(document.get_element_by_id("formNeighborhood")
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
         .unwrap()
-        .value();
+        .value());
     order.special_instructions = get_html_textarea_value("formSpecialInstructions", &document);
     order.amount_cash_collected = get_html_input_value("formCashPaid", &document);
     order.amount_checks_collected = get_html_input_value("formCheckPaid", &document);

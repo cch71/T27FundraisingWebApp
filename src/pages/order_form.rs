@@ -118,11 +118,12 @@ fn validate_order_form(document: &web_sys::Document) -> bool {
     for idx in 0..form_node_list.length() {
         log::info!("Going through Form List");
         if let Some(element) = form_node_list.item(idx).and_then(|t| t.dyn_into::<Element>().ok()) {
+            //log::info!("Validationg ID: {}", element.id());
             let is_form_element_valid = {
                 if let Some(form_element) = element.clone().dyn_into::<HtmlInputElement>().ok() {
                     form_element.check_validity()
                 } else if let Some(form_element) = element.clone().dyn_into::<HtmlSelectElement>().ok() {
-                    form_element.check_validity()
+                    form_element.check_validity() && form_element.value() != ""
                 } else {
                     false
                 }
@@ -277,38 +278,43 @@ pub fn hood_selector() -> Html
     let mut did_find_selected_hood = false;
 
     html! {
-
-                <div class="form-floating col-md-4">
-                    <select class="form-control" id="formNeighborhood" onchange={on_hood_change} required=true>
-                        {
-                            get_neighborhoods().iter().map(|hood_info| {
-                                let is_selected = hood_info.name == order.customer.neighborhood;
-                                if !did_find_selected_hood && is_selected { did_find_selected_hood=true; }
-                                html!{<option value={hood_info.name.clone()} selected={is_selected}>{hood_info.name.clone()}</option>}
-                            }).collect::<Html>()
-                        }
-                        if !did_find_selected_hood {
-                            if order.customer.neighborhood.len() == 0 {
-                                <option value="" selected=true disabled=true hidden=true>
-                                    {"Select Neighborhood"}
-                                </option>
+        <div class="form-floating col-md-4">
+            <select class="form-control" id="formNeighborhood" onchange={on_hood_change} required=true>
+                {
+                    get_neighborhoods().iter().map(|hood_info| {
+                        let is_selected = {
+                            if let Some(neighborhood) = order.customer.neighborhood.as_ref() {
+                                &hood_info.name == neighborhood
                             } else {
-                                <option value={order.customer.neighborhood.clone()}
-                                        selected=true disabled=true hidden=true>
-                                    {format!("{} (DNE. Report Issue)", &order.customer.neighborhood)}
-                                </option>
+                                false
                             }
-                        }
-                    </select>
-                    <label for="formNeighborhood">
-                        {"Neighborhood"}<RequiredSmall/>
-                    </label>
-                    <small id="outOfHoodDisclaimer" style={(*on_hood_warning).clone()}>
-                        <i class="bi bi-exclamation-triangle-fill pe-1"></i>
-                        {"You are responsible for delivery of all out of area orders"}
-                        <i class="bi bi-exclamation-triangle-fill ps-1"></i>
-                    </small>
-                </div>
+                        };
+                        if !did_find_selected_hood && is_selected { did_find_selected_hood=true; }
+                        html!{<option value={hood_info.name.clone()} selected={is_selected}>{hood_info.name.clone()}</option>}
+                    }).collect::<Html>()
+                }
+                if !did_find_selected_hood {
+                    if order.customer.neighborhood.is_none() {
+                        <option value="" selected=true disabled=true hidden=true>
+                            {"Select Neighborhood"}
+                        </option>
+                    } else {
+                        <option value={order.customer.neighborhood.as_ref().unwrap().clone()}
+                                selected=true disabled=true hidden=true>
+                            {format!("{} (DNE. Report Issue)", order.customer.neighborhood.as_ref().unwrap())}
+                        </option>
+                    }
+                }
+            </select>
+            <label for="formNeighborhood">
+                {"Neighborhood"}<RequiredSmall/>
+            </label>
+            <small id="outOfHoodDisclaimer" style={(*on_hood_warning).clone()}>
+                <i class="bi bi-exclamation-triangle-fill pe-1"></i>
+                {"You are responsible for delivery of all out of area orders"}
+                <i class="bi bi-exclamation-triangle-fill ps-1"></i>
+            </small>
+        </div>
     }
 }
 
