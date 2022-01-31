@@ -532,6 +532,12 @@ pub fn order_form_fields() -> Html
                         <label for="formIsVerified">{"Verified"}</label>
                      </div>
                  </div>
+            } else {
+                <input
+                    id="formIsVerified"
+                    type="hidden"
+                    checked={order.is_verified.unwrap_or(false)}
+                />
             }
 
             <div class="row mb-2 g-2">
@@ -617,7 +623,7 @@ pub fn order_form_fields() -> Html
                         <label class="form-check-label" for="formCollectLater">{"Collect Later"}</label>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="formCollectLater"
-                                   checked={order.will_collect_money_later}  />
+                                   checked={order.will_collect_money_later.unwrap_or(false)}  />
                         </div>
                     </div>
                     <div class="col-md-3">

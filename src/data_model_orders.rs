@@ -34,7 +34,7 @@ pub(crate) struct MulchOrder {
     pub(crate) amount_checks_collected: Option<String>,
     pub(crate) amount_total_collected: Option<String>,
     pub(crate) check_numbers: Option<String>,
-    pub(crate) will_collect_money_later: bool,
+    pub(crate) will_collect_money_later: Option<bool>,
     pub(crate) is_verified: Option<bool>,
     pub(crate) customer: CustomerInfo,
     pub(crate) purchases: Option<HashMap<String, PurchasedItem>>,
@@ -160,7 +160,7 @@ impl MulchOrder {
                 self.get_total_to_collect()!=Decimal::ZERO &&
                 (self.get_total_to_collect() == self.get_total_collected())
             )
-            || self.will_collect_money_later)
+            || self.will_collect_money_later.unwrap_or(false))
     }
 
     pub(crate) fn is_check_numbers_valid(&self) -> bool {
@@ -291,7 +291,7 @@ pub(crate) async fn submit_active_order()
     if let Some(value) = order.amount_total_collected.as_ref() {
         query.push_str(&format!("\t\t amountTotalCollected: \"{}\"\n", value.trim()));
     } else {
-        if !order.will_collect_money_later {
+        if !order.will_collect_money_later.unwrap_or(false) {
             log::error!("Total collected is zero. will collect later should be true");
         }
         query.push_str("\t\t willCollectMoneyLater: true\n");
@@ -473,7 +473,7 @@ pub(crate) async fn load_active_order_from_db(order_id: &str)
             amount_checks_collected: from_cloud_to_money_str(order.amount_checks_collected),
             check_numbers: order.check_numbers,
             amount_total_collected: from_cloud_to_money_str(order.amount_total_collected),
-            will_collect_money_later: order.will_collect_money_later.unwrap_or(false),
+            will_collect_money_later: order.will_collect_money_later,
             is_verified: order.is_verified,
             customer: order.customer,
             delivery_id: order.delivery_id,

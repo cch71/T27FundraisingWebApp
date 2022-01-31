@@ -90,10 +90,10 @@ pub(crate) fn save_to_active_order() {
     order.amount_cash_collected = get_html_input_value("formCashPaid", &document);
     order.amount_checks_collected = get_html_input_value("formCheckPaid", &document);
     order.check_numbers = get_html_input_value("formCheckNumbers", &document);
-    order.will_collect_money_later = document.get_element_by_id("formCollectLater")
+    order.will_collect_money_later = Some(document.get_element_by_id("formCollectLater")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
-        .checked();
+        .checked());
     order.is_verified = Some(document.get_element_by_id("formIsVerified")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
