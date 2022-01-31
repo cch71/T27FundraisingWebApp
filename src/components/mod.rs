@@ -5,6 +5,7 @@ pub(crate) mod action_report_buttons;
 pub(crate) mod navbar;
 pub(crate) mod report_quick;
 pub(crate) mod report_full;
+pub(crate) mod report_verify;
 pub(crate) mod report_spreading_jobs;
 pub(crate) mod report_loading_spinny;
 pub(crate) mod report_spreaders_dlg;

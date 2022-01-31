@@ -302,11 +302,6 @@ pub(crate) fn is_purchase_valid(product_id: &str, num_sold: u32) -> bool {
 //}
 
 
-pub(crate) fn is_order_readonly(delivery_id: Option<u32>) -> bool {
-    //if none then check for all delivery dates because it is donation order
-    false
-}
-
 pub(crate) fn is_fundraiser_locked() -> bool {
     get_fr_config().is_locked
 }
@@ -332,4 +327,22 @@ pub(crate) async fn report_new_issue(reporting_id: &str, title: &str, body: &str
     let req = GraphQlReq::new(query);
     make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
 }
+
+// static TEST_ADMIN_API_GQL:&'static str =
+// r#"
+// {
+//   testApi(param1: "***USERID***")
+// }"#;
+//
+// pub(crate) async fn call_admin_test_api()
+//     -> std::result::Result<() ,Box<dyn std::error::Error>>
+// {
+//     let active_user = get_active_user();
+//     let user_id = active_user.get_id();
+//     let query = TEST_ADMIN_API_GQL
+//         .replace("***USERID***", &user_id);
+//
+//     let req = GraphQlReq::new(query);
+//     make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+// }
 

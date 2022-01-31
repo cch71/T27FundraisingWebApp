@@ -68,14 +68,51 @@ const getFullViewReportDataTable = (params) => {
         },
         { title: "Bags" },
         { title: "Special Instructions" },
-        { title: "Verified" },
-        { title: "Money Collected" },
         { title: "Donations" },
         { title: "Cash" },
         { title: "Check" },
         { title: "Check Numbers" },
         { title: "Total Amount" },
         { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner },
+        { title: "Verified" },
+        { title: "Actions", "orderable": false, className: "all" }
+    ];
+
+    return new DataTable(
+        params.id,
+        {
+            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
+            buttons: [
+                "csv", "copy", "excel", "print", 'colvis'
+            ],
+            responsive: true,
+            deferRender: true,
+            language: {
+                paginate: {
+                    previous: "<<",
+                    next: ">>"
+                }
+            },
+            columns: tableColumns
+        }
+    );
+};
+
+/////////////////////////////////////////////////////////////////////
+//
+const getOrderVerificationViewReportDataTable = (params) => {
+    console.log("Setting Full Report View");
+    let tableColumns = [
+        { name: "OrderId", className: "all", visible: false },
+        { title: "Name", className: "all" },
+        { title: "Delivery Date" },
+        { title: "Donations" },
+        { title: "Cash" },
+        { title: "Check" },
+        { title: "Check Numbers" },
+        { title: "Total Amount" },
+        { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner },
+        { title: "Verified" },
         { title: "Actions", "orderable": false, className: "all" }
     ];
 
@@ -153,6 +190,8 @@ const getDataTable = (params) => {
         return getQuickViewReportDataTable(params);
     } else if (params.reportType === "full") {
         return getFullViewReportDataTable(params);
+    } else if (params.reportType === "verification") {
+        return getOrderVerificationViewReportDataTable(params);
     } else if (params.reportType === "spreadingJobs") {
         return getSpreadingJobsViewReportDataTable(params);
     }

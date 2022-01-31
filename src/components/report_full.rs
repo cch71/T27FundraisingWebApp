@@ -106,14 +106,13 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                     <th>{"Spreading"}</th>
                     <th>{"Bags"}</th>
                     <th>{"Special Instructions"}</th>
-                    <th>{"Verified"}</th>
-                    <th>{"Money Collected"}</th>
                     <th>{"Donations"}</th>
                     <th>{"Cash"}</th>
                     <th>{"Check"}</th>
                     <th>{"Check Numbers"}</th>
                     <th>{"Total Amount"}</th>
                     <th>{"Order Owner"}</th>
+                    <th>{"Verified"}</th>
                     <th>{"Actions"}</th>
                 </tr>
             };
@@ -142,7 +141,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("Donation".to_string(), "Donation".to_string()),
                                 };
-                                let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
+                                let is_readonly = is_order_from_report_data_readonly(&v);
                                 let spreaders: String = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
                                     .unwrap_or(Vec::new())
                                     .join(",");
@@ -160,14 +159,13 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                         <td>{&spreading}</td>
                                         <td>{&bags}</td>
                                         <td>{v["specialInstructions"].as_str().unwrap_or("")}</td>
-                                        <td>{v["isVerified"].as_bool().unwrap_or(false).to_string()}</td>
-                                        <td>{v["willCollectMoneyLater"].as_bool().unwrap_or(false).to_string()}</td>
                                         <td>{to_money_str(v["amountFromDonations"].as_str())}</td>
                                         <td>{to_money_str(v["amountFromCashCollected"].as_str())}</td>
                                         <td>{to_money_str(v["amountFromChecksCollected"].as_str())}</td>
                                         <td>{v["checkNumbers"].as_str().unwrap_or("")}</td>
                                         <td>{to_money_str(v["amountTotalCollected"].as_str())}</td>
                                         <td>{v["ownerId"].as_str().unwrap()}</td>
+                                        <td>{v["isVerified"].as_bool().unwrap_or(false).to_string()}</td>
                                         <td>
                                             <ReportActionButtons
                                                 orderid={v["orderId"].as_str().unwrap().to_string()}

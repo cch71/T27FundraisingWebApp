@@ -121,7 +121,7 @@ pub(crate) fn report_quick_view(props: &QuickReportViewProps) -> Html {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("Donation".to_string(), "Donation".to_string()),
                                 };
-                                let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
+                                let is_readonly = is_order_from_report_data_readonly(&v);
                                 let spreaders: String = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
                                     .unwrap_or(Vec::new())
                                     .join(",");

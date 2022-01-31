@@ -3,10 +3,10 @@ use yew_router::prelude::*;
 use web_sys::{ MouseEvent};
 use crate::datatable::*;
 use crate::data_model::*;
+use crate::currency_utils::*;
 use crate::components::action_report_buttons::{
     on_delete_order_from_rpt,
     on_view_or_edit_from_rpt,
-    on_edit_spreading_from_rpt,
     ReportActionButtons,
 };
 use crate::components::report_loading_spinny::*;
@@ -14,14 +14,14 @@ use crate::components::report_loading_spinny::*;
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 #[derive(Properties, PartialEq, Clone, Debug)]
-pub(crate) struct SpreadingJobsReportViewProps {
+pub(crate) struct OrderVerificationViewProps {
     pub(crate) seller: String,
 }
-#[function_component(SpreadingJobsReportView)]
-pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
+#[function_component(OrderVerificationView)]
+pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Html {
     let report_state = use_state(||ReportViewState::IsLoading);
     let history = use_history().unwrap();
-    let is_fr_locked = is_fundraiser_locked();
+    // let is_fr_locked = is_fundraiser_locked();
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
@@ -46,13 +46,6 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
         })
     };
 
-    let on_edit_spreading = {
-        let datatable = datatable.clone();
-        Callback::from(move |evt: MouseEvent| {
-            on_edit_spreading_from_rpt(evt, datatable.clone());
-        })
-    };
-
     {
         let report_state = report_state.clone();
         let seller = props.seller.to_string();
@@ -60,13 +53,13 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
             match &*report_state {
                 ReportViewState::IsLoading=>{
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!("Downloading Spreading Jobs Report View Data for {}", &seller);
+                        log::info!("Downloading Verification Report View Data for {}", &seller);
                         let seller = if &seller == ALL_USERS_TAG {
                             None
                         } else {
                             Some(seller)
                         };
-                        let resp = get_spreading_jobs_report_data(seller.as_ref()).await.unwrap();
+                        let resp = get_order_verfification_report_data(seller.as_ref()).await.unwrap();
                         log::info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
@@ -74,12 +67,11 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                 ReportViewState::ReportHtmlGenerated(_) => {
                     // log::info!("Setting DataTable");
                     *datatable.borrow_mut() = get_datatable(&serde_json::json!({
-                        "reportType": "spreadingJobs",
+                        "reportType": "verification",
                         "id": ".data-table-report table",
-                        "showOrderOwner": &seller != &get_active_user().get_id(),
+                        "showOrderOwner": true,
                         "isMulchOrder": true
                     }));
-
                 },
             };
 
@@ -94,14 +86,14 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                 <tr>
                     <th>{"OrderId"}</th>
                     <th>{"Name"}</th>
-                    <th>{"Phone"}</th>
                     <th>{"Delivery Date"}</th>
-                    <th>{"Instructions"}</th>
-                    <th>{"Address"}</th>
-                    <th>{"Neighborhood"}</th>
-                    <th>{"Spreaders"}</th>
-                    <th>{"Spreading"}</th>
+                    <th>{"Donations"}</th>
+                    <th>{"Cash"}</th>
+                    <th>{"Check"}</th>
+                    <th>{"Check Numbers"}</th>
+                    <th>{"Total Amount"}</th>
                     <th>{"Order Owner"}</th>
+                    <th>{"Verified"}</th>
                     <th>{"Actions"}</th>
                 </tr>
             };
@@ -114,50 +106,31 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                         <tbody>
                         {
                             orders.into_iter().map(|v|{
-                                let mut spreading = "".to_string();
-                                for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
-                                    if purchase["productId"].as_str().unwrap() == "spreading" {
-                                        spreading = purchase["numSold"].as_u64().unwrap().to_string();
-                                        break;
-                                    }
-                                }
-                                if spreading.len() == 0 {
-                                    return html!{};
-                                }
-                                let enable_spreading_button = spreading.len()!=0 && !is_fr_locked;
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
-                                    None => ("N/A".to_string(), "N/A".to_string()),
+                                    None => ("Donation".to_string(), "Donation".to_string()),
                                 };
-                                let address = format!("{} {}",
-                                    v["customer"]["addr1"].as_str().unwrap(),
-                                    v["customer"]["addr2"].as_str().unwrap_or("")).trim().to_string();
                                 let is_readonly = is_order_from_report_data_readonly(&v);
-                                let spreaders: String = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
-                                    .unwrap_or(Vec::new())
-                                    .join(",");
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>
                                         <td>{v["customer"]["name"].as_str().unwrap()}</td>
-                                        <td>{v["customer"]["phone"].as_str().unwrap()}</td>
                                         <td data-deliveryid={delivery_id}>{delivery_date}</td>
-                                        <td>{v["specialInstructions"].as_str().unwrap_or("")}</td>
-                                        <td>{&address}</td>
-                                        <td>{v["customer"]["neighborhood"].as_str().unwrap_or("")}</td>
-                                        <td>{spreaders.clone()}</td>
-                                        <td>{&spreading}</td>
+                                        <td>{to_money_str(v["amountFromDonations"].as_str())}</td>
+                                        <td>{to_money_str(v["amountFromCashCollected"].as_str())}</td>
+                                        <td>{to_money_str(v["amountFromChecksCollected"].as_str())}</td>
+                                        <td>{v["checkNumbers"].as_str().unwrap_or("")}</td>
+                                        <td>{to_money_str(v["amountTotalCollected"].as_str())}</td>
                                         <td>{v["ownerId"].as_str().unwrap()}</td>
+                                        <td>{v["isVerified"].as_bool().unwrap_or(false).to_string()}</td>
                                         <td>
                                             <ReportActionButtons
                                                 orderid={v["orderId"].as_str().unwrap().to_string()}
-                                                showspreading={enable_spreading_button}
+                                                showspreading={false}
                                                 isreadonly={is_readonly}
                                                 ondeleteorder={on_delete_order.clone()}
                                                 onvieworder={on_view_or_edit_order.clone()}
                                                 oneditorder={on_view_or_edit_order.clone()}
-                                                oneditspreading={on_edit_spreading.clone()}
-                                                spreaders={spreaders}
                                             />
                                         </td>
                                     </tr>
@@ -174,3 +147,4 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
         },
     }
 }
+

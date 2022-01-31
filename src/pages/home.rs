@@ -7,6 +7,35 @@ use crate::data_model::*;
 use crate::currency_utils::*;
 use crate::google_charts::*;
 
+// #[function_component(AdminTestButton)]
+// pub fn admin_test_button() -> Html
+// {
+//     let on_press_red_button = {
+//         Callback::from(move |_| {
+//             wasm_bindgen_futures::spawn_local(async move {
+//                 log::info!("Calling Admin Test API");
+//                 let rslt = call_admin_test_api().await;
+//                 if let Err(err) = rslt {
+//                     gloo_dialogs::alert(&format!("Bad: {:#?}", err));
+//                 } else {
+//                     gloo_dialogs::alert(":)");
+//                 }
+//                 log::info!("Done Calling Admin Test API");
+//             });
+//         })
+//     };
+//
+//     html! {
+//         <div>
+//             <label>{"Admin Test Button"}</label>
+//             <button type="button"
+//                     class="btn btn-outline-primary"
+//                     onclick={on_press_red_button}>
+//             </button>
+//         </div>
+//     }
+// }
+
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 

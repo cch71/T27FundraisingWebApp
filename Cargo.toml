@@ -1,5 +1,5 @@
 [package]
-name = "yew-app"
+name = "t27-fundraiser-webapp"
 version = "0.1.0"
 edition = "2021"
 

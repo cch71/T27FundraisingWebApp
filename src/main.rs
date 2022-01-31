@@ -90,10 +90,14 @@ pub(crate) fn save_to_active_order() {
     order.amount_cash_collected = get_html_input_value("formCashPaid", &document);
     order.amount_checks_collected = get_html_input_value("formCheckPaid", &document);
     order.check_numbers = get_html_input_value("formCheckNumbers", &document);
-    order.will_collect_money_later = document.get_element_by_id("formCollectLater")
+    order.will_collect_money_later = Some(document.get_element_by_id("formCollectLater")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
-        .checked();
+        .checked());
+    order.is_verified = Some(document.get_element_by_id("formIsVerified")
+        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+        .unwrap()
+        .checked());
     // This must come after setting checks/cash collected
     let total_collected = order.get_total_collected();
     if total_collected == Decimal::ZERO {
@@ -234,6 +238,7 @@ impl Component for Model {
             Msg::Logout=>{
                 log::info!("User has asked to logout");
                 ctx.link().send_future(async move {
+                    delete_report_settings(); // We needs to delete report settings in case admin is on view user can't support
                     logout().await;
                     Msg::NoOp
                 });
