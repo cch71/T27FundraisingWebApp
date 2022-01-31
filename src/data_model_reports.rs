@@ -102,6 +102,7 @@ static QUICK_RPT_GRAPHQL: &'static str = r"
     ownerId
     deliveryId
     spreaders
+    isVerified
     customer {
         name
     }
@@ -176,6 +177,7 @@ static SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
   mulchOrders(***ORDER_OWNER_PARAM***) {
     orderId
     ownerId
+    isVerified
     customer {
         name
         phone
@@ -386,6 +388,11 @@ pub(crate) fn save_report_settings(settings: &ReportViewSettings)
 {
     SessionStorage::set("ReportViewSettings", settings)?;
     Ok(())
+}
+
+pub(crate) fn delete_report_settings()
+{
+    SessionStorage::delete("ReportViewSettings");
 }
 
 pub(crate) fn load_report_settings() -> ReportViewSettings

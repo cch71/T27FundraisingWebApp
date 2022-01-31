@@ -110,7 +110,7 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("Donation".to_string(), "Donation".to_string()),
                                 };
-                                let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
+                                let is_readonly = is_order_from_report_data_readonly(&v);
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>

@@ -253,9 +253,7 @@ pub fn hood_selector() -> Html
             history.push(AppRoutes::Home);
     }
 
-    let is_admin = false;
     let order = use_state_eq(||get_active_order().unwrap());
-    let is_order_readonly = order.is_readonly();
     // log::info!("Loading Order: {:#?}", &*order);
 
     let on_hood_warning = use_state_eq(|| "display: none;".to_owned());
@@ -521,6 +519,17 @@ pub fn order_form_fields() -> Html
                          }
                          </select>
                          <label for="formOrderOwner">{"Order Owner"}</label>
+                     </div>
+
+                     <div class="col-md-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input order-vrfy-switch"
+                                id="formIsVerified"
+                                type="checkbox"
+                                checked={order.is_verified.unwrap_or(false)}
+                            />
+                        </div>
+                        <label for="formIsVerified">{"Verified"}</label>
                      </div>
                  </div>
             }

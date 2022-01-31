@@ -7,7 +7,7 @@ use rusty_money::{Money, iso};
 use crate::currency_utils::*;
 use regex::Regex;
 
-// use crate::data_model::{get_active_user};
+use crate::data_model::{get_active_user};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 
 lazy_static! {
@@ -77,7 +77,18 @@ impl MulchOrder {
 
     pub(crate) fn is_readonly(&self) -> bool {
         /* if is_system_locked() { return true } */
-        // return !is_admin() /* && now > order.delivery_id.cutoff_date */;
+
+        if get_active_user().is_admin() {
+            return false;
+        }
+
+        if self.is_verified.unwrap_or(false) {
+            return true;
+        }
+
+        if let Some(_delivery_id) = self.delivery_id {
+            // now > order.delivery_id.cutoff_date return true
+        }
         false
     }
 
@@ -187,6 +198,24 @@ impl MulchOrder {
 
 }
 
+pub(crate) fn is_order_from_report_data_readonly(jorder: &serde_json::Value) -> bool {
+
+    /* if is_system_locked() { return true } */
+
+    if get_active_user().is_admin() {
+        return false;
+    }
+
+    if jorder["isVerified"].as_bool().unwrap_or(false) {
+        return true;
+    }
+
+    if let Some(_delivery_id) = jorder["deliveryId"].as_u64() {
+        // now > order.delivery_id.cutoff_date return true
+    }
+    false
+}
+
 pub(crate) fn create_new_active_order(owner_id: &str) {
     let new_active_order_state = ActiveOrderState {
         order: MulchOrder::new(owner_id),
@@ -256,7 +285,7 @@ pub(crate) async fn submit_active_order()
     }
 
     if let Some(value) = order.is_verified.as_ref() {
-        query.push_str(&format!("\t\t isVerified: \"{}\"\n", value));
+        query.push_str(&format!("\t\t isVerified: {}\n", value));
     }
 
     if let Some(value) = order.amount_total_collected.as_ref() {

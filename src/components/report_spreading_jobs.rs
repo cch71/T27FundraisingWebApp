@@ -132,7 +132,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                 let address = format!("{} {}",
                                     v["customer"]["addr1"].as_str().unwrap(),
                                     v["customer"]["addr2"].as_str().unwrap_or("")).trim().to_string();
-                                let is_readonly = is_order_readonly(delivery_id.parse::<u32>().ok());
+                                let is_readonly = is_order_from_report_data_readonly(&v);
                                 let spreaders: String = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
                                     .unwrap_or(Vec::new())
                                     .join(",");
