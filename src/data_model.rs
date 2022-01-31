@@ -333,3 +333,21 @@ pub(crate) async fn report_new_issue(reporting_id: &str, title: &str, body: &str
     make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
 }
 
+static TEST_ADMIN_API_GQL:&'static str =
+r#"
+{
+  testApi(param1: "***USERID***")
+}"#;
+
+pub(crate) async fn call_admin_test_api()
+    -> std::result::Result<() ,Box<dyn std::error::Error>>
+{
+    let active_user = get_active_user();
+    let user_id = active_user.get_id();
+    let query = TEST_ADMIN_API_GQL
+        .replace("***USERID***", &user_id);
+
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+}
+

@@ -10,6 +10,7 @@ use crate::components::report_spreaders_dlg::{ChooseSpreadersDlg};
 use crate::components::report_quick::{QuickReportView};
 use crate::components::report_spreading_jobs::{SpreadingJobsReportView};
 use crate::components::report_full::{FullReportView};
+use crate::components::report_verify::{OrderVerificationView};
 
 
 
@@ -118,19 +119,11 @@ pub fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[derive(PartialEq, Debug)]
-struct ReportViewSettings {
-    current_view: ReportViews,
-    seller_id_filter: String,
-}
 
 #[function_component(Reports)]
 pub fn reports_page() -> Html {
-    let current_settings = use_state_eq(|| ReportViewSettings{
-        current_view: ReportViews::Quick,
-        seller_id_filter: get_active_user().get_id(),
-    });
 
+    let current_settings = use_state_eq(|| load_report_settings());
 
     // let on_download_report = {
     //     Callback::from(move |evt: MouseEvent| {
@@ -175,6 +168,9 @@ pub fn reports_page() -> Html {
                 current_view: ReportViews::from_str(&report_view).unwrap(),
                 seller_id_filter: seller_id,
             };
+            if let Err(err) = save_report_settings(&updated_settings) {
+                log::error!("Failed saving report settings: {:#?}", err);
+            }
 
             log::info!("on_save_settings.  report view: {} seller: {}",
                 &updated_settings.current_view, &updated_settings.seller_id_filter);
@@ -226,6 +222,7 @@ pub fn reports_page() -> Html {
                                 ReportViews::Quick=>html!{<QuickReportView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 ReportViews::Full=>html!{<FullReportView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 ReportViews::SpreadingJobs=>html!{<SpreadingJobsReportView seller={(*current_settings).seller_id_filter.clone()}/>},
+                                ReportViews::OrderVerification=>html!{<OrderVerificationView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 _=>html!{<h6>{"Not Yet Implemented"}</h6>},
                             }
                         }

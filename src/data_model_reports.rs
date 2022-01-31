@@ -1,14 +1,14 @@
 
 use serde::{Deserialize, Serialize};
 use chrono::prelude::*;
-use gloo_storage::{LocalStorage, Storage};
+use gloo_storage::{LocalStorage, SessionStorage, Storage};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 use crate::auth_utils::{get_active_user};
 use crate::data_model::{get_fr_config};
 
 pub(crate) static ALL_USERS_TAG: &'static str = "doShowAllUsers";
 
-#[derive(PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub(crate) enum ReportViews {
     // Reports available to sellers
     Quick,
@@ -67,7 +67,7 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
 
         if get_active_user().is_admin() {
             //         reports.push(ReportViews::UnfinishedSpreadingJobs);
-            //         reports.push(ReportViews::OrderVerification);
+            reports.push(ReportViews::OrderVerification);
             //         reports.push(ReportViews::DistributionPoints);
             //         reports.push(ReportViews::Deliveries);
         }
@@ -343,3 +343,57 @@ pub(crate) enum ReportViewState {
 }
 
 
+static ORDER_VERIFICATION_GRAPHQL: &'static str = r"
+{
+  mulchOrders(***ORDER_OWNER_PARAM***) {
+    orderId
+    ownerId
+    amountFromDonations
+    amountFromCashCollected
+    amountFromChecksCollected
+    checkNumbers
+    amountTotalCollected
+    isVerified
+    customer {
+        name
+    }
+    deliveryId
+  }
+}
+";
+
+pub(crate) async fn get_order_verfification_report_data(order_owner_id: Option<&String>)
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+
+    let query = if let Some(order_owner_id) = order_owner_id {
+        ORDER_VERIFICATION_GRAPHQL.replace("***ORDER_OWNER_PARAM***", &format!("ownerId: \"{}\"", order_owner_id))
+    } else {
+        ORDER_VERIFICATION_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
+    };
+    log::info!("Running Query: {}", &query);
+    make_report_query(query).await
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub(crate) struct ReportViewSettings {
+    pub(crate) current_view: ReportViews,
+    pub(crate) seller_id_filter: String,
+}
+
+pub(crate) fn save_report_settings(settings: &ReportViewSettings)
+    -> std::result::Result<(), Box<dyn std::error::Error>>
+{
+    SessionStorage::set("ReportViewSettings", settings)?;
+    Ok(())
+}
+
+pub(crate) fn load_report_settings() -> ReportViewSettings
+{
+    SessionStorage::get("ReportViewSettings").unwrap_or(
+        ReportViewSettings{
+            current_view: ReportViews::Quick,
+            seller_id_filter: get_active_user().get_id(),
+        }
+    )
+}

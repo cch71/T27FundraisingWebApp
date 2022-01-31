@@ -37,6 +37,7 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         errors: Option<Vec<serde_json::Value>>,
     }
 
+    // log::info!("Bearer Token: {}", get_active_user().token);
     let raw_resp: serde_json::Value = Request::post(&*GQLURL)
         .header("Content-Type", "application/json")
         .header("Authorization", &format!("Bearer {}", &get_active_user().token))
