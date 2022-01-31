@@ -138,7 +138,6 @@ static FULL_RPT_GRAPHQL: &'static str = r"
     amountFromChecksCollected
     checkNumbers
     amountTotalCollected
-    willCollectMoneyLater
     isVerified
     customer {
         name
