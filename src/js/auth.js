@@ -21,7 +21,7 @@ const getUserInfo = async () => {
         "email": userInfo.email,
         "token": token,
         "roles": userInfo["https://www.bsatroop27.us/roles"],
-        "id": userInfo.nickname
+        "id": userInfo.email.split('@')[0] //don't use nickname since we can't chnage it
     };
 
     if (userInfo["https://www.bsatroop27.us/app_metadata"].hasOwnProperty("full_name")) {
