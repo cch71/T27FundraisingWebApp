@@ -75,13 +75,14 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                 },
                 ReportViewState::ReportHtmlGenerated(_) => {
                     // log::info!("Setting DataTable");
-                    *datatable.borrow_mut() = get_datatable(&serde_json::json!({
-                        "reportType": "full",
-                        "id": ".data-table-report table",
-                        "showOrderOwner": &seller != &get_active_user().get_id(),
-                        "isMulchOrder": true
-                    }));
-
+                    if datatable.borrow().is_none() {
+                        *datatable.borrow_mut() = get_datatable(&serde_json::json!({
+                            "reportType": "full",
+                            "id": ".data-table-report table",
+                            "showOrderOwner": &seller != &get_active_user().get_id(),
+                            "isMulchOrder": true
+                        }));
+                    }
                 },
             };
 
