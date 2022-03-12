@@ -187,6 +187,7 @@ pub fn order_products() -> Html
         });
     }
     let mut found_selected_delivery = false;
+    let is_admin = get_active_user().is_admin();
     html! {
         <div class="col-xs-1 justify-content-center">
             <div class="card">
@@ -206,7 +207,7 @@ pub fn order_products() -> Html
                                         if is_selected && !found_selected_delivery {
                                             found_selected_delivery = true;
                                         }
-                                        if delivery.new_order_cutoff_date > Utc::now() {
+                                        if is_admin || delivery.new_order_cutoff_date > Utc::now() {
                                             html!{
                                                 <option value={delivery_id.to_string()} selected={is_selected}>
                                                     {delivery.get_delivery_date_str()}

@@ -72,13 +72,15 @@ pub(crate) fn report_quick_view(props: &QuickReportViewProps) -> Html {
                     });
                 },
                 ReportViewState::ReportHtmlGenerated(_) => {
-                    // log::info!("Setting DataTable");
-                    *datatable.borrow_mut() = get_datatable(&serde_json::json!({
-                        "reportType": "quick",
-                        "id": ".data-table-report table",
-                        "showOrderOwner": &seller != &get_active_user().get_id(),
-                        "isMulchOrder": true
-                    }));
+                    log::info!("Setting DataTable");
+                    if datatable.borrow().is_none() {
+                        *datatable.borrow_mut() = get_datatable(&serde_json::json!({
+                            "reportType": "quick",
+                            "id": ".data-table-report table",
+                            "showOrderOwner": &seller != &get_active_user().get_id(),
+                            "isMulchOrder": true
+                        }));
+                    }
                 },
             };
 
