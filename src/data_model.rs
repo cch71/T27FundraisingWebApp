@@ -55,6 +55,9 @@ r#"
   }
 }"#;
 
+// Internal Schma version for stored config data.  This gives me a way
+//   to force update reload of config even if last_modified_time hasn't changed
+static LOCAL_STORE_SCHEMA_VER: u32 = 020501;
 
 lazy_static! {
     static ref NEIGHBORHOODS: RwLock<Option<Arc<Vec<Neighborhood>>>> = RwLock::new(None);
@@ -198,7 +201,6 @@ fn process_config_data(config: FrConfigApi) {
 
     log::info!("Fundraising Config retrieved");
 }
-static LOCAL_STORE_SCHEMA_VER: u32 = 020500;
 pub(crate) async fn load_config() {
     log::info!("Getting Fundraising Config: Loading From LocalStorage");
     let rslt = LocalStorage::get("FrConfig");

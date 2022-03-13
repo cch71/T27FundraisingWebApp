@@ -1,13 +1,13 @@
 use yew::prelude::*;
-use wasm_bindgen::{JsCast};
-use web_sys::{Event, InputEvent, MouseEvent, HtmlSelectElement};
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::{Event, InputEvent, MouseEvent, Element, HtmlElement, HtmlButtonElement, HtmlInputElement, HtmlSelectElement};
 
 use crate::data_model::*;
 
 
 /////////////////////////////////////////////////
 ///
-fn get_delivery_id() -> Option<String> {
+fn get_delivery_id() -> Option<u32> {
     let document = gloo_utils::document();
     let value = document.get_element_by_id("timeSheetSelectDeliveryDate")
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
@@ -17,7 +17,7 @@ fn get_delivery_id() -> Option<String> {
     if 0==value.len() || "none" == value {
         None
     } else {
-        Some(value)
+        value.parse::<u32>().ok()
     }
 }
 
@@ -45,10 +45,9 @@ pub fn timecards_page() -> Html {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_delivery_selection_change");
-            if let Some(delivery_id_str) = get_delivery_id() {
+            if let Some(delivery_id) = get_delivery_id() {
                 is_delivery_date_selected.set(true);
-                log::info!("Downloading timecard data for: {delivery_id_str}");
-                let delivery_id = delivery_id_str.parse::<u32>().unwrap();
+                log::info!("Downloading timecard data for: {delivery_id}");
                 let timecards_data_ready = timecards_data_ready.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     match get_timecards_data(Some(delivery_id), None).await {
@@ -69,9 +68,98 @@ pub fn timecards_page() -> Html {
 
     let on_time_change = {
         Callback::from(move |evt: InputEvent| {
+            use std::time::{ Duration };
+
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_time_change");
+
+            let row_elm = evt.target()
+                .and_then(|t| t.dyn_into::<Element>().ok())
+                .and_then(|t|t.parent_element())
+                .and_then(|t|t.parent_element())
+                .and_then(|t|t.parent_element())
+                .unwrap();
+
+            fn read_time_val(elm: Result<Option<Element>, JsValue>)->Option<Duration> {
+                if let Some(time_val_str) = elm
+                    .ok()
+                    .flatten()
+                    .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                    .and_then(|t| {
+                        // log::info!("IEVal: {}", t.value());
+                        Some(t.value().split(":").map(|v|v.to_string()).collect::<Vec<String>>())
+                    })
+                {
+                    // log::info!("Read in: {}", time_val_str.join(" ,"));
+                    if time_val_str.len() == 2 {
+                        return time_val_str[0]
+                            .parse::<u64>().ok()
+                            .and_then(|v1|Some(Duration::from_secs(v1*60*60)))
+                            .and_then(|v1| {
+                                time_val_str[1]
+                                    .parse::<u64>().ok()
+                                    .and_then(|v2|Some(Duration::from_secs(v2*60)))
+                                    .and_then(|v2| v1.checked_add(v2))
+                            });
+                    }
+                }
+                None
+            }
+
+            let time_in_val = read_time_val(row_elm.query_selector(".time-in"));
+            // log::info!("TI Val: {}", time_in_val.unwrap_or(Duration::from_secs(0)).as_secs());
+            let time_out_val = read_time_val(row_elm.query_selector(".time-out"));
+            // log::info!("TO Val: {}", time_out_val.unwrap_or(Duration::from_secs(0)).as_secs());
+
+
+            let time_calc_elm = row_elm.query_selector(".time-calc").ok()
+                .flatten()
+                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                .unwrap();
+
+            let btn_elm = row_elm.query_selector(".btn").ok()
+                .flatten()
+                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                .unwrap();
+
+            if time_in_val.is_none() || time_out_val.is_none() {
+                let _ = btn_elm.class_list().add_1("invisible");
+                time_calc_elm.set_inner_text("00:00");
+                return;
+            }
+
+            let time_in = time_in_val.unwrap();
+            let time_out = time_out_val.unwrap();
+
+
+            let mark_invalid = ||{
+                let _ = time_calc_elm.class_list().add_1("is-invalid");
+                let _ = btn_elm.class_list().add_1("invisible");
+                time_calc_elm.set_inner_text("00:00");
+            };
+
+            match time_out.checked_sub(time_in) {
+                Some(time_total)=>{
+                    let time_total_secs = time_total.as_secs();
+                    if 0==time_total_secs {
+                        mark_invalid();
+                        return;
+                    }
+
+                    let _ = time_calc_elm.class_list().remove_1("is-invalid");
+                    let new_hours:u64 = (time_total_secs as f64 / (60.0*60.0)).floor() as u64;
+                    let new_mins:u64 = ((time_total_secs as f64 % (60.0*60.0)) / 60.0).floor() as u64;
+                    let new_time_total_str = format!("{:02}:{:02}", new_hours, new_mins);
+                    if 0 == new_hours && 0 == new_mins {
+                        let _ = btn_elm.class_list().add_1("invisible");
+                        return;
+                    }
+                    let _ = btn_elm.class_list().remove_1("invisible");
+                    time_calc_elm.set_inner_text(&new_time_total_str);
+                },
+                None=>mark_invalid(),
+            };
         })
     };
 
@@ -81,39 +169,29 @@ pub fn timecards_page() -> Html {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_save_entry");
+            let btn_elm = evt.target()
+                .and_then(|t| t.dyn_into::<Element>().ok())
+                .and_then(|t|
+                    match t.node_name().as_str() {
+                        "I"=>t.parent_element(),
+                        _=>Some(t),
+                    }
+                )
+                .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+                .unwrap();
+
+            let spinny_elm = btn_elm.query_selector(".spinner-border")
+                .ok().flatten()
+                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                .unwrap();
+
+            let _ = spinny_elm.class_list().remove_1("d-none");
+            btn_elm.set_disabled(true);
+
+            let _ = spinny_elm.class_list().add_1("d-none");
+            btn_elm.set_disabled(false);
         })
     };
-    // let on_save_entry = {
-    //     let current_settings = current_settings.clone();
-    //     Callback::from(move |_evt: MouseEvent| {
-    //         let report_view = gloo_utils::document().get_element_by_id("reportViewSettingsDlgViewSelection")
-    //             .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
-    //             .unwrap()
-    //             .value();
-
-    //         let seller_id: String = if get_active_user().is_admin() {
-    //             gloo_utils::document().get_element_by_id("reportViewSettingsDlgUserSelection")
-    //                 .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
-    //                 .unwrap()
-    //                 .value()
-    //         } else {
-    //             get_active_user().get_id()
-    //         };
-
-    //         let updated_settings = ReportViewSettings{
-    //             current_view: ReportViews::from_str(&report_view).unwrap(),
-    //             seller_id_filter: seller_id,
-    //         };
-    //         if let Err(err) = save_report_settings(&updated_settings) {
-    //             log::error!("Failed saving report settings: {:#?}", err);
-    //         }
-
-    //         log::info!("on_save_settings.  report view: {} seller: {}",
-    //             &updated_settings.current_view, &updated_settings.seller_id_filter);
-
-    //         current_settings.set(updated_settings);
-    //     })
-    // };
 
     html! {
         <div class="col-xs-1 d-flex justify-content-center">
@@ -168,7 +246,7 @@ pub fn timecards_page() -> Html {
                                             </div>
                                             <div class="col">
                                                 <div class="form-floating">
-                                                    <input data-clocklet="format: HH:mm;" /* oninput={on_time_change.clone()} */
+                                                    <input data-clocklet="format: HH:mm;" oninput={on_time_change.clone()}
                                                            class="form-control time-out" id={time_out_id.clone()}
                                                            value={tc.as_ref().map_or("".to_string(), |v|v.time_out.clone())}
                                                     />
@@ -184,10 +262,9 @@ pub fn timecards_page() -> Html {
                                                 </div>
                                             </div>
                                             <div class="col">
-                                                <button type="button" class="btn btn-primary d-none" onclick={on_save_entry.clone()}>
-                                                    <span class="spinner-border spinner-border-sm me-1" role="status"
-                                                          aria-hidden="true" />
-                                                          {"Save"}
+                                                <button type="button" class="btn btn-primary invisible" onclick={on_save_entry.clone()}>
+                                                    <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true" />
+                                                    {"Save"}
                                                 </button>
                                             </div>
                                         </div>

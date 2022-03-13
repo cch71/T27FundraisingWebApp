@@ -39,8 +39,7 @@ pub(crate) fn on_edit_spreading_from_rpt( evt: MouseEvent, datatable: std::rc::R
             } else {
                 Some(t)
             }
-        })
-    .unwrap();
+        }).unwrap();
 
     let tr_node = btn_elm.parent_node() .and_then(|t| t.parent_node()) .unwrap();
     let elm = btn_elm.dyn_into::<HtmlElement>().ok().unwrap();
