@@ -25,7 +25,7 @@ uuid = { version = "0.8", features = ["serde", "v4", "wasm-bindgen"] }
 gloo-utils = "0.1"
 gloo-dialogs = "0.1"
 gloo-storage = "0.2"
-reqwasm = {version = "0.4", default-features = false, features = ["json", "http"] }
+reqwasm = {version = "0.5", default-features = false, features = ["json", "http"] }
 regex = "1"
 
 [dependencies.web-sys]

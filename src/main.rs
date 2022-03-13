@@ -295,5 +295,6 @@ impl Component for Model {
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
+    log::info!("RelVer: {}", std::option_env!("AWS_COMMIT_ID").unwrap_or("?"));
     yew::start_app::<Model>();
 }
