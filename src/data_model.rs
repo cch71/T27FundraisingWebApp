@@ -50,6 +50,7 @@ r#"
     users {
       id
       name
+      group
     }
   }
 }"#;
@@ -60,7 +61,14 @@ lazy_static! {
     static ref PRODUCTS: RwLock<Option<Arc<BTreeMap<String, ProductInfo>>>> = RwLock::new(None);
     static ref DELIVERIES: RwLock<Option<Arc<BTreeMap<u32, DeliveryInfo>>>> = RwLock::new(None);
     static ref FRCONFIG: RwLock<Option<Arc<FrConfig>>> = RwLock::new(None);
-    static ref USER_MAP: RwLock<Arc<BTreeMap<String,String>>> = RwLock::new(Arc::new(BTreeMap::new()));
+    // map<uid,(name, group)>
+    static ref USER_MAP: RwLock<Arc<BTreeMap<String,UserInfo>>> = RwLock::new(Arc::new(BTreeMap::new()));
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct UserInfo {
+    pub(crate) name: String,
+    pub(crate) group: String,
 }
 
 pub(crate) struct FrConfig {
@@ -103,6 +111,7 @@ pub(crate) struct ProductInfo {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct ConfigApi {
+    local_store_schema_ver: Option<u32>,
     config: FrConfigApi,
 }
 
@@ -125,6 +134,7 @@ struct FrConfigApi {
 struct UsersConfigApi {
     id: String,
     name: String,
+    group: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct ProductsApi {
@@ -178,17 +188,17 @@ fn process_config_data(config: FrConfigApi) {
     *PRODUCTS.write().unwrap() = Some(Arc::new(products));
 
     {
-        let mut new_map: BTreeMap<String, String> =
-            config.users.into_iter().map(|v| (v.id.clone(), v.name.clone())).collect::<_>();
+        let mut new_map: BTreeMap<String, UserInfo> =
+            config.users.into_iter().map(|v| (v.id.clone(), UserInfo{name: v.name.clone(), group: v.group.clone()})).collect::<_>();
         if let Ok(mut arc_umap) = USER_MAP.write() {
             Arc::get_mut(&mut *arc_umap).unwrap().append(&mut new_map);
-            Arc::get_mut(&mut *arc_umap).unwrap().insert("fradmin".to_string(), "Super User".to_string());
+            Arc::get_mut(&mut *arc_umap).unwrap().insert("fradmin".to_string(), UserInfo{name:"Super User".to_string(), group: "Bear".to_string()});
         }
     }
 
     log::info!("Fundraising Config retrieved");
 }
-
+static LOCAL_STORE_SCHEMA_VER: u32 = 020500;
 pub(crate) async fn load_config() {
     log::info!("Getting Fundraising Config: Loading From LocalStorage");
     let rslt = LocalStorage::get("FrConfig");
@@ -197,7 +207,11 @@ pub(crate) async fn load_config() {
 
         let req = GraphQlReq::new(ALWAYS_CONFIG_GQL.to_string());
         if let Ok(val) = make_gql_request::<serde_json::Value>(&req).await {
-            if val["config"]["lastModifiedTime"].as_str().unwrap() == stored_config.config.last_modified_time {
+            let is_last_mod_time_check_passed =
+                val["config"]["lastModifiedTime"].as_str().unwrap() == stored_config.config.last_modified_time;
+            let is_ver_schema_check_passed =
+                stored_config.local_store_schema_ver.unwrap_or(0) == LOCAL_STORE_SCHEMA_VER;
+            if is_last_mod_time_check_passed && is_ver_schema_check_passed {
                 log::info!("Using stored config data");
                 process_config_data(stored_config.config);
                 return;
@@ -219,7 +233,8 @@ pub(crate) async fn load_config() {
     }
 
     let config = {
-        let frconfig = rslt.unwrap();
+        let mut frconfig = rslt.unwrap();
+        frconfig.local_store_schema_ver = Some(LOCAL_STORE_SCHEMA_VER);
         if let Err(err) = LocalStorage::set("FrConfig", frconfig.clone()) {
             log::error!("Failed to cache config to storage: {:#?}", err);
         } else {
@@ -233,7 +248,7 @@ pub(crate) async fn load_config() {
 
 }
 
-pub(crate) fn get_users() -> Arc<BTreeMap<String, String>> {
+pub(crate) fn get_users() -> Arc<BTreeMap<String, UserInfo>> {
     USER_MAP.read().unwrap().clone()
 }
 
@@ -328,6 +343,66 @@ pub(crate) async fn report_new_issue(reporting_id: &str, title: &str, body: &str
     make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
 }
 
+static GET_TIMECARDS_GRAPHQL: &'static str = r"
+{
+  mulchTimecards(***GET_TIMECARDS_PARAMS***){
+    id,
+    deliveryId
+    timeIn
+    timeOut
+    timeTotal
+  }
+}
+";
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub(crate) struct TimeCard{
+    #[serde(alias = "id")]
+    pub(crate) uid: String,
+    #[serde(alias = "deliveryId")]
+    pub(crate) delivery_id: u32,
+    #[serde(alias = "timeIn")]
+    pub(crate) time_in: String,
+    #[serde(alias = "timeOut")]
+    pub(crate) time_out: String,
+    #[serde(alias = "timeTotal")]
+    pub(crate) time_total: String,
+}
+
+pub(crate) async fn get_timecards_data(delivery_id: Option<u32>, _uid: Option<String>)
+    -> std::result::Result<Vec<(String, String, Option<TimeCard>)> ,Box<dyn std::error::Error>>
+{
+    let query = if let Some(delivery_id) = delivery_id {
+        GET_TIMECARDS_GRAPHQL.replace("***GET_TIMECARDS_PARAMS***", &format!("deliveryId: {}", delivery_id))
+    } else {
+        GET_TIMECARDS_GRAPHQL.replace("(***GET_TIMECARDS_PARAMS***)", "")
+    };
+    log::info!("Running Query: {}", &query);
+
+    let mut timecard_map = {
+        #[derive(Serialize, Deserialize, Debug)]
+        struct GqlResp {
+            #[serde(alias = "mulchTimecards")]
+            mulch_timecards: Vec<TimeCard>,
+        }
+
+        let req = GraphQlReq::new(query);
+        let resp = make_gql_request::<GqlResp>(&req).await?;
+        let timecard_map: BTreeMap<_, _> = resp.mulch_timecards.into_iter().map(|v|(v.uid.clone(), v)).collect();
+        timecard_map
+    };
+
+    let timecard_data = (*get_users()).clone()
+        .into_iter()
+        .filter(|(_,user_info)| "Bear"!=user_info.group && "Bogus"!=user_info.group)
+        .map(|(uid,user_info)| {
+            let tc = timecard_map.remove(&uid);
+            (uid, user_info.name, tc)
+        })
+        .collect::<Vec<(String, String, Option<TimeCard>)>>();
+    //timecard_data.sort_by_key(|k| k.1.clone());  //Shouldn't need this since btree is sorted
+    Ok(timecard_data)
+}
 // static TEST_ADMIN_API_GQL:&'static str =
 // r#"
 // {

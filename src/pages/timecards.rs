@@ -1,7 +1,6 @@
 use yew::prelude::*;
 use wasm_bindgen::{JsCast};
-use web_sys::{ MouseEvent, HtmlSelectElement};
-use std::str::FromStr;
+use web_sys::{Event, InputEvent, MouseEvent, HtmlSelectElement};
 
 use crate::data_model::*;
 
@@ -27,7 +26,7 @@ fn get_delivery_id() -> Option<String> {
 #[function_component(Timecards)]
 pub fn timecards_page() -> Html {
 
-    let timecards_data_ready: Option<Vec<serde_json::Value>> = use_state_eq(|| None);
+    let timecards_data_ready: yew::UseStateHandle<Option<Vec<(String, String, Option<TimeCard>)>>> = use_state_eq(|| None);
     let is_delivery_date_selected = use_state_eq(|| false);
 
     let on_export_timecards = {
@@ -42,7 +41,7 @@ pub fn timecards_page() -> Html {
     let on_delivery_selection_change = {
         let timecards_data_ready = timecards_data_ready.clone();
         let is_delivery_date_selected = is_delivery_date_selected.clone();
-        Callback::from(move |evt: MouseEvent| {
+        Callback::from(move |evt: Event| {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_delivery_selection_change");
@@ -50,28 +49,40 @@ pub fn timecards_page() -> Html {
                 is_delivery_date_selected.set(true);
                 log::info!("Downloading timecard data for: {delivery_id_str}");
                 let delivery_id = delivery_id_str.parse::<u32>().unwrap();
+                let timecards_data_ready = timecards_data_ready.clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    let resp = get_timecards_data(delivery_id).await.unwrap();
-                    log::info!("Timecards data ready");
-                    timecards_data_ready.set(Some(resp));
+                    match get_timecards_data(Some(delivery_id), None).await {
+                        Ok(resp)=>{
+                            log::info!("Timecards data ready");
+                            timecards_data_ready.set(Some(resp));
+                        },
+                        Err(err)=>{
+                            let err_str = format!("Failed to get retrieve timecard data: {:#?}", err);
+                            log::error!("{}",&err_str);
+                            gloo_dialogs::alert(err_str.as_str());
+                        },
+                    };
                 });
             }
         })
     };
 
-    // let on_view_settings = {
-    //     Callback::from(move |evt: MouseEvent| {
-    //         evt.prevent_default();
-    //         evt.stop_propagation();
-    //         log::info!("on_view_settings");
-
-    //         let dlg = bootstrap::get_modal_by_id("reportViewSettingsDlg").unwrap();
-    //         dlg.show();
-
-    //     })
-    // };
+    let on_time_change = {
+        Callback::from(move |evt: InputEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            log::info!("on_time_change");
+        })
+    };
 
 
+    let on_save_entry = {
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            log::info!("on_save_entry");
+        })
+    };
     // let on_save_entry = {
     //     let current_settings = current_settings.clone();
     //     Callback::from(move |_evt: MouseEvent| {
@@ -105,20 +116,18 @@ pub fn timecards_page() -> Html {
     // };
 
     html! {
-        <div>
-            <div class="col-xs-1 d-flex justify-content-center">
-                <div class="card" style="width: 100%;">
+        <div class="col-xs-1 d-flex justify-content-center">
+            <div class="card" style="width: 100%;">
 
-                    <div class="card-body" id="cardReportBody">
-                        <h6 class="card-title ps-2" id="orderCardTitle">
-
-                    <h5 class="card-title">{"Delivery Timesheet"}</h5>
+                <div class="card-body" id="cardReportBody">
+                    <h6 class="card-title">{"Delivery Timesheet"}</h6>
                     <div class="row mb-2">
-                        <span>{"Choose Delivery Date"}
-                            <select class="ms-1" id="timeSheetSelectDeliveryDate" onchange={on_delivery_selection_change}>
+                        <span>
+                            {"Choose Delivery Date"}
+                            <select class="ms-1" id="timeSheetSelectDeliveryDate" onchange={on_delivery_selection_change.clone()}>
                                 {
                                     get_deliveries().iter().map(|(delivery_id, delivery)| {
-                                        html!{
+                                    html!{
                                             <option value={delivery_id.to_string()}>
                                                 {delivery.get_delivery_date_str()}
                                             </option>
@@ -134,57 +143,62 @@ pub fn timecards_page() -> Html {
                             </button>
                         </span>
                     </div>
-                    if !is_delivery_date_selected {
+                    if !(*is_delivery_date_selected) {
                         <div>{"Select a delivery date"}</div>
-                    } else if let Some(timecards) = timecards_data_ready {
-                        <ul class="list-group" id="timeSheet">
-                            timecardData.into_iter().map(|v| {
+                    } else if let Some(timecards_data) = &*timecards_data_ready {
+                        <ul class="list-group" id="timeSheet"> {
+                            timecards_data.into_iter().map(|(uid, user_name, tc)| {
                                 let time_in_id = format!("timeInId-{}", &uid);
                                 let time_out_id = format!("timeOutId-{}", &uid);
                                 let time_calc_id = format!("timeCalcId-{}", &uid);
                                 html!{
                                     <li class="list-group-item">
-                                        <div class="row" data-uid={uid.clone()} data-uname={user_name}>
+                                        <div class="row" data-uid={uid.clone()} data-uname={user_name.clone()}>
                                             <div class="col">
-                                                {userName}
+                                                {user_name.clone()}
                                             </div>
                                             <div class="col">
                                                 <div class="form-floating">
-                                                    <input data-clocklet="format: HH:mm;" oninput={on_time_change}
-                                                           class="form-control time-in" id={time_in_id} />
+                                                    <input data-clocklet="format: HH:mm;" oninput={on_time_change.clone()}
+                                                           class="form-control time-in" id={time_in_id.clone()}
+                                                           value={tc.as_ref().map_or("".to_string(), |v|v.time_in.clone())}
+                                                    />
                                                     <label for={time_in_id}>{"Time In"}</label>
                                                 </div>
                                             </div>
                                             <div class="col">
                                                 <div class="form-floating">
-                                                    <input data-clocklet="format: HH:mm;" oninput={on_time_change}
-                                                           class="form-control time-out" id={time_out_id} />
+                                                    <input data-clocklet="format: HH:mm;" /* oninput={on_time_change.clone()} */
+                                                           class="form-control time-out" id={time_out_id.clone()}
+                                                           value={tc.as_ref().map_or("".to_string(), |v|v.time_out.clone())}
+                                                    />
                                                     <label for={time_out_id}>{"Time Out"}</label>
                                                 </div>
                                             </div>
                                             <div class="col">
                                                 <div class="form-floating">
-                                                    <div id={time_calc_id} class="form-control time-calc">{"00:00"}</div>
+                                                    <div id={time_calc_id.clone()} class="form-control time-calc">
+                                                        {tc.as_ref().map_or("00:00".to_string(), |v|v.time_total.clone())}
+                                                    </div>
                                                     <label for={time_calc_id}>{"Total Time"}</label>
                                                 </div>
                                             </div>
                                             <div class="col">
-                                                <button type="button" class="btn btn-primary invisible" onclick={on_save_entry}>
+                                                <button type="button" class="btn btn-primary d-none" onclick={on_save_entry.clone()}>
                                                     <span class="spinner-border spinner-border-sm me-1" role="status"
-                                                          aria-hidden="true" style={{display: "none"}} />
+                                                          aria-hidden="true" />
                                                           {"Save"}
                                                 </button>
                                             </div>
                                         </div>
                                     </li>
                                 }
-                            });
+                            }).collect::<Html>()
+                        }
                         </ul>
                     } else {
-                        <div class="col-xs-1 d-flex justify-content-center" >
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">{"Loading Timecard data..."}</span>
-                            </div>
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">{"Loading Timecard data..."}</span>
                         </div>
                     }
                 </div>
