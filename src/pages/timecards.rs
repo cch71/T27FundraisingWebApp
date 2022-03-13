@@ -1,9 +1,16 @@
 use yew::prelude::*;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Event, InputEvent, MouseEvent, Element, HtmlElement, HtmlButtonElement, HtmlInputElement, HtmlSelectElement};
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use crate::data_model::*;
+use std::time::{ Duration };
 
+thread_local! {
+    static CURRENT_TIMECARDS: Rc<RefCell<std::collections::HashMap<String, Duration>>> =
+        Rc::new(RefCell::new(std::collections::HashMap::new()));
+}
 
 /////////////////////////////////////////////////
 ///
@@ -19,6 +26,45 @@ fn get_delivery_id() -> Option<u32> {
     } else {
         value.parse::<u32>().ok()
     }
+}
+
+/////////////////////////////////////////////////
+///
+fn server_time_to_display(server_time: &str) -> String {
+    if server_time.len() == 8 {
+        server_time[0..5].to_string()
+    } else {
+        server_time.to_string()
+    }
+}
+
+/////////////////////////////////////////////////
+///
+fn get_uid_from_row(row_elm: &HtmlElement) -> String {
+    row_elm.dataset().get("uid").unwrap()
+}
+
+/////////////////////////////////////////////////
+///
+fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
+    let mut time_val_str = time_val_str.split(":").map(|v|v.to_string()).collect::<Vec<String>>();
+    if time_val_str.len() == 3 { //If vector is server time
+        time_val_str.pop();
+    }
+
+    if time_val_str.len() == 2 {
+        return time_val_str[0]
+            .parse::<u64>().ok()
+            .and_then(|v1|Some(Duration::from_secs(v1*60*60)))
+            .and_then(|v1| {
+                time_val_str[1]
+                    .parse::<u64>().ok()
+                    .and_then(|v2|Some(Duration::from_secs(v2*60)))
+                    .and_then(|v2| v1.checked_add(v2))
+            });
+    }
+    None
+
 }
 
 /////////////////////////////////////////////////
@@ -52,8 +98,25 @@ pub fn timecards_page() -> Html {
                 wasm_bindgen_futures::spawn_local(async move {
                     match get_timecards_data(Some(delivery_id), None).await {
                         Ok(resp)=>{
-                            log::info!("Timecards data ready");
-                            timecards_data_ready.set(Some(resp));
+                            CURRENT_TIMECARDS.with(|f|{
+                                log::info!("Timecards data ready");
+                                *f.borrow_mut() = resp.iter()
+                                    .filter(|v| v.2.is_some())
+                                    .map(|v|{
+                                        // Rememeber time str from server is "00:00:00"
+                                         let time_comps = v.2.as_ref().unwrap().time_total
+                                            .split(":")
+                                            .map(|v|v.parse::<u64>().unwrap())
+                                            .collect::<Vec<u64>>();
+                                        let mut dur = Duration::from_secs(time_comps[0] * 60 * 60); //Hours
+                                        dur = dur.checked_add(Duration::from_secs(time_comps[1] * 60)).unwrap(); //min
+                                        log::info!("Loading Duration {} : {}", &v.0, dur.as_secs());
+                                        // ignore seconds
+                                        (v.0.clone(), dur)
+                                    })
+                                    .collect::<std::collections::HashMap<String, Duration>>();
+                                timecards_data_ready.set(Some(resp));
+                            });
                         },
                         Err(err)=>{
                             let err_str = format!("Failed to get retrieve timecard data: {:#?}", err);
@@ -66,45 +129,32 @@ pub fn timecards_page() -> Html {
         })
     };
 
+
     let on_time_change = {
         Callback::from(move |evt: InputEvent| {
-            use std::time::{ Duration };
 
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_time_change");
 
             let row_elm = evt.target()
-                .and_then(|t| t.dyn_into::<Element>().ok())
+                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                 .and_then(|t|t.parent_element())
                 .and_then(|t|t.parent_element())
                 .and_then(|t|t.parent_element())
+                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                 .unwrap();
 
+            let uid = get_uid_from_row(&row_elm);
+
             fn read_time_val(elm: Result<Option<Element>, JsValue>)->Option<Duration> {
-                if let Some(time_val_str) = elm
-                    .ok()
+                elm.ok()
                     .flatten()
                     .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                     .and_then(|t| {
                         // log::info!("IEVal: {}", t.value());
-                        Some(t.value().split(":").map(|v|v.to_string()).collect::<Vec<String>>())
+                        time_val_str_to_duration(&t.value())
                     })
-                {
-                    // log::info!("Read in: {}", time_val_str.join(" ,"));
-                    if time_val_str.len() == 2 {
-                        return time_val_str[0]
-                            .parse::<u64>().ok()
-                            .and_then(|v1|Some(Duration::from_secs(v1*60*60)))
-                            .and_then(|v1| {
-                                time_val_str[1]
-                                    .parse::<u64>().ok()
-                                    .and_then(|v2|Some(Duration::from_secs(v2*60)))
-                                    .and_then(|v2| v1.checked_add(v2))
-                            });
-                    }
-                }
-                None
             }
 
             let time_in_val = read_time_val(row_elm.query_selector(".time-in"));
@@ -126,12 +176,17 @@ pub fn timecards_page() -> Html {
             if time_in_val.is_none() || time_out_val.is_none() {
                 let _ = btn_elm.class_list().add_1("invisible");
                 time_calc_elm.set_inner_text("00:00");
+                CURRENT_TIMECARDS.with(|f|{
+                    if time_in_val.is_none() && time_out_val.is_none() && f.borrow().contains_key(&uid) {
+                        let _ = btn_elm.class_list().remove_1("invisible");
+                        let _ = time_calc_elm.class_list().remove_1("is-invalid");
+                    }
+                });
                 return;
             }
 
             let time_in = time_in_val.unwrap();
             let time_out = time_out_val.unwrap();
-
 
             let mark_invalid = ||{
                 let _ = time_calc_elm.class_list().add_1("is-invalid");
@@ -140,23 +195,34 @@ pub fn timecards_page() -> Html {
             };
 
             match time_out.checked_sub(time_in) {
-                Some(time_total)=>{
-                    let time_total_secs = time_total.as_secs();
-                    if 0==time_total_secs {
-                        mark_invalid();
-                        return;
-                    }
+                Some(new_time_total)=>{
+                    CURRENT_TIMECARDS.with(|f|{
+                        let new_time_total_secs = new_time_total.as_secs();
+                        if 0==new_time_total_secs {
+                            mark_invalid();
+                            return;
+                        }
 
-                    let _ = time_calc_elm.class_list().remove_1("is-invalid");
-                    let new_hours:u64 = (time_total_secs as f64 / (60.0*60.0)).floor() as u64;
-                    let new_mins:u64 = ((time_total_secs as f64 % (60.0*60.0)) / 60.0).floor() as u64;
-                    let new_time_total_str = format!("{:02}:{:02}", new_hours, new_mins);
-                    if 0 == new_hours && 0 == new_mins {
-                        let _ = btn_elm.class_list().add_1("invisible");
-                        return;
-                    }
-                    let _ = btn_elm.class_list().remove_1("invisible");
-                    time_calc_elm.set_inner_text(&new_time_total_str);
+                        let _ = time_calc_elm.class_list().remove_1("is-invalid");
+
+                        if let Some(saved_time_total) = f.borrow().get(&uid) {
+                            if &new_time_total == saved_time_total {
+                                let _ = btn_elm.class_list().add_1("invisible");
+                                return;
+                            }
+                        }
+
+                        let new_hours:u64 = (new_time_total_secs as f64 / (60.0*60.0)).floor() as u64;
+                        let new_mins:u64 = ((new_time_total_secs as f64 % (60.0*60.0)) / 60.0).floor() as u64;
+                        let new_time_total_str = format!("{:02}:{:02}", new_hours, new_mins);
+                        if 0 == new_hours && 0 == new_mins {
+                            let _ = btn_elm.class_list().add_1("invisible");
+                            return;
+                        }
+
+                        let _ = btn_elm.class_list().remove_1("invisible");
+                        time_calc_elm.set_inner_text(&new_time_total_str);
+                    });
                 },
                 None=>mark_invalid(),
             };
@@ -185,11 +251,72 @@ pub fn timecards_page() -> Html {
                 .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                 .unwrap();
 
+            let row_elm = btn_elm
+                .parent_element()
+                .and_then(|t|t.parent_element())
+                .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                .unwrap();
+
+            // Start spinny and disable save button
             let _ = spinny_elm.class_list().remove_1("d-none");
             btn_elm.set_disabled(true);
 
-            let _ = spinny_elm.class_list().add_1("d-none");
-            btn_elm.set_disabled(false);
+            fn read_time_val(elm: Result<Option<Element>, JsValue>)->String {
+                if let Some(time_val_str) = elm
+                    .ok()
+                    .flatten()
+                    .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                    .and_then(|t| {
+                        // log::info!("IEVal: {}", t.value());
+                        Some(t.value())
+                    })
+                {
+                    if time_val_str.len() < 0 {
+                        return format!("{}:00", time_val_str);
+                    }
+                }
+
+                "".to_string()
+            }
+
+            let time_in_val = read_time_val(row_elm.query_selector(".time-in"));
+            // log::info!("TI Val: {}", time_in_val.unwrap_or(Duration::from_secs(0)).as_secs());
+            let time_out_val = read_time_val(row_elm.query_selector(".time-out"));
+            // log::info!("TO Val: {}", time_out_val.unwrap_or(Duration::from_secs(0)).as_secs());
+
+
+            let time_calc_val = {
+                let time_val_str = row_elm.query_selector(".time-calc").ok()
+                    .flatten()
+                    .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                    .unwrap()
+                    .inner_text();
+                if time_val_str.len() < 0 {
+                    format!("{}:00", time_val_str)
+                } else {
+                    "".to_string()
+                }
+            };
+
+            let uid = get_uid_from_row(&row_elm);
+
+                wasm_bindgen_futures::spawn_local(async move {
+                    log::info!("Saving: uid:{} ti: {} to:{} tt:{}",
+                        &uid,
+                        &time_in_val,
+                        &time_out_val,
+                        &time_calc_val);
+
+                    //Save to cloud
+
+                    CURRENT_TIMECARDS.with(|f|{
+                        let time_calc_val = time_val_str_to_duration(&time_calc_val).unwrap();
+                        let _ = f.borrow_mut().insert(uid.clone(), time_calc_val);
+                    });
+
+                    let _ = spinny_elm.class_list().add_1("d-none");
+                    btn_elm.set_disabled(false);
+            });
         })
     };
 
@@ -239,7 +366,7 @@ pub fn timecards_page() -> Html {
                                                 <div class="form-floating">
                                                     <input data-clocklet="format: HH:mm;" oninput={on_time_change.clone()}
                                                            class="form-control time-in" id={time_in_id.clone()}
-                                                           value={tc.as_ref().map_or("".to_string(), |v|v.time_in.clone())}
+                                                           value={tc.as_ref().map_or("".to_string(), |v|server_time_to_display(&v.time_in))}
                                                     />
                                                     <label for={time_in_id}>{"Time In"}</label>
                                                 </div>
@@ -248,7 +375,7 @@ pub fn timecards_page() -> Html {
                                                 <div class="form-floating">
                                                     <input data-clocklet="format: HH:mm;" oninput={on_time_change.clone()}
                                                            class="form-control time-out" id={time_out_id.clone()}
-                                                           value={tc.as_ref().map_or("".to_string(), |v|v.time_out.clone())}
+                                                           value={tc.as_ref().map_or("".to_string(), |v|server_time_to_display(&v.time_out))}
                                                     />
                                                     <label for={time_out_id}>{"Time Out"}</label>
                                                 </div>
@@ -256,7 +383,7 @@ pub fn timecards_page() -> Html {
                                             <div class="col">
                                                 <div class="form-floating">
                                                     <div id={time_calc_id.clone()} class="form-control time-calc">
-                                                        {tc.as_ref().map_or("00:00".to_string(), |v|v.time_total.clone())}
+                                                        {tc.as_ref().map_or("00:00".to_string(), |v|server_time_to_display(&v.time_total))}
                                                     </div>
                                                     <label for={time_calc_id}>{"Total Time"}</label>
                                                 </div>
