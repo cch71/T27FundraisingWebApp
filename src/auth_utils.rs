@@ -3,7 +3,7 @@ use std::sync::{RwLock, Arc};
 
 
 lazy_static! {
-    static ref ACTIVE_USER: RwLock<Option<Arc<UserInfo>>> = RwLock::new(None);
+    static ref ACTIVE_USER: RwLock<Option<Arc<AuthenticatedUserInfo>>> = RwLock::new(None);
 }
 
 /////////////////////////////////////////////////
@@ -26,7 +26,7 @@ extern "C" {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
-pub(crate) struct UserInfo {
+pub(crate) struct AuthenticatedUserInfo {
     pub(crate) email: String,
     pub(crate) token: String,
     name: Option<String>,
@@ -34,7 +34,7 @@ pub(crate) struct UserInfo {
     pub(crate) roles: Vec<String>,
 }
 
-impl UserInfo {
+impl AuthenticatedUserInfo {
     pub(crate) fn get_id(&self)->String {
         // TODO: Do this at creation time
         self.id.as_ref().map_or_else(||{
@@ -54,11 +54,11 @@ impl UserInfo {
     }
 }
 
-pub(crate) async fn get_active_user_async() -> Option<Arc<UserInfo>> {
+pub(crate) async fn get_active_user_async() -> Option<Arc<AuthenticatedUserInfo>> {
     match getUserInfo().await {
         Ok(user_info) => {
             //log::info!("User Info: {:#?}", user_info);
-            let user_info: UserInfo = serde_wasm_bindgen::from_value(user_info).unwrap();
+            let user_info: AuthenticatedUserInfo = serde_wasm_bindgen::from_value(user_info).unwrap();
             let user_info = Arc::new(user_info);
             *ACTIVE_USER.write().unwrap() = Some(user_info.clone());
             Some(user_info)
@@ -71,7 +71,7 @@ pub(crate) async fn get_active_user_async() -> Option<Arc<UserInfo>> {
     }
 }
 
-pub(crate) fn get_active_user() -> Arc<UserInfo> {
+pub(crate) fn get_active_user() -> Arc<AuthenticatedUserInfo> {
     ACTIVE_USER.read().unwrap().as_ref().unwrap().clone()
 }
 

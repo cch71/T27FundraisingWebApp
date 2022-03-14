@@ -32,6 +32,7 @@ use pages::{
     order_form::OrderForm,
     order_donations::OrderDonations,
     order_products::OrderProducts,
+    timecards::Timecards,
 };
 
 /////////////////////////////////////////////////
@@ -153,6 +154,8 @@ pub enum AppRoutes {
     OrderDonations,
     #[at("/reports")]
     Reports,
+    #[at("/timecards")]
+    Timecards,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -173,6 +176,7 @@ fn switch(route: &AppRoutes) -> Html {
         AppRoutes::OrderProducts => html!{<OrderProducts/>},
         AppRoutes::OrderDonations => html!{<OrderDonations/>},
         AppRoutes::Reports => html!{<Reports/>},
+        AppRoutes::Timecards => html!{<Timecards/>},
         AppRoutes::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }
@@ -270,10 +274,11 @@ impl Component for Model {
             let active_user = get_active_user();
             let user_id = active_user.get_id();
             let user_name = active_user.get_name();
+            let is_admin = active_user.is_admin();
 
             html! {
                 <BrowserRouter>
-                    <AppNav userid={user_id.clone()} username={user_name} onlogoff={on_logoff} onreportissue={on_reportissue}/>
+                    <AppNav userid={user_id.clone()} username={user_name} isadmin={is_admin} onlogoff={on_logoff} onreportissue={on_reportissue}/>
                     <main class="flex-shrink-0">
                         <Switch<AppRoutes> render={Switch::render(switch)} />
                         <ReportIssueDlg/>
@@ -290,5 +295,6 @@ impl Component for Model {
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
+    log::info!("RelVer: {}", std::option_env!("AWS_COMMIT_ID").unwrap_or("?"));
     yew::start_app::<Model>();
 }

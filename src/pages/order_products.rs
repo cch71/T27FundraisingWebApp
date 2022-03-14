@@ -25,7 +25,7 @@ fn get_delivery_id(document: &web_sys::Document) -> Option<String> {
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
         .unwrap()
         .value();
-    log::info!("Product Select Val: {}", &value);
+    log::info!("Delivery Date Selection Val: {}", &value);
     if 0==value.len() || "none" == value {
         None
     } else {

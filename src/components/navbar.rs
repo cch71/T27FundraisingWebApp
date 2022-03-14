@@ -9,6 +9,7 @@ use crate::AppRoutes;
 pub(crate) struct AppNavProps {
     pub(crate) userid: String,
     pub(crate) username: String,
+    pub(crate) isadmin: bool,
     pub(crate) onlogoff: Callback<MouseEvent>,
     pub(crate) onreportissue: Callback<MouseEvent>,
 }
@@ -63,6 +64,11 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html
                         {userlabel}
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        if props.isadmin {
+                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::Timecards} >
+                                {"Timecards"}
+                            </Link<AppRoutes>>
+                        }
                         <a class="dropdown-item" onclick={props.onreportissue.clone()} href="#" data-bs-toggle="modal">
                             {"Report Issue"}
                         </a>

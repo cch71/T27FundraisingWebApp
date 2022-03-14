@@ -39,8 +39,7 @@ pub(crate) fn on_edit_spreading_from_rpt( evt: MouseEvent, datatable: std::rc::R
             } else {
                 Some(t)
             }
-        })
-    .unwrap();
+        }).unwrap();
 
     let tr_node = btn_elm.parent_node() .and_then(|t| t.parent_node()) .unwrap();
     let elm = btn_elm.dyn_into::<HtmlElement>().ok().unwrap();
@@ -51,7 +50,7 @@ pub(crate) fn on_edit_spreading_from_rpt( evt: MouseEvent, datatable: std::rc::R
         .unwrap_or("".to_string())
         .split(",").into_iter()
         .map(|v|{
-            (v.to_string(), users.get(v).unwrap_or(&v.to_string()).to_string())
+            (v.to_string(), users.get(v).map_or(v.to_string(),|ui|ui.name.to_string()))
         }).collect::<_>();
     log::info!("on_edit_spreading: {}", order_id);
 
@@ -222,22 +221,26 @@ pub(crate) fn choose_spreaders_dlg() -> Html
                                         <div class="btn-group-vertical overflow-auto" role="group"
                                              id="spreadingDlgSpreaderSelection" aria-label="Select Spreaders">
                                              {
-                                                 get_users().iter().map(|(userid, name)|{
-                                                     let (li_classes, is_checked, lbl_classes) = if selected_users.contains_key(userid) {
-                                                         ("btn-check active", true, "btn btn-outline-primary active")
-                                                     } else {
-                                                         ("btn-check", false, "btn btn-outline-primary")
-                                                     };
-                                                     //log::info!("Reviewing: {}:{} is_checked: {}", userid, name, is_checked);
-                                                     html! {
-                                                         <label class={lbl_classes}>
-                                                             {name.clone()}
-                                                            <input type="checkbox" class={li_classes} onchange={handle_selected_user.clone()}
-                                                                data-uid={userid.clone()} data-uname={name.clone()} autocomplete="off"
-                                                                checked={is_checked}/>
-                                                        </label>
-                                                     }
-                                                 }).collect::<Html>()
+                                                 get_users()
+                                                     .iter()
+                                                     .filter(|(_,user_info)| "Bear"!=user_info.group && "Bogus"!=user_info.group)
+                                                     .map(|(userid, user_info)|{
+                                                         let name = &user_info.name;
+                                                         let (li_classes, is_checked, lbl_classes) = if selected_users.contains_key(userid) {
+                                                             ("btn-check active", true, "btn btn-outline-primary active")
+                                                         } else {
+                                                             ("btn-check", false, "btn btn-outline-primary")
+                                                         };
+                                                         //log::info!("Reviewing: {}:{} is_checked: {}", userid, name, is_checked);
+                                                         html! {
+                                                             <label class={lbl_classes}>
+                                                                {name.clone()}
+                                                                <input type="checkbox" class={li_classes} onchange={handle_selected_user.clone()}
+                                                                    data-uid={userid.clone()} data-uname={name.clone()} autocomplete="off"
+                                                                    checked={is_checked}/>
+                                                             </label>
+                                                         }
+                                                     }).collect::<Html>()
                                              }
                                         </div>
                                     </div>
