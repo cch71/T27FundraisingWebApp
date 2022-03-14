@@ -93,6 +93,7 @@ pub fn timecards_page() -> Html {
             log::info!("on_delivery_selection_change");
             if let Some(delivery_id) = get_delivery_id() {
                 is_delivery_date_selected.set(true);
+                timecards_data_ready.set(None);
                 log::info!("Downloading timecard data for: {delivery_id}");
                 let timecards_data_ready = timecards_data_ready.clone();
                 wasm_bindgen_futures::spawn_local(async move {
@@ -271,7 +272,7 @@ pub fn timecards_page() -> Html {
                         Some(t.value())
                     })
                 {
-                    if time_val_str.len() < 0 {
+                    if time_val_str.len() != 0 {
                         return format!("{}:00", time_val_str);
                     }
                 }
@@ -291,7 +292,7 @@ pub fn timecards_page() -> Html {
                     .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                     .unwrap()
                     .inner_text();
-                if time_val_str.len() < 0 {
+                if time_val_str.len() != 0 {
                     format!("{}:00", time_val_str)
                 } else {
                     "".to_string()
@@ -300,22 +301,35 @@ pub fn timecards_page() -> Html {
 
             let uid = get_uid_from_row(&row_elm);
 
-                wasm_bindgen_futures::spawn_local(async move {
-                    log::info!("Saving: uid:{} ti: {} to:{} tt:{}",
-                        &uid,
-                        &time_in_val,
-                        &time_out_val,
-                        &time_calc_val);
+            wasm_bindgen_futures::spawn_local(async move {
+                log::info!("Saving: uid:{} ti: {} to:{} tt:{}",
+                    &uid,
+                    &time_in_val,
+                    &time_out_val,
+                    &time_calc_val);
 
-                    //Save to cloud
+                let delivery_id = get_delivery_id().unwrap();
+                //Save to cloud
+                let tc = TimeCard{
+                    uid: uid.clone(),
+                    delivery_id: delivery_id,
+                    time_in: time_in_val,
+                    time_out: time_out_val,
+                    time_total: time_calc_val.clone(),
+                };
+                if let Err(err) = save_timecards_data(vec![tc]).await {
+                    gloo_dialogs::alert(&format!("Failed to set timecard data: {}", &err));
+                    return;
+                }
 
-                    CURRENT_TIMECARDS.with(|f|{
-                        let time_calc_val = time_val_str_to_duration(&time_calc_val).unwrap();
-                        let _ = f.borrow_mut().insert(uid.clone(), time_calc_val);
-                    });
+                CURRENT_TIMECARDS.with(|f|{
+                    let time_calc_val = time_val_str_to_duration(&time_calc_val).unwrap();
+                    let _ = f.borrow_mut().insert(uid.clone(), time_calc_val);
+                });
 
-                    let _ = spinny_elm.class_list().add_1("d-none");
-                    btn_elm.set_disabled(false);
+                let _ = spinny_elm.class_list().add_1("d-none");
+                let _ = btn_elm.class_list().add_1("invisible");
+                btn_elm.set_disabled(false);
             });
         })
     };
