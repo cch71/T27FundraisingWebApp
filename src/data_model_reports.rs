@@ -49,7 +49,7 @@ impl std::str::FromStr for ReportViews {
             "Unfinished Spreading Jobs" => Ok(ReportViews::UnfinishedSpreadingJobs),
             "Order Verfication" => Ok(ReportViews::OrderVerification),
             "Distribution Point" => Ok(ReportViews::DistributionPoints),
-            "Deliveriesl" => Ok(ReportViews::Deliveries),
+            "Deliveries" => Ok(ReportViews::Deliveries),
             "Allocation Summary" => Ok(ReportViews::AllocationSummary),
             _ => Err(format!("'{}' is not a valid value for ReportViews", s)),
         }
@@ -69,7 +69,7 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
             //         reports.push(ReportViews::UnfinishedSpreadingJobs);
             reports.push(ReportViews::OrderVerification);
             //         reports.push(ReportViews::DistributionPoints);
-            //         reports.push(ReportViews::Deliveries);
+            reports.push(ReportViews::Deliveries);
         }
 
     }
@@ -169,6 +169,36 @@ pub(crate) async fn get_full_report_data(order_owner_id: Option<&String>)
     };
 
     make_report_query(query).await
+}
+
+static DELIVERIES_RPT_GRAPHQL: &'static str = r#"
+{
+  mulchOrders {
+    orderId
+    ownerId
+    customer {
+        name
+        addr1
+        addr2
+        phone
+        neighborhood
+    }
+    specialInstructions
+    purchases {
+        productId
+        numSold
+    }
+    deliveryId
+  }
+}
+"#;
+
+pub(crate) async fn get_deliveries_report_data()
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    make_report_query(DELIVERIES_RPT_GRAPHQL.to_string()).await
+        .and_then(|orders|Ok(orders.into_iter()
+            .filter(|v|v["delivery_id"].as_u64().is_none()).collect::<Vec<_>>()))
 }
 
 static SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"

@@ -4,6 +4,7 @@ pub(crate) mod delete_report_order_dlg;
 pub(crate) mod action_report_buttons;
 pub(crate) mod navbar;
 pub(crate) mod report_quick;
+pub(crate) mod report_deliveries;
 pub(crate) mod report_full;
 pub(crate) mod report_verify;
 pub(crate) mod report_spreading_jobs;

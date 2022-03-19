@@ -307,6 +307,16 @@ pub(crate) fn get_neighborhoods() -> Arc<Vec<Neighborhood>>
 
 ////////////////////////////////////////////////////////////////////////////
 //
+pub(crate) fn get_neighborhood(hood: &str) -> Option<Neighborhood>
+{
+    NEIGHBORHOODS.read()
+        .unwrap()
+        .as_ref()
+        .and_then(|v|v.iter().find(|&v|v.name == hood).cloned())
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
 pub(crate) fn get_products() -> Arc<BTreeMap<String, ProductInfo>>
 {
     PRODUCTS.read().unwrap().as_ref().unwrap().clone()
