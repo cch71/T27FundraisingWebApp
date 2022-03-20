@@ -8,7 +8,7 @@ use crate::data_model::{get_fr_config};
 
 pub(crate) static ALL_USERS_TAG: &'static str = "doShowAllUsers";
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub(crate) enum ReportViews {
     // Reports available to sellers
     Quick,
@@ -79,6 +79,19 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
     // }
 
     reports
+}
+
+pub(crate) fn do_show_current_seller(current_view: &ReportViews) -> bool {
+    match *current_view {
+        ReportViews::Quick=>true,
+        ReportViews::Full=>true,
+        ReportViews::SpreadingJobs=>true,
+        ReportViews::UnfinishedSpreadingJobs=>false,
+        ReportViews::OrderVerification=>true,
+        ReportViews::Deliveries=>false,
+        ReportViews::DistributionPoints=>false,
+        _=>false,
+    }
 }
 
 async fn make_report_query(query: String)
