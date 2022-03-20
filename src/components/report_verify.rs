@@ -113,6 +113,7 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
                                     None => ("Donation".to_string(), "Donation".to_string()),
                                 };
                                 let is_readonly = is_order_from_report_data_readonly(&v);
+                                let uid = v["ownerId"].as_str().unwrap();
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>
@@ -123,7 +124,7 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
                                         <td>{to_money_str(v["amountFromChecksCollected"].as_str())}</td>
                                         <td>{v["checkNumbers"].as_str().unwrap_or("")}</td>
                                         <td>{to_money_str(v["amountTotalCollected"].as_str())}</td>
-                                        <td>{v["ownerId"].as_str().unwrap()}</td>
+                                        <td>{get_username_from_id(uid).map_or(uid.to_string(), |v|format!("{v}[{uid}]"))}</td>
                                         <td>{v["isVerified"].as_bool().unwrap_or(false).to_string()}</td>
                                         <td>
                                             <ReportActionButtons
