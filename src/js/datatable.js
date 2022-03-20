@@ -41,6 +41,78 @@ const getQuickViewReportDataTable = (params) => {
     );
 };
 
+/////////////////////////////////////////////////////////////////
+//
+const getDeliveriesViewReportDataTable = (params) => {
+    console.log("Setting Deliveries Report View");
+    let tableColumns = [
+        { name: "OrderId", className: "all", visible: false },
+        { title: "Delivery Date", name: "DeliveryDate", className: "all" },
+        { title: "Name", className: "all" },
+        { title: "Neighborhood" },
+        { title: "Address" },
+        { title: "Bags" },
+        { title: "Phone" },
+        { title: "Location" },
+        { title: "Notes" },
+        { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner },
+    ];
+
+    return new DataTable(
+        params.id,
+        {
+            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
+            buttons: [
+                "csv", "copy", "excel", "print", 'colvis'
+            ],
+            order: [[ 1, "asc" ]],
+            responsive: true,
+            deferRender: true,
+            language: {
+                paginate: {
+                    previous: "<<",
+                    next: ">>"
+                }
+            },
+            columns: tableColumns
+        }
+    );
+};
+
+/////////////////////////////////////////////////////////////////
+//
+const getDistPointsViewReportDataTable = (params) => {
+    console.log("Setting Distrtibution Points Report View");
+    let tableColumns = [
+        { title: "Delivery Date", name: "DeliveryDate", className: "all" },
+        { title: "Total Bags", name: "TotalBags", className: "all"},
+    ];
+
+    for (const header of params.distPoints) {
+        tableColumns.push({title: header, className: "all"});
+    }
+
+    return new DataTable(
+        params.id,
+        {
+            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
+            buttons: [
+                "csv", "copy", "excel", "print", 'colvis'
+            ],
+            responsive: true,
+            deferRender: true,
+            language: {
+                paginate: {
+                    previous: "<<",
+                    next: ">>"
+                }
+            },
+            columns: tableColumns
+        }
+    );
+};
+
+
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -138,6 +210,36 @@ const getOrderVerificationViewReportDataTable = (params) => {
 
 /////////////////////////////////////////////////////////////////////
 //
+const getSpreadingJobsUnfinishedViewReportDataTable = (params) => {
+    console.log("Setting Full Report View");
+    let tableColumns = [
+        { title: "Order Owner", name: "OrderOwner" },
+        { title: "Name" },
+        { title: "Bags Left To Spread", className: "all" }
+    ];
+
+    return new DataTable(
+        params.id,
+        {
+            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
+            buttons: [
+                "csv", "copy", "excel", "print", 'colvis'
+            ],
+            responsive: true,
+            deferRender: true,
+            language: {
+                paginate: {
+                    previous: "<<",
+                    next: ">>"
+                }
+            },
+            columns: tableColumns
+        }
+    );
+};
+
+/////////////////////////////////////////////////////////////////////
+//
 const getSpreadingJobsViewReportDataTable = (params) => {
     console.log("Setting Full Report View");
     let tableColumns = [
@@ -188,12 +290,18 @@ const getSpreadingJobsViewReportDataTable = (params) => {
 const getDataTable = (params) => {
     if (params.reportType === "quick") {
         return getQuickViewReportDataTable(params);
+    } else if (params.reportType === "distributionPoints") {
+        return getDistPointsViewReportDataTable(params);
+    } else if (params.reportType === "deliveries") {
+        return getDeliveriesViewReportDataTable(params);
     } else if (params.reportType === "full") {
         return getFullViewReportDataTable(params);
     } else if (params.reportType === "verification") {
         return getOrderVerificationViewReportDataTable(params);
     } else if (params.reportType === "spreadingJobs") {
         return getSpreadingJobsViewReportDataTable(params);
+    } else if (params.reportType === "spreadingJobsUnfinished") {
+        return getSpreadingJobsUnfinishedViewReportDataTable(params);
     }
     return undefined;
 };

@@ -1,6 +1,6 @@
 use yew::prelude::*;
 use wasm_bindgen::{JsCast};
-use web_sys::{ MouseEvent, HtmlSelectElement};
+use web_sys::{ MouseEvent, Event, HtmlElement, HtmlSelectElement};
 use std::str::FromStr;
 
 use crate::data_model::*;
@@ -9,28 +9,59 @@ use crate::components::delete_report_order_dlg::{DeleteOrderDlg};
 use crate::components::report_spreaders_dlg::{ChooseSpreadersDlg};
 use crate::components::report_quick::{QuickReportView};
 use crate::components::report_spreading_jobs::{SpreadingJobsReportView};
+use crate::components::report_spreading_jobs_unfinished::{SpreadingJobsUnfinishedReportView};
 use crate::components::report_full::{FullReportView};
 use crate::components::report_verify::{OrderVerificationView};
+use crate::components::report_deliveries::{DeliveriesReportView};
+use crate::components::report_distribution_points::{DistributionPointsReportView};
 
 
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 #[derive(Properties, PartialEq, Clone, Debug)]
-pub struct ReportsSettingsDlgProps {
-    pub id: String,
-    pub onsave: Callback<MouseEvent>,
-    pub currentview: String,
+pub(crate) struct ReportsSettingsDlgProps {
+    pub(crate) id: String,
+    pub(crate) onsave: Callback<MouseEvent>,
+    pub(crate) currentview: ReportViews,
 
 }
 #[function_component(ReportsSettingsDlg)]
-pub fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
+pub(crate) fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
 
     let tag = props.id.clone();
     let active_user_id = get_active_user().get_id();
 
     let mut did_find_selected_view = false;
     let mut did_find_selected_seller = false;
+
+
+    let on_view_selection_change = {
+        Callback::from(move |evt: Event| {
+            let elm = evt.target().and_then(|t| t.dyn_into::<HtmlSelectElement>().ok());
+            elm.map(|v| {
+                let selected_view = ReportViews::from_str(&v.value()).unwrap();
+                let do_show_seller = do_show_current_seller(&selected_view);
+                log::info!("Do Show Seller Selection: {}", do_show_seller);
+
+                if get_active_user().is_admin() {
+                    if do_show_seller {
+                        let _ = gloo_utils::document().get_element_by_id("reportViewSettingsDlgUserSelectionCol")
+                            .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                            .unwrap()
+                            .class_list()
+                            .remove_1("d-none");
+                    } else {
+                        let _ = gloo_utils::document().get_element_by_id("reportViewSettingsDlgUserSelectionCol")
+                            .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+                            .unwrap()
+                            .class_list()
+                            .add_1("d-none");
+                    }
+                }
+            });
+        })
+    };
 
     html! {
         <div class="modal fade" id={tag.to_string()} tabIndex="-1" aria-labelledby={format!("{}Title", &tag)} aria-hidden="true">
@@ -47,10 +78,10 @@ pub fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
                             <div class="row">
                                 <div class="col-sm">
                                     <div class="form-floating">
-                                        <select class="form-select" id={format!("{}ViewSelection", &tag)}>
+                                        <select class="form-select" id={format!("{}ViewSelection", &tag)} onchange={on_view_selection_change}>
                                         {
                                             get_allowed_report_views().iter().map(|v|{
-                                                let is_selected = &ReportViews::from_str(&props.currentview).unwrap() == v;
+                                                let is_selected = &props.currentview == v;
                                                 if !did_find_selected_view && is_selected { did_find_selected_view=true; }
                                                 html! {
                                                     <option value={v.to_string()} selected={is_selected}>
@@ -182,6 +213,8 @@ pub fn reports_page() -> Html {
     log::info!("Report View Rendering.  report view: {} seller: {}",
         &current_settings.current_view, &current_settings.seller_id_filter);
 
+    let do_show_current_seller = do_show_current_seller(&(*current_settings).current_view);
+
     html! {
         <div>
             <div class="col-xs-1 d-flex justify-content-center">
@@ -196,7 +229,7 @@ pub fn reports_page() -> Html {
                                         {(*current_settings).current_view.to_string()}
                                     </div>
                                 </li>
-                                if get_active_user().is_admin() {
+                                if get_active_user().is_admin() && do_show_current_seller {
                                     <li class="list-group-item" id="orderOwnerLabel">
                                         <label class="text-muted pe-2">{"Showing Orders for:"}</label>
                                         <div class="d-inline" id="reportViewOrderOwner">
@@ -222,7 +255,10 @@ pub fn reports_page() -> Html {
                                 ReportViews::Quick=>html!{<QuickReportView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 ReportViews::Full=>html!{<FullReportView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 ReportViews::SpreadingJobs=>html!{<SpreadingJobsReportView seller={(*current_settings).seller_id_filter.clone()}/>},
+                                ReportViews::UnfinishedSpreadingJobs=>html!{<SpreadingJobsUnfinishedReportView />},
                                 ReportViews::OrderVerification=>html!{<OrderVerificationView seller={(*current_settings).seller_id_filter.clone()}/>},
+                                ReportViews::Deliveries=>html!{<DeliveriesReportView />},
+                                ReportViews::DistributionPoints=>html!{<DistributionPointsReportView />},
                                 _=>html!{<h6>{"Not Yet Implemented"}</h6>},
                             }
                         }
@@ -239,7 +275,7 @@ pub fn reports_page() -> Html {
 
             <DeleteOrderDlg />
             <ReportsSettingsDlg id="reportViewSettingsDlg"
-                onsave={on_save_settings} currentview={(*current_settings).current_view.to_string()}/>
+                onsave={on_save_settings} currentview={(*current_settings).current_view.clone()}/>
             <ChooseSpreadersDlg />
             // {confirmDlg}
         </div>

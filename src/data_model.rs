@@ -287,6 +287,12 @@ pub(crate) fn get_users() -> Arc<BTreeMap<String, UserInfo>> {
 
 ////////////////////////////////////////////////////////////////////////////
 //
+pub(crate) fn get_username_from_id(uid: &str) -> Option<String> {
+    USER_MAP.read().unwrap().get(uid).and_then(|v|Some(v.name.clone()))
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
 pub(crate) fn get_deliveries() -> Arc<BTreeMap<u32,DeliveryInfo>> {
     DELIVERIES.read().unwrap().as_ref().unwrap().clone()
 }
@@ -303,6 +309,16 @@ pub(crate) fn get_delivery_date(delivery_id: &u32) -> String {
 pub(crate) fn get_neighborhoods() -> Arc<Vec<Neighborhood>>
 {
     NEIGHBORHOODS.read().unwrap().as_ref().unwrap().clone()
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) fn get_neighborhood(hood: &str) -> Option<Neighborhood>
+{
+    NEIGHBORHOODS.read()
+        .unwrap()
+        .as_ref()
+        .and_then(|v|v.iter().find(|&v|v.name == hood).cloned())
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -8,7 +8,7 @@ use crate::data_model::{get_fr_config};
 
 pub(crate) static ALL_USERS_TAG: &'static str = "doShowAllUsers";
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub(crate) enum ReportViews {
     // Reports available to sellers
     Quick,
@@ -49,7 +49,7 @@ impl std::str::FromStr for ReportViews {
             "Unfinished Spreading Jobs" => Ok(ReportViews::UnfinishedSpreadingJobs),
             "Order Verfication" => Ok(ReportViews::OrderVerification),
             "Distribution Point" => Ok(ReportViews::DistributionPoints),
-            "Deliveriesl" => Ok(ReportViews::Deliveries),
+            "Deliveries" => Ok(ReportViews::Deliveries),
             "Allocation Summary" => Ok(ReportViews::AllocationSummary),
             _ => Err(format!("'{}' is not a valid value for ReportViews", s)),
         }
@@ -66,10 +66,10 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
         reports.push(ReportViews::SpreadingJobs);
 
         if get_active_user().is_admin() {
-            //         reports.push(ReportViews::UnfinishedSpreadingJobs);
+            reports.push(ReportViews::UnfinishedSpreadingJobs);
             reports.push(ReportViews::OrderVerification);
-            //         reports.push(ReportViews::DistributionPoints);
-            //         reports.push(ReportViews::Deliveries);
+            reports.push(ReportViews::DistributionPoints);
+            reports.push(ReportViews::Deliveries);
         }
 
     }
@@ -79,6 +79,19 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
     // }
 
     reports
+}
+
+pub(crate) fn do_show_current_seller(current_view: &ReportViews) -> bool {
+    match *current_view {
+        ReportViews::Quick=>true,
+        ReportViews::Full=>true,
+        ReportViews::SpreadingJobs=>true,
+        ReportViews::UnfinishedSpreadingJobs=>false,
+        ReportViews::OrderVerification=>true,
+        ReportViews::Deliveries=>false,
+        ReportViews::DistributionPoints=>false,
+        _=>false,
+    }
 }
 
 async fn make_report_query(query: String)
@@ -171,6 +184,103 @@ pub(crate) async fn get_full_report_data(order_owner_id: Option<&String>)
     make_report_query(query).await
 }
 
+static DISTRIBUTION_POINTS_RPT_GRAPHQL: &'static str = r#"
+{
+  mulchOrders {
+    customer {
+        neighborhood
+    }
+    purchases {
+        productId
+        numSold
+    }
+    deliveryId
+  }
+}
+"#;
+
+pub(crate) async fn get_distribution_points_report_data()
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    use std::collections::{BTreeMap, BTreeSet};
+    let mut delivery_id_map: BTreeMap<u64,BTreeMap<String, u64>> = BTreeMap::new();
+    make_report_query(DISTRIBUTION_POINTS_RPT_GRAPHQL.to_string()).await
+        .and_then(|orders| {
+            orders.into_iter()
+                .filter(|v|v["deliveryId"].as_u64().is_some())
+                .for_each(|v|{
+                    let delivery_id = v["deliveryId"].as_u64().unwrap();
+                    if !delivery_id_map.contains_key(&delivery_id) {
+                        delivery_id_map.insert(delivery_id, BTreeMap::new());
+                    }
+                    let dist_point_map = delivery_id_map.get_mut(&delivery_id).unwrap();
+                    let neighborhood = v["customer"]["neighborhood"].as_str().unwrap();
+                    let dist_point = crate::get_neighborhood(neighborhood)
+                        .map_or("".to_string(), |v|v.distribution_point.clone());
+                    let num_bags_sold: u64 = v["purchases"].as_array().unwrap_or(&Vec::new())
+                        .iter()
+                        .find(|&v| v["productId"].as_str().unwrap() == "bags")
+                        .map_or(0, |v| v["numSold"].as_u64().unwrap());
+                    match dist_point_map.get_mut(&dist_point) {
+                        Some(num_bags_for_point)=>{
+                            *num_bags_for_point += num_bags_sold;
+                            *dist_point_map.get_mut("TotalBagSummary").unwrap() += num_bags_sold;
+                        },
+                        None=>{
+                            dist_point_map.insert(dist_point.to_string(), num_bags_sold);
+                            dist_point_map.insert("TotalBagSummary".to_string(), num_bags_sold);
+                        },
+                    }
+                });
+            Ok(())
+        })?;
+
+    let mut dist_points_set = BTreeSet::new();
+    delivery_id_map.values().for_each(|v| {
+        v.keys()
+            .filter(|v| *v!="TotalBagSummary" )
+            .for_each(|v| {dist_points_set.insert(v.to_string());})
+    });
+
+    // This is really not very efficient to convert to vec serde vals just to avoid
+    //  adding another enum but this is least impact for a report that is rarely ran
+    //  so right now this should be acceptable
+    Ok(vec![serde_json::json!({
+        "deliveryIdMap": delivery_id_map,
+        "distPoints": dist_points_set,
+    })])
+}
+
+static DELIVERIES_RPT_GRAPHQL: &'static str = r#"
+{
+  mulchOrders {
+    orderId
+    ownerId
+    customer {
+        name
+        addr1
+        addr2
+        phone
+        neighborhood
+    }
+    specialInstructions
+    purchases {
+        productId
+        numSold
+    }
+    deliveryId
+  }
+}
+"#;
+
+pub(crate) async fn get_deliveries_report_data()
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    make_report_query(DELIVERIES_RPT_GRAPHQL.to_string()).await
+        .and_then(|orders|Ok(orders.into_iter()
+            .filter(|v|v["deliveryId"].as_u64().is_some()).collect::<Vec<_>>()))
+}
+
 static SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
 {
   mulchOrders(***ORDER_OWNER_PARAM***) {
@@ -206,6 +316,52 @@ pub(crate) async fn get_spreading_jobs_report_data(order_owner_id: Option<&Strin
     };
 
     make_report_query(query).await
+}
+
+static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
+{
+  mulchOrders {
+    ownerId
+    purchases {
+        productId
+        numSold
+    }
+    spreaders
+  }
+}
+";
+
+pub(crate) async fn get_unfinished_spreading_jobs_report_data()
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    use std::collections::BTreeMap;
+    let mut unfinished_job_map: BTreeMap<String, u64> = BTreeMap::new();
+    make_report_query(UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL.to_string()).await
+        .and_then(|orders| {
+            orders.into_iter()
+                .for_each(|v|{
+                    let num_spreaders = v["spreaders"].as_array().unwrap_or(&Vec::new()).len();
+                    if num_spreaders != 0 { return; }
+                    let num_spreading_bags_sold: u64 = v["purchases"].as_array().unwrap_or(&Vec::new())
+                        .iter()
+                        .find(|&v| v["productId"].as_str().unwrap() == "spreading")
+                        .map_or(0, |v| v["numSold"].as_u64().unwrap());
+                    if num_spreading_bags_sold == 0 { return; }
+                    let uid = v["ownerId"].as_str().unwrap();
+                    if uid == "alatham" {
+                        log::info!("{}: NumSpreaders: {}   Info: {}", uid, num_spreaders, serde_json::to_string(&v).unwrap());
+                    }
+                    match unfinished_job_map.get_mut(uid) {
+                        Some(uid_unfinished_jobs) => *uid_unfinished_jobs += num_spreading_bags_sold,
+                        None=>{ unfinished_job_map.insert(uid.to_string(), num_spreading_bags_sold); },
+                    };
+                });
+            Ok(())
+        })?;
+    Ok(unfinished_job_map
+        .into_iter()
+        .map(|(k,v)|serde_json::json!({"ownerId": k, "bagsLeft": v}))
+        .collect::<Vec<serde_json::Value>>())
 }
 
 #[derive(Serialize, Deserialize, Debug)]

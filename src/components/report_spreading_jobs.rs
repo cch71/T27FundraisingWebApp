@@ -115,17 +115,15 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                         <tbody>
                         {
                             orders.into_iter().map(|v|{
-                                let mut spreading = "".to_string();
-                                for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
-                                    if purchase["productId"].as_str().unwrap() == "spreading" {
-                                        spreading = purchase["numSold"].as_u64().unwrap().to_string();
-                                        break;
-                                    }
-                                }
-                                if spreading.len() == 0 {
+                                let spreading = v["purchases"].as_array().unwrap_or(&Vec::new())
+                                    .iter()
+                                    .find(|&v| v["productId"].as_str().unwrap() == "spreading")
+                                    .map_or(0, |v| v["numSold"].as_u64().unwrap());
+                                log::info!("Spreading: {}", spreading);
+                                if spreading == 0 {
                                     return html!{};
                                 }
-                                let enable_spreading_button = spreading.len()!=0 && !is_fr_locked;
+                                let enable_spreading_button = spreading != 0 && !is_fr_locked;
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("N/A".to_string(), "N/A".to_string()),
@@ -147,7 +145,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                         <td>{&address}</td>
                                         <td>{v["customer"]["neighborhood"].as_str().unwrap_or("")}</td>
                                         <td>{spreaders.clone()}</td>
-                                        <td>{&spreading}</td>
+                                        <td>{spreading.to_string()}</td>
                                         <td>{v["ownerId"].as_str().unwrap()}</td>
                                         <td>
                                             <ReportActionButtons

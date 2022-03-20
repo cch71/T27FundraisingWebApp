@@ -46,8 +46,12 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         .await?
         .json()
         .await?;
+    let host_str = gloo_utils::window().location().host().unwrap_or("".to_string());
+    // log::info!("Hostname: {host_str}");
+    if host_str.starts_with("localhost") {
+        log::info!("GQL Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
+    }
 
-    // log::info!("GQL Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
     let resp: DataWrapper<T> = serde_json::from_value(raw_resp).unwrap();
     if let Some(errs) = resp.errors {
         let err_str = serde_json::to_string(&errs).unwrap_or("Failed to parse error resp".to_string());
