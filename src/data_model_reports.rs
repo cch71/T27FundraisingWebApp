@@ -66,7 +66,7 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
         reports.push(ReportViews::SpreadingJobs);
 
         if get_active_user().is_admin() {
-            //         reports.push(ReportViews::UnfinishedSpreadingJobs);
+            reports.push(ReportViews::UnfinishedSpreadingJobs);
             reports.push(ReportViews::OrderVerification);
             reports.push(ReportViews::DistributionPoints);
             reports.push(ReportViews::Deliveries);
@@ -303,6 +303,52 @@ pub(crate) async fn get_spreading_jobs_report_data(order_owner_id: Option<&Strin
     };
 
     make_report_query(query).await
+}
+
+static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
+{
+  mulchOrders {
+    ownerId
+    purchases {
+        productId
+        numSold
+    }
+    spreaders
+  }
+}
+";
+
+pub(crate) async fn get_unfinished_spreading_jobs_report_data()
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    use std::collections::BTreeMap;
+    let mut unfinished_job_map: BTreeMap<String, u64> = BTreeMap::new();
+    make_report_query(UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL.to_string()).await
+        .and_then(|orders| {
+            orders.into_iter()
+                .for_each(|v|{
+                    let num_spreaders = v["spreaders"].as_array().unwrap_or(&Vec::new()).len();
+                    if num_spreaders != 0 { return; }
+                    let num_spreading_bags_sold: u64 = v["purchases"].as_array().unwrap_or(&Vec::new())
+                        .iter()
+                        .find(|&v| v["productId"].as_str().unwrap() == "spreading")
+                        .map_or(0, |v| v["numSold"].as_u64().unwrap());
+                    if num_spreading_bags_sold == 0 { return; }
+                    let uid = v["ownerId"].as_str().unwrap();
+                    if uid == "alatham" {
+                        log::info!("{}: NumSpreaders: {}   Info: {}", uid, num_spreaders, serde_json::to_string(&v).unwrap());
+                    }
+                    match unfinished_job_map.get_mut(uid) {
+                        Some(uid_unfinished_jobs) => *uid_unfinished_jobs += num_spreading_bags_sold,
+                        None=>{ unfinished_job_map.insert(uid.to_string(), num_spreading_bags_sold); },
+                    };
+                });
+            Ok(())
+        })?;
+    Ok(unfinished_job_map
+        .into_iter()
+        .map(|(k,v)|serde_json::json!({"ownerId": k, "bagsLeft": v}))
+        .collect::<Vec<serde_json::Value>>())
 }
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -210,6 +210,36 @@ const getOrderVerificationViewReportDataTable = (params) => {
 
 /////////////////////////////////////////////////////////////////////
 //
+const getSpreadingJobsUnfinishedViewReportDataTable = (params) => {
+    console.log("Setting Full Report View");
+    let tableColumns = [
+        { title: "Order Owner", name: "OrderOwner" },
+        { title: "Name" },
+        { title: "Bags Left To Spread", className: "all" }
+    ];
+
+    return new DataTable(
+        params.id,
+        {
+            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
+            buttons: [
+                "csv", "copy", "excel", "print", 'colvis'
+            ],
+            responsive: true,
+            deferRender: true,
+            language: {
+                paginate: {
+                    previous: "<<",
+                    next: ">>"
+                }
+            },
+            columns: tableColumns
+        }
+    );
+};
+
+/////////////////////////////////////////////////////////////////////
+//
 const getSpreadingJobsViewReportDataTable = (params) => {
     console.log("Setting Full Report View");
     let tableColumns = [
@@ -270,6 +300,8 @@ const getDataTable = (params) => {
         return getOrderVerificationViewReportDataTable(params);
     } else if (params.reportType === "spreadingJobs") {
         return getSpreadingJobsViewReportDataTable(params);
+    } else if (params.reportType === "spreadingJobsUnfinished") {
+        return getSpreadingJobsUnfinishedViewReportDataTable(params);
     }
     return undefined;
 };

@@ -9,6 +9,7 @@ use crate::components::delete_report_order_dlg::{DeleteOrderDlg};
 use crate::components::report_spreaders_dlg::{ChooseSpreadersDlg};
 use crate::components::report_quick::{QuickReportView};
 use crate::components::report_spreading_jobs::{SpreadingJobsReportView};
+use crate::components::report_spreading_jobs_unfinished::{SpreadingJobsUnfinishedReportView};
 use crate::components::report_full::{FullReportView};
 use crate::components::report_verify::{OrderVerificationView};
 use crate::components::report_deliveries::{DeliveriesReportView};
@@ -184,6 +185,17 @@ pub fn reports_page() -> Html {
     log::info!("Report View Rendering.  report view: {} seller: {}",
         &current_settings.current_view, &current_settings.seller_id_filter);
 
+    let do_show_current_seller = match (*current_settings).current_view {
+        ReportViews::Quick=>true,
+        ReportViews::Full=>true,
+        ReportViews::SpreadingJobs=>true,
+        ReportViews::UnfinishedSpreadingJobs=>false,
+        ReportViews::OrderVerification=>true,
+        ReportViews::Deliveries=>false,
+        ReportViews::DistributionPoints=>false,
+        _=>false,
+    };
+
     html! {
         <div>
             <div class="col-xs-1 d-flex justify-content-center">
@@ -198,7 +210,7 @@ pub fn reports_page() -> Html {
                                         {(*current_settings).current_view.to_string()}
                                     </div>
                                 </li>
-                                if get_active_user().is_admin() {
+                                if get_active_user().is_admin() && do_show_current_seller {
                                     <li class="list-group-item" id="orderOwnerLabel">
                                         <label class="text-muted pe-2">{"Showing Orders for:"}</label>
                                         <div class="d-inline" id="reportViewOrderOwner">
@@ -224,6 +236,7 @@ pub fn reports_page() -> Html {
                                 ReportViews::Quick=>html!{<QuickReportView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 ReportViews::Full=>html!{<FullReportView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 ReportViews::SpreadingJobs=>html!{<SpreadingJobsReportView seller={(*current_settings).seller_id_filter.clone()}/>},
+                                ReportViews::UnfinishedSpreadingJobs=>html!{<SpreadingJobsUnfinishedReportView />},
                                 ReportViews::OrderVerification=>html!{<OrderVerificationView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 ReportViews::Deliveries=>html!{<DeliveriesReportView />},
                                 ReportViews::DistributionPoints=>html!{<DistributionPointsReportView />},

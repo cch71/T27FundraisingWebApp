@@ -287,6 +287,12 @@ pub(crate) fn get_users() -> Arc<BTreeMap<String, UserInfo>> {
 
 ////////////////////////////////////////////////////////////////////////////
 //
+pub(crate) fn get_username_from_id(uid: &str) -> Option<String> {
+    USER_MAP.read().unwrap().get(uid).and_then(|v|Some(v.name.clone()))
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
 pub(crate) fn get_deliveries() -> Arc<BTreeMap<u32,DeliveryInfo>> {
     DELIVERIES.read().unwrap().as_ref().unwrap().clone()
 }
