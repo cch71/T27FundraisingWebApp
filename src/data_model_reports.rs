@@ -68,7 +68,7 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
         if get_active_user().is_admin() {
             //         reports.push(ReportViews::UnfinishedSpreadingJobs);
             reports.push(ReportViews::OrderVerification);
-            //         reports.push(ReportViews::DistributionPoints);
+            reports.push(ReportViews::DistributionPoints);
             reports.push(ReportViews::Deliveries);
         }
 
@@ -171,6 +171,73 @@ pub(crate) async fn get_full_report_data(order_owner_id: Option<&String>)
     make_report_query(query).await
 }
 
+static DISTRIBUTION_POINTS_RPT_GRAPHQL: &'static str = r#"
+{
+  mulchOrders {
+    customer {
+        neighborhood
+    }
+    purchases {
+        productId
+        numSold
+    }
+    deliveryId
+  }
+}
+"#;
+
+pub(crate) async fn get_distribution_points_report_data()
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    use std::collections::{BTreeMap, BTreeSet};
+    let mut delivery_id_map: BTreeMap<u64,BTreeMap<String, u64>> = BTreeMap::new();
+    make_report_query(DISTRIBUTION_POINTS_RPT_GRAPHQL.to_string()).await
+        .and_then(|orders| {
+            orders.into_iter()
+                .filter(|v|v["deliveryId"].as_u64().is_some())
+                .for_each(|v|{
+                    let delivery_id = v["deliveryId"].as_u64().unwrap();
+                    if !delivery_id_map.contains_key(&delivery_id) {
+                        delivery_id_map.insert(delivery_id, BTreeMap::new());
+                    }
+                    let dist_point_map = delivery_id_map.get_mut(&delivery_id).unwrap();
+                    let neighborhood = v["customer"]["neighborhood"].as_str().unwrap();
+                    let dist_point = crate::get_neighborhood(neighborhood)
+                        .map_or("".to_string(), |v|v.distribution_point.clone());
+                    let num_bags_sold: u64 = v["purchases"].as_array().unwrap_or(&Vec::new())
+                        .iter()
+                        .find(|&v| v["productId"].as_str().unwrap() == "bags")
+                        .map_or(0, |v| v["numSold"].as_u64().unwrap());
+                    match dist_point_map.get_mut(&dist_point) {
+                        Some(num_bags_for_point)=>{
+                            *num_bags_for_point += num_bags_sold;
+                            *dist_point_map.get_mut("TotalBagSummary").unwrap() += num_bags_sold;
+                        },
+                        None=>{
+                            dist_point_map.insert(dist_point.to_string(), num_bags_sold);
+                            dist_point_map.insert("TotalBagSummary".to_string(), num_bags_sold);
+                        },
+                    }
+                });
+            Ok(())
+        })?;
+
+    let mut dist_points_set = BTreeSet::new();
+    delivery_id_map.values().for_each(|v| {
+        v.keys()
+            .filter(|v| *v!="TotalBagSummary" )
+            .for_each(|v| {dist_points_set.insert(v.to_string());})
+    });
+
+    // This is really not very efficient to convert to vec serde vals just to avoid
+    //  adding another enum but this is least impact for a report that is rarely ran
+    //  so right now this should be acceptable
+    Ok(vec![serde_json::json!({
+        "deliveryIdMap": delivery_id_map,
+        "distPoints": dist_points_set,
+    })])
+}
+
 static DELIVERIES_RPT_GRAPHQL: &'static str = r#"
 {
   mulchOrders {
@@ -198,7 +265,7 @@ pub(crate) async fn get_deliveries_report_data()
 {
     make_report_query(DELIVERIES_RPT_GRAPHQL.to_string()).await
         .and_then(|orders|Ok(orders.into_iter()
-            .filter(|v|v["delivery_id"].as_u64().is_none()).collect::<Vec<_>>()))
+            .filter(|v|v["deliveryId"].as_u64().is_some()).collect::<Vec<_>>()))
 }
 
 static SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"

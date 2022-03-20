@@ -12,6 +12,7 @@ use crate::components::report_spreading_jobs::{SpreadingJobsReportView};
 use crate::components::report_full::{FullReportView};
 use crate::components::report_verify::{OrderVerificationView};
 use crate::components::report_deliveries::{DeliveriesReportView};
+use crate::components::report_distribution_points::{DistributionPointsReportView};
 
 
 
@@ -225,6 +226,7 @@ pub fn reports_page() -> Html {
                                 ReportViews::SpreadingJobs=>html!{<SpreadingJobsReportView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 ReportViews::OrderVerification=>html!{<OrderVerificationView seller={(*current_settings).seller_id_filter.clone()}/>},
                                 ReportViews::Deliveries=>html!{<DeliveriesReportView />},
+                                ReportViews::DistributionPoints=>html!{<DistributionPointsReportView />},
                                 _=>html!{<h6>{"Not Yet Implemented"}</h6>},
                             }
                         }

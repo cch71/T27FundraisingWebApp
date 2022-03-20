@@ -79,6 +79,40 @@ const getDeliveriesViewReportDataTable = (params) => {
     );
 };
 
+/////////////////////////////////////////////////////////////////
+//
+const getDistPointsViewReportDataTable = (params) => {
+    console.log("Setting Distrtibution Points Report View");
+    let tableColumns = [
+        { title: "Delivery Date", name: "DeliveryDate", className: "all" },
+        { title: "Total Bags", name: "TotalBags", className: "all"},
+    ];
+
+    for (const header of params.distPoints) {
+        tableColumns.push({title: header, className: "all"});
+    }
+
+    return new DataTable(
+        params.id,
+        {
+            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
+            buttons: [
+                "csv", "copy", "excel", "print", 'colvis'
+            ],
+            responsive: true,
+            deferRender: true,
+            language: {
+                paginate: {
+                    previous: "<<",
+                    next: ">>"
+                }
+            },
+            columns: tableColumns
+        }
+    );
+};
+
+
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -226,6 +260,8 @@ const getSpreadingJobsViewReportDataTable = (params) => {
 const getDataTable = (params) => {
     if (params.reportType === "quick") {
         return getQuickViewReportDataTable(params);
+    } else if (params.reportType === "distributionPoints") {
+        return getDistPointsViewReportDataTable(params);
     } else if (params.reportType === "deliveries") {
         return getDeliveriesViewReportDataTable(params);
     } else if (params.reportType === "full") {
