@@ -87,6 +87,7 @@ pub(crate) fn report_deliveries_view() -> Html {
                                 let neighborhood = v["customer"]["neighborhood"].as_str().unwrap();
                                 let dist_point = get_neighborhood(&neighborhood)
                                     .map_or("".to_string(), |v|v.distribution_point.clone());
+                                let uid = v["ownerId"].as_str().unwrap();
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>
@@ -97,8 +98,8 @@ pub(crate) fn report_deliveries_view() -> Html {
                                         <td>{num_bags_sold.to_string()}</td>
                                         <td>{v["customer"]["phone"].as_str().unwrap()}</td>
                                         <td>{dist_point}</td>
-                                        <td>{v["customer"]["specialInstructions"].as_str().unwrap_or("").to_string()}</td>
-                                        <td>{v["ownerId"].as_str().unwrap()}</td>
+                                        <td>{v["specialInstructions"].as_str().unwrap_or("").to_string()}</td>
+                                        <td>{get_username_from_id(uid).map_or(uid.to_string(), |v|format!("{v}[{uid}]"))}</td>
                                     </tr>
                                 }
                             }).collect::<Html>()

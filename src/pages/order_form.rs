@@ -502,7 +502,10 @@ pub fn order_form_fields() -> Html
                              get_users().keys().into_iter().map(|user_id| {
                                  let is_selected = user_id == &order.order_owner_id;
                                  if !did_find_selected_order_owner && is_selected { did_find_selected_order_owner=true; }
-                                 html!{<option value={user_id.to_string()} selected={is_selected}>{user_id.to_string()}</option>}
+                                 html!{
+                                     <option value={user_id.to_string()} selected={is_selected}>
+                                         {get_username_from_id(user_id).unwrap_or(user_id.to_string())}
+                                     </option>}
                              }).collect::<Html>()
                          }
                          if !did_find_selected_order_owner {
