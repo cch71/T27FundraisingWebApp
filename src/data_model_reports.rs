@@ -224,13 +224,19 @@ pub(crate) async fn get_distribution_points_report_data()
                     match dist_point_map.get_mut(&dist_point) {
                         Some(num_bags_for_point)=>{
                             *num_bags_for_point += num_bags_sold;
-                            *dist_point_map.get_mut("TotalBagSummary").unwrap() += num_bags_sold;
                         },
                         None=>{
                             dist_point_map.insert(dist_point.to_string(), num_bags_sold);
+                        },
+                    };
+                    match dist_point_map.get_mut("TotalBagSummary") {
+                        Some(num_bags_for_point)=>{
+                            *num_bags_for_point += num_bags_sold;
+                        },
+                        None=>{
                             dist_point_map.insert("TotalBagSummary".to_string(), num_bags_sold);
                         },
-                    }
+                    };
                 });
             Ok(())
         })?;
