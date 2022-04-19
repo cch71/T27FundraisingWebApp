@@ -86,10 +86,6 @@ pub(crate) fn do_show_current_seller(current_view: &ReportViews) -> bool {
         ReportViews::Quick=>true,
         ReportViews::Full=>true,
         ReportViews::SpreadingJobs=>true,
-        ReportViews::UnfinishedSpreadingJobs=>false,
-        ReportViews::OrderVerification=>true,
-        ReportViews::Deliveries=>false,
-        ReportViews::DistributionPoints=>false,
         _=>false,
     }
 }
