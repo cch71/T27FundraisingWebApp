@@ -45,29 +45,6 @@ fn get_uid_from_row(row_elm: &HtmlElement) -> String {
 }
 
 /////////////////////////////////////////////////
-///
-fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
-    let mut time_val_str = time_val_str.split(":").map(|v|v.to_string()).collect::<Vec<String>>();
-    if time_val_str.len() == 3 { //If vector is server time
-        time_val_str.pop();
-    }
-
-    if time_val_str.len() == 2 {
-        return time_val_str[0]
-            .parse::<u64>().ok()
-            .and_then(|v1|Some(Duration::from_secs(v1*60*60)))
-            .and_then(|v1| {
-                time_val_str[1]
-                    .parse::<u64>().ok()
-                    .and_then(|v2|Some(Duration::from_secs(v2*60)))
-                    .and_then(|v2| v1.checked_add(v2))
-            });
-    }
-    None
-
-}
-
-/////////////////////////////////////////////////
 /////////////////////////////////////////////////
 #[function_component(Timecards)]
 pub fn timecards_page() -> Html {

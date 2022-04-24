@@ -5,6 +5,7 @@ use chrono::prelude::*;
 use std::collections::{BTreeMap};
 use rust_decimal::prelude::*;
 use gloo_storage::{LocalStorage, Storage};
+use std::time::{ Duration };
 
 pub(crate) use crate::data_model_reports::*;
 pub(crate) use crate::data_model_orders::*;
@@ -66,6 +67,7 @@ lazy_static! {
     static ref FRCONFIG: RwLock<Option<Arc<FrConfig>>> = RwLock::new(None);
     // map<uid,(name, group)>
     static ref USER_MAP: RwLock<Arc<BTreeMap<String,UserInfo>>> = RwLock::new(Arc::new(BTreeMap::new()));
+    static ref FR_CLOSURE_DATA: RwLock<Arc<BTreeMap<String,ClosureData>>> = RwLock::new(Arc::new(BTreeMap::new()));
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -522,6 +524,232 @@ pub(crate) async fn save_timecards_data(timecards: Vec<TimeCard>)
     let _ = make_gql_request::<serde_json::Value>(&req).await?;
     Ok(())
 }
+
+
+////////////////////////////////////////////////////////////////////////////
+//
+static GET_FR_CLOSURE_DATA_GRAPHQL: &'static str = r"
+{
+  mulchTimecards{
+    id,
+    timeTotal
+  }
+  mulchOrders {
+    ownerId
+    purchases {
+        productId
+        numSold
+        amountCharged
+    }
+    amountFromDonations
+    amountTotalCollected
+    spreaders
+  }
+}
+";
+
+////////////////////////////////////////////////////////////////////////////
+//
+#[derive(Default, Debug, Clone, PartialEq)]
+pub(crate) struct ClosureData {
+    pub(crate) delivery_time_total: Duration,
+    pub(crate) num_bags_sold: u64,
+    pub(crate) amount_from_bags_sales: Decimal,
+    pub(crate) num_bags_to_spread_sold: u64,
+    pub(crate) amount_from_bags_to_spread_sales: Decimal,
+    pub(crate) amount_from_donations: Decimal,
+    pub(crate) amount_total_collected: Decimal,
+    pub(crate) num_bags_spread: u64,
+}
+
+/////////////////////////////////////////////////
+///
+pub(crate) fn duration_to_time_val_str(dur: &Duration) -> String {
+    let new_hours:u64 = (dur.as_secs() as f64 / (60.0*60.0)).floor() as u64;
+    let new_mins:u64 = ((dur.as_secs() as f64 % (60.0*60.0)) / 60.0).floor() as u64;
+    format!("{:02}:{:02}", new_hours, new_mins)
+}
+
+/////////////////////////////////////////////////
+///
+pub(crate) fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
+    let mut time_val_str = time_val_str.split(":").map(|v|v.to_string()).collect::<Vec<String>>();
+    if time_val_str.len() == 3 { //If vector is server time
+        time_val_str.pop();
+    }
+
+    if time_val_str.len() == 2 {
+        return time_val_str[0]
+            .parse::<u64>().ok()
+            .and_then(|v1|Some(Duration::from_secs(v1*60*60)))
+            .and_then(|v1| {
+                time_val_str[1]
+                    .parse::<u64>().ok()
+                    .and_then(|v2|Some(Duration::from_secs(v2*60)))
+                    .and_then(|v2| v1.checked_add(v2))
+            });
+    }
+    None
+}
+
+pub(crate) type FrClosureStaticData = Arc<BTreeMap<String, ClosureData>>;
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn get_fundraiser_closure_static_data()
+    -> std::result::Result<FrClosureStaticData ,Box<dyn std::error::Error>>
+{
+    if let Ok(closure_data) = FR_CLOSURE_DATA.read() {
+        if closure_data.len() > 0 {
+            return Ok(closure_data.clone());
+        }
+    }
+
+    #[derive(Deserialize, Debug)]
+    struct TimecardClosureData {
+        #[serde(rename = "id")]
+        uid: String,
+        #[serde(rename = "timeTotal")]
+        time_total: String,
+    }
+    #[derive(Deserialize, Debug)]
+    pub(crate) struct PurchasedItemsClosureData {
+        #[serde(alias = "productId")]
+        pub(crate) product_id: String,
+        #[serde(alias = "numSold")]
+        pub(crate) num_sold: u64,
+        #[serde(alias = "amountCharged")]
+        pub(crate) amount_charged: String,
+    }
+    #[derive(Deserialize, Debug)]
+    struct OrdersClosureData {
+        #[serde(rename = "ownerId")]
+        uid: String,
+        #[serde(rename = "amountFromDonations")]
+        amount_from_donations: Option<String>,
+        #[serde(rename = "amountTotalCollected")]
+        amount_total_collected: Option<String>,
+        purchases: Vec<PurchasedItemsClosureData>,
+        spreaders: Vec<String>,
+    }
+    #[derive(Deserialize, Debug)]
+    struct RespClosureData {
+        #[serde(rename = "mulchTimeCards")]
+        time_cards: Vec<TimecardClosureData>,
+        #[serde(rename = "mulchOrders")]
+        orders: Vec<OrdersClosureData>,
+    }
+
+    let resp = {
+        let query = GET_FR_CLOSURE_DATA_GRAPHQL.to_string();
+        log::info!("Running Query: {}", &query);
+        let req = GraphQlReq::new(query);
+        make_gql_request::<RespClosureData>(&req).await?
+    };
+
+    fn add_tc(cd: &mut ClosureData, add_dur: Duration) {
+        cd.delivery_time_total =
+            cd.delivery_time_total.checked_add(add_dur).unwrap();
+    }
+
+    fn add_order_data(cd: &mut ClosureData, new_data: &ClosureData) {
+        cd.amount_from_donations =
+            cd.amount_from_donations.checked_add(new_data.amount_from_donations).unwrap();
+        cd.amount_total_collected =
+            cd.amount_total_collected.checked_add(new_data.amount_total_collected).unwrap();
+        cd.num_bags_sold += new_data.num_bags_sold;
+        cd.amount_from_bags_sales =
+            cd.amount_from_bags_sales.checked_add(new_data.amount_from_bags_sales).unwrap();
+        cd.num_bags_to_spread_sold += new_data.num_bags_to_spread_sold;
+        cd.amount_from_bags_to_spread_sales =
+            cd.amount_from_bags_to_spread_sales.checked_add(new_data.amount_from_bags_to_spread_sales).unwrap();
+    }
+
+    fn register_spreaders(closure_data: &mut BTreeMap<String, ClosureData>, mut spreaders: Vec<String>, num_bags: u64) {
+        //Due to bug there can be empty spreaders
+        spreaders.retain(|v| v.len()>0 );
+
+        if spreaders.len() == 0 {
+            return;
+        }
+
+        if num_bags == 0 {
+            log::error!("We have spreaders but no bags to spread");
+            return;
+        }
+
+        let num_bags_to_record_as_spread_per_user: u64 = {
+            if spreaders.len() == 1 {
+                num_bags
+            } else {
+                (((num_bags as f64)/(spreaders.len() as f64)).floor()) as u64
+            }
+        };
+
+        for uid in spreaders {
+            if !closure_data.contains_key(&uid) {
+                closure_data.insert(uid.clone(), ClosureData::default());
+            }
+
+            closure_data.get_mut(&uid).unwrap().num_bags_spread += num_bags_to_record_as_spread_per_user;
+            closure_data.get_mut("TROOP_TOTALS").unwrap().num_bags_spread += num_bags_to_record_as_spread_per_user;
+        }
+    }
+
+    let mut closure_data = BTreeMap::new();
+    closure_data.insert("TROOP_TOTALS".to_string(), ClosureData::default());
+
+    // convert time and total and assign to user
+    for tc in resp.time_cards {
+        if !closure_data.contains_key(&tc.uid) {
+            closure_data.insert(tc.uid.clone(), ClosureData::default());
+        }
+        let dur = time_val_str_to_duration(tc.time_total.as_str()).unwrap();
+        add_tc(closure_data.get_mut(&tc.uid).unwrap(), dur.clone());
+        add_tc(closure_data.get_mut("TROOP_TOTALS").unwrap(), dur);
+    }
+
+    for order in resp.orders {
+        // convert values and total and assign to user
+        if !closure_data.contains_key(&order.uid) {
+            closure_data.insert(order.uid.clone(), ClosureData::default());
+        }
+
+        let new_data = {
+            let mut new_data = ClosureData::default();
+
+            new_data.amount_from_donations = order.amount_from_donations
+                .map_or(Decimal::ZERO,|v| Decimal::from_str(v.as_str()).unwrap());
+            new_data.amount_total_collected = order.amount_total_collected
+                .map_or(Decimal::ZERO,|v| Decimal::from_str(v.as_str()).unwrap());
+            for purchase in order.purchases {
+                if "bags" == purchase.product_id.as_str() {
+                    new_data.num_bags_sold = purchase.num_sold;
+                    new_data.amount_from_bags_sales =
+                        Decimal::from_str(& purchase.amount_charged).unwrap();
+                } else if "spreading" == purchase.product_id.as_str() {
+                    new_data.num_bags_to_spread_sold = purchase.num_sold;
+                    new_data.amount_from_bags_to_spread_sales =
+                        Decimal::from_str(& purchase.amount_charged).unwrap();
+                }
+            }
+
+            new_data
+        };
+
+        add_order_data(closure_data.get_mut(&order.uid).unwrap(), &new_data);
+        add_order_data(closure_data.get_mut("TROOP_TOTALS").unwrap(), &new_data);
+
+        register_spreaders(&mut closure_data, order.spreaders, new_data.num_bags_to_spread_sold);
+    }
+
+    if let Ok(mut arc_map) = FR_CLOSURE_DATA.write() {
+        Arc::get_mut(&mut *arc_map).unwrap().append(&mut closure_data);
+    }
+
+    Ok(FR_CLOSURE_DATA.read().unwrap().clone())
+}
+
+
 // static TEST_ADMIN_API_GQL:&'static str =
 // r#"
 // {
