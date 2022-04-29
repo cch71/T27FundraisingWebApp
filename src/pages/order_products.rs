@@ -10,12 +10,13 @@ use std::collections::HashMap;
 /////////////////////////////////////////////////
 ///
 fn disable_submit_button(value: bool) {
-    web_sys::window().unwrap()
+    if let Some(btn) = web_sys::window().unwrap()
         .document().unwrap()
         .get_element_by_id("formAddProductsSubmit")
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
-        .unwrap()
-        .set_disabled(value);
+    {
+        btn.set_disabled(value);
+    }
 }
 
 /////////////////////////////////////////////////
@@ -206,8 +207,12 @@ pub fn order_products() -> Html
                                         let is_selected = delivery_id == order.delivery_id.as_ref().unwrap_or(&0);
                                         if is_selected && !found_selected_delivery {
                                             found_selected_delivery = true;
-                                        }
-                                        if is_admin || delivery.new_order_cutoff_date > Utc::now() {
+                                            html!{
+                                                <option value={delivery_id.to_string()} selected={is_selected}>
+                                                    {delivery.get_delivery_date_str()}
+                                                </option>
+                                            }
+                                        } else if is_admin || delivery.new_order_cutoff_date > Utc::now() {
                                             html!{
                                                 <option value={delivery_id.to_string()} selected={is_selected}>
                                                     {delivery.get_delivery_date_str()}
