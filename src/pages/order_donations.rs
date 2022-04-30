@@ -34,12 +34,13 @@ fn set_donation_amount(value: &str) {
 /////////////////////////////////////////////////
 ///
 fn disable_submit_button(value: bool) {
-    web_sys::window().unwrap()
+    if let Some(btn) = web_sys::window().unwrap()
         .document().unwrap()
         .get_element_by_id("formDonationSubmit")
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
-        .unwrap()
-        .set_disabled(value);
+    {
+        btn.set_disabled(value);
+    }
 }
 
 /////////////////////////////////////////////////

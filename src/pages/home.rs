@@ -150,7 +150,7 @@ pub fn home_page() -> Html
         wasm_bindgen_futures::spawn_local(async move {
             let id = get_active_user().get_id();
             match get_summary_report_data(&id, 10).await{
-                Err(err) => gloo_dialogs::alert(&format!("Failed to save summary data to local storage: {:#?}", err)),
+                Err(err) => gloo_dialogs::alert(&format!("Failed to retrieve summary data to local storage: {:#?}", err)),
                 Ok(summary) => summary_values.set(Some(summary)),
             };
         });

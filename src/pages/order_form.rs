@@ -50,16 +50,17 @@ fn set_check_amount_collected(document: &web_sys::Document, value: &str) {
 /////////////////////////////////////////////////
 ///
 fn disable_submit_button(document: &web_sys::Document, value: bool, with_spinner: bool) {
-    document.get_element_by_id("formOrderSubmit")
+    if let Some(btn) = document.get_element_by_id("formOrderSubmit")
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
-        .unwrap()
-        .set_disabled(value);
-    let spinner_display = if with_spinner { "inline-block" } else { "none" };
-    let _ = document.get_element_by_id("formOrderSubmitSpinner")
-        .and_then(|t| t.dyn_into::<HtmlElement>().ok())
-        .unwrap()
-        .style()
-        .set_property("display", spinner_display);
+    {
+       btn.set_disabled(value);
+       let spinner_display = if with_spinner { "inline-block" } else { "none" };
+       let _ = document.get_element_by_id("formOrderSubmitSpinner")
+           .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+           .unwrap()
+           .style()
+           .set_property("display", spinner_display);
+    }
 }
 
 /////////////////////////////////////////////////

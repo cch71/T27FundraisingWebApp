@@ -52,7 +52,7 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         log::info!("GQL Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
     }
 
-    let resp: DataWrapper<T> = serde_json::from_value(raw_resp).unwrap();
+    let resp: DataWrapper<T> = serde_json::from_value(raw_resp)?;
     if let Some(errs) = resp.errors {
         let err_str = serde_json::to_string(&errs).unwrap_or("Failed to parse error resp".to_string());
         use std::io::{Error, ErrorKind};
