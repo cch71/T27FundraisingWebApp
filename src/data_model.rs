@@ -564,11 +564,11 @@ pub(crate) struct ClosureData {
 
 /////////////////////////////////////////////////
 ///
-pub(crate) fn duration_to_time_val_str(dur: &Duration) -> String {
-    let new_hours:u64 = (dur.as_secs() as f64 / (60.0*60.0)).floor() as u64;
-    let new_mins:u64 = ((dur.as_secs() as f64 % (60.0*60.0)) / 60.0).floor() as u64;
-    format!("{:02}:{:02}", new_hours, new_mins)
-}
+// pub(crate) fn duration_to_time_val_str(dur: &Duration) -> String {
+//     let new_hours:u64 = (dur.as_secs() as f64 / (60.0*60.0)).floor() as u64;
+//     let new_mins:u64 = ((dur.as_secs() as f64 % (60.0*60.0)) / 60.0).floor() as u64;
+//     format!("{:02}:{:02}", new_hours, new_mins)
+// }
 
 /////////////////////////////////////////////////
 ///
@@ -633,7 +633,7 @@ pub(crate) async fn get_fundraiser_closure_static_data()
     }
     #[derive(Deserialize, Debug)]
     struct RespClosureData {
-        #[serde(rename = "mulchTimeCards")]
+        #[serde(rename = "mulchTimecards")]
         time_cards: Vec<TimecardClosureData>,
         #[serde(rename = "mulchOrders")]
         orders: Vec<OrdersClosureData>,
@@ -709,6 +709,7 @@ pub(crate) async fn get_fundraiser_closure_static_data()
     }
 
     for order in resp.orders {
+        //log::info!("{} Spread order: {:#?}",&order.uid, &order);
         // convert values and total and assign to user
         if !closure_data.contains_key(&order.uid) {
             closure_data.insert(order.uid.clone(), ClosureData::default());
@@ -722,11 +723,12 @@ pub(crate) async fn get_fundraiser_closure_static_data()
             new_data.amount_total_collected = order.amount_total_collected
                 .map_or(Decimal::ZERO,|v| Decimal::from_str(v.as_str()).unwrap());
             for purchase in order.purchases {
-                if "bags" == purchase.product_id.as_str() {
+                if "bags" == purchase.product_id.as_str() && purchase.num_sold != 0 {
                     new_data.num_bags_sold = purchase.num_sold;
+                    // Issue #108 hack replace ","->""
                     new_data.amount_from_bags_sales =
-                        Decimal::from_str(& purchase.amount_charged).unwrap();
-                } else if "spreading" == purchase.product_id.as_str() {
+                        Decimal::from_str(& purchase.amount_charged.replace(",","")).unwrap();
+                } else if "spreading" == purchase.product_id.as_str() && purchase.num_sold !=0 {
                     new_data.num_bags_to_spread_sold = purchase.num_sold;
                     new_data.amount_from_bags_to_spread_sales =
                         Decimal::from_str(& purchase.amount_charged).unwrap();

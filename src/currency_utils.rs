@@ -68,4 +68,7 @@ pub(crate) fn on_money_input_filter(input: Option<&String>) -> String {
     }
 }
 
-
+pub(crate) fn decimal_to_money_string(dec_amount: &Decimal)->String {
+    // log::info!("Decimal To Money: {}", dec_amount.round_dp(4).to_string());
+    to_money_str(Some(dec_amount.round_dp(4).to_string()))
+}

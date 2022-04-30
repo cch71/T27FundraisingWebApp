@@ -68,6 +68,9 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html
                             <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::Timecards} >
                                 {"Timecards"}
                             </Link<AppRoutes>>
+                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FundraiserCloseout} >
+                                {"Closeout Fundraiser"}
+                            </Link<AppRoutes>>
                         }
                         <a class="dropdown-item" onclick={props.onreportissue.clone()} href="#" data-bs-toggle="modal">
                             {"Report Issue"}

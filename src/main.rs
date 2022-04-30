@@ -33,6 +33,7 @@ use pages::{
     order_donations::OrderDonations,
     order_products::OrderProducts,
     timecards::Timecards,
+    closeout_fundraiser::CloseoutFundraiser,
 };
 
 /////////////////////////////////////////////////
@@ -156,6 +157,8 @@ pub enum AppRoutes {
     Reports,
     #[at("/timecards")]
     Timecards,
+    #[at("/frcloseout")]
+    FundraiserCloseout,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -177,6 +180,8 @@ fn switch(route: &AppRoutes) -> Html {
         AppRoutes::OrderDonations => html!{<OrderDonations/>},
         AppRoutes::Reports => html!{<Reports/>},
         AppRoutes::Timecards => html!{<Timecards/>},
+        AppRoutes::FundraiserCloseout => html!{<CloseoutFundraiser/>},
+
         AppRoutes::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }
