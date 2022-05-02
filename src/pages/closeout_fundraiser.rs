@@ -9,47 +9,7 @@ use crate::currency_utils::decimal_to_money_string;
 
 ////////////////////////////////////////////////////////
 ///
-#[derive(Default, Debug, PartialEq, Clone)]
-struct DynamicVars {
-    bank_deposited: Decimal,
-    mulch_cost: Decimal,
-    per_bag_cost: Decimal,
-    profits_from_bags: Decimal,
-    mulch_sales_gross: Decimal,
-    money_pool_for_troop: Decimal,
-    money_pool_for_scouts_sub_pools: Decimal,
-    money_pool_for_scout_sales: Decimal,
-    per_bag_avg_earnings: Decimal,
-    money_pool_for_scout_delivery: Decimal,
-    delivery_earnings_per_minute: Decimal,
-}
-
-impl DynamicVars {
-    fn new()->Self {
-        DynamicVars::default()
-    }
-
-}
-
-////////////////////////////////////////////////////////
-///
-#[derive(Default, Debug, PartialEq, Clone)]
-struct ScoutVals {
-    name: String,
-    uid: String,
-    bags_sold: u64,
-    bags_spread: u64,
-    delivery_minutes: Decimal,
-    total_donations: Decimal,
-    allocation_from_bags_sold: Decimal,
-    allocation_from_bags_spread: Decimal,
-    allocation_from_delivery: Decimal,
-    allocation_total: Decimal,
-}
-
-////////////////////////////////////////////////////////
-///
-fn calculate_new_dvars(mut dvars: DynamicVars, svar_map: FrClosureStaticData)->Option<DynamicVars> {
+fn calculate_new_dvars(mut dvars: FrCloseoutDynamicVars, svar_map: FrClosureStaticData)->Option<FrCloseoutDynamicVars> {
     //use Decimal::dec;
     let svars = svar_map.get("TROOP_TOTALS").unwrap();
 
@@ -77,7 +37,7 @@ fn calculate_new_dvars(mut dvars: DynamicVars, svar_map: FrClosureStaticData)->O
 }
 ////////////////////////////////////////////////////////
 ///
-fn calculate_per_scout_report(dvars:&DynamicVars, svar_map: FrClosureStaticData) -> Vec<ScoutVals> {
+fn calculate_per_scout_report(dvars:&FrCloseoutDynamicVars, svar_map: FrClosureStaticData) -> Vec<FrCloseoutAllocationVals> {
 
     // These totals are calculated from what is in the scout report as given to the scouts
     let mut total_calc_donations = Decimal::ZERO;
@@ -122,7 +82,7 @@ fn calculate_per_scout_report(dvars:&DynamicVars, svar_map: FrClosureStaticData)
         calc_allocations_total = calc_allocations_total.checked_add(total_allocations).unwrap();
 
 
-        ScoutVals {
+        FrCloseoutAllocationVals {
             name: uid_2_name_map.get(uid.as_str()).map_or("".to_string(), |v|v.name.clone()),
             uid: uid.clone(),
             bags_sold: data.num_bags_sold,
@@ -134,11 +94,11 @@ fn calculate_per_scout_report(dvars:&DynamicVars, svar_map: FrClosureStaticData)
             allocation_from_delivery: allocations_from_delivery,
             allocation_total: total_allocations,
         }
-    }).collect::<Vec<ScoutVals>>();
+    }).collect::<Vec<FrCloseoutAllocationVals>>();
 
     let svars = svar_map.get("TROOP_TOTALS").unwrap();
     // First Record is special Troop Totals
-    scout_vals.insert(0, ScoutVals{
+    scout_vals.insert(0, FrCloseoutAllocationVals{
         name: "Scout Alloc Totals".to_string(),
         uid: "".to_string(),
         bags_sold: svars.num_bags_sold,
@@ -157,7 +117,7 @@ fn calculate_per_scout_report(dvars:&DynamicVars, svar_map: FrClosureStaticData)
 /////////////////////////////////////////////////
 #[derive(Properties, PartialEq)]
 struct AllocationReportRowProps {
-    scoutvals: ScoutVals,
+    scoutvals: FrCloseoutAllocationVals,
     class: Classes,
 }
 #[function_component(AllocationReportRow)]
@@ -182,7 +142,8 @@ fn allocation_report_row(props: &AllocationReportRowProps) -> Html {
 /////////////////////////////////////////////////
 #[derive(Properties, PartialEq)]
 struct AllocationReportProps {
-    reportlist: Vec<ScoutVals>,
+    reportlist: Vec<FrCloseoutAllocationVals>,
+    onreleasefunds: Callback<FocusEvent>,
 }
 #[function_component(AllocationReport)]
 fn allocation_report(props: &AllocationReportProps) -> Html {
@@ -192,15 +153,6 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_download_report");
-        })
-    };
-
-    let on_release_funds_form_submission = {
-        Callback::from(move |evt: FocusEvent| {
-            evt.prevent_default();
-            evt.stop_propagation();
-            log::info!("on_release_funds_form_submission");
-
         })
     };
 
@@ -218,7 +170,7 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
                     </button>
                 </h5>
                 <div class="card-body">
-                    <form onsubmit={on_release_funds_form_submission}>
+                    <form onsubmit={props.onreleasefunds.clone()}>
                         <div class="table-responsive-xxl" id="fundsReleaseTables">
                             <table class="table table-striped">
                                 <thead>
@@ -318,7 +270,7 @@ fn sales_table(props: &SalesTableProps) -> Html {
 /////////////////////////////////////////////////
 #[derive(Properties, PartialEq)]
 struct AllocationsTableProps {
-    dvars: DynamicVars,
+    dvars: FrCloseoutDynamicVars,
     svarsmap: FrClosureStaticData,
 }
 #[function_component(AllocationsTable)]
@@ -415,7 +367,7 @@ fn currency_widget(props: &CurrencyWidgetProps) -> Html {
 /////////////////////////////////////////////////
 #[derive(Properties, PartialEq)]
 struct AllocationsFormProps {
-    dvars: DynamicVars,
+    dvars: FrCloseoutDynamicVars,
     svarsmap: FrClosureStaticData,
     oninput: Callback<InputEvent>,
 }
@@ -478,8 +430,17 @@ macro_rules! get_new_input_val_maybe{
 #[function_component(CloseoutFundraiser)]
 pub fn closeout_fundraiser_page() -> Html {
 
-    let dvars = use_state_eq(|| DynamicVars::new());
-    let scout_report_list: yew::UseStateHandle<Vec<ScoutVals>> = use_state_eq(|| Vec::new());
+    let dvars = use_state_eq(|| {
+        let mut dvars = FrCloseoutDynamicVars::new();
+        if let Some(stored_dynamic_data) = get_fundraiser_closure_dynamic_data() {
+            dvars.bank_deposited = stored_dynamic_data.bank_deposited
+                .map_or(Decimal::ZERO, |v| Decimal::from_str(v.as_str()).unwrap());
+            dvars.mulch_cost = stored_dynamic_data.mulch_cost
+                .map_or(Decimal::ZERO, |v| Decimal::from_str(v.as_str()).unwrap());
+        }
+        dvars
+    });
+    let scout_report_list: yew::UseStateHandle<Vec<FrCloseoutAllocationVals>> = use_state_eq(|| Vec::new());
     let fr_closure_static_data: yew::UseStateHandle<Option<FrClosureStaticData>> = use_state_eq(|| None);
 
     let on_download_summary = {
@@ -487,6 +448,24 @@ pub fn closeout_fundraiser_page() -> Html {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_download_summary");
+
+        })
+    };
+
+
+    let on_release_funds_form_submission = {
+        let dvars = dvars.clone();
+        let scout_report_list = scout_report_list.clone();
+        Callback::from(move |evt: FocusEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            let dvars = dvars.clone();
+            let scout_report_list = scout_report_list.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                log::info!("on_release_funds_form_submission");
+                set_fr_closeout_data(&*dvars.clone(), &*scout_report_list).await;
+                gloo_dialogs::alert("Submitted");
+            });
 
         })
     };
@@ -521,6 +500,11 @@ pub fn closeout_fundraiser_page() -> Html {
             if let Some(new_dvars) = new_dvars_opt {
                 match calculate_new_dvars(new_dvars, (*fr_closure_static_data).as_ref().unwrap().clone()) {
                     Some(new_dvars)=>{
+                        log::info!("Setting new dynamic vars from inputs");
+                        set_fundraiser_closure_dynamic_data(FrClosureDynamicData{
+                            bank_deposited: Some(new_dvars.bank_deposited.to_string()),
+                            mulch_cost: Some(new_dvars.mulch_cost.to_string()),
+                        });
                         dvars.set(new_dvars);
                     },
                     None=>{},
@@ -540,15 +524,28 @@ pub fn closeout_fundraiser_page() -> Html {
                 let resp = get_fundraiser_closure_static_data().await.unwrap();
                 log::info!("Data has been downloaded");
                 fr_closure_static_data.set(Some(resp));
-                if dvars.bank_deposited > Decimal::ZERO && dvars.mulch_cost > Decimal::ZERO {
-                    scout_report_list.set(calculate_per_scout_report(
-                            &*dvars, (*fr_closure_static_data).as_ref().unwrap().clone()));
+                if dvars.bank_deposited > Decimal::ZERO &&
+                   dvars.mulch_cost > Decimal::ZERO &&
+                   (*fr_closure_static_data).is_some()
+                {
+                    // If we pull the values from storage then we short circuit a lot of the original logic.
+                    //  TODO: Refactor this logic to make is simpler since we are storing values
+                    if let Some(new_dvars) = calculate_new_dvars((*dvars).clone(), (*fr_closure_static_data).as_ref().unwrap().clone()) {
+                        log::info!("Setting new dynamic vars");
+                        scout_report_list.set(calculate_per_scout_report(
+                                &new_dvars, (*fr_closure_static_data).as_ref().unwrap().clone()));
+                        dvars.set(new_dvars);
+                    } else {
+                        scout_report_list.set(calculate_per_scout_report(
+                                &*dvars, (*fr_closure_static_data).as_ref().unwrap().clone()));
+                    }
                 }
             });
 
             ||{}
         });
     }
+
 
     if (*fr_closure_static_data).is_none() {
         html! { <StaticDataLoadingSpinny/> }
@@ -582,7 +579,10 @@ pub fn closeout_fundraiser_page() -> Html {
                             </div> // End of Card
                         </div>
                         if (*scout_report_list).len() > 0 {
-                            <AllocationReport reportlist={(*scout_report_list).clone()}/>
+                            <AllocationReport
+                                reportlist={(*scout_report_list).clone()}
+                                onreleasefunds={on_release_funds_form_submission.clone()}
+                            />
                         }
                     </div>
                 </div>

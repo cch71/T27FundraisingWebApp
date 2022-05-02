@@ -435,7 +435,17 @@ pub(crate) struct SellerSummary {
     #[serde(alias = "totalAmountCollected")]
     pub(crate) amount_total_collected: String,
 
-    //TODO: Add Allocations in fo rthis
+    #[serde(alias = "allocationsFromDelivery")]
+    pub(crate) allocations_from_deliveries: String,
+
+    #[serde(alias = "allocationsFromBagsSold")]
+    pub(crate) allocations_from_bags_sold: String,
+
+    #[serde(alias = "allocationsFromBagsSpread")]
+    pub(crate) allocations_from_bags_spread: String,
+
+    #[serde(alias = "allocationsTotal")]
+    pub(crate) allocations_total: String,
 }
 
 static SUMMARY_RPT_GRAPHQL: &'static str = r"

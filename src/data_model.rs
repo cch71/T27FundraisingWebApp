@@ -48,6 +48,19 @@ r#"
         unitPrice
       }
     }
+    finalizationData {
+      bankDeposited
+      mulchCost
+      perBagCost
+      profitsFromBags
+      mulchSalesGross
+      moneyPoolForTroop
+      moneyPoolForScoutsSubPools
+      moneyPoolForScoutsSales
+      moneyPoolForScoutsDelivery
+      perBagAvgEarnings
+      deliveryEarningsPerMinute
+    }
     users {
       id
       name
@@ -67,7 +80,8 @@ lazy_static! {
     static ref FRCONFIG: RwLock<Option<Arc<FrConfig>>> = RwLock::new(None);
     // map<uid,(name, group)>
     static ref USER_MAP: RwLock<Arc<BTreeMap<String,UserInfo>>> = RwLock::new(Arc::new(BTreeMap::new()));
-    static ref FR_CLOSURE_DATA: RwLock<Arc<BTreeMap<String,ClosureData>>> = RwLock::new(Arc::new(BTreeMap::new()));
+    static ref FR_CLOSURE_DATA: RwLock<Arc<BTreeMap<String,FrClosureMapData>>> = RwLock::new(Arc::new(BTreeMap::new()));
+    static ref IS_FR_FINALIZED: RwLock<bool> = RwLock::new(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -148,6 +162,8 @@ struct FrConfigApi {
     products: Vec<ProductsApi>,
     #[serde(alias = "mulchDeliveryConfigs")]
     mulch_delivery_configs: Vec<MulchDeliveryConfigApi>,
+    #[serde(alias = "finalizationData")]
+    finalization_data: Option<FinalizationDataConfigApi>,
     users: Vec<UsersConfigApi>,
 }
 
@@ -158,6 +174,34 @@ struct UsersConfigApi {
     id: String,
     name: String,
     group: String,
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct FinalizationDataConfigApi {
+    #[serde(alias = "bankDeposited")]
+    bank_deposited: String,
+    #[serde(alias = "mulchCost")]
+    mulch_cost: String,
+    #[serde(alias = "perBagCost")]
+    per_bag_cost: String,
+    #[serde(alias = "profitsFromBags")]
+    profits_from_bags: String,
+    #[serde(alias = "mulchSalesGross")]
+    mulch_sales_gross: String,
+    #[serde(alias = "moneyPoolForTroop")]
+    money_pool_for_troop: String,
+    #[serde(alias = "moneyPoolForScoutsSubPools")]
+    money_pool_for_scouts_sub_pools: String,
+    #[serde(alias = "moneyPoolForScoutsSales")]
+    money_pool_for_scout_sales: String,
+    #[serde(alias = "perBagAvgEarnings")]
+    per_bag_avg_earnings: String,
+    #[serde(alias = "moneyPoolForScoutsDelivery")]
+    money_pool_for_scout_delivery: String,
+    #[serde(alias = "deliveryEarningsPerMinute")]
+    delivery_earnings_per_minute: String,
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -226,7 +270,12 @@ fn process_config_data(config: FrConfigApi) {
             Arc::get_mut(&mut *arc_umap).unwrap().insert("fradmin".to_string(), UserInfo{name:"Super User".to_string(), group: "Bear".to_string()});
         }
     }
-
+    if let Some(finalization_data) = config.finalization_data {
+        // If we have the value AND it isn't set to 0 then we are finalized. If one is set they all should be
+        if Decimal::from_str(finalization_data.bank_deposited.as_str()).map_or(false, |v| v > Decimal::ZERO) {
+            *IS_FR_FINALIZED.write().unwrap() = true;
+        }
+    }
     log::info!("Fundraising Config retrieved");
 }
 
@@ -393,6 +442,12 @@ pub(crate) fn is_fundraiser_locked() -> bool {
 }
 
 
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) fn is_fundraiser_finalized()->bool {
+    *IS_FR_FINALIZED.read().unwrap()
+}
+
 
 
 
@@ -551,7 +606,7 @@ static GET_FR_CLOSURE_DATA_GRAPHQL: &'static str = r"
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Default, Debug, Clone, PartialEq)]
-pub(crate) struct ClosureData {
+pub(crate) struct FrClosureMapData {
     pub(crate) delivery_time_total: Duration,
     pub(crate) num_bags_sold: u64,
     pub(crate) amount_from_bags_sales: Decimal,
@@ -561,14 +616,6 @@ pub(crate) struct ClosureData {
     pub(crate) amount_total_collected: Decimal,
     pub(crate) num_bags_spread: u64,
 }
-
-/////////////////////////////////////////////////
-///
-// pub(crate) fn duration_to_time_val_str(dur: &Duration) -> String {
-//     let new_hours:u64 = (dur.as_secs() as f64 / (60.0*60.0)).floor() as u64;
-//     let new_mins:u64 = ((dur.as_secs() as f64 % (60.0*60.0)) / 60.0).floor() as u64;
-//     format!("{:02}:{:02}", new_hours, new_mins)
-// }
 
 /////////////////////////////////////////////////
 ///
@@ -592,7 +639,7 @@ pub(crate) fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
     None
 }
 
-pub(crate) type FrClosureStaticData = Arc<BTreeMap<String, ClosureData>>;
+pub(crate) type FrClosureStaticData = Arc<BTreeMap<String, FrClosureMapData>>;
 ////////////////////////////////////////////////////////////////////////////
 //
 pub(crate) async fn get_fundraiser_closure_static_data()
@@ -646,12 +693,12 @@ pub(crate) async fn get_fundraiser_closure_static_data()
         make_gql_request::<RespClosureData>(&req).await?
     };
 
-    fn add_tc(cd: &mut ClosureData, add_dur: Duration) {
+    fn add_tc(cd: &mut FrClosureMapData, add_dur: Duration) {
         cd.delivery_time_total =
             cd.delivery_time_total.checked_add(add_dur).unwrap();
     }
 
-    fn add_order_data(cd: &mut ClosureData, new_data: &ClosureData) {
+    fn add_order_data(cd: &mut FrClosureMapData, new_data: &FrClosureMapData) {
         cd.amount_from_donations =
             cd.amount_from_donations.checked_add(new_data.amount_from_donations).unwrap();
         cd.amount_total_collected =
@@ -664,7 +711,7 @@ pub(crate) async fn get_fundraiser_closure_static_data()
             cd.amount_from_bags_to_spread_sales.checked_add(new_data.amount_from_bags_to_spread_sales).unwrap();
     }
 
-    fn register_spreaders(closure_data: &mut BTreeMap<String, ClosureData>, mut spreaders: Vec<String>, num_bags: u64) {
+    fn register_spreaders(closure_data: &mut BTreeMap<String, FrClosureMapData>, mut spreaders: Vec<String>, num_bags: u64) {
         //Due to bug there can be empty spreaders
         spreaders.retain(|v| v.len()>0 );
 
@@ -687,7 +734,7 @@ pub(crate) async fn get_fundraiser_closure_static_data()
 
         for uid in spreaders {
             if !closure_data.contains_key(&uid) {
-                closure_data.insert(uid.clone(), ClosureData::default());
+                closure_data.insert(uid.clone(), FrClosureMapData::default());
             }
 
             closure_data.get_mut(&uid).unwrap().num_bags_spread += num_bags_to_record_as_spread_per_user;
@@ -696,12 +743,12 @@ pub(crate) async fn get_fundraiser_closure_static_data()
     }
 
     let mut closure_data = BTreeMap::new();
-    closure_data.insert("TROOP_TOTALS".to_string(), ClosureData::default());
+    closure_data.insert("TROOP_TOTALS".to_string(), FrClosureMapData::default());
 
     // convert time and total and assign to user
     for tc in resp.time_cards {
         if !closure_data.contains_key(&tc.uid) {
-            closure_data.insert(tc.uid.clone(), ClosureData::default());
+            closure_data.insert(tc.uid.clone(), FrClosureMapData::default());
         }
         let dur = time_val_str_to_duration(tc.time_total.as_str()).unwrap();
         add_tc(closure_data.get_mut(&tc.uid).unwrap(), dur.clone());
@@ -712,11 +759,11 @@ pub(crate) async fn get_fundraiser_closure_static_data()
         //log::info!("{} Spread order: {:#?}",&order.uid, &order);
         // convert values and total and assign to user
         if !closure_data.contains_key(&order.uid) {
-            closure_data.insert(order.uid.clone(), ClosureData::default());
+            closure_data.insert(order.uid.clone(), FrClosureMapData::default());
         }
 
         let new_data = {
-            let mut new_data = ClosureData::default();
+            let mut new_data = FrClosureMapData::default();
 
             new_data.amount_from_donations = order.amount_from_donations
                 .map_or(Decimal::ZERO,|v| Decimal::from_str(v.as_str()).unwrap());
@@ -749,6 +796,121 @@ pub(crate) async fn get_fundraiser_closure_static_data()
     }
 
     Ok(FR_CLOSURE_DATA.read().unwrap().clone())
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct FrClosureDynamicData {
+    pub(crate) bank_deposited: Option<String>,
+    pub(crate) mulch_cost: Option<String>,
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) fn get_fundraiser_closure_dynamic_data()
+    -> Option<FrClosureDynamicData>
+{
+    log::info!("Getting Fundraiser Closure Data From LocalStorage");
+    LocalStorage::get("FrClosureDynamicData").ok()
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) fn set_fundraiser_closure_dynamic_data(data: FrClosureDynamicData) {
+    log::info!("Getting Fundraiser Closure Data From LocalStorage");
+    let _ = LocalStorage::set("FrClosureDynamicData", data);
+}
+
+
+////////////////////////////////////////////////////////
+///
+#[derive(Default, Debug, PartialEq, Clone)]
+pub(crate) struct FrCloseoutDynamicVars {
+    pub(crate) bank_deposited: Decimal,
+    pub(crate) mulch_cost: Decimal,
+    pub(crate) per_bag_cost: Decimal,
+    pub(crate) profits_from_bags: Decimal,
+    pub(crate) mulch_sales_gross: Decimal,
+    pub(crate) money_pool_for_troop: Decimal,
+    pub(crate) money_pool_for_scouts_sub_pools: Decimal,
+    pub(crate) money_pool_for_scout_sales: Decimal,
+    pub(crate) per_bag_avg_earnings: Decimal,
+    pub(crate) money_pool_for_scout_delivery: Decimal,
+    pub(crate) delivery_earnings_per_minute: Decimal,
+}
+
+impl FrCloseoutDynamicVars {
+    pub(crate) fn new()->Self {
+        FrCloseoutDynamicVars::default()
+    }
+
+}
+
+////////////////////////////////////////////////////////
+///
+#[derive(Default, Debug, PartialEq, Clone)]
+pub(crate) struct FrCloseoutAllocationVals {
+    pub(crate) name: String,
+    pub(crate) uid: String,
+    pub(crate) bags_sold: u64,
+    pub(crate) bags_spread: u64,
+    pub(crate) delivery_minutes: Decimal,
+    pub(crate) total_donations: Decimal,
+    pub(crate) allocation_from_bags_sold: Decimal,
+    pub(crate) allocation_from_bags_spread: Decimal,
+    pub(crate) allocation_from_delivery: Decimal,
+    pub(crate) allocation_total: Decimal,
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+static SET_FR_CONFIG_CLOSEOUT_DATA_GRAPHQL: &'static str = r#"
+mutation {
+  updateConfig(config: {
+    finalizationData: {
+      bankDeposited: "0.0000",
+      mulchCost: "0.0000",
+      perBagCost: "0.0000",
+      profitsFromBags: "0.0000",
+      mulchSalesGross: "0.0000",
+      moneyPoolForTroop: "0.0000",
+      moneyPoolForScoutsSubPools: "0.0000",
+      moneyPoolForScoutsSales: "0.0000",
+      moneyPoolForScoutsDelivery: "0.0000",
+      perBagAvgEarnings: "0.0000",
+      deliveryEarningsPerMinute: "0.0000"
+    }
+  })
+}
+"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn set_fr_closeout_data(dvars: &FrCloseoutDynamicVars, allocation_list: &Vec<FrCloseoutAllocationVals>) {
+
+
+
+
+
+    // Set Config closeout data
+    let query = SET_FR_CONFIG_CLOSEOUT_DATA_GRAPHQL
+        .replace("bankDeposited: \"0.0000\"", &format!("bankDeposited: \"{}\"", dvars.bank_deposited.round_dp(4).to_string()))
+        .replace("mulchCost: \"0.0000\"", &format!("mulchCost: \"{}\"", dvars.mulch_cost.round_dp(4).to_string()))
+        .replace("perBagCost: \"0.0000\"", &format!("perBagCost: \"{}\"", dvars.per_bag_cost.round_dp(4).to_string()))
+        .replace("profitsFromBags: \"0.0000\"", &format!("profitsFromBags: \"{}\"", dvars.profits_from_bags.round_dp(4).to_string()))
+        .replace("mulchSalesGross: \"0.0000\"", &format!("mulchSalesGross: \"{}\"", dvars.mulch_sales_gross.round_dp(4).to_string()))
+        .replace("moneyPoolForTroop: \"0.0000\"", &format!("moneyPoolForTroop: \"{}\"", dvars.money_pool_for_troop.round_dp(4).to_string()))
+        .replace("moneyPoolForScoutsSubPools: \"0.0000\"", &format!("moneyPoolForScoutsSubPools: \"{}\"", dvars.money_pool_for_scouts_sub_pools.round_dp(4).to_string()))
+        .replace("moneyPoolForScoutsSales: \"0.0000\"", &format!("moneyPoolForScoutsSales: \"{}\"", dvars.money_pool_for_scout_sales.round_dp(4).to_string()))
+        .replace("perBagAvgEarnings: \"0.0000\"", &format!("perBagAvgEarnings: \"{}\"", dvars.per_bag_avg_earnings.round_dp(4).to_string()))
+        .replace("moneyPoolForScoutsDelivery: \"0.0000\"", &format!("moneyPoolForScoutsDelivery: \"{}\"", dvars.money_pool_for_scout_delivery.round_dp(4).to_string()))
+        .replace("deliveryEarningsPerMinute: \"0.0000\"", &format!("deliveryEarningsPerMinute: \"{}\"", dvars.delivery_earnings_per_minute.round_dp(4).to_string()));
+
+    let req = GraphQlReq::new(query);
+    let _ = make_gql_request::<serde_json::Value>(&req).await.unwrap();
+
+
 }
 
 
