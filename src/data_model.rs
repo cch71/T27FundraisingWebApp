@@ -865,7 +865,7 @@ pub(crate) struct FrCloseoutAllocationVals {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-static SET_FR_CONFIG_CLOSEOUT_DATA_GRAPHQL: &'static str = r#"
+static SET_FR_CLOSEOUT_CONFIG_DATA_GRAPHQL: &'static str = r#"
 mutation {
   updateConfig(config: {
     finalizationData: {
@@ -887,14 +887,37 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
+static SET_FR_CLOSEOUT_ALLOC_DATA_GRAPHQL: &'static str = r#"
+mutation {
+  setFundraiserCloseoutAllocations(
+    allocations: [
+        ***ALLOCATIONS***
+    ]
+  )
+}
+"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+static SET_FR_CLOSEOUT_ALLOC_DATUM_GRAPHQL: &'static str = r#"
+        {
+            uid:,
+            bagsSold:,
+            bagsSpread:,
+            deliveryMinutes:,
+            totalDonations:,
+            allocationsFromBagsSold:,
+            allocationsFromBagsSpread:,
+            allocationsFromDelivery:,
+            allocationsTotal:
+        }
+"#;
+////////////////////////////////////////////////////////////////////////////
+//
 pub(crate) async fn set_fr_closeout_data(dvars: &FrCloseoutDynamicVars, allocation_list: &Vec<FrCloseoutAllocationVals>) {
 
-
-
-
-
     // Set Config closeout data
-    let query = SET_FR_CONFIG_CLOSEOUT_DATA_GRAPHQL
+    let query = SET_FR_CLOSEOUT_CONFIG_DATA_GRAPHQL
         .replace("bankDeposited: \"0.0000\"", &format!("bankDeposited: \"{}\"", dvars.bank_deposited.round_dp(4).to_string()))
         .replace("mulchCost: \"0.0000\"", &format!("mulchCost: \"{}\"", dvars.mulch_cost.round_dp(4).to_string()))
         .replace("perBagCost: \"0.0000\"", &format!("perBagCost: \"{}\"", dvars.per_bag_cost.round_dp(4).to_string()))
@@ -910,7 +933,55 @@ pub(crate) async fn set_fr_closeout_data(dvars: &FrCloseoutDynamicVars, allocati
     let req = GraphQlReq::new(query);
     let _ = make_gql_request::<serde_json::Value>(&req).await.unwrap();
 
+    let query = SET_FR_CLOSEOUT_ALLOC_DATA_GRAPHQL.replace(
+        "***ALLOCATIONS***" ,
+        allocation_list
+        .iter()
+        .map(|v|{
+            let bags_sold_str = if 0!=v.bags_sold { format!("bagsSold: {},\n", v.bags_sold) } else {"".to_string()};
+            let bags_spread_str = if 0!=v.bags_spread { format!("bagsSpread: {},\n", v.bags_spread) } else {"".to_string()};
+            let delivery_minutes_str = if Decimal::ZERO != v.delivery_minutes {
+                format!("deliveryMinutes: \"{}\",\n", v.delivery_minutes.round_dp(4).to_string())
+            } else {
+                "".to_string()
+            };
+            let total_donations_str = if Decimal::ZERO != v.total_donations {
+                format!("totalDonations: \"{}\",\n", v.total_donations.round_dp(4).to_string())
+            } else {
+                "".to_string()
+            };
+            let allocation_from_bags_sold_str = if Decimal::ZERO != v.allocation_from_bags_sold {
+                format!("allocationsFromBagsSold: \"{}\",\n", v.allocation_from_bags_sold.round_dp(4).to_string())
+            } else {
+                "".to_string()
+            };
+            let allocation_from_bags_spread_str = if Decimal::ZERO != v.allocation_from_bags_spread {
+                format!("allocationsFromBagsSpread: \"{}\",\n", v.allocation_from_bags_spread.round_dp(4).to_string())
+            } else {
+                "".to_string()
+            };
+            let allocation_from_delivery_str = if Decimal::ZERO != v.allocation_from_delivery {
+                format!("allocationsFromDelivery: \"{}\",\n", v.allocation_from_delivery.round_dp(4).to_string())
+            } else {
+                "".to_string()
+            };
+            SET_FR_CLOSEOUT_ALLOC_DATUM_GRAPHQL
+                .replace("uid:", &format!("uid: \"{}\"", v.uid))
+                .replace("allocationsTotal:", &format!("allocationsTotal: \"{}\"", v.allocation_total.round_dp(4).to_string()))
+                .replace("bagsSold:,\n", &bags_sold_str)
+                .replace("bagsSpread:,\n", &bags_spread_str)
+                .replace("deliveryMinutes:,\n", &delivery_minutes_str)
+                .replace("totalDonations:,\n", &total_donations_str)
+                .replace("allocationsFromBagsSold:,\n", &allocation_from_bags_sold_str)
+                .replace("allocationsFromBagsSpread:,\n", &allocation_from_bags_spread_str)
+                .replace("allocationsFromDelivery:,\n", &allocation_from_delivery_str)
 
+        }).collect::<Vec<String>>()
+        .join(",\n").as_str());
+
+    log::info!("Allocation Mutation:\n{}", &query);
+    let req = GraphQlReq::new(query);
+    let _ = make_gql_request::<serde_json::Value>(&req).await.unwrap();
 }
 
 

@@ -1,11 +1,15 @@
 
 use yew::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{InputEvent, MouseEvent, HtmlInputElement};
+use web_sys::{InputEvent, MouseEvent, FocusEvent, HtmlInputElement};
 use rust_decimal::prelude::*;
 
 use crate::data_model::*;
-use crate::currency_utils::decimal_to_money_string;
+use crate::currency_utils::{
+    str_to_money_str,
+    decimal_to_money_string,
+    parse_money_str_as_decimal
+};
 
 ////////////////////////////////////////////////////////
 ///
@@ -100,7 +104,7 @@ fn calculate_per_scout_report(dvars:&FrCloseoutDynamicVars, svar_map: FrClosureS
     // First Record is special Troop Totals
     scout_vals.insert(0, FrCloseoutAllocationVals{
         name: "Scout Alloc Totals".to_string(),
-        uid: "".to_string(),
+        uid: "TROOP_TOTALS".to_string(),
         bags_sold: svars.num_bags_sold,
         bags_spread: calc_num_bags_spread,
         delivery_minutes: calc_delivery_minutes,
@@ -348,14 +352,29 @@ fn currency_widget(props: &CurrencyWidgetProps) -> Html {
     // function formatCurrency(evt) {
     //     evt.currentTarget.value = USD(evt.currentTarget.value).format();
     // }
+    let on_blur = {
+        Callback::from(move |evt: FocusEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            log::info!("on_allocation_form_inputs_change");
+
+            let input_elm = evt.target()
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                .unwrap();
+            let mut input_value = input_elm.value();
+            input_value.retain(|c| c != '$' && c != ',');
+            input_elm.set_value(str_to_money_str(input_value.as_str()).as_str());
+        })
+    };
+
     html! {
         <div class="form-floating">
             <input type="text" min="0" step="any" class="form-control"
-                   //pattern={r"^\$\d{1,3}(,\d{3})*(\.\d+)?$"}
+                   pattern={r"^\$\d{1,3}(,\d{3})*(\.\d+)?$"}
                    id={props.id.clone()}
-                   value={props.value.to_string()}
+                   value={str_to_money_str(props.value.to_string().as_str())}
                    placeholder="$0.00"
-                   // onblur={formatcurrency}
+                   onblur={on_blur.clone()}
                    oninput={props.oninput.clone()}
             />
             <label for={props.id.clone()}>{props.label.clone()}</label>
@@ -483,7 +502,9 @@ pub fn closeout_fundraiser_page() -> Html {
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap();
 
-            let new_val = Decimal::from_str(input_elm.value().as_str()).unwrap();
+            let mut input_value = input_elm.value();
+            input_value.retain(|c| c != '$' && c != ',');
+            let new_val = parse_money_str_as_decimal(input_value.as_str()).unwrap();
 
             let new_dvars_opt = match input_elm.id().as_str() {
                 "formBankDeposited" => {
