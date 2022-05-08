@@ -825,7 +825,7 @@ pub(crate) fn set_fundraiser_closure_dynamic_data(data: FrClosureDynamicData) {
 
 ////////////////////////////////////////////////////////
 ///
-#[derive(Default, Debug, PartialEq, Clone)]
+#[derive(Serialize, Default, Debug, PartialEq, Clone)]
 pub(crate) struct FrCloseoutDynamicVars {
     pub(crate) bank_deposited: Decimal,
     pub(crate) mulch_cost: Decimal,
@@ -849,7 +849,7 @@ impl FrCloseoutDynamicVars {
 
 ////////////////////////////////////////////////////////
 ///
-#[derive(Default, Debug, PartialEq, Clone)]
+#[derive(Serialize, Default, Debug, PartialEq, Clone)]
 pub(crate) struct FrCloseoutAllocationVals {
     pub(crate) name: String,
     pub(crate) uid: String,

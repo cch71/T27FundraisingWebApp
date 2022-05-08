@@ -39,6 +39,9 @@ pub(crate) fn from_cloud_to_money_str(input: Option<String>) -> Option<String>{
 }
 
 pub(crate) fn parse_money_str_as_decimal(input: &str) -> Option<Decimal>{
+    if input.len() == 0 {
+        return Some(Decimal::ZERO);
+    }
     Some(Money::from_str(input, iso::USD).unwrap().amount().clone())
 }
 

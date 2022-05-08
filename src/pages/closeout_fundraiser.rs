@@ -1,7 +1,7 @@
 
 use yew::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{InputEvent, MouseEvent, FocusEvent, HtmlInputElement};
+use web_sys::{Url, InputEvent, MouseEvent, FocusEvent, HtmlInputElement, HtmlAnchorElement};
 use rust_decimal::prelude::*;
 
 use crate::data_model::*;
@@ -10,6 +10,10 @@ use crate::currency_utils::{
     decimal_to_money_string,
     parse_money_str_as_decimal
 };
+
+use chrono::prelude::*;
+use gloo_file::File;
+
 
 ////////////////////////////////////////////////////////
 ///
@@ -153,10 +157,37 @@ struct AllocationReportProps {
 fn allocation_report(props: &AllocationReportProps) -> Html {
 
     let on_download_report = {
+        let report_list = props.reportlist.clone();
+
         Callback::from(move |evt: MouseEvent| {
+            use csv::Writer;
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_download_report");
+
+            let mut wtr = Writer::from_writer(vec![]);
+            for item in &report_list {
+                wtr.serialize(item).unwrap();
+            }
+
+            let data = String::from_utf8(wtr.into_inner().unwrap()).unwrap();
+
+            let f = File::new_with_options(
+                "FundsReleaseReport.csv",
+                data.as_str(),
+                Some("text/plain;charset=utf-8"),
+                Some(Utc::now().into())
+            );
+            let link = gloo_utils::document().create_element("a")
+                .ok()
+                .and_then(|t| t.dyn_into::<HtmlAnchorElement>().ok())
+                .unwrap();
+            let url = Url::create_object_url_with_blob(f.as_ref()).unwrap();
+
+            link.set_target("_blank");
+            link.set_href(url.as_str());
+            link.set_download(f.name().as_str());
+            link.click();
         })
     };
 
@@ -463,11 +494,28 @@ pub fn closeout_fundraiser_page() -> Html {
     let fr_closure_static_data: yew::UseStateHandle<Option<FrClosureStaticData>> = use_state_eq(|| None);
 
     let on_download_summary = {
+        let dvars = dvars.clone();
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_download_summary");
 
+            let alloc_file = File::new_with_options(
+                "AllocationSummary.json",
+                serde_json::to_string_pretty(&(*dvars)).unwrap().as_str(),
+                Some("application/json"),
+                Some(Utc::now().into())
+            );
+            let link = gloo_utils::document().create_element("a")
+                .ok()
+                .and_then(|t| t.dyn_into::<HtmlAnchorElement>().ok())
+                .unwrap();
+            let url = Url::create_object_url_with_blob(alloc_file.as_ref()).unwrap();
+
+            link.set_target("_blank");
+            link.set_href(url.as_str());
+            link.set_download(alloc_file.name().as_str());
+            link.click();
         })
     };
 
@@ -599,7 +647,10 @@ pub fn closeout_fundraiser_page() -> Html {
                                 </div>
                             </div> // End of Card
                         </div>
-                        if (*scout_report_list).len() > 0 {
+                        if Decimal::ZERO != (*dvars).bank_deposited &&
+                           Decimal::ZERO != (*dvars).mulch_cost &&
+                           (*scout_report_list).len() > 0
+                        {
                             <AllocationReport
                                 reportlist={(*scout_report_list).clone()}
                                 onreleasefunds={on_release_funds_form_submission.clone()}

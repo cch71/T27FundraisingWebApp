@@ -25,20 +25,24 @@ uuid = { version = "1", features = ["serde", "v4", "js"] }
 gloo-utils = ">=0.1"
 gloo-dialogs = ">=0.1"
 gloo-storage = ">=0.2"
+gloo-file = ">=0.2"
 reqwasm = {version = ">=0.5", default-features = false, features = ["json", "http"] }
 regex = "1"
+csv = "1"
 
 [dependencies.web-sys]
 version = "0.3"
 features = [
   "Window",
   "Document",
+  "Url",
   "Element",
   "HtmlElement",
   "HtmlFormElement",
   "HtmlSelectElement",
   "HtmlButtonElement",
   "HtmlTextAreaElement",
+  "HtmlAnchorElement",
   "Event",
   "FocusEvent",
   "Node",
