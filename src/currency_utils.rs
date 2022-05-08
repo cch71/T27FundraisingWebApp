@@ -39,6 +39,9 @@ pub(crate) fn from_cloud_to_money_str(input: Option<String>) -> Option<String>{
 }
 
 pub(crate) fn parse_money_str_as_decimal(input: &str) -> Option<Decimal>{
+    if input.len() == 0 {
+        return Some(Decimal::ZERO);
+    }
     Some(Money::from_str(input, iso::USD).unwrap().amount().clone())
 }
 
@@ -68,4 +71,7 @@ pub(crate) fn on_money_input_filter(input: Option<&String>) -> String {
     }
 }
 
-
+pub(crate) fn decimal_to_money_string(dec_amount: &Decimal)->String {
+    // log::info!("Decimal To Money: {}", dec_amount.round_dp(4).to_string());
+    to_money_str(Some(dec_amount.round_dp(4).to_string()))
+}

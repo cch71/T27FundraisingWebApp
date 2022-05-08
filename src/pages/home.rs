@@ -85,6 +85,42 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
         });
     }
 
+    // Allocation Information
+    if is_fundraiser_finalized() {
+
+        if summary.allocations_from_deliveries != "0" {
+            summary_html.push(html!{
+                <li class="list-group-item border-0 py-1">
+                    {format!("Alloc from deliveries: {}", str_to_money_str(&summary.allocations_from_deliveries))}
+                </li>
+            });
+        }
+
+        if summary.allocations_from_bags_sold != "0" {
+            summary_html.push(html!{
+                <li class="list-group-item border-0 py-1">
+                    {format!("Alloc from bags sold: {}", str_to_money_str(&summary.allocations_from_bags_sold))}
+                </li>
+            });
+        }
+
+        if summary.allocations_from_bags_spread != "0" {
+            summary_html.push(html!{
+                <li class="list-group-item border-0 py-1">
+                    {format!("Alloc from bags spread: {}", str_to_money_str(&summary.allocations_from_bags_spread))}
+                </li>
+            });
+        }
+
+        if summary.allocations_total != "0" {
+            summary_html.push(html!{
+                <li class="list-group-item border-0 py-1">
+                    {format!("Alloc total: {}", str_to_money_str(&summary.allocations_total))}
+                </li>
+            });
+        }
+    }
+
     let troop_summary = &full_summary.troop_summary;
     if troop_summary.amount_total_collected != "0" {
         summary_html.push(html!{

@@ -189,6 +189,22 @@ html {
         }
     }
 
+    #fundsSalesTable {
+        th:nth-child(3) { text-align: end; }
+        td:nth-child(3) { text-align: end; }
+    }
+    #fundsAllocationsTable {
+        td:nth-child(2) { text-align: end; }
+    }
+    #fundsScoutAllocationsTable {
+        td:nth-child(2) { text-align: end; }
+    }
+    #fundsReleaseTables {
+        .alloc-first-row {
+            background: DarkSeaGreen;
+        }
+    }
+
     #outOfHoodDisclaimer {
         color: maroon;
     }
