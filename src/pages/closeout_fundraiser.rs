@@ -38,6 +38,8 @@ fn calculate_new_dvars(mut dvars: FrCloseoutDynamicVars, svar_map: FrClosureStat
     dvars.money_pool_for_scout_delivery = dvars.money_pool_for_scout_sales;
     dvars.per_bag_avg_earnings = dvars.money_pool_for_scout_sales.checked_div(svars.num_bags_sold.into()).unwrap();
     dvars.per_bag_cost = dvars.mulch_cost.checked_div(svars.num_bags_sold.into()).unwrap();
+    // Profits from bags should be equal to mulch_sales_gross.  When satified this is true should just use
+    // mulch_sales_gross
     dvars.profits_from_bags = svars.amount_from_bags_sales.checked_sub(dvars.mulch_cost).unwrap();
     let delivery_time_in_minutes = Decimal::from_f64(svars.delivery_time_total.as_secs_f64()/60.0).unwrap();
     dvars.delivery_earnings_per_minute = dvars.money_pool_for_scout_delivery.checked_div(delivery_time_in_minutes).unwrap();
@@ -61,6 +63,14 @@ fn calculate_per_scout_report(dvars:&FrCloseoutDynamicVars, svar_map: FrClosureS
 
     let mut scout_vals = svar_map.iter().filter(|(uid, _)| uid.as_str() != "TROOP_TOTALS").map(|(uid, data)| {
         total_calc_donations = total_calc_donations.checked_add(data.amount_from_donations).unwrap();
+        // This calculates the percentage of sales and then allocates that percentage from the bag sale allocation
+        //   so from a raw perspective.
+        //   Step 1: get cost to troop for this scouts bags sold by multiplying troop cost per bag by bags
+        //   that were sold.
+        //   Step 2: Subtract that number from the amount of money in mulch bag sales the scout made for the trop.  This gives
+        //    you how much profit the scout had
+        //   Step 3: Divide that scouts's profit by the troop profit to get the profit percentage
+        //   Step 4: Mulitpy the Allocations for mulch by that percentage pulling out the the amount
         let allocations_from_bags_sold = dvars.per_bag_cost.checked_mul(data.num_bags_sold.into())
             .and_then(|cost_for_this_scouts_bags_sold|data.amount_from_bags_sales.checked_sub(cost_for_this_scouts_bags_sold))
             .and_then(|profit_from_these_bags|profit_from_these_bags.checked_div(dvars.profits_from_bags))
@@ -314,12 +324,23 @@ fn allocations_table(props: &AllocationsTableProps) -> Html {
     html! {
         <>
         <table class="table table-striped table-responsive caption-top" id="fundsAllocationsTable">
-            <caption>{"Allocations"}</caption>
+            <caption>{"Information"}</caption>
             <tbody>
+                <tr>
+                    <td>{"Per Bag Cost"}</td>
+                    <td>{decimal_to_money_string(&props.dvars.per_bag_cost)}</td>
+                </tr>
                 <tr>
                     <td>{"Gross Profits"}</td>
                     <td>{decimal_to_money_string(&props.dvars.mulch_sales_gross)}</td>
                 </tr>
+            </tbody>
+            <tfoot>
+            </tfoot>
+        </table>
+        <table class="table table-striped table-responsive caption-top" id="fundsAllocationsTable">
+            <caption>{"Allocations"}</caption>
+            <tbody>
                 <tr>
                     <td>{"Min Allocations to Troop (est)"}</td>
                     <td>{decimal_to_money_string(&props.dvars.money_pool_for_troop)}</td>
@@ -327,8 +348,6 @@ fn allocations_table(props: &AllocationsTableProps) -> Html {
                 <tr>
                     <td>{"Max Allocations to Scouts (est)"}</td>
                     <td>{decimal_to_money_string(&props.dvars.money_pool_for_scouts_sub_pools)}</td>
-                </tr>
-                <tr>
                 </tr>
             </tbody>
             <tfoot>
