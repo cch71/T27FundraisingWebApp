@@ -728,7 +728,7 @@ pub(crate) async fn get_fundraiser_closure_static_data()
             if spreaders.len() == 1 {
                 num_bags
             } else {
-                (((num_bags as f64)/(spreaders.len() as f64)).floor()) as u64
+                ((num_bags as f64)/(spreaders.len() as f64)) as u64
             }
         };
 
