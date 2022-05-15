@@ -53,7 +53,7 @@ fn calculate_per_scout_report(dvars:&FrCloseoutDynamicVars, svar_map: FrClosureS
     let mut calc_allocations_from_bags_spread = Decimal::ZERO;
     let mut calc_allocations_from_delivery = Decimal::ZERO;
     let mut calc_delivery_minutes = Decimal::ZERO;
-    let mut calc_num_bags_spread: u64 = 0;
+    let mut calc_num_bags_spread: Decimal = Decimal::ZERO;
     let mut calc_allocations_total = Decimal::ZERO;
 
     let uid_2_name_map = get_users();
@@ -73,7 +73,7 @@ fn calculate_per_scout_report(dvars:&FrCloseoutDynamicVars, svar_map: FrClosureS
 
         let allocation_from_bags_spread= spreading_price.checked_mul(data.num_bags_spread.into()).unwrap();
         calc_allocations_from_bags_spread = calc_allocations_from_bags_spread.checked_add(allocation_from_bags_spread).unwrap();
-        calc_num_bags_spread += data.num_bags_spread;
+        calc_num_bags_spread = calc_num_bags_spread.checked_add(data.num_bags_spread).unwrap();
 
         let delivery_minutes = Decimal::from_f64(data.delivery_time_total.as_secs_f64()/60.0).unwrap();
         let allocations_from_delivery = dvars.delivery_earnings_per_minute
@@ -135,7 +135,7 @@ fn allocation_report_row(props: &AllocationReportRowProps) -> Html {
             <td>{&props.scoutvals.name}</td>
             <td>{&props.scoutvals.uid}</td>
             <td>{&props.scoutvals.bags_sold}</td>
-            <td>{&props.scoutvals.bags_spread}</td>
+            <td>{&props.scoutvals.bags_spread.round_dp(2).to_string()}</td>
             <td>{props.scoutvals.delivery_minutes.round_dp(2).to_string()}</td>
             <td>{decimal_to_money_string(&props.scoutvals.total_donations)}</td>
             <td>{decimal_to_money_string(&props.scoutvals.allocation_from_bags_sold)}</td>

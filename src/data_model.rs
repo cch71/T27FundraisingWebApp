@@ -614,7 +614,7 @@ pub(crate) struct FrClosureMapData {
     pub(crate) amount_from_bags_to_spread_sales: Decimal,
     pub(crate) amount_from_donations: Decimal,
     pub(crate) amount_total_collected: Decimal,
-    pub(crate) num_bags_spread: u64,
+    pub(crate) num_bags_spread: Decimal,
 }
 
 /////////////////////////////////////////////////
@@ -724,11 +724,11 @@ pub(crate) async fn get_fundraiser_closure_static_data()
             return;
         }
 
-        let num_bags_to_record_as_spread_per_user: u64 = {
+        let num_bags_to_record_as_spread_per_user: Decimal = {
             if spreaders.len() == 1 {
-                num_bags
+                Decimal::from(num_bags)
             } else {
-                ((num_bags as f64)/(spreaders.len() as f64)) as u64
+                Decimal::from(num_bags).checked_div(spreaders.len().into()).unwrap()
             }
         };
 
@@ -737,8 +737,10 @@ pub(crate) async fn get_fundraiser_closure_static_data()
                 closure_data.insert(uid.clone(), FrClosureMapData::default());
             }
 
-            closure_data.get_mut(&uid).unwrap().num_bags_spread += num_bags_to_record_as_spread_per_user;
-            closure_data.get_mut("TROOP_TOTALS").unwrap().num_bags_spread += num_bags_to_record_as_spread_per_user;
+            let mut datum:&mut FrClosureMapData = closure_data.get_mut(&uid).unwrap();
+            datum.num_bags_spread = datum.num_bags_spread.checked_add(num_bags_to_record_as_spread_per_user).unwrap();
+            let mut datum:&mut FrClosureMapData = closure_data.get_mut("TROOP_TOTALS").unwrap();
+            datum.num_bags_spread = datum.num_bags_spread.checked_add(num_bags_to_record_as_spread_per_user).unwrap();
         }
     }
 
@@ -854,7 +856,7 @@ pub(crate) struct FrCloseoutAllocationVals {
     pub(crate) name: String,
     pub(crate) uid: String,
     pub(crate) bags_sold: u64,
-    pub(crate) bags_spread: u64,
+    pub(crate) bags_spread: Decimal,
     pub(crate) delivery_minutes: Decimal,
     pub(crate) total_donations: Decimal,
     pub(crate) allocation_from_bags_sold: Decimal,
@@ -939,7 +941,11 @@ pub(crate) async fn set_fr_closeout_data(dvars: &FrCloseoutDynamicVars, allocati
         .iter()
         .map(|v|{
             let bags_sold_str = if 0!=v.bags_sold { format!("bagsSold: {},\n", v.bags_sold) } else {"".to_string()};
-            let bags_spread_str = if 0!=v.bags_spread { format!("bagsSpread: {},\n", v.bags_spread) } else {"".to_string()};
+            let bags_spread_str = if Decimal::ZERO != v.bags_spread {
+                format!("bagsSpread: {},\n", v.bags_spread.round_dp(4).to_string())
+            } else {
+                "".to_string()
+            };
             let delivery_minutes_str = if Decimal::ZERO != v.delivery_minutes {
                 format!("deliveryMinutes: \"{}\",\n", v.delivery_minutes.round_dp(4).to_string())
             } else {
