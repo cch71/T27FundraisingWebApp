@@ -942,7 +942,7 @@ pub(crate) async fn set_fr_closeout_data(dvars: &FrCloseoutDynamicVars, allocati
         .map(|v|{
             let bags_sold_str = if 0!=v.bags_sold { format!("bagsSold: {},\n", v.bags_sold) } else {"".to_string()};
             let bags_spread_str = if Decimal::ZERO != v.bags_spread {
-                format!("bagsSpread: {},\n", v.bags_spread.round_dp(4).to_string())
+                format!("bagsSpread: \"{}\",\n", v.bags_spread.round_dp(4).to_string())
             } else {
                 "".to_string()
             };
