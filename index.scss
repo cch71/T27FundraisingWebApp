@@ -81,10 +81,15 @@ html {
     }
 
     #orderOwnerSummaryCard {
-        // width: 24rem;
+        #orderOwnerSummaryTable {
+            td:nth-child(2) { text-align: end; }
+        }
     }
+    
     #topSellersCard {
-        // width: 18rem;
+        #topSellersTable {
+            td:nth-child(3) { text-align: end; }
+        }
     }
 
     #patrolStandingsChartCard {

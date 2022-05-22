@@ -23,7 +23,7 @@ pub(crate) struct FullReportViewProps {
 pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
     let report_state = use_state(||ReportViewState::IsLoading);
     let history = use_history().unwrap();
-    let is_fr_locked = is_fundraiser_locked();
+    let is_fr_editable = is_fundraiser_locked() || is_fundraiser_finalized();
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
@@ -137,7 +137,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                         continue;
                                     }
                                 }
-                                let enable_spreading_button = spreading.len()!=0 && !is_fr_locked;
+                                let enable_spreading_button = spreading.len()!=0 && !is_fr_editable;
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("Donation".to_string(), "Donation".to_string()),

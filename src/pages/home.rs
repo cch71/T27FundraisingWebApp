@@ -44,44 +44,50 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
     let summary = &full_summary.seller_summary;
     if summary.total_num_bags_sold != 0 {
         summary_html.push(html!{
-            <li class="list-group-item border-0 py-1">
-                {format!("Num bags sold: {}", summary.total_num_bags_sold)}
-            </li>
+            <tr>
+                <td class="py-1">{"Num bags sold:"}</td>
+                <td class="py-1">{summary.total_num_bags_sold.to_string()}</td>
+            </tr>
         });
     }
     if summary.total_num_bags_to_spread_sold != 0 {
         summary_html.push(html!{
-            <li class="list-group-item border-0 py-1">
-                {format!("Num bags to spread: {}", summary.total_num_bags_to_spread_sold)}
-            </li>
+            <tr>
+                <td class="py-1">{"Num bags to spread:"}</td>
+                <td class="py-1">{summary.total_num_bags_to_spread_sold.to_string()}</td>
+            </tr>
         });
     }
     if summary.amount_total_collected_for_donations != "0" {
         summary_html.push(html!{
-            <li class="list-group-item border-0 py-1">
-                {format!("Donations collected: {}", str_to_money_str(&summary.amount_total_collected_for_donations))}
-            </li>
+            <tr>
+                <td class="py-1">{"Donations collected:"}</td>
+                <td class="py-1">{str_to_money_str(&summary.amount_total_collected_for_donations)}</td>
+            </tr>
         });
     }
     if summary.amount_total_collected_for_bags != "0" {
         summary_html.push(html!{
-            <li class="list-group-item border-0 py-1">
-                {format!("Your bag sales: {}", str_to_money_str(&summary.amount_total_collected_for_bags))}
-            </li>
+            <tr>
+                <td class="py-1">{"Your bag sales:"}</td>
+                <td class="py-1">{str_to_money_str(&summary.amount_total_collected_for_bags)}</td>
+            </tr>
         });
     }
     if summary.amount_total_collected_for_bags_to_spread != "0" {
         summary_html.push(html!{
-            <li class="list-group-item border-0 py-1">
-                {format!("Your bags to spread sales: {}", str_to_money_str(&summary.amount_total_collected_for_bags_to_spread))}
-            </li>
+            <tr>
+                <td class="py-1">{"Your bags to spread sales:"}</td>
+                <td class="py-1">{str_to_money_str(&summary.amount_total_collected_for_bags_to_spread)}</td>
+            </tr>
         });
     }
     if summary.amount_total_collected != "0" {
         summary_html.push(html!{
-            <li class="list-group-item border-0 py-1">
-                {format!("Your total sales: {}", str_to_money_str(&summary.amount_total_collected))}
-            </li>
+            <tr>
+                <td class="py-1">{"Your total sales:"}</td>
+                <td class="py-1">{str_to_money_str(&summary.amount_total_collected)}</td>
+            </tr>
         });
     }
 
@@ -90,33 +96,37 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
 
         if summary.allocations_from_deliveries != "0" {
             summary_html.push(html!{
-                <li class="list-group-item border-0 py-1">
-                    {format!("Alloc from deliveries: {}", str_to_money_str(&summary.allocations_from_deliveries))}
-                </li>
+                <tr>
+                    <td class="py-1">{"Alloc from deliveries:"}</td>
+                    <td class="py-1">{str_to_money_str(&summary.allocations_from_deliveries)}</td>
+                </tr>
             });
         }
 
         if summary.allocations_from_bags_sold != "0" {
             summary_html.push(html!{
-                <li class="list-group-item border-0 py-1">
-                    {format!("Alloc from bags sold: {}", str_to_money_str(&summary.allocations_from_bags_sold))}
-                </li>
+                <tr>
+                    <td class="py-1">{"Alloc from bags sold:"}</td>
+                    <td class="py-1">{str_to_money_str(&summary.allocations_from_bags_sold)}</td>
+                </tr>
             });
         }
 
         if summary.allocations_from_bags_spread != "0" {
             summary_html.push(html!{
-                <li class="list-group-item border-0 py-1">
-                    {format!("Alloc from bags spread: {}", str_to_money_str(&summary.allocations_from_bags_spread))}
-                </li>
+                <tr>
+                    <td class="py-1">{"Alloc from bags spread:"}</td>
+                    <td class="py-1">{str_to_money_str(&summary.allocations_from_bags_spread)}</td>
+                </tr>
             });
         }
 
         if summary.allocations_total != "0" {
             summary_html.push(html!{
-                <li class="list-group-item border-0 py-1">
-                    {format!("Alloc total: {}", str_to_money_str(&summary.allocations_total))}
-                </li>
+                <tr>
+                    <td class="py-1">{"Alloc total:"}</td>
+                    <td class="py-1">{str_to_money_str(&summary.allocations_total)}</td>
+                </tr>
             });
         }
     }
@@ -124,9 +134,10 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
     let troop_summary = &full_summary.troop_summary;
     if troop_summary.amount_total_collected != "0" {
         summary_html.push(html!{
-            <li class="list-group-item border-0 py-1">
-                {format!("Troop has sold: {}", str_to_money_str(&troop_summary.amount_total_collected))}
-            </li>
+            <tr>
+                <td class="py-1">{"Troop has sold:"}</td>
+                <td class="py-1">{str_to_money_str(&troop_summary.amount_total_collected)}</td>
+            </tr>
         });
     }
 
@@ -174,11 +185,21 @@ pub fn home_page() -> Html
     let fundraiser_sales_finished_msg = if are_sales_still_allowed() {
         html!{}
     } else {
-        html! {
-            <div style="color: red;">
-                <b>{"(The order phase has concluded. Contact the fundrasier admin for new orders/changes)"}</b>
-            </div>
+        if !is_fundraiser_finalized() {
+            html! {
+                <div style="color: red;">
+                    <b>{"(The order phase has concluded. Contact the fundrasier admin for new orders/changes)"}</b>
+                </div>
+            }
+        } else {
+            // Fundraiser is finished and allocations have been distributed
+            html! {
+                <div style="color: red;">
+                    <b>{"(The fundraiser is now closed and funds have been released)"}</b>
+                </div>
+            }
         }
+
     };
 
     {
@@ -214,9 +235,11 @@ pub fn home_page() -> Html
                                 </div>
                                 <div class="card-body text-start">
                                     <small muted=true>{"*updates may take up to 24 hours"}</small>
-                                    <ul class="list-group list-group-flush sm-owner-summary" id="orderOwnerSummaryList">
-                                        {summary_html}
-                                    </ul>
+                                    <table class="table table-sm table-borderless table-responsive" id="orderOwnerSummaryTable">
+                                        <tbody>
+                                            {summary_html}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>

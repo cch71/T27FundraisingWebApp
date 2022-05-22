@@ -81,7 +81,6 @@ lazy_static! {
     // map<uid,(name, group)>
     static ref USER_MAP: RwLock<Arc<BTreeMap<String,UserInfo>>> = RwLock::new(Arc::new(BTreeMap::new()));
     static ref FR_CLOSURE_DATA: RwLock<Arc<BTreeMap<String,FrClosureMapData>>> = RwLock::new(Arc::new(BTreeMap::new()));
-    static ref IS_FR_FINALIZED: RwLock<bool> = RwLock::new(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -99,6 +98,7 @@ pub(crate) struct FrConfig {
     pub(crate) description: String,
     pub(crate) last_modified_time: String,
     pub(crate) is_locked: bool,
+    pub(crate) is_finalized: bool,
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -237,6 +237,7 @@ fn process_config_data(config: FrConfigApi) {
         description: config.description,
         last_modified_time: config.last_modified_time,
         is_locked: config.is_locked,
+        is_finalized: config.finalization_data.is_some(),
     }));
     *NEIGHBORHOODS.write().unwrap() = Some(Arc::new(config.neighborhoods));
 
@@ -268,12 +269,6 @@ fn process_config_data(config: FrConfigApi) {
         if let Ok(mut arc_umap) = USER_MAP.write() {
             Arc::get_mut(&mut *arc_umap).unwrap().append(&mut new_map);
             Arc::get_mut(&mut *arc_umap).unwrap().insert("fradmin".to_string(), UserInfo{name:"Super User".to_string(), group: "Bear".to_string()});
-        }
-    }
-    if let Some(finalization_data) = config.finalization_data {
-        // If we have the value AND it isn't set to 0 then we are finalized. If one is set they all should be
-        if Decimal::from_str(finalization_data.bank_deposited.as_str()).map_or(false, |v| v > Decimal::ZERO) {
-            *IS_FR_FINALIZED.write().unwrap() = true;
         }
     }
     log::info!("Fundraising Config retrieved");
@@ -441,11 +436,10 @@ pub(crate) fn is_fundraiser_locked() -> bool {
     get_fr_config().is_locked
 }
 
-
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn is_fundraiser_finalized()->bool {
-    *IS_FR_FINALIZED.read().unwrap()
+pub(crate) fn is_fundraiser_finalized() -> bool {
+    get_fr_config().is_finalized
 }
 
 

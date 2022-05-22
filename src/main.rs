@@ -289,7 +289,9 @@ impl Component for Model {
                         <ReportIssueDlg/>
                     </main>
                     <AppFooter>
-                        <AddNewOrderButton userid={user_id}/>
+                        if are_sales_still_allowed() || is_admin {
+                            <AddNewOrderButton userid={user_id}/>
+                        }
                     </AppFooter>
                 </BrowserRouter>
             }
