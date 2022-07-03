@@ -14,11 +14,25 @@ The original goals for this system where to
 
 From the beginning the concept for this new system was to be something the Scouts could use from their devices to make sales.  Rather than create individual mobile device apps the PWA format was chosen. The other design goal was that this be a static web app so that all the dynamic functionality happens in the browser.  This eliminates the need to have a server backend to dynamically generate the pages.
 
+Main categories of functionality:
+* User
+  * Order Entry
+  * User Summary/Standings
+  * Mulch Spreading Status
+  * Order Area Saturation (TODO)
+* Admin Functionality
+  * Adjust order for any user
+  * Enter new orders for a user
+  * Reset Fundraiser for a new year (TODO)
+  * Change Fundraiser Variables (TODO)
+  * Delivery user time tracking
+  * Allocation adjustment
+
 ## Why Rust
 Having done web development for many years I have come to swear by Typescript for large complexity projects.  Originally the first iteration was built using Gatsby however while Gatsby supported Typescript it did not easily support the type safety compilation and so maintenance was problematic and in general the system was fragile as any medium complexity javascript project often is.  There was also an expectation that it was easier for contributors to pickup javascript/typescript.  This turned out to not be true either.  To that end the 2nd version of this project was switched to the [Yew Rust Framework](https://yew.rs/).  This increased performance for app compilation, performance in the client, true type validation, easier bug fixes and feature additions.  The tradeoff is as the app gained functionality load time while not as of yet problematic did increase.  At some point when this does get to be problematic then splitting up the app into different WASM modules will solve this issue.
 
 ## Being served from AWS Amplify
-We are using AWS Amplify to serve the web app from.  This service automatically generates the TLS certificate and handles the CDN functionality.  Because this is a static page web app we are only using the AWS Amplify service to build and publish.  There is no need for the more expensive server backend to server dynamic data.  The other functionality AWS Amplify gives us is that it has a webhook setup for the repo so that when code is checked into the main branch it triggers the build/publish process in AWS Amplify.  A TODO would be to figure out how to have it trigger on the published tag releases instead of main branch to make release more obvious.
+We are using [AWS Amplify](https://aws.amazon.com/amplify) to serve the web app from.  This service automatically generates the TLS certificate and handles the CDN functionality.  Because this is a static page web app we are only using the AWS Amplify service to build and publish.  There is no need for the more expensive server backend to server dynamic data.  The other functionality AWS Amplify gives us is that it has a webhook setup for the repo so that when code is checked into the main branch it triggers the build/publish process in AWS Amplify.  A TODO would be to figure out how to have it trigger on the published tag releases instead of main branch to make release more obvious.
 
 ## Authentication
 Authentication is handled by [Auth0](https://auth0.com/).  I am intentionally going to leave off the details because it is pretty standard stuff if you understand security and if you don't then don't need the attack vector to be too easy:)
@@ -35,4 +49,5 @@ The functionality of the Lambda is to convert the GraphQL request into actionabl
 ## Database Backend
 [CockroachDB](https://www.cockroachlabs.com/) is a cloud based database solution.  They have provided a PostgreSQL compatible interface so that it works well with any PostgreSQL driver available.  While DynamoDB provided some great functionality ultimately our application would benefit better from the SQL based database.  This also allows us to avoid vendor lock-in with AWS Dynamo.  There are other cloud based providers that have SQL based cloud DB access. If there is a need in the future to switch databases again, because we are using GraphQL as our interface, it should be trivial to switch to an alternative SQL DB.
 
-
+# CLI Utility
+Currently there isn't a user interface from the webapp to change the fundraiser system variables. However the GraphQL in the API does exists and can be controlled from the command line utility.  That said it is only meant to be used by the SuperAdmin until the user interface is available in the webapp for all admin's
