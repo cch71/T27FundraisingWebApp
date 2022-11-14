@@ -489,8 +489,8 @@ pub fn order_form_fields() -> Html
     }
 
     let mut did_find_selected_order_owner = false;
-    let amt_cash_paid = order.amount_cash_collected.as_ref().unwrap_or(&"".to_string()).to_string();
-    let amt_checks_paid = order.amount_checks_collected.as_ref().unwrap_or(&"".to_string()).to_string();
+    let amt_cash_paid = from_cloud_to_money_str(order.amount_cash_collected.clone());
+    let amt_checks_paid = from_cloud_to_money_str(order.amount_checks_collected.clone());
 
     html! {
         <form class="needs-validation" id="newOrEditOrderForm" novalidate=true onsubmit={on_form_submission}>
@@ -608,12 +608,12 @@ pub fn order_form_fields() -> Html
                         <OrderCostItem label="Donation"
                             isreadonly={is_order_readonly}
                             ondelete={on_donations_delete}
-                            amount={order.amount_from_donations.clone()}/>
+                            amount={from_cloud_to_money_str(order.amount_from_donations.clone())}/>
                         <OrderCostItem label="Product Order"
                             deliveryid={order.delivery_id}
                             ondelete={on_purchases_delete}
                             isreadonly={is_order_readonly}
-                            amount={order.amount_from_purchases.clone()}/>
+                            amount={from_cloud_to_money_str(order.amount_from_purchases.clone())}/>
                     </ul>
                 </div>
                 <div class="invalid-feedback">

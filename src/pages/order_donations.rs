@@ -130,7 +130,7 @@ pub fn order_donations() -> Html
                                     <span class="input-group-text">{"$"}</span>
                                 </div>
                                 <input type="number" min="0" step="any" class="form-control" id="formDonationAmount"
-                                       value={order.amount_from_donations.unwrap_or("".to_string())}
+                                       value={from_cloud_to_money_str(order.amount_from_donations.clone())}
                                        placeholder="0.00"
                                        oninput={do_form_validation} />
                             </div>
