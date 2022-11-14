@@ -522,7 +522,7 @@ mutation {
 pub(crate) async fn set_spreaders(order_id: &str, spreaders: &Vec<String>)
     -> std::result::Result<(), Box<dyn std::error::Error>>
 {
-    //log::info!("Setting Spreaders for orderid: {}:{:#?}", order_id, &spreaders);
+    log::info!("Setting Spreaders for orderid: {}:{:#?}", order_id, &spreaders);
     let spreaders = spreaders.into_iter()
         .map(|v|format!("\"{}\"",v)).collect::<Vec<String>>()
         .join(",");

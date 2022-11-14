@@ -21,7 +21,7 @@ pub(crate) struct QuickReportViewProps {
 pub(crate) fn report_quick_view(props: &QuickReportViewProps) -> Html {
     let report_state = use_state(||ReportViewState::IsLoading);
     let history = use_history().unwrap();
-    let is_fr_editable = is_fundraiser_locked() || is_fundraiser_finalized();
+    let is_fr_editable = is_fundraiser_editable();
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
@@ -111,14 +111,14 @@ pub(crate) fn report_quick_view(props: &QuickReportViewProps) -> Html {
                         <tbody>
                         {
                             orders.into_iter().map(|v|{
-                                let mut spreading = "".to_string();
+                                let mut spreading:u64 = 0;
                                 for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
                                     if purchase["productId"].as_str().unwrap() == "spreading" {
-                                        spreading = purchase["numSold"].as_u64().unwrap().to_string();
+                                        spreading = purchase["numSold"].as_u64().unwrap();
                                         break;
                                     }
                                 }
-                                let enable_spreading_button = spreading.len()!=0 && !is_fr_editable;
+                                let enable_spreading_button = 0!=spreading && is_fr_editable;
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("Donation".to_string(), "Donation".to_string()),
@@ -133,7 +133,7 @@ pub(crate) fn report_quick_view(props: &QuickReportViewProps) -> Html {
                                         <td>{v["customer"]["name"].as_str().unwrap()}</td>
                                         <td data-deliveryid={delivery_id}>{delivery_date}</td>
                                         <td>{spreaders.clone()}</td>
-                                        <td>{&spreading}</td>
+                                        <td>{&spreading.to_string()}</td>
                                         <td>{v["ownerId"].as_str().unwrap()}</td>
                                         <td>
                                             <ReportActionButtons

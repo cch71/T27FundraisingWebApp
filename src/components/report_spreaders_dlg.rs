@@ -62,7 +62,7 @@ pub(crate) fn on_edit_spreading_from_rpt( evt: MouseEvent, datatable: std::rc::R
             dlg: dlg.clone().dyn_into::<bootstrap::Modal>().unwrap(),
             tr_node: tr_node,
             order_id: order_id,
-            selected_users: spreaders,
+            selected_users: spreaders.into_iter().filter(|(_id, name)| 0!=name.len()).collect(),
             dataset_elm: elm,
         });
     });

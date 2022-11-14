@@ -450,6 +450,12 @@ pub(crate) fn is_fundraiser_finalized() -> bool {
 }
 
 
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) fn is_fundraiser_editable() -> bool {
+    let is_fr_readonly = is_fundraiser_locked() || is_fundraiser_finalized();
+    !is_fr_readonly || (get_active_user().get_id() == "fradmin")
+}
 
 
 ////////////////////////////////////////////////////////////////////////////
