@@ -45,9 +45,13 @@ fn get_product_items(document: &web_sys::Document) -> HashMap<String, PurchasedI
                 let value = element.value();
                 if let Some(num_sold) = value.parse::<u32>().ok() {
                     let product_id = element.dataset().get("productid").unwrap();
-                    log::info!("Purchase Item: {}: {}", &product_id, num_sold);
-                    let amount_charged = get_purchase_cost_for(&product_id, num_sold);
-                    product_map.insert( product_id, PurchasedItem::new(num_sold, amount_charged));
+                    if 0==num_sold {
+                        log::info!("Purchase Item (Removing): {}: {}", &product_id, num_sold);
+                    } else  {
+                        log::info!("Purchase Item: {}: {}", &product_id, num_sold);
+                        let amount_charged = get_purchase_cost_for(&product_id, num_sold);
+                        product_map.insert( product_id, PurchasedItem::new(num_sold, amount_charged));
+                    }
                 }
             }
         }
