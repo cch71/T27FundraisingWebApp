@@ -96,7 +96,7 @@ pub(crate) struct UserInfo {
 pub(crate) struct FrConfig {
     pub(crate) kind: String,
     pub(crate) description: String,
-    pub(crate) last_modified_time: String,
+    // pub(crate) last_modified_time: String,
     pub(crate) is_locked: bool,
     pub(crate) is_finalized: bool,
 }
@@ -235,7 +235,7 @@ fn process_config_data(config: FrConfigApi) {
     *FRCONFIG.write().unwrap() = Some(Arc::new(FrConfig {
         kind: config.kind,
         description: config.description,
-        last_modified_time: config.last_modified_time,
+        // last_modified_time: config.last_modified_time,
         is_locked: config.is_locked,
         is_finalized: config.finalization_data.is_some(),
     }));
@@ -243,11 +243,18 @@ fn process_config_data(config: FrConfigApi) {
 
     let mut deliveries = BTreeMap::new();
     for delivery in config.mulch_delivery_configs {
-        let delivery_date = NaiveDate::parse_from_str(&delivery.delivery_date, "%m/%d/%Y").unwrap();
-        let cutoff_date = NaiveDate::parse_from_str(&delivery.new_order_cutoff_date, "%m/%d/%Y").unwrap();
+        let delivery_date = {
+            let nd = NaiveDate::parse_from_str(&delivery.delivery_date, "%m/%d/%Y").unwrap();
+            Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
+        };
+        let cutoff_date = {
+            let nd = NaiveDate::parse_from_str(&delivery.new_order_cutoff_date, "%m/%d/%Y").unwrap();
+            Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
+        };
+
         deliveries.insert(delivery.id, DeliveryInfo{
-            delivery_date: Utc.ymd(delivery_date.year(), delivery_date.month(), delivery_date.day()).and_hms(0, 0, 0),
-            new_order_cutoff_date: Utc.ymd(cutoff_date.year(), cutoff_date.month(), cutoff_date.day()).and_hms(0, 0, 0),
+            delivery_date: delivery_date,
+            new_order_cutoff_date: cutoff_date,
         });
     }
     *DELIVERIES.write().unwrap() = Some(Arc::new(deliveries));

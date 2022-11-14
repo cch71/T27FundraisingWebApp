@@ -170,11 +170,12 @@ pub fn home_page() -> Html
         let summary_values = summary_values.clone();
         use_effect(move || {
             if let Some(summary) = (*summary_values).as_ref() {
-                draw_google_chart(&serde_json::json!({
-                    "groupRankings": summary.troop_summary.group_summary.iter().map(|v|{
+                use std::collections::HashMap;
+                let patrol_summary_map: HashMap<String, f32> = summary.troop_summary.group_summary.iter().map(|v|{
                         (v.group_id.clone(), v.amount_total_collected.parse::<f32>().unwrap_or(0.0))
-                    }).collect::<Vec<(String, f32)>>(),
-                }));
+                    }).collect();
+                //log::info!("Google Chart Params: {:#?}", &m);
+                draw_google_chart(&patrol_summary_map);
             }
 
             || {}

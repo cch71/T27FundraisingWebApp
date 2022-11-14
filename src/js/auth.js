@@ -2,11 +2,14 @@
 /**
  *  Creates an auth object
  */
-const authObj = new Auth0Client(
+const authObj = await auth0.createAuth0Client(
     {
-        domain: 'dev-pmq2q476.us.auth0.com',
-        client_id: 'AewxkIRU4ckn5GcNH32qkTU1AYgdKKMn',
-        audience: 'https://fundraiser.bsatroop27.us/api'
+	domain: 'dev-pmq2q476.us.auth0.com',
+	clientId: 'AewxkIRU4ckn5GcNH32qkTU1AYgdKKMn',
+	authorizationParams: {
+            audience: 'https://fundraiser.bsatroop27.us/api',
+            redirect_uri: window.location.origin
+	}
     });
 
 /**
@@ -36,15 +39,13 @@ const getUserInfo = async () => {
 const loginUser = async (targetUrl) => {
     // console.log("Starting login");
 
-    const options = {
-        redirect_uri: window.location.origin
-    };
-
     if (targetUrl) {
-        options.appState = { targetUrl };
+	await authObj.loginWithRedirect({ targetUrl });
+    } else {
+	await authObj.loginWithRedirect();
     }
 
-    await authObj.loginWithRedirect(options);
+
 };
 
 /**
@@ -67,8 +68,8 @@ const isAuthenticated = async () => {
 
     if (isAuthenticated) {
         // show the gated content
-        console.log(`JS1: Is Authenticated: True`);
-        return;
+        console.log(`JS1: Is Authenticated: ${isAuthenticated}`);
+        return isAuthenticated;
     }
 
     // NEW - check for the code and state parameters

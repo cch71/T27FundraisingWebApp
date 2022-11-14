@@ -35,7 +35,8 @@ extern "C" {
 }
 
 pub(crate) fn get_datatable(params: &serde_json::Value) -> Option<DataTable> {
-    getDataTable(&JsValue::from_serde(params).unwrap()).ok()
+    //log::info!("Get Data Table: {:#?}", &params);
+    getDataTable(&serde_wasm_bindgen::to_value(params).unwrap()).ok()
 }
 
 pub(crate) fn remove_row_with_tr(dt: &JsValue, tr: &web_sys::Node)

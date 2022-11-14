@@ -6,27 +6,27 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = { version = ">=0.4", features = ["wasmbind"] }
 lazy_static = "1"
-wasm-bindgen = ">=0.2"
-wasm-bindgen-futures = ">=0.4"
-serde-wasm-bindgen = ">=0.3"
+chrono = { version = "0.4", features = ["wasmbind"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
-js-sys = ">=0.3"
-log = ">=0.4"
-wasm-logger = ">=0.2"
-yew = ">=0.19"
-yew-router = ">=0.16"
+wasm-bindgen = "0.2"
+serde-wasm-bindgen = "0.4"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+log = "0.4"
+wasm-logger = "0.2"
+yew = "0.19"
+yew-router = "0.16"
 # yewtil = "0.4"
 rust_decimal = "1"
-rusty-money = { version = ">=0.4", features = ["iso"] }
+rusty-money = { version = "0.4", features = ["iso"] }
 uuid = { version = "1", features = ["serde", "v4", "js"] }
-gloo-utils = ">=0.1"
-gloo-dialogs = ">=0.1"
-gloo-storage = ">=0.2"
-gloo-file = ">=0.2"
-reqwasm = {version = ">=0.5", default-features = false, features = ["json", "http"] }
+gloo-utils = { version = "0.1", features = ["serde"] }
+gloo-dialogs = "0.1"
+gloo-storage = "0.2"
+gloo-file = "0.2"
+reqwasm = {version = "0.5", default-features = false, features = ["json", "http"] }
 regex = "1"
 csv = "1"
 

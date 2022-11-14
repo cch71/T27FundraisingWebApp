@@ -52,6 +52,15 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         log::info!("GQL Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
     }
 
+    if !raw_resp["message"].is_null() {
+        let err_str = serde_json::to_string(&raw_resp).unwrap_or("Failed to stringify json resp".to_string());
+        use std::io::{Error, ErrorKind};
+        return Err(Box::new(
+                Error::new(
+                    ErrorKind::Other,
+                    format!("GQL request returned raw error:\n {}", err_str).as_str())));
+    }
+
     let resp: DataWrapper<T> = serde_json::from_value(raw_resp)?;
     if let Some(errs) = resp.errors {
         let err_str = serde_json::to_string(&errs).unwrap_or("Failed to parse error resp".to_string());
@@ -59,7 +68,7 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         Err(Box::new(
                 Error::new(
                     ErrorKind::Other,
-                    format!("GQL request returned and error:\n {}", err_str).as_str())))
+                    format!("GQL request returned error:\n {}", err_str).as_str())))
     } else {
         Ok(resp.data.unwrap())
     }
