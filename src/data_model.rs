@@ -4,7 +4,7 @@ use std::sync::{RwLock, Arc};
 use chrono::prelude::*;
 use std::collections::{BTreeMap};
 use rust_decimal::prelude::*;
-use gloo_storage::{LocalStorage, Storage};
+use gloo::storage::{LocalStorage, Storage};
 use std::time::{ Duration };
 
 pub(crate) use crate::data_model_reports::*;
@@ -312,7 +312,7 @@ pub(crate) async fn load_config() {
     let req = GraphQlReq::new(CONFIG_GQL.to_string());
     let rslt = make_gql_request::<ConfigApi>(&req).await;
     if let Err(err) = rslt {
-        gloo_dialogs::alert(&format!("Failed to retrieve config: {:#?}", err));
+        gloo::dialogs::alert(&format!("Failed to retrieve config: {:#?}", err));
         return;
     }
 

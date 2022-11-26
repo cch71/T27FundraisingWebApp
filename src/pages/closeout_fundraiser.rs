@@ -1,7 +1,7 @@
 
 use yew::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{Url, InputEvent, MouseEvent, FocusEvent, HtmlInputElement, HtmlAnchorElement};
+use web_sys::{Url, InputEvent, MouseEvent, FocusEvent, SubmitEvent, HtmlInputElement, HtmlAnchorElement};
 use rust_decimal::prelude::*;
 
 use crate::data_model::*;
@@ -12,7 +12,7 @@ use crate::currency_utils::{
 };
 
 use chrono::prelude::*;
-use gloo_file::File;
+use gloo::file::File;
 
 
 ////////////////////////////////////////////////////////
@@ -161,7 +161,7 @@ fn allocation_report_row(props: &AllocationReportRowProps) -> Html {
 #[derive(Properties, PartialEq)]
 struct AllocationReportProps {
     reportlist: Vec<FrCloseoutAllocationVals>,
-    onreleasefunds: Callback<FocusEvent>,
+    onreleasefunds: Callback<SubmitEvent>,
 }
 #[function_component(AllocationReport)]
 fn allocation_report(props: &AllocationReportProps) -> Html {
@@ -188,7 +188,7 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
                 Some("text/plain;charset=utf-8"),
                 Some(Utc::now().into())
             );
-            let link = gloo_utils::document().create_element("a")
+            let link = gloo::utils::document().create_element("a")
                 .ok()
                 .and_then(|t| t.dyn_into::<HtmlAnchorElement>().ok())
                 .unwrap();
@@ -525,7 +525,7 @@ pub fn closeout_fundraiser_page() -> Html {
                 Some("application/json"),
                 Some(Utc::now().into())
             );
-            let link = gloo_utils::document().create_element("a")
+            let link = gloo::utils::document().create_element("a")
                 .ok()
                 .and_then(|t| t.dyn_into::<HtmlAnchorElement>().ok())
                 .unwrap();
@@ -542,7 +542,7 @@ pub fn closeout_fundraiser_page() -> Html {
     let on_release_funds_form_submission = {
         let dvars = dvars.clone();
         let scout_report_list = scout_report_list.clone();
-        Callback::from(move |evt: FocusEvent| {
+        Callback::from(move |evt: SubmitEvent| {
             evt.prevent_default();
             evt.stop_propagation();
             let dvars = dvars.clone();
@@ -550,7 +550,7 @@ pub fn closeout_fundraiser_page() -> Html {
             wasm_bindgen_futures::spawn_local(async move {
                 log::info!("on_release_funds_form_submission");
                 set_fr_closeout_data(&*dvars.clone(), &*scout_report_list).await;
-                gloo_dialogs::alert("Submitted");
+                gloo::dialogs::alert("Submitted");
             });
 
         })

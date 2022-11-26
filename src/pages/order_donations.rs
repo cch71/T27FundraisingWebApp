@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{InputEvent, MouseEvent, FocusEvent, HtmlInputElement, HtmlButtonElement};
+use web_sys::{InputEvent, MouseEvent, SubmitEvent, HtmlInputElement, HtmlButtonElement};
 use crate::AppRoutes;
 use crate::currency_utils::*;
 use crate::data_model::*;
@@ -9,7 +9,7 @@ use crate::data_model::*;
 /////////////////////////////////////////////////
 ///
 fn get_donation_amount() -> Option<String> {
-    let document = gloo_utils::document();
+    let document = gloo::utils::document();
     let donation_amt = document.get_element_by_id("formDonationAmount")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
@@ -24,7 +24,7 @@ fn get_donation_amount() -> Option<String> {
 /////////////////////////////////////////////////
 ///
 fn set_donation_amount(value: &str) {
-    let document = gloo_utils::document();
+    let document = gloo::utils::document();
     document.get_element_by_id("formDonationAmount")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
@@ -48,19 +48,19 @@ fn disable_submit_button(value: bool) {
 #[function_component(OrderDonations)]
 pub fn order_donations() -> Html
 {
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
     if !is_active_order() {
-            history.push(AppRoutes::Home);
+            history.push(&AppRoutes::Home);
     }
     let order = get_active_order().unwrap();
     let is_order_readonly = order.is_readonly();
 
     let on_form_submission = {
         let history = history.clone();
-        let mut updated_order = order.clone();
-        Callback::once(move |evt: FocusEvent| {
+        move |evt: SubmitEvent| {
             evt.prevent_default();
             evt.stop_propagation();
+            let mut updated_order = get_active_order().unwrap();
             // log::info!("on_form_submission");
             let mut donation_amt = get_donation_amount();
             if donation_amt.is_some() {
@@ -71,8 +71,8 @@ pub fn order_donations() -> Html
                 updated_order.clear_donations();
             }
             update_active_order(updated_order).unwrap();
-            history.push(AppRoutes::OrderForm);
-        })
+            history.push(&AppRoutes::OrderForm);
+        }
     };
 
     let on_cancel_item = {
@@ -81,7 +81,7 @@ pub fn order_donations() -> Html
             evt.prevent_default();
             evt.stop_propagation();
             //log::info!("on_cancel_item");
-            history.push(AppRoutes::OrderForm);
+            history.push(&AppRoutes::OrderForm);
         })
     };
 

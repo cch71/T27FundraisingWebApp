@@ -1,7 +1,7 @@
 
 use serde::{Deserialize, Serialize};
 use chrono::prelude::*;
-use gloo_storage::{LocalStorage, SessionStorage, Storage};
+use gloo::storage::{LocalStorage, SessionStorage, Storage};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 use crate::auth_utils::{get_active_user};
 use crate::data_model::{get_fr_config};

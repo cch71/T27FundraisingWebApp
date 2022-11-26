@@ -16,9 +16,9 @@ use crate::google_charts::*;
 //                 log::info!("Calling Admin Test API");
 //                 let rslt = call_admin_test_api().await;
 //                 if let Err(err) = rslt {
-//                     gloo_dialogs::alert(&format!("Bad: {:#?}", err));
+//                     gloo::dialogs::alert(&format!("Bad: {:#?}", err));
 //                 } else {
-//                     gloo_dialogs::alert(":)");
+//                     gloo::dialogs::alert(":)");
 //                 }
 //                 log::info!("Done Calling Admin Test API");
 //             });
@@ -208,7 +208,7 @@ pub fn home_page() -> Html
         wasm_bindgen_futures::spawn_local(async move {
             let id = get_active_user().get_id();
             match get_summary_report_data(&id, 10).await{
-                Err(err) => gloo_dialogs::alert(&format!("Failed to retrieve summary data to local storage: {:#?}", err)),
+                Err(err) => gloo::dialogs::alert(&format!("Failed to retrieve summary data to local storage: {:#?}", err)),
                 Ok(summary) => summary_values.set(Some(summary)),
             };
         });

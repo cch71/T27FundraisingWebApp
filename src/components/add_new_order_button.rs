@@ -11,14 +11,14 @@ pub struct AddNewOrderButtonProps {
 #[function_component(AddNewOrderButton)]
 pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html
 {
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
     let on_add_new_order = {
         let history = history.clone();
         let userid = props.userid.clone();
         Callback::from(move |_| {
             log::info!("Starting process to add new order");
             create_new_active_order(&userid);
-            history.push(AppRoutes::OrderForm);
+            history.push(&AppRoutes::OrderForm);
         })
     };
 

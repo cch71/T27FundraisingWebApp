@@ -3,7 +3,7 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{
-    Event, InputEvent, MouseEvent,
+    Event, InputEvent, MouseEvent, SubmitEvent,
     Element, HtmlElement, HtmlSelectElement, HtmlInputElement, HtmlButtonElement,
 };
 use crate::AppRoutes;
@@ -176,7 +176,7 @@ pub struct OrderCostItemProps {
 #[function_component(OrderCostItem)]
 pub fn order_cost_item(props: &OrderCostItemProps) -> Html
 {
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
 
     let on_add_edit_view = {
         let props_label = props.label.clone();
@@ -186,9 +186,9 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
             evt.stop_propagation();
             log::info!("On Add/Edit/View Called");
             if props_label=="Donation" {
-                history.push(AppRoutes::OrderDonations);
+                history.push(&AppRoutes::OrderDonations);
             } else {
-                history.push(AppRoutes::OrderProducts);
+                history.push(&AppRoutes::OrderProducts);
             }
         })
     };
@@ -249,9 +249,9 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html
 #[function_component(HoodSelector)]
 pub fn hood_selector() -> Html
 {
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
     if !is_active_order() {
-            history.push(AppRoutes::Home);
+            history.push(&AppRoutes::Home);
     }
 
     let order = use_state_eq(||get_active_order().unwrap());
@@ -323,9 +323,9 @@ pub fn hood_selector() -> Html
 #[function_component(OrderFormFields)]
 pub fn order_form_fields() -> Html
 {
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
     if !is_active_order() {
-            history.push(AppRoutes::Home);
+            history.push(&AppRoutes::Home);
     }
 
     let is_admin = get_active_user().is_admin();
@@ -345,7 +345,7 @@ pub fn order_form_fields() -> Html
             evt.prevent_default();
             evt.stop_propagation();
 
-            let document = gloo_utils::document();
+            let document = gloo::utils::document();
             let mut cash_amt_collected = get_cash_amount_collected(&document);
             if cash_amt_collected.is_some() {
                 let new_amt = on_money_input_filter(cash_amt_collected.as_ref());
@@ -395,22 +395,22 @@ pub fn order_form_fields() -> Html
 
     let on_form_submission = {
         let history = history.clone();
-        let on_form_submitted = Callback::once(move |_was_submitted_ok: bool| {
+        let on_form_submitted = move |_was_submitted_ok: bool| {
             let was_from_db =  is_active_order_from_db();
             reset_active_order();
             if was_from_db {
-                history.push(AppRoutes::Reports);
+                history.push(&AppRoutes::Reports);
             } else {
-                history.push(AppRoutes::Home);
+                history.push(&AppRoutes::Home);
             }
-        });
-        Callback::from(move |evt: FocusEvent| {
+        };
+        Callback::from(move |evt: SubmitEvent| {
             let on_form_submitted = on_form_submitted.clone();
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_form_submission");
 
-            let document = gloo_utils::document();
+            let document = gloo::utils::document();
 
             disable_submit_button(&document, true, true);
             disable_cancel_button(&document, true);
@@ -427,9 +427,9 @@ pub fn order_form_fields() -> Html
                     disable_submit_button(&document, false, false);
                     disable_cancel_button(&document, false);
                     if let Err(err) = rslt {
-                        gloo_dialogs::alert(&format!("Failed to submit order: {:#?}", err));
+                        gloo::dialogs::alert(&format!("Failed to submit order: {:#?}", err));
                     } else {
-                        on_form_submitted.emit(true);
+                        on_form_submitted(true);
                     }
                 });
             }
@@ -445,9 +445,9 @@ pub fn order_form_fields() -> Html
             let was_from_db =  is_active_order_from_db();
             reset_active_order();
             if was_from_db {
-                history.push(AppRoutes::Reports);
+                history.push(&AppRoutes::Reports);
             } else {
-                history.push(AppRoutes::Home);
+                history.push(&AppRoutes::Home);
             }
         })
     };
@@ -479,7 +479,7 @@ pub fn order_form_fields() -> Html
     {
         let order = order.clone();
         use_effect(move || {
-            let document = gloo_utils::document();
+            let document = gloo::utils::document();
             update_order_amount_due_element(&order, &document);
             // disable_submit_button(
             //     !are_product_items_valid(&document) || get_delivery_id(&document).is_none()

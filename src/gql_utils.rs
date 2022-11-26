@@ -46,7 +46,7 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         .await?
         .json()
         .await?;
-    let host_str = gloo_utils::window().location().host().unwrap_or("".to_string());
+    let host_str = gloo::utils::window().location().host().unwrap_or("".to_string());
     // log::info!("Hostname: {host_str}");
     if host_str.starts_with("localhost") {
         log::info!("GQL Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());

@@ -46,13 +46,13 @@ pub(crate) fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
 
                 if get_active_user().is_admin() {
                     if do_show_seller {
-                        let _ = gloo_utils::document().get_element_by_id("reportViewSettingsDlgUserSelectionCol")
+                        let _ = gloo::utils::document().get_element_by_id("reportViewSettingsDlgUserSelectionCol")
                             .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                             .unwrap()
                             .class_list()
                             .remove_1("d-none");
                     } else {
-                        let _ = gloo_utils::document().get_element_by_id("reportViewSettingsDlgUserSelectionCol")
+                        let _ = gloo::utils::document().get_element_by_id("reportViewSettingsDlgUserSelectionCol")
                             .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                             .unwrap()
                             .class_list()
@@ -181,13 +181,13 @@ pub fn reports_page() -> Html {
     let on_save_settings = {
         let current_settings = current_settings.clone();
         Callback::from(move |_evt: MouseEvent| {
-            let report_view = gloo_utils::document().get_element_by_id("reportViewSettingsDlgViewSelection")
+            let report_view = gloo::utils::document().get_element_by_id("reportViewSettingsDlgViewSelection")
                 .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
                 .unwrap()
                 .value();
 
             let seller_id: String = if get_active_user().is_admin() {
-                gloo_utils::document().get_element_by_id("reportViewSettingsDlgUserSelection")
+                gloo::utils::document().get_element_by_id("reportViewSettingsDlgUserSelection")
                     .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
                     .unwrap()
                     .value()

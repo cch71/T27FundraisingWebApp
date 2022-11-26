@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{InputEvent, MouseEvent, FocusEvent, HtmlSelectElement, HtmlInputElement, HtmlButtonElement};
+use web_sys::{InputEvent, MouseEvent, SubmitEvent, HtmlSelectElement, HtmlInputElement, HtmlButtonElement};
 use crate::AppRoutes;
 use crate::data_model::*;
 use chrono::prelude::*;
@@ -129,29 +129,29 @@ pub fn product_item(props: &ProductItemProps) -> Html
 #[function_component(OrderProducts)]
 pub fn order_products() -> Html
 {
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
     if !is_active_order() {
-            history.push(AppRoutes::Home);
+            history.push(&AppRoutes::Home);
     }
     let order = get_active_order().unwrap();
     let is_order_readonly = order.is_readonly();
 
     let on_form_submission = {
         let history = history.clone();
-        let mut updated_order = order.clone();
-        Callback::once(move |evt: FocusEvent| {
+        move |evt: SubmitEvent| {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_form_submission");
+            let mut updated_order = get_active_order().unwrap();
 
-            let document = gloo_utils::document();
+            let document = gloo::utils::document();
             let delivery_id = get_delivery_id(&document).unwrap().parse::<u32>().unwrap();
             let purchases = get_product_items(&document);
             updated_order.set_purchases(delivery_id, purchases);
             update_active_order(updated_order).unwrap();
 
-            history.push(AppRoutes::OrderForm);
-        })
+            history.push(&AppRoutes::OrderForm);
+        }
     };
 
     let on_cancel_item = {
@@ -160,7 +160,7 @@ pub fn order_products() -> Html
             evt.prevent_default();
             evt.stop_propagation();
             //log::info!("on_cancel_item");
-            history.push(AppRoutes::OrderForm);
+            history.push(&AppRoutes::OrderForm);
         })
     };
 
@@ -170,7 +170,7 @@ pub fn order_products() -> Html
             evt.stop_propagation();
             log::info!("do_form_validation");
 
-            let document = gloo_utils::document();
+            let document = gloo::utils::document();
 
             if !are_product_items_valid(&document) || get_delivery_id(&document).is_none() {
                 disable_submit_button(true);
@@ -184,7 +184,7 @@ pub fn order_products() -> Html
 
     {
         use_effect(move || {
-            let document = gloo_utils::document();
+            let document = gloo::utils::document();
             disable_submit_button(
                 !are_product_items_valid(&document) || get_delivery_id(&document).is_none()
             );

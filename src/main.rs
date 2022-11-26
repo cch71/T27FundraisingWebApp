@@ -69,7 +69,7 @@ pub(crate) fn get_html_textarea_value(id: &str, document: &web_sys::Document) ->
 pub(crate) fn save_to_active_order() {
     if !is_active_order() { return; }
 
-    let document = gloo_utils::document();
+    let document = gloo::utils::document();
     let mut order = get_active_order().unwrap();
 
     if let Some(order_owner_element) = document.get_element_by_id("formOrderOwner")
@@ -125,7 +125,7 @@ pub struct AppFooterProps {
 #[function_component(AppFooter)]
 pub fn app_footer(props: &AppFooterProps) -> Html
 {
-    let cur_win_loc = gloo_utils::window().location().pathname().unwrap();
+    let cur_win_loc = gloo::utils::window().location().pathname().unwrap();
     // log::info!("!!!!! WinLoc: {}", cur_win_loc);
 
     html! {
@@ -164,7 +164,7 @@ pub enum AppRoutes {
     NotFound,
 }
 
-fn switch(route: &AppRoutes) -> Html {
+fn route_switch(route: AppRoutes) -> Html {
     // This is kindof a hack to save order form before we switch away
     let document = web_sys::window().unwrap().document().unwrap();
     if document.get_element_by_id("newOrEditOrderForm").is_some() {
@@ -198,11 +198,11 @@ pub enum AppMsg {
 }
 type Msg = AppMsg;
 
-struct Model {
+struct App {
     is_loading: bool,
 }
 
-impl Component for Model {
+impl Component for App {
     type Message = Msg;
     type Properties = ();
 
@@ -285,7 +285,7 @@ impl Component for Model {
                 <BrowserRouter>
                     <AppNav userid={user_id.clone()} username={user_name} isadmin={is_admin} onlogoff={on_logoff} onreportissue={on_reportissue}/>
                     <main class="flex-shrink-0">
-                        <Switch<AppRoutes> render={Switch::render(switch)} />
+                        <Switch<AppRoutes> render={route_switch} />
                         <ReportIssueDlg/>
                     </main>
                     <AppFooter>
@@ -303,5 +303,5 @@ impl Component for Model {
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
     log::info!("RelVer: {}", std::option_env!("AWS_COMMIT_ID").unwrap_or("?"));
-    yew::start_app::<Model>();
+    yew::Renderer::<App>::new().render();
 }

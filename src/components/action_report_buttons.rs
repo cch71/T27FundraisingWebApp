@@ -10,7 +10,7 @@ pub(crate) use crate::components::report_spreaders_dlg::*;
 
 /////////////////////////////////////////////////
 ///
-pub(crate) fn on_view_or_edit_from_rpt( evt: MouseEvent, history: AnyHistory)
+pub(crate) fn on_view_or_edit_from_rpt( evt: MouseEvent, history: Navigator)
 {
     evt.prevent_default();
     evt.stop_propagation();
@@ -31,9 +31,9 @@ pub(crate) fn on_view_or_edit_from_rpt( evt: MouseEvent, history: AnyHistory)
     wasm_bindgen_futures::spawn_local(async move {
         log::info!("on_view_or_edit_order: {}", order_id);
         if let Err(err) = load_active_order_from_db(&order_id).await {
-            gloo_dialogs::alert(&format!("Failed to load order: {}: Err: {:#?}", order_id, err));
+            gloo::dialogs::alert(&format!("Failed to load order: {}: Err: {:#?}", order_id, err));
         }
-        history.push(AppRoutes::OrderForm);
+        history.push(&AppRoutes::OrderForm);
     });
 }
 
