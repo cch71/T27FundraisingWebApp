@@ -83,7 +83,7 @@ const isAuthenticated = async () => {
     try {
         await loginUser();
         return true;
-    } catch() {
+    } catch {
         return false;
     }
 };
