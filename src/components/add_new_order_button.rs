@@ -15,11 +15,11 @@ pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html
     let on_add_new_order = {
         let history = history.clone();
         let userid = props.userid.clone();
-        Callback::from(move |_| {
+        move |_| {
             log::info!("Starting process to add new order");
             create_new_active_order(&userid);
             history.push(&AppRoutes::OrderForm);
-        })
+        }
     };
 
     html! {
