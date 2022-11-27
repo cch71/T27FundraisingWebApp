@@ -34,6 +34,7 @@ use pages::{
     order_products::OrderProducts,
     timecards::Timecards,
     closeout_fundraiser::CloseoutFundraiser,
+    fr_config::FrConfig,
 };
 
 /////////////////////////////////////////////////
@@ -159,6 +160,8 @@ pub enum AppRoutes {
     Timecards,
     #[at("/frcloseout")]
     FundraiserCloseout,
+    #[at("/frcconfig")]
+    FrConfig,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -181,6 +184,7 @@ fn route_switch(route: AppRoutes) -> Html {
         AppRoutes::Reports => html!{<Reports/>},
         AppRoutes::Timecards => html!{<Timecards/>},
         AppRoutes::FundraiserCloseout => html!{<CloseoutFundraiser/>},
+        AppRoutes::FrConfig => html!{<FrConfig/>},
 
         AppRoutes::NotFound => html! { <h1>{ "404" }</h1> },
     }

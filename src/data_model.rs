@@ -111,6 +111,10 @@ impl DeliveryInfo {
     pub(crate) fn get_delivery_date_str(&self) -> String {
         self.delivery_date.format("%Y-%m-%d").to_string()
     }
+
+    pub(crate) fn get_new_order_cutoff_date_str(&self) -> String {
+        self.delivery_date.format("%Y-%m-%d").to_string()
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
