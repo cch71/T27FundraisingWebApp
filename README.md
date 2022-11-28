@@ -56,8 +56,15 @@ on the published tag releases instead of main branch to make release more obviou
 
 ## Authentication
 
-Authentication is handled by [Auth0](https://auth0.com/).  I am intentionally going to leave off the details because it is
-pretty standard stuff if you understand security and if you don't then don't need the attack vector to be too easy:)
+Authentication is handled by [Phase//](https://phasetwo.io/). Phase//(aka phasetwo) is a provider that is based on
+[KeyCloak](https://www.keycloak.org/).  Our authentication has evolved since the original implementation where we started out
+with a pure AWS Solution (which used Cognito) and then went to Auth0 as a cloud vendor independent and has now gone to use
+a KeyCloak based system.  This gives up greater flexibility as there are multiple KeyCloak cloud vendors or we could setup
+our own.  While Auth0 hand some less than ideal limits (for the free account) so far Phase// has been perfect for our needs.
+Using a KeyCloak based system also means that the admin scripts that we write can be used with other KeyCloak providers.
+
+I am intentionally going to leave off implementation details because it is pretty standard stuff if you understand security
+and if you don't then don't need the attack vector to be too easy:)
 
 # The Backend
 

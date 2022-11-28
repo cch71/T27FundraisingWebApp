@@ -12,3 +12,6 @@ pub(crate) mod report_spreading_jobs;
 pub(crate) mod report_spreading_jobs_unfinished;
 pub(crate) mod report_loading_spinny;
 pub(crate) mod report_spreaders_dlg;
+pub(crate) mod admin_config_deliveries;
+pub(crate) mod admin_config_neighborhoods;
+
