@@ -103,6 +103,7 @@ pub(crate) struct FrConfig {
 
 ////////////////////////////////////////////////////////////////////////////
 //
+#[derive(Debug, Clone)]
 pub(crate) struct DeliveryInfo {
     pub(crate) delivery_date: DateTime<Utc>,
     pub(crate) new_order_cutoff_date: DateTime<Utc>,
@@ -113,7 +114,7 @@ impl DeliveryInfo {
     }
 
     pub(crate) fn get_new_order_cutoff_date_str(&self) -> String {
-        self.delivery_date.format("%Y-%m-%d").to_string()
+        self.new_order_cutoff_date.format("%Y-%m-%d").to_string()
     }
 }
 
@@ -235,6 +236,23 @@ struct MulchDeliveryConfigApi {
 
 ////////////////////////////////////////////////////////////////////////////
 //
+pub(crate) fn new_delivery_info(delivery_date: &String, new_order_cutoff: &String) -> DeliveryInfo {
+    let delivery_date = {
+        let nd = NaiveDate::parse_from_str(delivery_date, "%m/%d/%Y").unwrap();
+        Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
+    };
+    let cutoff_date = {
+        let nd = NaiveDate::parse_from_str(new_order_cutoff, "%m/%d/%Y").unwrap();
+        Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
+    };
+    DeliveryInfo{
+        delivery_date: delivery_date,
+        new_order_cutoff_date: cutoff_date,
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
 fn process_config_data(config: FrConfigApi) {
     *FRCONFIG.write().unwrap() = Some(Arc::new(FrConfig {
         kind: config.kind,
@@ -247,19 +265,8 @@ fn process_config_data(config: FrConfigApi) {
 
     let mut deliveries = BTreeMap::new();
     for delivery in config.mulch_delivery_configs {
-        let delivery_date = {
-            let nd = NaiveDate::parse_from_str(&delivery.delivery_date, "%m/%d/%Y").unwrap();
-            Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
-        };
-        let cutoff_date = {
-            let nd = NaiveDate::parse_from_str(&delivery.new_order_cutoff_date, "%m/%d/%Y").unwrap();
-            Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
-        };
-
-        deliveries.insert(delivery.id, DeliveryInfo{
-            delivery_date: delivery_date,
-            new_order_cutoff_date: cutoff_date,
-        });
+        let delivery_info = new_delivery_info(&delivery.delivery_date, &delivery.new_order_cutoff_date);
+        deliveries.insert(delivery.id, delivery_info);
     }
     *DELIVERIES.write().unwrap() = Some(Arc::new(deliveries));
 
