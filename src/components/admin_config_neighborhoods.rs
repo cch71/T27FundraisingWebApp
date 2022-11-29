@@ -10,7 +10,6 @@ use wasm_bindgen::JsCast;
 
 
 thread_local! {
-    // static ADD_OR_EDIT_NEIGHBORHOOD_DLG: Rc<RefCell<Option<bootstrap::Modal>>> = Rc::new(RefCell::new(None));
     static SELECTED_NEIGHBORHOOD: Rc<RefCell<Option<UseStateHandle<Option<(String, String)>>>>> = Rc::new(RefCell::new(None));
 }
 
@@ -211,7 +210,7 @@ pub(crate) fn neighborhood_list() -> Html
 
             SELECTED_NEIGHBORHOOD.with(|rc|{
                 let selected_neighborhood = rc.borrow().as_ref().unwrap().clone();
-                selected_neighborhood.set(Some((neighborhood, distpt.clone())));
+                selected_neighborhood.set(Some((neighborhood, distpt.to_string())));
             });
             let dlg = bootstrap::get_modal_by_id("neighborhoodAddOrEditDlg").unwrap();
             dlg.toggle();

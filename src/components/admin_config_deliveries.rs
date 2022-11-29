@@ -11,7 +11,6 @@ use wasm_bindgen::JsCast;
 use chrono::prelude::*;
 
 thread_local! {
-    // static ADD_OR_EDIT_DELIVERY_DLG: Rc<RefCell<Option<bootstrap::Modal>>> = Rc::new(RefCell::new(None));
     static SELECTED_DELIVERY: Rc<RefCell<Option<UseStateHandle<String>>>> = Rc::new(RefCell::new(None));
 }
 
