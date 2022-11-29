@@ -192,7 +192,6 @@ pub(crate) fn set_mulch_cost() -> Html
     };
 
     let on_add_pricebreak = {
-        let is_dirty = is_dirty.clone();
         move | _evt: MouseEvent | {
             log::info!("Adding Pricebreak...");
             // Since we are adding we don't have a selected index
@@ -207,7 +206,6 @@ pub(crate) fn set_mulch_cost() -> Html
     };
 
     let on_edit = {
-        let is_dirty = is_dirty.clone();
         let price_breaks = price_breaks.clone();
         move | evt: MouseEvent | {
             let gt = get_selected_pricebreak(evt);

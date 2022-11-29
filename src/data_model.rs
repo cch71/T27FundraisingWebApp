@@ -73,13 +73,15 @@ r#"
 //   to force update reload of config even if last_modified_time hasn't changed
 static LOCAL_STORE_SCHEMA_VER: u32 = 020501;
 
+pub(crate) type UserMapType = BTreeMap<String,UserInfo>;
+
 lazy_static! {
     static ref NEIGHBORHOODS: RwLock<Option<Arc<Vec<Neighborhood>>>> = RwLock::new(None);
     static ref PRODUCTS: RwLock<Option<Arc<BTreeMap<String, ProductInfo>>>> = RwLock::new(None);
     static ref DELIVERIES: RwLock<Option<Arc<BTreeMap<u32, DeliveryInfo>>>> = RwLock::new(None);
     static ref FRCONFIG: RwLock<Option<Arc<FrConfig>>> = RwLock::new(None);
     // map<uid,(name, group)>
-    static ref USER_MAP: RwLock<Arc<BTreeMap<String,UserInfo>>> = RwLock::new(Arc::new(BTreeMap::new()));
+    static ref USER_MAP: RwLock<Arc<UserMapType>> = RwLock::new(Arc::new(BTreeMap::new()));
     static ref FR_CLOSURE_DATA: RwLock<Arc<BTreeMap<String,FrClosureMapData>>> = RwLock::new(Arc::new(BTreeMap::new()));
 }
 
