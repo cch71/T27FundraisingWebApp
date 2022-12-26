@@ -10,7 +10,38 @@ The original goals for this system where to
 
 # High Level Diagram
 
-![FundraisingAppArchitecture drawio](https://user-images.githubusercontent.com/349492/177050223-5e865ffa-2360-41b6-808c-0bf00e1d4876.svg)
+~~~mermaid
+C4Context
+title T27 Fundraising Web System
+
+Person(seller, "Seller", "Fundraiser Seller")
+Person(admin, "Admin", "Fundraising Admin")
+
+System_Boundary(web, "Web") {
+  System(webClient, "Web Client (PWA)")
+}
+
+System_Boundary(b2, "Serverless Cloud") {
+  System(awsAmplify, "AWS Amplify", "Web Client Server")
+  System(awsApiGw, "AWS API Gateway")
+  System(awsLambda, "AWS Lambda")
+  System_Ext(keycloak, "phaseTwo (KeyCloak)", "Authentication and IAM")
+  SystemDb_Ext(db, "CockroachDB (Postgresql)")
+}
+
+
+Rel(awsAmplify, webClient, "Publishes")
+BiRel(awsLambda, awsApiGw, "Calls")
+BiRel(awsApiGw, webClient, "Uses")
+
+BiRel(admin, webClient, "Uses")
+BiRel(seller, webClient, "Uses")
+BiRel(webClient, keycloak, "Authenticates")
+BiRel(awsLambda, db, "SQL")
+BiRel(awsApiGw, keycloak, "Verifies")
+
+~~~
+
 
 # Fundraising App (PWA)
 
@@ -91,11 +122,11 @@ efficiently used the Lambda services, but also will allow us to switch datasourc
 [CockroachDB](https://www.cockroachlabs.com/) is a cloud based database solution.  They have provided a PostgreSQL compatible interface
 so that it works well with any PostgreSQL driver available.  While DynamoDB provided some great functionality ultimately our application
 would benefit better from the SQL based database.  This also allows us to avoid vendor lock-in with AWS Dynamo.  There are other cloud
-based providers that have SQL based cloud DB access. If there is a need in the future to switch databases again, because we are using GraphQL
-as our interface, it should be trivial to switch to an alternative SQL DB.
+based providers that have SQL (and specifically Postgresql) based cloud DB access. If there is a need in the future to switch databases
+again it should be trivial to switch to an alternative database provider because we are using GraphQL as our interface.
 
 # CLI Utility
 
-Currently there isn't a user interface from the webapp to change the fundraiser system variables. However the GraphQL in the API does
-exists and can be controlled from the command line utility.  That said it is only meant to be used by the SuperAdmin until the user
+Currently there isn't a user interface from the webapp to change the fundraiser system variables. However the GraphQL API does
+exists and can be driven from the command line utility.  That said it is only meant to be used by the SuperAdmin until the user
 interface is available in the webapp for all admin's

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use reqwasm::http::Request;
+use gloo::net::http::Request;
 use lazy_static::lazy_static;
 
 use crate::auth_utils::{get_active_user};

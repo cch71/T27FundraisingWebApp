@@ -69,23 +69,25 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html
                     </div>
                     <div class="modal-body">
                         <div class="container-sm">
-                            <div class="row">
-                                <div class="form-floating col-md">
-                                    <input class="form-control" type="text" autocomplete="fr-new-neighborhood" id="formNeighborhood"
-                                        required=true
-                                        readonly={!is_new}
-                                        value={hood} />
-                                        <label for="formNeighborhood">{"Neighborhood"}</label>
+                            <form>
+                                <div class="row">
+                                    <div class="form-floating col-md">
+                                        <input class="form-control" type="text" autocomplete="fr-new-neighborhood" id="formNeighborhood"
+                                            required=true
+                                            readonly={!is_new}
+                                            value={hood} />
+                                            <label for="formNeighborhood">{"Neighborhood"}</label>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="row">
-                                <div class="form-floating col-md">
-                                    <input class="form-control" type="edit" autocomplete="fr-new-distpt" id="formDistPt"
-                                        required=true
-                                        value={distpt} />
-                                    <label for="formDistPt">{"Distribution Point"}</label>
+                                <div class="row">
+                                    <div class="form-floating col-md">
+                                        <input class="form-control" type="edit" autocomplete="fr-new-distpt" id="formDistPt"
+                                            required=true
+                                            value={distpt} />
+                                        <label for="formDistPt">{"Distribution Point"}</label>
+                                    </div>
                                 </div>
-                            </div>
+                            </form>
                         </div>
                     </div>
                     <div class="modal-footer">
