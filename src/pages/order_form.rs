@@ -1,7 +1,7 @@
 //use yew::{function_component, html, Properties};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsValue, JsCast};
 use web_sys::{
     Event, InputEvent, MouseEvent, SubmitEvent,
     Element, HtmlElement, HtmlSelectElement, HtmlInputElement, HtmlButtonElement,
@@ -80,6 +80,21 @@ fn update_order_amount_due_element(order: &MulchOrder, document: &web_sys::Docum
         .and_then(|t| t.dyn_into::<HtmlElement>().ok())
         .unwrap()
         .set_inner_text(&Money::from_decimal(total_to_collect, iso::USD).to_string());
+}
+
+/////////////////////////////////////////////////
+///
+fn update_city_and_zip<T: AsRef<str>>(city: T, zipcode: T, document: &web_sys::Document) {
+
+    set_html_input_value("formZipcode", document, zipcode.as_ref());
+    set_html_input_value("formCity", document, city.as_ref());
+}
+
+/////////////////////////////////////////////////
+///
+fn update_addr1(addr: String, document: &web_sys::Document) {
+
+    set_html_input_value("formAddr1", document, addr.as_str());
 }
 
 /////////////////////////////////////////////////
@@ -263,12 +278,17 @@ pub fn hood_selector() -> Html
         Callback::from(move |evt: Event| {
             let hood_value = evt.target().and_then(|t| t.dyn_into::<HtmlSelectElement>().ok());
             hood_value.map(|v| {
-                if v.value().starts_with("Out of Area") {
+                let val = v.value();
+                if val.starts_with("Out of Area") {
                     log::info!("Is Out Of Area");
                     on_hood_warning.set("display: block;".to_owned());
+                    update_city_and_zip("", "", &gloo::utils::document());
                 } else {
                     log::info!("Is Not Out Of Area");
                     on_hood_warning.set("display: none;".to_owned());
+                    let (city, zipcode) = get_city_and_zip_from_neighborhood(&val).unwrap();
+                    log::info!("Using Neighborhood City: {}, Zipcode: {}", &city, zipcode);
+                    update_city_and_zip(&city, &zipcode.to_string(), &gloo::utils::document());
                 }
             });
         })
@@ -277,7 +297,7 @@ pub fn hood_selector() -> Html
     let mut did_find_selected_hood = false;
 
     html! {
-        <div class="form-floating col-md-4">
+        <div class="form-floating col-md-3">
             <select class="form-control" id="formNeighborhood" onchange={on_hood_change} required=true>
                 {
                     get_neighborhoods().iter().map(|hood_info| {
@@ -464,6 +484,35 @@ pub fn order_form_fields() -> Html
         })
     };
 
+    let on_geolocate = {
+        // let order = order.clone();
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+
+            let document = gloo::utils::document();
+            let elm = document.get_element_by_id("btnGeolocate")
+                .and_then(|t| t.dyn_into::<Element>().ok())
+                .unwrap();
+            let _ = elm.class_list().add_1("btn-outline-danger");
+            let _ = elm.class_list().remove_1("btn-outline-info");
+            wasm_bindgen_futures::spawn_local(async move {
+                log::info!("Making Geolocate call");
+                if let Some(pos) = crate::geolocate::get_current_position().await {
+                    log::info!("Geo callback: {}", serde_json::to_string_pretty(&pos).unwrap());
+                    if let Ok(addr) = get_address_from_lat_lng(pos.coords.latitude, pos.coords.longitude).await {
+                        log::info!("Geo address: {}", serde_json::to_string_pretty(&addr).unwrap());
+                        if addr.house_number.is_some() && addr.street.is_some() {
+                            update_addr1(format!("{} {}", addr.house_number.unwrap(), addr.street.unwrap()), &document);
+                        }
+                    }
+                }
+                let _ = elm.class_list().add_1("btn-outline-info");
+                let _ = elm.class_list().remove_1("btn-outline-danger");
+            });
+        })
+    };
+
     let on_purchases_delete = {
         let order = order.clone();
         Callback::from(move |evt: MouseEvent| {
@@ -481,9 +530,6 @@ pub fn order_form_fields() -> Html
         use_effect(move || {
             let document = gloo::utils::document();
             update_order_amount_due_element(&order, &document);
-            // disable_submit_button(
-            //     !are_product_items_valid(&document) || get_delivery_id(&document).is_none()
-            // );
             ||{}
         });
     }
@@ -556,25 +602,25 @@ pub fn order_form_fields() -> Html
             </div>
 
             <div class="row mb-2 g-2">
-                <div class="form-floating col-md-6">
-                    <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formAddr1"
-                           placeholder="Address 1" required=true
-                           value={order.customer.addr1.clone()} />
-                    <label for="formAddr1">
-                    {"Address 1"}<RequiredSmall/>
+                <HoodSelector/>
+                <div class="form-floating col-md-2" id="formZipcodeFloatDiv">
+                    <input class="form-control" type="number" autocomplete="fr-new-cust-info" id="formZipcode"
+                           pattern="[0-9]{5}"
+                           placeholder="Zipcode"
+                           value={order.customer.zipcode.map(|v|v.to_string())}/>
+                    <label for="formZipcode">
+                        {"Zipcode"}
                     </label>
                 </div>
-                <div class="form-floating col-md-6">
-                    <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formAddr2"
-                           placeholder="Address 2"
-                           value={order.customer.addr2.clone()}/>
-                    <label for="formAddr2">{"Address 2"}</label>
+                <div class="form-floating col-md-2" id="formCityFloatDiv">
+                    <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formCity"
+                           placeholder="City"
+                           value={order.customer.city.clone()}/>
+                    <label for="formCity">
+                        {"City"}
+                    </label>
                 </div>
-            </div>
-
-            <div class="row mb-2 g-2">
-            <HoodSelector/>
-                <div class="form-floating col-md-4" id="formPhoneFloatDiv">
+                <div class="form-floating col-md-2" id="formPhoneFloatDiv">
                     <input class="form-control" type="tel" autocomplete="fr-new-cust-info" id="formPhone"
                            pattern="[0-9]{3}[-|.]{0,1}[0-9]{3}[-|.]{0,1}[0-9]{4}"
                            placeholder="Phone" required=true
@@ -585,11 +631,33 @@ pub fn order_form_fields() -> Html
                         <RequiredSmall/>
                     </label>
                 </div>
-                <div class="form-floating col-md-4">
+                <div class="form-floating col-md-3">
                     <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formEmail"
                            placeholder="Email"
                            value={order.customer.email.clone()}/>
                     <label for="formEmail">{"Email"}</label>
+                </div>
+            </div>
+
+            <div class="row mb-2 g-2">
+                <button class="btn btn-outline-info order-edt-btn col-md-1 mt-2"
+                    id="btnGeolocate"
+                    onclick={on_geolocate}>
+                    <i class="bi bi-geo" fill="currentColor"></i>
+                </button>
+                <div class="form-floating col-md-6">
+                    <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formAddr1"
+                           placeholder="House Number/Street" required=true
+                           value={order.customer.addr1.clone()} />
+                    <label for="formAddr1">
+                    {"House Number/Street"}<RequiredSmall/>
+                    </label>
+                </div>
+                <div class="form-floating col-md-5">
+                    <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formAddr2"
+                           placeholder="Suite, etc..."
+                           value={order.customer.addr2.clone()}/>
+                    <label for="formAddr2">{"Suite, etc..."}</label>
                 </div>
             </div>
 

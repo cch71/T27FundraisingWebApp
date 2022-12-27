@@ -61,6 +61,8 @@ pub(crate) struct CustomerInfo {
     pub(crate) name: String,
     pub(crate) addr1: String,
     pub(crate) addr2: Option<String>,
+    pub(crate) city: Option<String>,
+    pub(crate) zipcode: Option<u32>,
     pub(crate) phone: String,
     pub(crate) email: Option<String>,
     pub(crate) neighborhood: Option<String>,
@@ -338,6 +340,12 @@ pub(crate) async fn submit_active_order()
     if let Some(value) = order.customer.addr2.as_ref() {
         query.push_str(&format!("\t\t addr2: \"{}\"\n", value.trim()));
     }
+    if let Some(value) = order.customer.city.as_ref() {
+        query.push_str(&format!("\t\t city: \"{}\"\n", value.trim()));
+    }
+    if let Some(value) = order.customer.zipcode.as_ref() {
+        query.push_str(&format!("\t\t zipcode: {}\n", value));
+    }
     query.push_str(&format!("\t\t\t phone: \"{}\"\n", order.customer.phone.trim()));
     if let Some(value) = order.customer.email.as_ref() {
         query.push_str(&format!("\t\t email: \"{}\"\n", value.trim()));
@@ -390,6 +398,8 @@ static LOAD_ORDER_GQL:& 'static str = r"
         name
         addr1
         addr2
+        city
+        zipcode
         phone
         email
         neighborhood

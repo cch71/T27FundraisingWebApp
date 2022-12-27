@@ -53,10 +53,10 @@ const loginUser = async () => {
         keycloak.updateToken(70).then((refreshed) => {
             if (refreshed) {
                 console.info('Token refreshed' + refreshed);
-            } else {
-                console.warn('Token not refreshed, valid for '
-                             + Math.round(keycloak.tokenParsed.exp
-                                          + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
+            // } else {
+            //     console.warn('Token not refreshed, valid for '
+            //                  + Math.round(keycloak.tokenParsed.exp
+            //                               + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
             }
         }).catch(() => {
             console.error('Failed to refresh token');

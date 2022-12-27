@@ -31,6 +31,9 @@ r#"
     lastModifiedTime
     neighborhoods {
       name
+      city
+      zipcode
+      isVisible
       distributionPoint
     }
     mulchDeliveryConfigs {
@@ -125,6 +128,10 @@ impl DeliveryInfo {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct Neighborhood {
     pub(crate) name: String,
+    pub(crate) zipcode: Option<u32>,
+    pub(crate) city: Option<String>,
+    #[serde(alias = "isVisible")]
+    pub(crate) is_visible: bool,
     #[serde(alias = "distributionPoint")]
     pub(crate) distribution_point: String,
 }
@@ -379,12 +386,25 @@ pub(crate) fn get_neighborhoods() -> Arc<Vec<Neighborhood>>
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_neighborhood(hood: &str) -> Option<Neighborhood>
+pub(crate) fn get_neighborhood<T: AsRef<str>>(hood: T) -> Option<Neighborhood>
 {
     NEIGHBORHOODS.read()
         .unwrap()
         .as_ref()
-        .and_then(|v|v.iter().find(|&v|v.name == hood).cloned())
+        .and_then(|v|v.iter().find(|&v|v.name == hood.as_ref()).cloned())
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) fn get_city_and_zip_from_neighborhood<T: AsRef<str>>(hood: T) -> Option<(String, u32)>
+{
+    get_neighborhood(hood).and_then(|v| {
+        if v.city.is_some() && v.zipcode.is_some() {
+            Some((v.city.unwrap(), v.zipcode.unwrap()))
+        } else {
+            None
+        }
+    })
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1010,6 +1030,49 @@ pub(crate) async fn set_fr_closeout_data(dvars: &FrCloseoutDynamicVars, allocati
     let _ = make_gql_request::<serde_json::Value>(&req).await.unwrap();
 }
 
+////////////////////////////////////////////////////////////////////////////
+//
+static GET_ADDR_API_GQL:&'static str =
+r#"
+{
+  getAddress(***LAT_LNG_PARAMS***) {
+    zipcode
+    city
+    houseNumber
+    street
+  }
+}"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub(crate) struct AddressInfo{
+    #[serde(rename = "houseNumber")]
+    pub(crate) house_number: Option<String>,
+    pub(crate) street: Option<String>,
+    pub(crate) city: Option<String>,
+    pub(crate) zipcode: Option<u32>,
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn get_address_from_lat_lng(lat: f64, lng:f64)
+    -> std::result::Result<AddressInfo,Box<dyn std::error::Error>>
+{
+    let query = GET_ADDR_API_GQL
+        .replace("***LAT_LNG_PARAMS***", &format!("lat: {}, lng: {}", lat, lng));
+
+    #[derive(Deserialize)]
+    struct RespAddressInfo {
+        #[serde(rename = "getAddress")]
+        address_info: AddressInfo,
+    }
+
+    // log::info!("Get Addr Query:\n{}", &query);
+    let req = GraphQlReq::new(query);
+    make_gql_request::<RespAddressInfo>(&req).await.map(|v|v.address_info)
+
+}
 
 // static TEST_ADMIN_API_GQL:&'static str =
 // r#"

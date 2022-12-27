@@ -46,6 +46,9 @@ features = [
   "DomStringMap",
   "DomTokenList",
   "CssStyleDeclaration",
+  "Navigator",
+  "Geolocation",
+  "PositionOptions"
 ]
 
 [profile.release]

@@ -3,6 +3,7 @@ mod bootstrap;
 mod datatable;
 mod google_charts;
 mod auth_utils;
+mod geolocate;
 mod data_model_orders;
 mod data_model_reports;
 mod data_model;
@@ -85,6 +86,8 @@ pub(crate) fn save_to_active_order() {
     order.customer.email = get_html_input_value("formEmail", &document);
     order.customer.addr1 = get_html_input_value("formAddr1", &document).unwrap_or("".to_string());
     order.customer.addr2 = get_html_input_value("formAddr2", &document);
+    order.customer.city = get_html_input_value("formCity", &document);
+    order.customer.zipcode = get_html_input_value("formZipcode", &document).map(|v| v.parse::<u32>().unwrap());
     order.customer.neighborhood = Some(document.get_element_by_id("formNeighborhood")
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
         .unwrap()
