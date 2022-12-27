@@ -121,6 +121,14 @@ impl DeliveryInfo {
     pub(crate) fn get_new_order_cutoff_date_str(&self) -> String {
         self.new_order_cutoff_date.format("%Y-%m-%d").to_string()
     }
+
+    pub(crate) fn get_api_delivery_date_str(&self) -> String {
+        self.delivery_date.format("%m/%d/%Y").to_string()
+    }
+
+    pub(crate) fn get_api_new_order_cutoff_date_str(&self) -> String {
+        self.new_order_cutoff_date.format("%m/%d/%Y").to_string()
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -237,9 +245,9 @@ struct ProductsApi {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct MulchDeliveryConfigApi {
     id: u32,
-    #[serde(alias = "date")]
+    #[serde(rename = "date")]
     delivery_date: String,
-    #[serde(alias = "newOrderCutoffDate")]
+    #[serde(rename = "newOrderCutoffDate")]
     new_order_cutoff_date: String,
 }
 
@@ -362,6 +370,39 @@ pub(crate) fn get_users() -> Arc<BTreeMap<String, UserInfo>> {
 //
 pub(crate) fn get_username_from_id(uid: &str) -> Option<String> {
     USER_MAP.read().unwrap().get(uid).and_then(|v|Some(v.name.clone()))
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+static SET_DELIVERIES_GQL:&'static str =
+r#"
+mutation {
+  updateConfig(config: {
+    mulchDeliveryConfigs: [
+        ***DELIVERIES_PARAMS***
+    ]
+  })
+}"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn set_deliveries(deliveries: BTreeMap<u32,DeliveryInfo>)
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    let deliveries_str = deliveries.iter().map(|(k,v)| {
+        format!("\t\t{{\n{}\n{}\n{}\n\t\t}}",
+            format!("\t\t\tid: {},", k),
+            format!("\t\t\tdate: \"{}\",", v.get_api_delivery_date_str()),
+            format!("\t\t\tnewOrderCutoffDate: \"{}\"", v.get_api_new_order_cutoff_date_str()))
+    })
+    .collect::<Vec<String>>().join(",");
+
+    let query = SET_DELIVERIES_GQL
+        .replace("***DELIVERIES_PARAMS***", &deliveries_str);
+
+    log::info!("Set Delivery Mutation:\n{}", &query);
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1073,6 +1114,8 @@ pub(crate) async fn get_address_from_lat_lng(lat: f64, lng:f64)
     make_gql_request::<RespAddressInfo>(&req).await.map(|v|v.address_info)
 
 }
+
+
 
 // static TEST_ADMIN_API_GQL:&'static str =
 // r#"

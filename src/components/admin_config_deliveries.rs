@@ -1,7 +1,7 @@
 use yew::prelude::*;
 //use yew_router::prelude::*;
 use web_sys::{
-    MouseEvent, Element, HtmlElement, HtmlInputElement,
+    MouseEvent, Element, HtmlElement, HtmlButtonElement, HtmlInputElement,
 };
 use crate::data_model::*;
 use crate::bootstrap;
@@ -11,7 +11,8 @@ use wasm_bindgen::JsCast;
 use chrono::prelude::*;
 
 thread_local! {
-    static SELECTED_DELIVERY: Rc<RefCell<Option<UseStateHandle<String>>>> = Rc::new(RefCell::new(None));
+    //Tuple of Devlivery ID, Delivery Data, Cutoff Date
+    static SELECTED_DELIVERY: Rc<RefCell<Option<UseStateHandle<(String, String, String)>>>> = Rc::new(RefCell::new(None));
 }
 
 /////////////////////////////////////////////////
@@ -27,18 +28,21 @@ struct DeliveryAddEditDlgProps {
 #[function_component(DeliveryAddEditDlg)]
 fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html
 {
-    let delivery_id = use_state_eq(|| "".to_string());
-    let delivery_date_str = use_state_eq(|| "".to_string());
-    let cutoff_date_str = use_state_eq(|| "".to_string());
+    //Tuple of Devlivery ID, Delivery Data, Cutoff Date
+    let delivery_info = use_state_eq(|| ("".to_string(), "".to_string(), "".to_string()));
+    // let delivery_date_str = use_state_eq(|| "".to_string());
+    // let cutoff_date_str = use_state_eq(|| "".to_string());
+
     {
-        let delivery_id = delivery_id.clone();
+        // This is just to initialize it with the state value so we can trigger it later
+        let delivery_info = delivery_info.clone();
         SELECTED_DELIVERY.with(|selected_delivery_rc|{
-            *selected_delivery_rc.borrow_mut() = Some(delivery_id);
+            *selected_delivery_rc.borrow_mut() = Some(delivery_info);
         });
     }
 
     let on_add_update = {
-        let delivery_id = delivery_id.clone();
+        let delivery_info = delivery_info.clone();
         let onaddorupdate = props.onaddorupdate.clone();
         move |_evt: MouseEvent| {
             let document = gloo::utils::document();
@@ -50,19 +54,7 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap()
                 .value();
-            onaddorupdate.emit(((*delivery_id).parse::<u32>().unwrap(), delivery_date, order_cutoff_date));
-        }
-    };
-
-    if "" != (*delivery_id).as_str() {
-        let deliveries = get_deliveries();
-        let delivery_id = (*delivery_id).parse::<u32>().unwrap();
-        if let Some(di) = deliveries.get(&delivery_id) {
-            delivery_date_str.set(di.get_delivery_date_str());
-            cutoff_date_str.set(di.get_new_order_cutoff_date_str());
-        } else {
-            delivery_date_str.set("".to_string());
-            cutoff_date_str.set("".to_string());
+            onaddorupdate.emit(((*delivery_info).0.parse::<u32>().unwrap(), delivery_date, order_cutoff_date));
         }
     };
 
@@ -81,23 +73,23 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html
                         <div class="container-sm">
                             <div class="row">
                                 <div class="form-floating col-md">
-                                    <input class="form-control" type="date" autocomplete="fr-new-delivery-date" id="formDeliveryDate"
-                                        required=true
-                                        value={(*delivery_date_str).clone()} />
-                                        <label for="formDeliveryDate">{"Delivery Date"}</label>
+                                    <div>{format!("Delivery ID: {}", &(*delivery_info).0)}</div>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="form-floating col-md">
                                     <input class="form-control" type="date" autocomplete="fr-order-cutoff-date" id="formOrderCutoffDate"
                                         required=true
-                                        value={(*cutoff_date_str).clone()} />
+                                        value={(*delivery_info).2.clone()} />
                                     <label for="formOrderCutoffDate">{"New Order Cutoff Date"}</label>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="form-floating col-md">
-                                    <div>{format!("Delivery ID: {}", *delivery_id)}</div>
+                                    <input class="form-control" type="date" autocomplete="fr-new-delivery-date" id="formDeliveryDate"
+                                        required=true
+                                        value={(*delivery_info).1.clone()} />
+                                        <label for="formDeliveryDate">{"Delivery Date"}</label>
                                 </div>
                             </div>
                         </div>
@@ -173,6 +165,22 @@ fn get_delivery_id(evt: MouseEvent) -> u32 {
 }
 
 /////////////////////////////////////////////////
+///
+fn disable_save_button(document: &web_sys::Document, value: bool, with_spinner: bool) {
+    if let Some(btn) = document.get_element_by_id("btnSaveDeliveries")
+        .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+    {
+       btn.set_disabled(value);
+       let spinner_display = if with_spinner { "inline-block" } else { "none" };
+       let _ = document.get_element_by_id("saveDeliveryConfigSpinner")
+           .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+           .unwrap()
+           .style()
+           .set_property("display", spinner_display);
+    }
+}
+
+/////////////////////////////////////////////////
 //
 #[function_component(DeliveryUl)]
 pub(crate) fn delivery_list() -> Html
@@ -224,7 +232,8 @@ pub(crate) fn delivery_list() -> Html
             // Since we are adding we don't have a selected delivery id
             SELECTED_DELIVERY.with(|selected_delivery_rc|{
                 let selected_delivery = selected_delivery_rc.borrow().as_ref().unwrap().clone();
-                selected_delivery.set((deliveries.len() + 1).to_string());
+                let delivery_id_str = (deliveries.len() + 1).to_string();
+                selected_delivery.set((delivery_id_str, "".to_string(), "".to_string()));
             });
 
             let dlg = bootstrap::get_modal_by_id("deliveryAddOrEditDlg").unwrap();
@@ -234,12 +243,17 @@ pub(crate) fn delivery_list() -> Html
 
 
     let on_edit = {
+        let deliveries = deliveries.clone();
         move | evt: MouseEvent | {
             let delivery_id = get_delivery_id(evt);
             log::info!("Editing ID: {}", delivery_id);
             SELECTED_DELIVERY.with(|selected_delivery_rc|{
+                let di = deliveries.get(&delivery_id).unwrap();
+                let delivery_date_str = di.get_delivery_date_str();
+                let cutoff_date_str = di.get_new_order_cutoff_date_str();
                 let selected_delivery = selected_delivery_rc.borrow().as_ref().unwrap().clone();
-                selected_delivery.set(delivery_id.to_string());
+                let delivery_id_str = delivery_id.to_string();
+                selected_delivery.set((delivery_id_str, delivery_date_str, cutoff_date_str));
             });
             let dlg = bootstrap::get_modal_by_id("deliveryAddOrEditDlg").unwrap();
             dlg.toggle();
@@ -250,8 +264,18 @@ pub(crate) fn delivery_list() -> Html
         let deliveries = deliveries.clone();
         let is_dirty = is_dirty.clone();
         move | _evt: MouseEvent | {
-            log::info!("Saving Deliveries");
-            is_dirty.set(false);
+            let document = gloo::utils::document();
+            disable_save_button(&document, true, true);
+            let deliveries = deliveries.clone();
+            let is_dirty = is_dirty.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                log::info!("Saving Deliveries {:#?}", &deliveries);
+                if let Err(err) = set_deliveries((*deliveries).clone()).await {
+                    gloo::dialogs::alert(&format!("Failed saving delivery config:\n{:#?}", err));
+                }
+                disable_save_button(&document, false, false);
+                is_dirty.set(false);
+            });
         }
     };
 
@@ -265,7 +289,7 @@ pub(crate) fn delivery_list() -> Html
                             <i class="bi bi-plus-square" fill="currentColor"></i>
                         </button>
                         if *is_dirty {
-                            <button class="btn btn-primary" onclick={on_save_deliveries}>
+                            <button class="btn btn-primary" onclick={on_save_deliveries} id="btnSaveDeliveries">
                                 <span class="spinner-border spinner-border-sm me-1" role="status"
                                 aria-hidden="true" id="saveDeliveryConfigSpinner" style="display: none;" />
                                 {"Save"}
