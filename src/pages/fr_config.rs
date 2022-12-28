@@ -57,7 +57,6 @@ pub fn fr_config() -> Html
             <div class="row">
                 <div class="col-xs-1 d-flex justify-content-center">
                     <MulchCost/>
-                    <SpreadingCost/>
                     <DeliveryUl/>
                 </div>
             </div>

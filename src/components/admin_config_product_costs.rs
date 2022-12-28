@@ -1,9 +1,11 @@
 use yew::prelude::*;
 use web_sys::{
-   MouseEvent, Element, HtmlElement, HtmlInputElement, InputEvent,
+   MouseEvent, Element, HtmlElement, HtmlButtonElement, HtmlInputElement, InputEvent,
 };
 use crate::data_model::*;
+use crate::currency_utils::*;
 use crate::bootstrap;
+use crate::get_html_input_value;
 use std::rc::Rc;
 use std::cell::RefCell;
 use wasm_bindgen::JsCast;
@@ -150,12 +152,33 @@ fn get_selected_pricebreak(evt: MouseEvent) -> u32 {
     elm.dataset().get("gt").unwrap().parse::<u32>().unwrap()
 }
 
+/////////////////////////////////////////////////
+///
+fn disable_save_button(document: &web_sys::Document, value: bool) {
+    if let Some(btn) = document.get_element_by_id("btnProductsSave")
+        .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
+    {
+       btn.set_disabled(value);
+       let spinner_display = if value { "inline-block" } else { "none" };
+       let _ = document.get_element_by_id("saveProductsConfigSpinner")
+           .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+           .unwrap()
+           .style()
+           .set_property("display", spinner_display);
+    }
+}
+
 #[function_component(MulchCost)]
 pub(crate) fn set_mulch_cost() -> Html
 {
     use std::collections::BTreeMap;
+
     let product = get_products();
     let mulch_product_info = product.get("bags").unwrap().clone();
+
+    let spreading_cost = use_mut_ref(|| get_purchase_cost_for("spreading", 1));
+    let mulch_min_units_cost = use_mut_ref(|| mulch_product_info.min_units.clone());
+    let mulch_base_bags_cost = use_mut_ref(|| mulch_product_info.unit_price.clone());
 
     let price_breaks = use_state(|| mulch_product_info
         .price_breaks
@@ -220,18 +243,80 @@ pub(crate) fn set_mulch_cost() -> Html
         }
     };
 
-    let on_save_mulch_cost = {
+    let on_save_mulch_products = {
         let is_dirty = is_dirty.clone();
+        let spreading_cost = spreading_cost.clone();
+        let mulch_min_units_cost = mulch_min_units_cost.clone();
+        let mulch_base_bags_cost = mulch_base_bags_cost.clone();
+        let price_breaks = price_breaks.clone();
         move |_evt: MouseEvent| {
-            log::info!("Saving Spreading Cost");
-            is_dirty.set(false);
+            let document = gloo::utils::document();
+            disable_save_button(&document, true);
+            let cost_str = spreading_cost.borrow().clone();
+            let spreading_cost_str = to_money_str_no_symbol(Some(&cost_str));
+
+            let mulch_base_per_bag_cost_str = get_html_input_value("formMulchCost", &document).unwrap_or("".to_string());
+            let mulch_min_units_str = get_html_input_value("formMulchMinUnits", &document).unwrap_or("".to_string());
+
+            let mut products = BTreeMap::new();
+            products.insert("bags".to_string(), ProductInfo{
+                label: "Bags of Mulch".to_string(),
+                min_units: mulch_min_units_str.parse::<u32>().unwrap(),
+                unit_price: to_money_str_no_symbol(Some(&mulch_base_per_bag_cost_str)),
+                price_breaks: (*price_breaks).iter().map(|(gt, unit_price)|{
+                    ProductPriceBreak {
+                        gt: *gt,
+                        unit_price: to_money_str_no_symbol(Some(&unit_price)),
+                    }
+                }).collect::<Vec<ProductPriceBreak>>()
+            });
+
+            products.insert("spreading".to_string(), ProductInfo{
+                label: "Bags to Spread".to_string(),
+                min_units: 0,
+                unit_price: spreading_cost_str,
+                price_breaks: Vec::new(),
+            });
+
+            // log::info!("Saving Products: {:#?}", &products);
+
+            let is_dirty = is_dirty.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                if let Err(err) = set_products(products).await {
+                    gloo::dialogs::alert(&format!("Failed saving products config:\n{:#?}", err));
+                }
+                disable_save_button(&document, false);
+                is_dirty.set(false);
+            });
         }
     };
 
-    let on_mulch_change = {
+    let on_mulch_min_units_change = {
         let is_dirty = is_dirty.clone();
-        move |_evt: InputEvent| {
-            log::info!("Spreading Changed");
+        let mulch_min_units_cost = mulch_min_units_cost.clone();
+        move |evt: InputEvent| {
+            let input: HtmlInputElement = evt.target_unchecked_into();
+            *mulch_min_units_cost.borrow_mut() = input.value().parse::<u32>().unwrap_or(0);
+            is_dirty.set(true);
+        }
+    };
+
+    let on_mulch_base_bags_cost_change = {
+        let is_dirty = is_dirty.clone();
+        let mulch_base_bags_cost = mulch_base_bags_cost.clone();
+        move |evt: InputEvent| {
+            let input: HtmlInputElement = evt.target_unchecked_into();
+            *mulch_base_bags_cost.borrow_mut() = input.value();
+            is_dirty.set(true);
+        }
+    };
+
+    let on_spreading_change = {
+        let is_dirty = is_dirty.clone();
+        let spreading_cost = spreading_cost.clone();
+        move |evt: InputEvent| {
+            let input: HtmlInputElement = evt.target_unchecked_into();
+            *spreading_cost.borrow_mut() = input.value();
             is_dirty.set(true);
         }
     };
@@ -243,9 +328,9 @@ pub(crate) fn set_mulch_cost() -> Html
                     <h5 class="card-title">
                         {"Set Mulch Cost"}
                         if *is_dirty {
-                            <button class="btn btn-primary" onclick={on_save_mulch_cost}>
+                            <button class="btn btn-primary" onclick={on_save_mulch_products} id="btnProductsSave">
                                 <span class="spinner-border spinner-border-sm me-1" role="status"
-                                aria-hidden="true" id="saveSpreadingConfigSpinner" style="display: none;" />
+                                aria-hidden="true" id="saveProductsConfigSpinner" style="display: none;" />
                                 {"Save"}
                             </button>
                         }
@@ -254,8 +339,8 @@ pub(crate) fn set_mulch_cost() -> Html
                        <div class="form-floating col-md">
                            <input class="form-control" type="number" autocomplete="fr-new-mulch-cost" id="formMulchCost"
                                required=true
-                               oninput={on_mulch_change.clone()}
-                               value={mulch_product_info.unit_price.clone()} />
+                               oninput={on_mulch_base_bags_cost_change.clone()}
+                               value={mulch_base_bags_cost.borrow().clone()} />
 
                                <label for="formMulchCost">{"Base Mulch Cost Per Bag"}</label>
                        </div>
@@ -264,8 +349,8 @@ pub(crate) fn set_mulch_cost() -> Html
                        <div class="form-floating col-md">
                            <input class="form-control" type="number" autocomplete="fr-new-mulch-units" id="formMulchMinUnits"
                                required=true
-                               oninput={on_mulch_change.clone()}
-                               value={mulch_product_info.min_units.to_string()} />
+                               oninput={on_mulch_min_units_change.clone()}
+                               value={mulch_min_units_cost.borrow().to_string()} />
                                <label for="formMulchMinUnits">{"Min Bags"}</label>
                        </div>
                    </div>
@@ -286,62 +371,25 @@ pub(crate) fn set_mulch_cost() -> Html
                         }
                         </ul>
                    </div>
+
+
+                    <h5 class="card-title mt-2">
+                        {"Set Spreading Cost"}
+                    </h5>
+                    <div class="row">
+                       <div class="form-floating col-md">
+                           <input class="form-control" type="number" autocomplete="fr-new-spreading" id="formSpreading"
+                               required=true
+                               oninput={on_spreading_change}
+                               value={spreading_cost.borrow().clone()} />
+
+                               <label for="formSpreading">{"Spreading Cost Per Bag"}</label>
+                       </div>
+                    </div>
+
                 </div>
             </div>
             <PriceBreakAddEditDlg onaddorupdate={on_add_or_update_dlg_submit}/>
-        </div>
-    }
-}
-
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-#[function_component(SpreadingCost)]
-pub(crate) fn set_spreading_cost() -> Html
-{
-    let is_dirty = use_state_eq(|| false);
-
-    let spreading_cost = get_purchase_cost_for("spreading", 1);
-
-    let on_save_spreading_cost = {
-        let is_dirty = is_dirty.clone();
-        move |_evt: MouseEvent| {
-            log::info!("Saving Spreading Cost");
-            is_dirty.set(false);
-        }
-    };
-
-    let on_spreading_change = {
-        let is_dirty = is_dirty.clone();
-        move |_evt: InputEvent| {
-            log::info!("Spreading Changed");
-            is_dirty.set(true);
-        }
-    };
-
-    html! {
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    {"Set Spreading Cost"}
-                    if *is_dirty {
-                        <button class="btn btn-primary" onclick={on_save_spreading_cost}>
-                            <span class="spinner-border spinner-border-sm me-1" role="status"
-                            aria-hidden="true" id="saveSpreadingConfigSpinner" style="display: none;" />
-                            {"Save"}
-                        </button>
-                    }
-                </h5>
-               <div class="row">
-                   <div class="form-floating col-md">
-                       <input class="form-control" type="number" autocomplete="fr-new-spreading" id="formSpreading"
-                           required=true
-                           oninput={on_spreading_change}
-                           value={spreading_cost} />
-
-                           <label for="formSpreading">{"Spreading Cost Per Bag"}</label>
-                   </div>
-               </div>
-            </div>
         </div>
     }
 }

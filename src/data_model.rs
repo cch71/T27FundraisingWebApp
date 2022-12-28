@@ -155,6 +155,7 @@ pub(crate) struct ProductPriceBreak {
 
 ////////////////////////////////////////////////////////////////////////////
 //
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct ProductInfo {
     pub(crate) label: String,
     pub(crate) min_units: u32,
@@ -374,6 +375,61 @@ pub(crate) fn get_username_from_id(uid: &str) -> Option<String> {
 
 ////////////////////////////////////////////////////////////////////////////
 //
+static SET_PRODUCTS_GQL:&'static str =
+r#"
+mutation {
+  updateConfig(config: {
+    products: [
+      {
+          id: "bags",
+          label: "Bags of Mulch",
+          unitPrice: "***MULCH_UNIT_PRICE***",
+          minUnits: ***MULCH_MIN_UNITS***,
+          priceBreaks: [
+            ***MULCH_PRICE_BREAKS***
+          ]
+      },{
+          id: "spreading",
+          label: "Bags to Spread",
+          unitPrice: "***SPREADING_UNIT_PRICE***"
+      }
+    ]
+  })
+}"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn set_products(products: BTreeMap<String,ProductInfo>)
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+
+
+    let mulch_info = products.get("bags").unwrap();
+    let spreading_info = products.get("spreading").unwrap();
+
+    let mulch_price_breaks_str = mulch_info.price_breaks.iter().map(|v| {
+        format!("\t\t{{\n{}\n{}\n\t\t}}",
+            format!("\t\t\tgt: {},", v.gt),
+            format!("\t\t\tunitPrice: \"{}\",", v.unit_price))
+    })
+    .collect::<Vec<String>>().join(",");
+
+    let query = SET_PRODUCTS_GQL
+        .replace("***SPREADING_UNIT_PRICE***", &spreading_info.unit_price)
+        .replace("***MULCH_UNIT_PRICE***", &mulch_info.unit_price)
+        .replace("***MULCH_MIN_UNITS***", &mulch_info.min_units.to_string())
+        .replace("***MULCH_PRICE_BREAKS***", &mulch_price_breaks_str);
+
+    log::info!("Set Product Mutation:\n{}", &query);
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| {
+        *PRODUCTS.write().unwrap() = Some(Arc::new(products));
+        ()
+    })
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
 static SET_DELIVERIES_GQL:&'static str =
 r#"
 mutation {
@@ -400,9 +456,12 @@ pub(crate) async fn set_deliveries(deliveries: BTreeMap<u32,DeliveryInfo>)
     let query = SET_DELIVERIES_GQL
         .replace("***DELIVERIES_PARAMS***", &deliveries_str);
 
-    log::info!("Set Delivery Mutation:\n{}", &query);
+    // log::info!("Set Delivery Mutation:\n{}", &query);
     let req = GraphQlReq::new(query);
-    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| {
+        *DELIVERIES.write().unwrap() = Some(Arc::new(deliveries));
+        ()
+    })
 }
 
 ////////////////////////////////////////////////////////////////////////////

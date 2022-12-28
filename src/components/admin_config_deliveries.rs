@@ -269,7 +269,7 @@ pub(crate) fn delivery_list() -> Html
             let deliveries = deliveries.clone();
             let is_dirty = is_dirty.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                log::info!("Saving Deliveries {:#?}", &deliveries);
+                // log::info!("Saving Deliveries {:#?}", &deliveries);
                 if let Err(err) = set_deliveries((*deliveries).clone()).await {
                     gloo::dialogs::alert(&format!("Failed saving delivery config:\n{:#?}", err));
                 }
