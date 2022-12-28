@@ -6,6 +6,7 @@ use std::collections::{BTreeMap};
 use rust_decimal::prelude::*;
 use gloo::storage::{LocalStorage, Storage};
 use std::time::{ Duration };
+use yew::prelude::*;
 
 pub(crate) use crate::data_model_reports::*;
 pub(crate) use crate::data_model_orders::*;
@@ -133,7 +134,7 @@ impl DeliveryInfo {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Properties, Debug, Clone, PartialEq)]
 pub(crate) struct Neighborhood {
     pub(crate) name: String,
     pub(crate) zipcode: Option<u32>,
@@ -475,6 +476,59 @@ pub(crate) fn get_deliveries() -> Arc<BTreeMap<u32,DeliveryInfo>> {
 pub(crate) fn get_delivery_date(delivery_id: &u32) -> String {
     get_deliveries().get(delivery_id).unwrap()
         .delivery_date.format("%Y-%m-%d").to_string()
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+static UPDATE_NEIGHBORHOODS_GQL:&'static str =
+r#"
+mutation {
+  updateNeighborhoods( neighborhoods: [
+    ***HOOD_PARAMS***
+  ])
+}"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn update_neighborhoods(hoods: Vec<Neighborhood>)
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    let neighborhoods_str = hoods.iter().map(|v| {
+        format!("\t\t{{\n{},\n{},{}{}\n{}\n\t\t}}",
+            format!("\t\t\tname: \"{}\"", v.name),
+            format!("\t\t\tdistributionPoint: \"{}\"", v.distribution_point),
+            "***CITY***",
+            "***ZIP***",
+            format!("\t\t\tisVisible: {}", v.is_visible))
+            .replace("***CITY***", &v.city.as_ref().map(|v| format!("\t\t\tcity: \"{}\",", v)).unwrap_or("".to_string()))
+            .replace("***ZIP***", &v.zipcode.as_ref().map(|v| format!("\t\t\tzipcode: {},", v)).unwrap_or("".to_string()))
+    })
+    .collect::<Vec<String>>().join(",");
+
+    let query = UPDATE_NEIGHBORHOODS_GQL
+        .replace("***HOOD_PARAMS***", &neighborhoods_str);
+
+    // log::info!("Set Delivery Mutation:\n{}", &query);
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())?;
+
+    // I don't know if there is any better way. Making DB Query costs money
+    // Trying to merge in place would also take multiple passes through the neighborhood list
+    // so converting it into a map and then replacing list with values
+
+    use std::collections::BTreeMap;
+    // Map neighborhood names to neighborhood and add ability to mark dirty
+    let mut merged_hoods = (*get_neighborhoods())
+        .iter()
+        .map(|ni| (ni.name.clone(),ni.clone()) )
+        .collect::<BTreeMap<String, Neighborhood>>();
+
+    for hood in hoods {
+        merged_hoods.insert(hood.name.clone(), hood);
+    }
+
+    *NEIGHBORHOODS.write().unwrap() = Some(Arc::new(merged_hoods.into_values().collect::<Vec<Neighborhood>>()));
+    Ok(())
 }
 
 ////////////////////////////////////////////////////////////////////////////

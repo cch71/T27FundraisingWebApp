@@ -54,6 +54,15 @@ pub(crate) fn get_html_input_value(id: &str, document: &web_sys::Document) -> Op
 
 /////////////////////////////////////////////////
 ///
+pub(crate) fn get_html_checked_input_value(id: &str, document: &web_sys::Document) -> bool {
+    document.get_element_by_id(id)
+        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+        .unwrap()
+        .checked()
+}
+
+/////////////////////////////////////////////////
+///
 pub(crate) fn get_html_textarea_value(id: &str, document: &web_sys::Document) -> Option<String> {
     let value = document.get_element_by_id(id)
         .and_then(|t| t.dyn_into::<HtmlTextAreaElement>().ok())
@@ -96,14 +105,8 @@ pub(crate) fn save_to_active_order() {
     order.amount_cash_collected = get_html_input_value("formCashPaid", &document);
     order.amount_checks_collected = get_html_input_value("formCheckPaid", &document);
     order.check_numbers = get_html_input_value("formCheckNumbers", &document);
-    order.will_collect_money_later = Some(document.get_element_by_id("formCollectLater")
-        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-        .unwrap()
-        .checked());
-    order.is_verified = Some(document.get_element_by_id("formIsVerified")
-        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-        .unwrap()
-        .checked());
+    order.will_collect_money_later = Some(get_html_checked_input_value("formCollectLater", &document));
+    order.is_verified = Some(get_html_checked_input_value("formIsVerified", &document));
     // This must come after setting checks/cash collected
     let total_collected = order.get_total_collected();
     if total_collected == Decimal::ZERO {

@@ -300,7 +300,7 @@ pub fn hood_selector() -> Html
         <div class="form-floating col-md-3">
             <select class="form-control" id="formNeighborhood" onchange={on_hood_change} required=true>
                 {
-                    get_neighborhoods().iter().map(|hood_info| {
+                    get_neighborhoods().iter().filter(|hood_info| hood_info.is_visible).map(|hood_info| {
                         let is_selected = {
                             if let Some(neighborhood) = order.customer.neighborhood.as_ref() {
                                 &hood_info.name == neighborhood
