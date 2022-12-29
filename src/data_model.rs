@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use lazy_static::lazy_static;
 use std::sync::{RwLock, Arc};
 use chrono::prelude::*;
-use std::collections::{BTreeMap};
+use std::collections::BTreeMap;
 use rust_decimal::prelude::*;
 use gloo::storage::{LocalStorage, Storage};
 use std::time::{ Duration };
@@ -91,7 +91,7 @@ lazy_static! {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub(crate) struct UserInfo {
     pub(crate) name: String,
     pub(crate) group: String,
@@ -516,7 +516,6 @@ pub(crate) async fn update_neighborhoods(hoods: Vec<Neighborhood>)
     // Trying to merge in place would also take multiple passes through the neighborhood list
     // so converting it into a map and then replacing list with values
 
-    use std::collections::BTreeMap;
     // Map neighborhood names to neighborhood and add ability to mark dirty
     let mut merged_hoods = (*get_neighborhoods())
         .iter()
@@ -1245,6 +1244,57 @@ pub(crate) async fn reset_fundraiser()
     let req = GraphQlReq::new(RESET_FUNDRAISER_API_GQL);
     make_gql_request::<serde_json::Value>(&req).await.map(|_|())?;
     load_config().await;
+    Ok(())
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+static GET_USERS_FOR_CONFIG_API_GQL:&'static str =
+r#"
+{
+  users {
+    id
+    group
+    firstName
+    lastName
+  }
+}"#;
+////////////////////////////////////////////////////////////////////////////
+//
+#[derive(Serialize, Deserialize, Properties, Debug, Clone, PartialEq)]
+pub(crate) struct UserAdminConfig {
+    pub(crate) id: String,
+    #[serde(rename = "firstName")]
+    pub(crate) first_name: String,
+    #[serde(rename = "lastName")]
+    pub(crate) last_name: String,
+    pub(crate) group: String,
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn get_users_for_admin_config()
+    -> std::result::Result<BTreeMap<String,UserAdminConfig>,Box<dyn std::error::Error>>
+{
+
+    #[derive(Deserialize)]
+    struct RespUserInfo {
+        users: Vec<UserAdminConfig>,
+    }
+
+    // log::info!("Get Addr Query:\n{}", &query);
+    let req = GraphQlReq::new(GET_USERS_FOR_CONFIG_API_GQL);
+    make_gql_request::<RespUserInfo>(&req).await.map(|v| {
+        v.users.into_iter().map(|v| (v.id.clone(),v)).collect::<BTreeMap<String,UserAdminConfig>>()
+    })
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn add_or_update_users_for_admin_config(users: Vec<UserAdminConfig>)
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    log::info!("Adding or Updating Users: {:#?}", &users);
     Ok(())
 }
 

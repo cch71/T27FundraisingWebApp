@@ -5,7 +5,7 @@ use crate::components::admin_config_product_costs::*;
 use crate::components::admin_config_users::*;
 
 use web_sys::{
-   MouseEvent, Element, HtmlElement, HtmlButtonElement,
+   MouseEvent, HtmlElement, HtmlButtonElement,
 };
 use wasm_bindgen::JsCast;
 use crate::data_model::*;
@@ -53,7 +53,7 @@ fn reset_orders_database() -> Html
                 }
 
                 disable_reset_button(&document, false);
-                gloo::utils::window().location().reload();
+                let _ = gloo::utils::window().location().reload();
             });
         }
     };
@@ -62,7 +62,7 @@ fn reset_orders_database() -> Html
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">
-                    {"Clear Order Data"}
+                    {"Clear Order And User Data"}
                 </h5>
                <div class="row">
                   <button class="btn btn-danger" onclick={on_reset_db} id="btnResetFrData">

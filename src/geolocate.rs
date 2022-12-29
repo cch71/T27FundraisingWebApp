@@ -13,7 +13,8 @@ pub(crate) struct GeolocationCoordinates {
     pub(crate) longitude: f64,
     pub(crate) accuracy: f64,
     pub(crate) altitude: Option<f64>,
-    pub(crate) altitudeAccuracy: Option<f64>,
+    #[serde(rename = "altitudeAccuracy")]
+    pub(crate) altitude_accuracy: Option<f64>,
     pub(crate) heading: Option<f64>,
     pub(crate) speed: Option<f64>,
 }

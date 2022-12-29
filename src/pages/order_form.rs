@@ -1,7 +1,7 @@
 //use yew::{function_component, html, Properties};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use wasm_bindgen::{JsValue, JsCast};
+use wasm_bindgen::JsCast;
 use web_sys::{
     Event, InputEvent, MouseEvent, SubmitEvent,
     Element, HtmlElement, HtmlSelectElement, HtmlInputElement, HtmlButtonElement,

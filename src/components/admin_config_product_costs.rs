@@ -246,8 +246,6 @@ pub(crate) fn set_mulch_cost() -> Html
     let on_save_mulch_products = {
         let is_dirty = is_dirty.clone();
         let spreading_cost = spreading_cost.clone();
-        let mulch_min_units_cost = mulch_min_units_cost.clone();
-        let mulch_base_bags_cost = mulch_base_bags_cost.clone();
         let price_breaks = price_breaks.clone();
         move |_evt: MouseEvent| {
             let document = gloo::utils::document();
