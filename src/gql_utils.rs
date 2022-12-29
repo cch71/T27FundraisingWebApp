@@ -14,9 +14,9 @@ pub(crate) struct GraphQlReq {
     pub(crate) query: String,
 }
 impl GraphQlReq {
-    pub(crate) fn new(query: String) -> Self {
+    pub(crate) fn new<T: AsRef<str>>(query: T) -> Self {
         return Self{
-            query: query,
+            query: query.as_ref().to_string(),
         }
     }
 }

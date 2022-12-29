@@ -1,6 +1,6 @@
 use yew::prelude::*;
 use web_sys::{
-   MouseEvent, Element, HtmlElement, HtmlInputElement,HtmlButtonElement,
+   MouseEvent, Element, HtmlElement, HtmlInputElement, HtmlButtonElement,
 };
 use crate::data_model::*;
 use crate::bootstrap;

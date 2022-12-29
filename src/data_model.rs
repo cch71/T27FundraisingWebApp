@@ -305,7 +305,7 @@ fn process_config_data(config: FrConfigApi) {
             config.users.into_iter().map(|v| (v.id.clone(), UserInfo{name: v.name.clone(), group: v.group.clone()})).collect::<_>();
         if let Ok(mut arc_umap) = USER_MAP.write() {
             Arc::get_mut(&mut *arc_umap).unwrap().append(&mut new_map);
-            Arc::get_mut(&mut *arc_umap).unwrap().insert("fradmin".to_string(), UserInfo{name:"Super User".to_string(), group: "Bear".to_string()});
+            Arc::get_mut(&mut *arc_umap).unwrap().insert("fradmin".to_string(), UserInfo{name:"Super User".to_string(), group: "Admins".to_string()});
         }
     }
     log::info!("Fundraising Config retrieved");
@@ -1229,6 +1229,24 @@ pub(crate) async fn get_address_from_lat_lng(lat: f64, lng:f64)
 }
 
 
+////////////////////////////////////////////////////////////////////////////
+//
+static RESET_FUNDRAISER_API_GQL:&'static str =
+r#"
+mutation {
+  resetFundraisingData(doResetUsers: true, doResetOrders: true)
+}"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn reset_fundraiser()
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    let req = GraphQlReq::new(RESET_FUNDRAISER_API_GQL);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_|())?;
+    load_config().await;
+    Ok(())
+}
 
 // static TEST_ADMIN_API_GQL:&'static str =
 // r#"
