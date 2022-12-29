@@ -82,6 +82,15 @@ fn reset_orders_database() -> Html
 #[function_component(FrConfig)]
 pub fn fr_config() -> Html
 {
+    let are_orders_created = use_state_eq(|| true);
+
+    {
+        let are_orders_created = are_orders_created.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            are_orders_created.set(have_orders_been_created().await.unwrap_or(true));
+        });
+    }
+
     html! {
         <div>
             <div class="row">
@@ -91,7 +100,9 @@ pub fn fr_config() -> Html
             </div>
             <div class="row">
                 <div class="col-xs-1 d-flex justify-content-center">
-                    <MulchCost/>
+                    if !(*are_orders_created) {
+                        <MulchCost/>
+                    }
                     <DeliveryUl/>
                 </div>
             </div>

@@ -1291,10 +1291,46 @@ pub(crate) async fn get_users_for_admin_config()
 
 ////////////////////////////////////////////////////////////////////////////
 //
+static ADD_OR_UPDATE_USERS_FOR_CONFIG_API_GQL:&'static str =
+r#"
+mutation {
+  addOrUpdateUsers(users: [
+     ***USERS_PARAMS***
+  ])
+}"#;
+////////////////////////////////////////////////////////////////////////////
+//
 pub(crate) async fn add_or_update_users_for_admin_config(users: Vec<UserAdminConfig>)
     -> std::result::Result<(),Box<dyn std::error::Error>>
 {
     log::info!("Adding or Updating Users: {:#?}", &users);
+
+    let users_str = users.iter().map(|v| {
+        format!("\t\t{{\n{}\n{}\n{}\n{}\n\t\t}}",
+            format!("\t\t\tid: \"{}\"", v.id),
+            format!("\t\t\tfirstName: \"{}\"", v.first_name),
+            format!("\t\t\tlastName: \"{}\"", v.last_name),
+            format!("\t\t\tgroup: \"{}\"", v.group))
+    })
+    .collect::<Vec<String>>().join(",");
+
+    let query = ADD_OR_UPDATE_USERS_FOR_CONFIG_API_GQL
+        .replace("***USERS_PARAMS***", &users_str);
+
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())?;
+
+    // I don't know if there is any better way. Making DB Query costs money
+    // Trying to merge in place would also take multiple passes through the neighborhood list
+    // so converting it into a map and then replacing list with values
+    let mut new_map: UserMapType = users.into_iter().map(|v| {
+        let ui = UserInfo{name:format!("{} {}", v.first_name, v.last_name), group: v.group};
+        (v.id, ui)
+    }).collect();
+    if let Ok(mut arc_umap) = USER_MAP.write() {
+        Arc::get_mut(&mut *arc_umap).unwrap().append(&mut new_map);
+    }
+
     Ok(())
 }
 

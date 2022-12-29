@@ -99,11 +99,15 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
                     for result in rdr.deserialize() {
                         let record: UserCsvRecord = result.unwrap();
                         log::info!("Rec: {:?}", record);
-                        let last_name:String = record.last_name.trim().chars().filter(|c| !c.is_whitespace()).collect();
-                        let uid = format!("{}{}",
-                            record.first_name.trim().chars().nth(0).unwrap(),
-                            last_name);
-                        let mut new_id = uid.to_lowercase();
+                        let mut new_id:String = record.uid
+                            .clone()
+                            .unwrap_or_else(|| {
+                                format!("{}{}", record.first_name.trim().chars().nth(0).unwrap(), record.last_name)
+                            })
+                            .chars()
+                            .filter(|c| !c.is_whitespace())
+                            .collect::<String>()
+                            .to_lowercase();
 
                         // Make sure there aren't dups in the uploaded list and create a unique id if it isn't
                         if let Some(found_user) = potential_new_users.get(&new_id) {

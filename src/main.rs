@@ -173,29 +173,6 @@ pub enum AppRoutes {
     NotFound,
 }
 
-fn route_switch(route: AppRoutes) -> Html {
-    // This is kindof a hack to save order form before we switch away
-    let document = web_sys::window().unwrap().document().unwrap();
-    if document.get_element_by_id("newOrEditOrderForm").is_some() {
-        save_to_active_order();
-    }
-    //log::info!("````````` switcthing ``````````, {:?}  {}", route, is_some);
-
-    match route {
-        AppRoutes::Home => html!{<Home/>},
-        AppRoutes::OrderForm => html!{<OrderForm/>},
-        //TODO: should these be in a seperate routing table?
-        AppRoutes::OrderProducts => html!{<OrderProducts/>},
-        AppRoutes::OrderDonations => html!{<OrderDonations/>},
-        AppRoutes::Reports => html!{<Reports/>},
-        AppRoutes::Timecards => html!{<Timecards/>},
-        AppRoutes::FundraiserCloseout => html!{<CloseoutFundraiser/>},
-        AppRoutes::FrConfig => html!{<FrConfig/>},
-
-        AppRoutes::NotFound => html! { <h1>{ "404" }</h1> },
-    }
-}
-
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
@@ -276,6 +253,34 @@ impl Component for App {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let on_logoff = ctx.link().callback(|_| Msg::Logout);
         let on_reportissue = ctx.link().callback(|_| Msg::ReportIssue);
+
+
+        let route_switch = {
+            move |route: AppRoutes| -> Html {
+                // This is kindof a hack to save order form before we switch away
+                let document = web_sys::window().unwrap().document().unwrap();
+                if document.get_element_by_id("newOrEditOrderForm").is_some() {
+                    save_to_active_order();
+                }
+                //log::info!("````````` switcthing ``````````, {:?}  {}", route, is_some);
+
+                match route {
+                    AppRoutes::Home => html!{<Home/>},
+                    AppRoutes::OrderForm => html!{<OrderForm/>},
+                    //TODO: should these be in a seperate routing table?
+                    AppRoutes::OrderProducts => html!{<OrderProducts/>},
+                    AppRoutes::OrderDonations => html!{<OrderDonations/>},
+                    AppRoutes::Reports => html!{<Reports/>},
+                    AppRoutes::Timecards => html!{<Timecards/>},
+                    AppRoutes::FundraiserCloseout => html!{<CloseoutFundraiser/>},
+                    AppRoutes::FrConfig => html!{<FrConfig/>},
+
+                    AppRoutes::NotFound => html! { <h1>{ "404" }</h1> },
+                }
+            }
+        };
+
+
 
         if self.is_loading {
             html! {
