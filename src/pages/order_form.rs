@@ -346,6 +346,7 @@ pub fn order_form_fields() -> Html
     let history = use_navigator().unwrap();
     if !is_active_order() {
             history.push(&AppRoutes::Home);
+            return html! {<div/>};
     }
 
     let is_admin = get_active_user().is_admin();
