@@ -60,9 +60,9 @@ Main categories of functionality:
 - Admin Functionality
   - Adjust order for any user
   - Enter new orders for a user
-  - Reset Fundraiser for a new year (TODO)
-  - Change Fundraiser Variables (TODO)
-  - Delivery user time tracking
+  - Reset Fundraiser for a new year
+  - Change Fundraiser Variables
+  - Delivery workers time tracking
   - Allocation adjustment
 
 ## Why Rust
