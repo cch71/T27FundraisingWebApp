@@ -27,6 +27,7 @@ pub(crate) struct MulchOrder {
     pub(crate) order_id: String,
     pub(crate) order_owner_id: String,
     pub(crate) last_modified_time: String,
+    pub(crate) comments: Option<String>,
     pub(crate) special_instructions: Option<String>,
     pub(crate) amount_from_donations: Option<String>,
     pub(crate) amount_from_purchases: Option<String>,
@@ -282,6 +283,10 @@ pub(crate) async fn submit_active_order()
     query.push_str(&format!("\t\t orderId: \"{}\"\n", order.order_id.trim()));
     query.push_str(&format!("\t\t ownerId: \"{}\"\n", order.order_owner_id.trim()));
 
+    if let Some(value) = order.comments.as_ref() {
+        query.push_str(&format!("\t\t comments: \"{}\"\n", value.trim()));
+    }
+
     if let Some(value) = order.special_instructions.as_ref() {
         query.push_str(&format!("\t\t specialInstructions: \"{}\"\n", value.trim()));
     }
@@ -404,6 +409,7 @@ static LOAD_ORDER_GQL:& 'static str = r"
         email
         neighborhood
     }
+    comments
     specialInstructions
     deliveryId
     purchases {
@@ -431,6 +437,7 @@ pub(crate) async fn load_active_order_from_db(order_id: &str)
         pub(crate) order_id: String,
         #[serde(alias = "ownerId")]
         pub(crate) order_owner_id: String,
+        pub(crate) comments: Option<String>,
         #[serde(alias = "specialInstructions")]
         pub(crate) special_instructions: Option<String>,
         #[serde(alias = "amountFromDonations")]
@@ -476,6 +483,7 @@ pub(crate) async fn load_active_order_from_db(order_id: &str)
         order: MulchOrder{
             order_id: order.order_id,
             order_owner_id: order.order_owner_id,
+            comments: order.comments,
             special_instructions: order.special_instructions,
             amount_from_donations: order.amount_from_donations,
             amount_from_purchases: order.amount_from_purchases,
