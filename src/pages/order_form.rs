@@ -671,6 +671,15 @@ pub fn order_form_fields() -> Html
                 </div>
             </div>
 
+            <div class="row mb-2 g-2">
+                <div class="form-floating col-md-12">
+                    <textarea class="form-control" id="formOrderComments" rows="2"
+                              value={order.comments.clone()}>
+                    </textarea>
+                    <label for="formOrderComments">{"Order Comments"}</label>
+                </div>
+            </div>
+
             <div class="row mb-2 my-2 g-2" style="display: contents; border: 0;" >
                 <div class="form-control" id="productList">
                     <ul class="list-group">

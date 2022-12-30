@@ -101,6 +101,7 @@ pub(crate) fn save_to_active_order() {
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
         .unwrap()
         .value());
+    order.comments = get_html_textarea_value("formOrderComments", &document);
     order.special_instructions = get_html_textarea_value("formSpecialInstructions", &document);
     order.amount_cash_collected = get_html_input_value("formCashPaid", &document);
     order.amount_checks_collected = get_html_input_value("formCheckPaid", &document);

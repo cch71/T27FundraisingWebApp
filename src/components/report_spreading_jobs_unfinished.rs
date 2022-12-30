@@ -58,10 +58,15 @@ pub(crate) fn report_quick_view() -> Html {
                         {
                             resp.into_iter().map(|v|{
                                 let owner_id = v["ownerId"].as_str().unwrap();
+                                let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
+                                    Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
+                                    None => ("N/A".to_string(), "N/A".to_string()),
+                                };
                                 html!{
                                     <tr>
                                         <td>{owner_id.to_string()}</td>
                                         <td>{get_username_from_id(owner_id).unwrap_or("".to_string())}</td>
+                                        <td data-deliveryid={delivery_id}>{delivery_date}</td>
                                         <td>{v["bagsLeft"].as_u64().unwrap_or(0).to_string()}</td>
                                     </tr>
                                 }

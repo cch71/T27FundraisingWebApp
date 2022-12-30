@@ -324,6 +324,7 @@ static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
 {
   mulchOrders {
     ownerId
+    deliveryId
     purchases {
         productId
         numSold
