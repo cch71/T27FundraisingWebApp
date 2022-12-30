@@ -61,6 +61,8 @@ pub(crate) struct CustomerInfo {
     pub(crate) name: String,
     pub(crate) addr1: String,
     pub(crate) addr2: Option<String>,
+    pub(crate) city: Option<String>,
+    pub(crate) zipcode: Option<u32>,
     pub(crate) phone: String,
     pub(crate) email: Option<String>,
     pub(crate) neighborhood: Option<String>,
@@ -336,7 +338,13 @@ pub(crate) async fn submit_active_order()
     query.push_str(&format!("\t\t\t name: \"{}\"\n", order.customer.name.trim()));
     query.push_str(&format!("\t\t\t addr1: \"{}\"\n", order.customer.addr1.trim()));
     if let Some(value) = order.customer.addr2.as_ref() {
-        query.push_str(&format!("\t\t addr2: \"{}\"\n", value.trim()));
+        query.push_str(&format!("\t\t\t addr2: \"{}\"\n", value.trim()));
+    }
+    if let Some(value) = order.customer.city.as_ref() {
+        query.push_str(&format!("\t\t\t city: \"{}\"\n", value.trim()));
+    }
+    if let Some(value) = order.customer.zipcode.as_ref() {
+        query.push_str(&format!("\t\t\t zipcode: {}\n", value));
     }
     query.push_str(&format!("\t\t\t phone: \"{}\"\n", order.customer.phone.trim()));
     if let Some(value) = order.customer.email.as_ref() {
@@ -390,6 +398,8 @@ static LOAD_ORDER_GQL:& 'static str = r"
         name
         addr1
         addr2
+        city
+        zipcode
         phone
         email
         neighborhood
@@ -467,10 +477,10 @@ pub(crate) async fn load_active_order_from_db(order_id: &str)
             order_id: order.order_id,
             order_owner_id: order.order_owner_id,
             special_instructions: order.special_instructions,
-            amount_from_donations: from_cloud_to_money_str(order.amount_from_donations),
-            amount_from_purchases: from_cloud_to_money_str(order.amount_from_purchases),
-            amount_cash_collected: from_cloud_to_money_str(order.amount_cash_collected),
-            amount_checks_collected: from_cloud_to_money_str(order.amount_checks_collected),
+            amount_from_donations: order.amount_from_donations,
+            amount_from_purchases: order.amount_from_purchases,
+            amount_cash_collected: order.amount_cash_collected,
+            amount_checks_collected: order.amount_checks_collected,
             check_numbers: order.check_numbers,
             amount_total_collected: from_cloud_to_money_str(order.amount_total_collected),
             will_collect_money_later: order.will_collect_money_later,
@@ -522,7 +532,7 @@ mutation {
 pub(crate) async fn set_spreaders(order_id: &str, spreaders: &Vec<String>)
     -> std::result::Result<(), Box<dyn std::error::Error>>
 {
-    //log::info!("Setting Spreaders for orderid: {}:{:#?}", order_id, &spreaders);
+    log::info!("Setting Spreaders for orderid: {}:{:#?}", order_id, &spreaders);
     let spreaders = spreaders.into_iter()
         .map(|v|format!("\"{}\"",v)).collect::<Vec<String>>()
         .join(",");
@@ -536,3 +546,23 @@ pub(crate) async fn set_spreaders(order_id: &str, spreaders: &Vec<String>)
 }
 
 
+static TROOP_ORDER_AMOUNT_COLLECTED_GQL: &'static str = r"
+{
+  summary {
+    troop(numTopSellers: 1) {
+      totalAmountCollected
+    }
+  }
+}
+";
+
+pub(crate) async fn have_orders_been_created()
+    -> std::result::Result<bool,Box<dyn std::error::Error>>
+{
+    // Fails safe
+    let req = GraphQlReq::new(TROOP_ORDER_AMOUNT_COLLECTED_GQL);
+    make_gql_request::<serde_json::Value>(&req).await.map(|v| {
+        v["summary"]["troop"]["totalAmountCollected"].as_str()
+            .map_or_else(|| true, |i| i != "0")
+    })
+}

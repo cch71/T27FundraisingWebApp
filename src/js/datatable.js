@@ -2,6 +2,7 @@
 /////////////////////////////////////////////////////////////////////
 //
 const getQuickViewReportDataTable = (params) => {
+    console.log("Setting Quick Report View");
     const tableColumns = [
         { name: "OrderId", className: "all", visible: false },
         { title: "Name", className: "all" },
@@ -173,7 +174,7 @@ const getFullViewReportDataTable = (params) => {
 /////////////////////////////////////////////////////////////////////
 //
 const getOrderVerificationViewReportDataTable = (params) => {
-    console.log("Setting Full Report View");
+    console.log("Setting Order Verification Report View");
     let tableColumns = [
         { name: "OrderId", className: "all", visible: false },
         { title: "Name", className: "all" },
@@ -211,7 +212,7 @@ const getOrderVerificationViewReportDataTable = (params) => {
 /////////////////////////////////////////////////////////////////////
 //
 const getSpreadingJobsUnfinishedViewReportDataTable = (params) => {
-    console.log("Setting Full Report View");
+    console.log("Setting Spreading Jobs Unfinished Report View");
     let tableColumns = [
         { title: "Order Owner", name: "OrderOwner" },
         { title: "Name" },
@@ -241,7 +242,7 @@ const getSpreadingJobsUnfinishedViewReportDataTable = (params) => {
 /////////////////////////////////////////////////////////////////////
 //
 const getSpreadingJobsViewReportDataTable = (params) => {
-    console.log("Setting Full Report View");
+    console.log("Setting Spreading Jobs Report View");
     let tableColumns = [
         { name: "OrderId", className: "all", visible: false },
         { title: "Name", className: "all" },
@@ -287,7 +288,11 @@ const getSpreadingJobsViewReportDataTable = (params) => {
 
 /////////////////////////////////////////////////////////////////////
 //
-const getDataTable = (params) => {
+const getDataTable = (mapOfParams) => {
+    // new rust code converts it to map so have to convert it back to
+    // JSON Object (or TODO:re-write all this)
+    const params = Object.fromEntries(mapOfParams);
+    // console.log("Get Data Table 2: ", params);
     if (params.reportType === "quick") {
         return getQuickViewReportDataTable(params);
     } else if (params.reportType === "distributionPoints") {

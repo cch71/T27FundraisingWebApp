@@ -76,11 +76,11 @@ pub(crate) fn delete_order_confirmation_dlg() -> Html {
                 .unwrap()
                 .value();
             if "delete" == &value {
-                gloo_utils::document().get_element_by_id("deleteDlgBtn")
+                gloo::utils::document().get_element_by_id("deleteDlgBtn")
                     .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
                     .unwrap().set_disabled(false);
             } else {
-                gloo_utils::document().get_element_by_id("deleteDlgBtn")
+                gloo::utils::document().get_element_by_id("deleteDlgBtn")
                     .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
                     .unwrap().set_disabled(true);
             }
@@ -98,15 +98,15 @@ pub(crate) fn delete_order_confirmation_dlg() -> Html {
                 wasm_bindgen_futures::spawn_local(async move {
                     if let Some(to_delete) = &*f.borrow() {
                         if let Err(err) = delete_order(&to_delete.order_id).await {
-                            gloo_dialogs::alert(&format!("Failed to delete order in the cloud: {:#?}", err));
+                            gloo::dialogs::alert(&format!("Failed to delete order in the cloud: {:#?}", err));
                         } else {
                             if let Err(err) = remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node) {
-                                gloo_dialogs::alert(&format!("Order was deleted from the cloud but not the local table: {:#?}", err));
+                                gloo::dialogs::alert(&format!("Order was deleted from the cloud but not the local table: {:#?}", err));
                             }
                         }
 
                         to_delete.delete_dlg.hide();
-                        gloo_utils::document().get_element_by_id("confirmDeleteOrderInput")
+                        gloo::utils::document().get_element_by_id("confirmDeleteOrderInput")
                             .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                             .unwrap()
                             .set_value("");

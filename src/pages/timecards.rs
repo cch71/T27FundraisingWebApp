@@ -15,7 +15,7 @@ thread_local! {
 /////////////////////////////////////////////////
 ///
 fn get_delivery_id() -> Option<u32> {
-    let document = gloo_utils::document();
+    let document = gloo::utils::document();
     let value = document.get_element_by_id("timeSheetSelectDeliveryDate")
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
         .unwrap()
@@ -99,7 +99,7 @@ pub fn timecards_page() -> Html {
                         Err(err)=>{
                             let err_str = format!("Failed to get retrieve timecard data: {:#?}", err);
                             log::error!("{}",&err_str);
-                            gloo_dialogs::alert(err_str.as_str());
+                            gloo::dialogs::alert(err_str.as_str());
                         },
                     };
                 });
@@ -295,7 +295,7 @@ pub fn timecards_page() -> Html {
                     time_total: time_calc_val.clone(),
                 };
                 if let Err(err) = save_timecards_data(vec![tc]).await {
-                    gloo_dialogs::alert(&format!("Failed to set timecard data: {}", &err));
+                    gloo::dialogs::alert(&format!("Failed to set timecard data: {}", &err));
                     return;
                 }
 

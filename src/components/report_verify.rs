@@ -20,7 +20,7 @@ pub(crate) struct OrderVerificationViewProps {
 #[function_component(OrderVerificationView)]
 pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Html {
     let report_state = use_state(||ReportViewState::IsLoading);
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
     // let is_fr_locked = is_fundraiser_locked();
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
@@ -41,9 +41,9 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
     };
     let on_view_or_edit_order = {
         let history = history.clone();
-        Callback::once(move |evt: MouseEvent| {
+        move |evt: MouseEvent| {
             on_view_or_edit_from_rpt(evt, history.clone());
-        })
+        }
     };
 
     {

@@ -62,7 +62,7 @@ pub(crate) fn on_edit_spreading_from_rpt( evt: MouseEvent, datatable: std::rc::R
             dlg: dlg.clone().dyn_into::<bootstrap::Modal>().unwrap(),
             tr_node: tr_node,
             order_id: order_id,
-            selected_users: spreaders,
+            selected_users: spreaders.into_iter().filter(|(_id, name)| 0!=name.len()).collect(),
             dataset_elm: elm,
         });
     });
@@ -130,12 +130,12 @@ pub(crate) fn choose_spreaders_dlg() -> Html
                     if let Some(meta) = &*metarc.borrow() {
                         let spreaders:Vec<String> = meta.selected_users.keys().cloned().collect::<_>();
                         if let Err(err) = set_spreaders(&meta.order_id, &spreaders).await {
-                            gloo_dialogs::alert(&format!("Failed to submit spreaders: {:#?}", err));
+                            gloo::dialogs::alert(&format!("Failed to submit spreaders: {:#?}", err));
                         } else {
                             let spreaders = spreaders.join(",");
                             let _ = meta.dataset_elm.dataset().set("spreaders", &spreaders);
                             if let Err(err) = set_spreaders_with_tr(&meta.datatable, &meta.tr_node, &spreaders) {
-                                gloo_dialogs::alert(&format!("Order was set in the cloud db but not the local table: {:#?}", err));
+                                gloo::dialogs::alert(&format!("Order was set in the cloud db but not the local table: {:#?}", err));
                             }
                         }
 

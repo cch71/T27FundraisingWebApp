@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use reqwasm::http::Request;
+use gloo::net::http::Request;
 use lazy_static::lazy_static;
 
 use crate::auth_utils::{get_active_user};
@@ -14,9 +14,9 @@ pub(crate) struct GraphQlReq {
     pub(crate) query: String,
 }
 impl GraphQlReq {
-    pub(crate) fn new(query: String) -> Self {
+    pub(crate) fn new<T: AsRef<str>>(query: T) -> Self {
         return Self{
-            query: query,
+            query: query.as_ref().to_string(),
         }
     }
 }
@@ -46,10 +46,19 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         .await?
         .json()
         .await?;
-    let host_str = gloo_utils::window().location().host().unwrap_or("".to_string());
+    let host_str = gloo::utils::window().location().host().unwrap_or("".to_string());
     // log::info!("Hostname: {host_str}");
     if host_str.starts_with("localhost") {
         log::info!("GQL Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
+    }
+
+    if !raw_resp["message"].is_null() {
+        let err_str = serde_json::to_string(&raw_resp).unwrap_or("Failed to stringify json resp".to_string());
+        use std::io::{Error, ErrorKind};
+        return Err(Box::new(
+                Error::new(
+                    ErrorKind::Other,
+                    format!("GQL request returned raw error:\n {}", err_str).as_str())));
     }
 
     let resp: DataWrapper<T> = serde_json::from_value(raw_resp)?;
@@ -59,7 +68,7 @@ pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
         Err(Box::new(
                 Error::new(
                     ErrorKind::Other,
-                    format!("GQL request returned and error:\n {}", err_str).as_str())))
+                    format!("GQL request returned error:\n {}", err_str).as_str())))
     } else {
         Ok(resp.data.unwrap())
     }

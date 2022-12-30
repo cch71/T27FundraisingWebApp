@@ -1,7 +1,7 @@
 
 use serde::{Deserialize, Serialize};
 use chrono::prelude::*;
-use gloo_storage::{LocalStorage, SessionStorage, Storage};
+use gloo::storage::{LocalStorage, SessionStorage, Storage};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 use crate::auth_utils::{get_active_user};
 use crate::data_model::{get_fr_config};
@@ -376,9 +376,9 @@ struct SummaryReportStorage {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub(crate) struct SummaryReport {
-    #[serde(alias = "troopSummary")]
+    #[serde(alias = "troop")]
     pub(crate) troop_summary: TroopSummary,
-    #[serde(alias = "summaryByOwnerId")]
+    #[serde(alias = "orderOwner")]
     pub(crate) seller_summary: SellerSummary,
 }
 
@@ -450,28 +450,30 @@ pub(crate) struct SellerSummary {
 
 static SUMMARY_RPT_GRAPHQL: &'static str = r"
 {
-  summaryByOwnerId(***ORDER_OWNER_PARAM***) {
-    totalDeliveryMinutes
-    totalNumBagsSold
-    totalNumBagsSoldToSpread
-    totalAmountCollectedForDonations
-    totalAmountCollectedForBags
-    totalAmountCollectedForBagsToSpread
-    totalAmountCollected
-    allocationsFromDelivery
-    allocationsFromBagsSold
-    allocationsFromBagsSpread
-    allocationsTotal
-  }
-  troopSummary(***TOP_SELLERS_PARAM***) {
-    totalAmountCollected
-    topSellers {
+  summary {
+    orderOwner(***ORDER_OWNER_PARAM***) {
+      totalDeliveryMinutes
+      totalNumBagsSold
+      totalNumBagsSoldToSpread
+      totalAmountCollectedForDonations
+      totalAmountCollectedForBags
+      totalAmountCollectedForBagsToSpread
       totalAmountCollected
-      name
+      allocationsFromDelivery
+      allocationsFromBagsSold
+      allocationsFromBagsSpread
+      allocationsTotal
     }
-    groupSummary {
-      groupId
+    troop(***TOP_SELLERS_PARAM***) {
       totalAmountCollected
+      topSellers {
+        totalAmountCollected
+        name
+      }
+      groupSummary {
+        groupId
+        totalAmountCollected
+      }
     }
   }
 }
@@ -494,16 +496,22 @@ pub(crate) async fn get_summary_report_data(seller_id: &str, num_top_sellers: u3
         .replace("***ORDER_OWNER_PARAM***", &format!("ownerId: \"{}\"", seller_id))
         .replace("***TOP_SELLERS_PARAM***", &format!("numTopSellers: {}", num_top_sellers));
 
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+    struct SummaryReportRslt {
+        #[serde(alias = "summary")]
+        summary: SummaryReport,
+    }
+
     let req = GraphQlReq::new(query);
-    let rslts = make_gql_request::<SummaryReport>(&req).await?;
+    let rslt = make_gql_request::<SummaryReportRslt>(&req).await?;
 
     LocalStorage::set("SummaryData", SummaryReportStorage{
-        summary_report: rslts.clone(),
+        summary_report: rslt.summary.clone(),
         seller_id: seller_id.to_string(),
         num_top_sellers: num_top_sellers,
         timestamp: Utc::now().timestamp(),
     })?;
-    Ok(rslts)
+    Ok(rslt.summary)
 }
 
 pub(crate) enum ReportViewState {

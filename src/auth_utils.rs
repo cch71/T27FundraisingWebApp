@@ -65,7 +65,7 @@ pub(crate) async fn get_active_user_async() -> Option<Arc<AuthenticatedUserInfo>
         },
         Err(err) => {
             log::error!("User Info Err: {:#?}", err);
-            gloo_dialogs::alert(&format!("Failed to get User Info: {:#?}", err));
+            gloo::dialogs::alert(&format!("Failed to get User Info: {:#?}", err));
             None
         },
     }

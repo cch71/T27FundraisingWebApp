@@ -1,50 +1,67 @@
 
+
+const initOptions = {
+  url: 'https://usw2.auth.ac/auth', realm: 't27fr', clientId: 't27frapp', onLoad: 'login-required'
+}
+
 /**
  *  Creates an auth object
  */
-const authObj = new Auth0Client(
-    {
-        domain: 'dev-pmq2q476.us.auth0.com',
-        client_id: 'AewxkIRU4ckn5GcNH32qkTU1AYgdKKMn',
-        audience: 'https://fundraiser.bsatroop27.us/api'
-    });
+const keycloak = Keycloak(initOptions);
+
+
 
 /**
  *  Retrieves user information
  */
 const getUserInfo = async () => {
-    const token = await authObj.getTokenSilently();
-    const userInfo = await authObj.getUser();
-    // console.log(`UserInfo: ${JSON.stringify(userInfo, null, '\t')}`);
+    const parsedToken = keycloak.idTokenParsed;
+    const token = keycloak.idToken;
+    // console.log(`UserInfo: ${JSON.stringify(parsedToken, null, '\t')}`);
     // console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
+    let roles = parsedToken.groups.map((role)=>{ 
+        return role.startsWith("/") ? role.substring(1) : role;
+    });
     const resp = {
-        "email": userInfo.email,
+        "email": parsedToken.email,
         "token": token,
-        "roles": userInfo["https://www.bsatroop27.us/roles"],
-        "id": userInfo.email.split('@')[0] //don't use nickname since we can't chnage it
+        "roles": roles,
+        "id": parsedToken.preferred_username,
+        "name": parsedToken.name
     };
 
-    if (userInfo["https://www.bsatroop27.us/app_metadata"].hasOwnProperty("full_name")) {
-        resp["name"] = userInfo["https://www.bsatroop27.us/app_metadata"]["full_name"];
-    }
     return resp;
 }
 
 /**
  * Starts the authentication flow
  */
-const loginUser = async (targetUrl) => {
+const loginUser = async () => {
     // console.log("Starting login");
 
-    const options = {
-        redirect_uri: window.location.origin
-    };
+    const auth =  await keycloak.init({ onLoad: initOptions.onLoad });
 
-    if (targetUrl) {
-        options.appState = { targetUrl };
+    if (!auth) {
+        window.location.reload();
+    } else {
+        console.info("Authenticated");
     }
 
-    await authObj.loginWithRedirect(options);
+
+    //Token Refresh
+    setInterval(() => {
+        keycloak.updateToken(70).then((refreshed) => {
+            if (refreshed) {
+                console.info('Token refreshed' + refreshed);
+            // } else {
+            //     console.warn('Token not refreshed, valid for '
+            //                  + Math.round(keycloak.tokenParsed.exp
+            //                               + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
+            }
+        }).catch(() => {
+            console.error('Failed to refresh token');
+        });
+    }, 6000)
 };
 
 /**
@@ -52,8 +69,8 @@ const loginUser = async (targetUrl) => {
  */
 const logoutUser = async (targetUrl) => {
     // console.log("Starting logout");
-    authObj.logout({
-        returnTo: window.location.origin
+    keycloak.logout({
+        redirectUri: window.location.origin
     });
 };
 
@@ -63,37 +80,12 @@ const logoutUser = async (targetUrl) => {
  * @param {*} fn The function to execute if the user is logged in
  */
 const isAuthenticated = async () => {
-    let isAuthenticated = await authObj.isAuthenticated();
-
-    if (isAuthenticated) {
-        // show the gated content
-        console.log(`JS1: Is Authenticated: True`);
-        return;
+    try {
+        await loginUser();
+        return true;
+    } catch {
+        return false;
     }
-
-    // NEW - check for the code and state parameters
-    const query = window.location.search;
-    if (query.includes("code=") && query.includes("state=")) {
-
-        // Process the login state
-        await authObj.handleRedirectCallback();
-
-        isAuthenticated = await authObj.isAuthenticated();
-
-        if (isAuthenticated) {
-            // show the gated content
-            //console.log(`JS2: Is Authenticated: True`);
-            //const token = await authObj.getTokenSilently();
-            //const userInfo = await authObj.getUser();
-            //console.log(`UserInfo: ${JSON.stringify(userInfo, null, '\t')}`);
-            //console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
-            //const claims = await authObj.getIdTokenClaims();
-            //console.log(`Claims: ${JSON.stringify(claims, null, '\t')}`);
-        }
-        window.history.replaceState({}, document.title, "/");
-    }
-    return isAuthenticated;
-
 };
 
 

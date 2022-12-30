@@ -13,7 +13,7 @@ thread_local! {
 }
 
 pub(crate) fn show_report_issue_dlg(do_show: bool) {
-    let document = gloo_utils::document();
+    let document = gloo::utils::document();
 
     document.get_element_by_id("formSummary")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
@@ -49,7 +49,7 @@ pub(crate) fn report_issue() -> Html
         Callback::from(move |evt: MouseEvent|{
             evt.prevent_default();
             evt.stop_propagation();
-            let document = gloo_utils::document();
+            let document = gloo::utils::document();
             let btn_elm = evt.target()
                 .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
                 .unwrap();
@@ -87,7 +87,7 @@ pub(crate) fn report_issue() -> Html
                 spinner_state.set("d-none");
                 btn_elm.set_disabled(false);
                 if let Err(err) = rslt {
-                    gloo_dialogs::alert(&format!("Failed to submit report: {:#?}", err));
+                    gloo::dialogs::alert(&format!("Failed to submit report: {:#?}", err));
                 } else {
                     show_report_issue_dlg(false);
                 }

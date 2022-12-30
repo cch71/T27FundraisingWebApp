@@ -20,8 +20,8 @@ pub(crate) struct SpreadingJobsReportViewProps {
 #[function_component(SpreadingJobsReportView)]
 pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
     let report_state = use_state(||ReportViewState::IsLoading);
-    let history = use_history().unwrap();
-    let is_fr_editable = is_fundraiser_locked() || is_fundraiser_finalized();
+    let history = use_navigator().unwrap();
+    let is_fr_editable = is_fundraiser_editable();
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
@@ -41,9 +41,9 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
     };
     let on_view_or_edit_order = {
         let history = history.clone();
-        Callback::once(move |evt: MouseEvent| {
+        move |evt: MouseEvent| {
             on_view_or_edit_from_rpt(evt, history.clone());
-        })
+        }
     };
 
     let on_edit_spreading = {
@@ -123,7 +123,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                 if spreading == 0 {
                                     return html!{};
                                 }
-                                let enable_spreading_button = spreading != 0 && !is_fr_editable;
+                                let enable_spreading_button = spreading != 0 && is_fr_editable;
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("N/A".to_string(), "N/A".to_string()),

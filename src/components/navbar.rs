@@ -1,7 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 use web_sys::{MouseEvent};
-use crate::data_model::*;
 use crate::AppRoutes;
 
 
@@ -12,12 +11,13 @@ pub(crate) struct AppNavProps {
     pub(crate) isadmin: bool,
     pub(crate) onlogoff: Callback<MouseEvent>,
     pub(crate) onreportissue: Callback<MouseEvent>,
+    pub(crate) isactiveorder: bool,
 }
 
 #[function_component(AppNav)]
 pub(crate) fn app_nav(props: &AppNavProps) -> Html
 {
-    let _ = use_history().unwrap(); // This forces re-render on path changes
+    let _ = use_navigator().unwrap(); // This forces re-render on path changes
     //log::info!("~~~~~~~ Re Rendered ~~~~~~~~~~~~~~");
     let userlabel = if props.username != props.userid {
         format!("{} ({})", props.username, props.userid)
@@ -45,7 +45,7 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html
                             {"Home"}
                         </Link<AppRoutes>>
                     </li>
-                    if is_active_order() {
+                    if props.isactiveorder {
                         <li class="nav-item">
                             <Link<AppRoutes> classes="nav-link" to={AppRoutes::OrderForm} >
                                 {"Order"}
@@ -70,6 +70,9 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html
                             </Link<AppRoutes>>
                             <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FundraiserCloseout} >
                                 {"Closeout Fundraiser"}
+                            </Link<AppRoutes>>
+                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FrConfig} >
+                                {"Configure Fundraiser"}
                             </Link<AppRoutes>>
                         }
                         <a class="dropdown-item" onclick={props.onreportissue.clone()} href="#" data-bs-toggle="modal">

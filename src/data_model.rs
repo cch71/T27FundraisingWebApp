@@ -2,10 +2,11 @@ use serde::{Deserialize, Serialize};
 use lazy_static::lazy_static;
 use std::sync::{RwLock, Arc};
 use chrono::prelude::*;
-use std::collections::{BTreeMap};
+use std::collections::BTreeMap;
 use rust_decimal::prelude::*;
-use gloo_storage::{LocalStorage, Storage};
+use gloo::storage::{LocalStorage, Storage};
 use std::time::{ Duration };
+use yew::prelude::*;
 
 pub(crate) use crate::data_model_reports::*;
 pub(crate) use crate::data_model_orders::*;
@@ -31,6 +32,9 @@ r#"
     lastModifiedTime
     neighborhoods {
       name
+      city
+      zipcode
+      isVisible
       distributionPoint
     }
     mulchDeliveryConfigs {
@@ -73,19 +77,21 @@ r#"
 //   to force update reload of config even if last_modified_time hasn't changed
 static LOCAL_STORE_SCHEMA_VER: u32 = 020501;
 
+pub(crate) type UserMapType = BTreeMap<String,UserInfo>;
+
 lazy_static! {
     static ref NEIGHBORHOODS: RwLock<Option<Arc<Vec<Neighborhood>>>> = RwLock::new(None);
     static ref PRODUCTS: RwLock<Option<Arc<BTreeMap<String, ProductInfo>>>> = RwLock::new(None);
     static ref DELIVERIES: RwLock<Option<Arc<BTreeMap<u32, DeliveryInfo>>>> = RwLock::new(None);
     static ref FRCONFIG: RwLock<Option<Arc<FrConfig>>> = RwLock::new(None);
     // map<uid,(name, group)>
-    static ref USER_MAP: RwLock<Arc<BTreeMap<String,UserInfo>>> = RwLock::new(Arc::new(BTreeMap::new()));
+    static ref USER_MAP: RwLock<Arc<UserMapType>> = RwLock::new(Arc::new(BTreeMap::new()));
     static ref FR_CLOSURE_DATA: RwLock<Arc<BTreeMap<String,FrClosureMapData>>> = RwLock::new(Arc::new(BTreeMap::new()));
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub(crate) struct UserInfo {
     pub(crate) name: String,
     pub(crate) group: String,
@@ -96,13 +102,14 @@ pub(crate) struct UserInfo {
 pub(crate) struct FrConfig {
     pub(crate) kind: String,
     pub(crate) description: String,
-    pub(crate) last_modified_time: String,
+    // pub(crate) last_modified_time: String,
     pub(crate) is_locked: bool,
     pub(crate) is_finalized: bool,
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
+#[derive(Debug, Clone)]
 pub(crate) struct DeliveryInfo {
     pub(crate) delivery_date: DateTime<Utc>,
     pub(crate) new_order_cutoff_date: DateTime<Utc>,
@@ -111,13 +118,29 @@ impl DeliveryInfo {
     pub(crate) fn get_delivery_date_str(&self) -> String {
         self.delivery_date.format("%Y-%m-%d").to_string()
     }
+
+    pub(crate) fn get_new_order_cutoff_date_str(&self) -> String {
+        self.new_order_cutoff_date.format("%Y-%m-%d").to_string()
+    }
+
+    pub(crate) fn get_api_delivery_date_str(&self) -> String {
+        self.delivery_date.format("%m/%d/%Y").to_string()
+    }
+
+    pub(crate) fn get_api_new_order_cutoff_date_str(&self) -> String {
+        self.new_order_cutoff_date.format("%m/%d/%Y").to_string()
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Properties, Debug, Clone, PartialEq)]
 pub(crate) struct Neighborhood {
     pub(crate) name: String,
+    pub(crate) zipcode: Option<u32>,
+    pub(crate) city: Option<String>,
+    #[serde(alias = "isVisible")]
+    pub(crate) is_visible: bool,
     #[serde(alias = "distributionPoint")]
     pub(crate) distribution_point: String,
 }
@@ -133,6 +156,7 @@ pub(crate) struct ProductPriceBreak {
 
 ////////////////////////////////////////////////////////////////////////////
 //
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub(crate) struct ProductInfo {
     pub(crate) label: String,
     pub(crate) min_units: u32,
@@ -223,10 +247,27 @@ struct ProductsApi {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct MulchDeliveryConfigApi {
     id: u32,
-    #[serde(alias = "date")]
+    #[serde(rename = "date")]
     delivery_date: String,
-    #[serde(alias = "newOrderCutoffDate")]
+    #[serde(rename = "newOrderCutoffDate")]
     new_order_cutoff_date: String,
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) fn new_delivery_info(delivery_date: &String, new_order_cutoff: &String) -> DeliveryInfo {
+    let delivery_date = {
+        let nd = NaiveDate::parse_from_str(delivery_date, "%m/%d/%Y").unwrap();
+        Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
+    };
+    let cutoff_date = {
+        let nd = NaiveDate::parse_from_str(new_order_cutoff, "%m/%d/%Y").unwrap();
+        Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
+    };
+    DeliveryInfo{
+        delivery_date: delivery_date,
+        new_order_cutoff_date: cutoff_date,
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -235,7 +276,7 @@ fn process_config_data(config: FrConfigApi) {
     *FRCONFIG.write().unwrap() = Some(Arc::new(FrConfig {
         kind: config.kind,
         description: config.description,
-        last_modified_time: config.last_modified_time,
+        // last_modified_time: config.last_modified_time,
         is_locked: config.is_locked,
         is_finalized: config.finalization_data.is_some(),
     }));
@@ -243,12 +284,8 @@ fn process_config_data(config: FrConfigApi) {
 
     let mut deliveries = BTreeMap::new();
     for delivery in config.mulch_delivery_configs {
-        let delivery_date = NaiveDate::parse_from_str(&delivery.delivery_date, "%m/%d/%Y").unwrap();
-        let cutoff_date = NaiveDate::parse_from_str(&delivery.new_order_cutoff_date, "%m/%d/%Y").unwrap();
-        deliveries.insert(delivery.id, DeliveryInfo{
-            delivery_date: Utc.ymd(delivery_date.year(), delivery_date.month(), delivery_date.day()).and_hms(0, 0, 0),
-            new_order_cutoff_date: Utc.ymd(cutoff_date.year(), cutoff_date.month(), cutoff_date.day()).and_hms(0, 0, 0),
-        });
+        let delivery_info = new_delivery_info(&delivery.delivery_date, &delivery.new_order_cutoff_date);
+        deliveries.insert(delivery.id, delivery_info);
     }
     *DELIVERIES.write().unwrap() = Some(Arc::new(deliveries));
 
@@ -268,7 +305,7 @@ fn process_config_data(config: FrConfigApi) {
             config.users.into_iter().map(|v| (v.id.clone(), UserInfo{name: v.name.clone(), group: v.group.clone()})).collect::<_>();
         if let Ok(mut arc_umap) = USER_MAP.write() {
             Arc::get_mut(&mut *arc_umap).unwrap().append(&mut new_map);
-            Arc::get_mut(&mut *arc_umap).unwrap().insert("fradmin".to_string(), UserInfo{name:"Super User".to_string(), group: "Bear".to_string()});
+            Arc::get_mut(&mut *arc_umap).unwrap().insert("fradmin".to_string(), UserInfo{name:"Super User".to_string(), group: "Admins".to_string()});
         }
     }
     log::info!("Fundraising Config retrieved");
@@ -305,7 +342,7 @@ pub(crate) async fn load_config() {
     let req = GraphQlReq::new(CONFIG_GQL.to_string());
     let rslt = make_gql_request::<ConfigApi>(&req).await;
     if let Err(err) = rslt {
-        gloo_dialogs::alert(&format!("Failed to retrieve config: {:#?}", err));
+        gloo::dialogs::alert(&format!("Failed to retrieve config: {:#?}", err));
         return;
     }
 
@@ -339,6 +376,97 @@ pub(crate) fn get_username_from_id(uid: &str) -> Option<String> {
 
 ////////////////////////////////////////////////////////////////////////////
 //
+static SET_PRODUCTS_GQL:&'static str =
+r#"
+mutation {
+  updateConfig(config: {
+    products: [
+      {
+          id: "bags",
+          label: "Bags of Mulch",
+          unitPrice: "***MULCH_UNIT_PRICE***",
+          minUnits: ***MULCH_MIN_UNITS***,
+          priceBreaks: [
+            ***MULCH_PRICE_BREAKS***
+          ]
+      },{
+          id: "spreading",
+          label: "Bags to Spread",
+          unitPrice: "***SPREADING_UNIT_PRICE***"
+      }
+    ]
+  })
+}"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn set_products(products: BTreeMap<String,ProductInfo>)
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+
+
+    let mulch_info = products.get("bags").unwrap();
+    let spreading_info = products.get("spreading").unwrap();
+
+    let mulch_price_breaks_str = mulch_info.price_breaks.iter().map(|v| {
+        format!("\t\t{{\n{}\n{}\n\t\t}}",
+            format!("\t\t\tgt: {},", v.gt),
+            format!("\t\t\tunitPrice: \"{}\",", v.unit_price))
+    })
+    .collect::<Vec<String>>().join(",");
+
+    let query = SET_PRODUCTS_GQL
+        .replace("***SPREADING_UNIT_PRICE***", &spreading_info.unit_price)
+        .replace("***MULCH_UNIT_PRICE***", &mulch_info.unit_price)
+        .replace("***MULCH_MIN_UNITS***", &mulch_info.min_units.to_string())
+        .replace("***MULCH_PRICE_BREAKS***", &mulch_price_breaks_str);
+
+    log::info!("Set Product Mutation:\n{}", &query);
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| {
+        *PRODUCTS.write().unwrap() = Some(Arc::new(products));
+        ()
+    })
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+static SET_DELIVERIES_GQL:&'static str =
+r#"
+mutation {
+  updateConfig(config: {
+    mulchDeliveryConfigs: [
+        ***DELIVERIES_PARAMS***
+    ]
+  })
+}"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn set_deliveries(deliveries: BTreeMap<u32,DeliveryInfo>)
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    let deliveries_str = deliveries.iter().map(|(k,v)| {
+        format!("\t\t{{\n{}\n{}\n{}\n\t\t}}",
+            format!("\t\t\tid: {},", k),
+            format!("\t\t\tdate: \"{}\",", v.get_api_delivery_date_str()),
+            format!("\t\t\tnewOrderCutoffDate: \"{}\"", v.get_api_new_order_cutoff_date_str()))
+    })
+    .collect::<Vec<String>>().join(",");
+
+    let query = SET_DELIVERIES_GQL
+        .replace("***DELIVERIES_PARAMS***", &deliveries_str);
+
+    // log::info!("Set Delivery Mutation:\n{}", &query);
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| {
+        *DELIVERIES.write().unwrap() = Some(Arc::new(deliveries));
+        ()
+    })
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
 pub(crate) fn get_deliveries() -> Arc<BTreeMap<u32,DeliveryInfo>> {
     DELIVERIES.read().unwrap().as_ref().unwrap().clone()
 }
@@ -352,6 +480,58 @@ pub(crate) fn get_delivery_date(delivery_id: &u32) -> String {
 
 ////////////////////////////////////////////////////////////////////////////
 //
+static UPDATE_NEIGHBORHOODS_GQL:&'static str =
+r#"
+mutation {
+  updateNeighborhoods( neighborhoods: [
+    ***HOOD_PARAMS***
+  ])
+}"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn update_neighborhoods(hoods: Vec<Neighborhood>)
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    let neighborhoods_str = hoods.iter().map(|v| {
+        format!("\t\t{{\n{},\n{},{}{}\n{}\n\t\t}}",
+            format!("\t\t\tname: \"{}\"", v.name),
+            format!("\t\t\tdistributionPoint: \"{}\"", v.distribution_point),
+            "***CITY***",
+            "***ZIP***",
+            format!("\t\t\tisVisible: {}", v.is_visible))
+            .replace("***CITY***", &v.city.as_ref().map(|v| format!("\t\t\tcity: \"{}\",", v)).unwrap_or("".to_string()))
+            .replace("***ZIP***", &v.zipcode.as_ref().map(|v| format!("\t\t\tzipcode: {},", v)).unwrap_or("".to_string()))
+    })
+    .collect::<Vec<String>>().join(",");
+
+    let query = UPDATE_NEIGHBORHOODS_GQL
+        .replace("***HOOD_PARAMS***", &neighborhoods_str);
+
+    // log::info!("Set Delivery Mutation:\n{}", &query);
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())?;
+
+    // I don't know if there is any better way. Making DB Query costs money
+    // Trying to merge in place would also take multiple passes through the neighborhood list
+    // so converting it into a map and then replacing list with values
+
+    // Map neighborhood names to neighborhood and add ability to mark dirty
+    let mut merged_hoods = (*get_neighborhoods())
+        .iter()
+        .map(|ni| (ni.name.clone(),ni.clone()) )
+        .collect::<BTreeMap<String, Neighborhood>>();
+
+    for hood in hoods {
+        merged_hoods.insert(hood.name.clone(), hood);
+    }
+
+    *NEIGHBORHOODS.write().unwrap() = Some(Arc::new(merged_hoods.into_values().collect::<Vec<Neighborhood>>()));
+    Ok(())
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
 pub(crate) fn get_neighborhoods() -> Arc<Vec<Neighborhood>>
 {
     NEIGHBORHOODS.read().unwrap().as_ref().unwrap().clone()
@@ -359,12 +539,25 @@ pub(crate) fn get_neighborhoods() -> Arc<Vec<Neighborhood>>
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_neighborhood(hood: &str) -> Option<Neighborhood>
+pub(crate) fn get_neighborhood<T: AsRef<str>>(hood: T) -> Option<Neighborhood>
 {
     NEIGHBORHOODS.read()
         .unwrap()
         .as_ref()
-        .and_then(|v|v.iter().find(|&v|v.name == hood).cloned())
+        .and_then(|v|v.iter().find(|&v|v.name == hood.as_ref()).cloned())
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) fn get_city_and_zip_from_neighborhood<T: AsRef<str>>(hood: T) -> Option<(String, u32)>
+{
+    get_neighborhood(hood).and_then(|v| {
+        if v.city.is_some() && v.zipcode.is_some() {
+            Some((v.city.unwrap(), v.zipcode.unwrap()))
+        } else {
+            None
+        }
+    })
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -443,6 +636,12 @@ pub(crate) fn is_fundraiser_finalized() -> bool {
 }
 
 
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) fn is_fundraiser_editable() -> bool {
+    let is_fr_readonly = is_fundraiser_locked() || is_fundraiser_finalized();
+    !is_fr_readonly || (get_active_user().get_id() == "fradmin")
+}
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -984,6 +1183,156 @@ pub(crate) async fn set_fr_closeout_data(dvars: &FrCloseoutDynamicVars, allocati
     let _ = make_gql_request::<serde_json::Value>(&req).await.unwrap();
 }
 
+////////////////////////////////////////////////////////////////////////////
+//
+static GET_ADDR_API_GQL:&'static str =
+r#"
+{
+  getAddress(***LAT_LNG_PARAMS***) {
+    zipcode
+    city
+    houseNumber
+    street
+  }
+}"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub(crate) struct AddressInfo{
+    #[serde(rename = "houseNumber")]
+    pub(crate) house_number: Option<String>,
+    pub(crate) street: Option<String>,
+    pub(crate) city: Option<String>,
+    pub(crate) zipcode: Option<u32>,
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn get_address_from_lat_lng(lat: f64, lng:f64)
+    -> std::result::Result<AddressInfo,Box<dyn std::error::Error>>
+{
+    let query = GET_ADDR_API_GQL
+        .replace("***LAT_LNG_PARAMS***", &format!("lat: {}, lng: {}", lat, lng));
+
+    #[derive(Deserialize)]
+    struct RespAddressInfo {
+        #[serde(rename = "getAddress")]
+        address_info: AddressInfo,
+    }
+
+    // log::info!("Get Addr Query:\n{}", &query);
+    let req = GraphQlReq::new(query);
+    make_gql_request::<RespAddressInfo>(&req).await.map(|v|v.address_info)
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+//
+static RESET_FUNDRAISER_API_GQL:&'static str =
+r#"
+mutation {
+  resetFundraisingData(doResetUsers: true, doResetOrders: true)
+}"#;
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn reset_fundraiser()
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    let req = GraphQlReq::new(RESET_FUNDRAISER_API_GQL);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_|())?;
+    load_config().await;
+    Ok(())
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+static GET_USERS_FOR_CONFIG_API_GQL:&'static str =
+r#"
+{
+  users {
+    id
+    group
+    firstName
+    lastName
+  }
+}"#;
+////////////////////////////////////////////////////////////////////////////
+//
+#[derive(Serialize, Deserialize, Properties, Debug, Clone, PartialEq)]
+pub(crate) struct UserAdminConfig {
+    pub(crate) id: String,
+    #[serde(rename = "firstName")]
+    pub(crate) first_name: String,
+    #[serde(rename = "lastName")]
+    pub(crate) last_name: String,
+    pub(crate) group: String,
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn get_users_for_admin_config()
+    -> std::result::Result<BTreeMap<String,UserAdminConfig>,Box<dyn std::error::Error>>
+{
+
+    #[derive(Deserialize)]
+    struct RespUserInfo {
+        users: Vec<UserAdminConfig>,
+    }
+
+    // log::info!("Get Addr Query:\n{}", &query);
+    let req = GraphQlReq::new(GET_USERS_FOR_CONFIG_API_GQL);
+    make_gql_request::<RespUserInfo>(&req).await.map(|v| {
+        v.users.into_iter().map(|v| (v.id.clone(),v)).collect::<BTreeMap<String,UserAdminConfig>>()
+    })
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+static ADD_OR_UPDATE_USERS_FOR_CONFIG_API_GQL:&'static str =
+r#"
+mutation {
+  addOrUpdateUsers(users: [
+     ***USERS_PARAMS***
+  ])
+}"#;
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) async fn add_or_update_users_for_admin_config(users: Vec<UserAdminConfig>)
+    -> std::result::Result<(),Box<dyn std::error::Error>>
+{
+    log::info!("Adding or Updating Users: {:#?}", &users);
+
+    let users_str = users.iter().map(|v| {
+        format!("\t\t{{\n{}\n{}\n{}\n{}\n\t\t}}",
+            format!("\t\t\tid: \"{}\"", v.id),
+            format!("\t\t\tfirstName: \"{}\"", v.first_name),
+            format!("\t\t\tlastName: \"{}\"", v.last_name),
+            format!("\t\t\tgroup: \"{}\"", v.group))
+    })
+    .collect::<Vec<String>>().join(",");
+
+    let query = ADD_OR_UPDATE_USERS_FOR_CONFIG_API_GQL
+        .replace("***USERS_PARAMS***", &users_str);
+
+    let req = GraphQlReq::new(query);
+    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())?;
+
+    // I don't know if there is any better way. Making DB Query costs money
+    // Trying to merge in place would also take multiple passes through the neighborhood list
+    // so converting it into a map and then replacing list with values
+    let mut new_map: UserMapType = users.into_iter().map(|v| {
+        let ui = UserInfo{name:format!("{} {}", v.first_name, v.last_name), group: v.group};
+        (v.id, ui)
+    }).collect();
+    if let Ok(mut arc_umap) = USER_MAP.write() {
+        Arc::get_mut(&mut *arc_umap).unwrap().append(&mut new_map);
+    }
+
+    Ok(())
+}
 
 // static TEST_ADMIN_API_GQL:&'static str =
 // r#"

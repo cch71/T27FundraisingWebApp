@@ -20,5 +20,5 @@ extern "C" {
 }
 
 pub fn get_modal_by_id(id: &str) -> Option<Modal> {
-    gloo_utils::document().get_element_by_id(id).and_then(|v| Some(Modal::new(v)))
+    gloo::utils::document().get_element_by_id(id).and_then(|v| Some(Modal::new(v)))
 }

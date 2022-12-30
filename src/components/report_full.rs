@@ -22,8 +22,8 @@ pub(crate) struct FullReportViewProps {
 #[function_component(FullReportView)]
 pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
     let report_state = use_state(||ReportViewState::IsLoading);
-    let history = use_history().unwrap();
-    let is_fr_editable = is_fundraiser_locked() || is_fundraiser_finalized();
+    let history = use_navigator().unwrap();
+    let is_fr_editable = is_fundraiser_editable();
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
@@ -43,9 +43,9 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
     };
     let on_view_or_edit_order = {
         let history = history.clone();
-        Callback::once(move |evt: MouseEvent| {
+        move |evt: MouseEvent| {
             on_view_or_edit_from_rpt(evt, history.clone());
-        })
+        }
     };
 
     let on_edit_spreading = {
@@ -126,18 +126,18 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                         <tbody>
                         {
                             orders.into_iter().map(|v|{
-                                let mut spreading = "".to_string();
+                                let mut spreading:u64 = 0;
                                 let mut bags = "".to_string();
                                 for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
                                     if purchase["productId"].as_str().unwrap() == "spreading" {
-                                        spreading = purchase["numSold"].as_u64().unwrap().to_string();
+                                        spreading = purchase["numSold"].as_u64().unwrap();
                                         continue;
                                     } else if purchase["productId"].as_str().unwrap() == "bags" {
                                         bags = purchase["numSold"].as_u64().unwrap().to_string();
                                         continue;
                                     }
                                 }
-                                let enable_spreading_button = spreading.len()!=0 && !is_fr_editable;
+                                let enable_spreading_button = 0 != spreading && is_fr_editable;
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("Donation".to_string(), "Donation".to_string()),
@@ -157,7 +157,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                         <td>{v["customer"]["neighborhood"].as_str().unwrap()}</td>
                                         <td data-deliveryid={delivery_id}>{delivery_date}</td>
                                         <td>{spreaders.clone()}</td>
-                                        <td>{&spreading}</td>
+                                        <td>{&spreading.to_string()}</td>
                                         <td>{&bags}</td>
                                         <td>{v["specialInstructions"].as_str().unwrap_or("")}</td>
                                         <td>{to_money_str(v["amountFromDonations"].as_str())}</td>
