@@ -73,7 +73,7 @@ support the type safety compilation and so maintenance was problematic and in ge
 There was also an expectation that it was easier for contributors to pickup javascript/typescript.
 This turned out to not be true either.  To that end the 2nd version of this project was switched to the [Yew Rust Framework](https://yew.rs/).
 This increased performance for app compilation, performance in the client, true type validation, easier bug fixes and feature additions.
-The tradeoff is as the app gained functionality load time while not as of yet problematic did increase.  At some point when this
+The tradeoff is as the app gained functionality load time did increase. However not enough to be an issue.  At some point when this
 does get to be problematic then splitting up the app into different WASM modules will solve this issue.
 
 ## Being served from AWS Amplify
