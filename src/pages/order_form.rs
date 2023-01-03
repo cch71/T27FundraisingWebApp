@@ -297,7 +297,7 @@ pub fn hood_selector() -> Html
     let mut did_find_selected_hood = false;
 
     html! {
-        <div class="form-floating col-md-3">
+        <div class="form-floating col-md-4">
             <select class="form-control" id="formNeighborhood" onchange={on_hood_change} required=true>
                 {
                     get_neighborhoods().iter().filter(|hood_info| hood_info.is_visible).map(|hood_info| {
@@ -592,33 +592,12 @@ pub fn order_form_fields() -> Html
             }
 
             <div class="row mb-2 g-2">
-                <div class="form-floating col-md">
+                <div class="form-floating col-md-6">
                     <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formCustomerName"
                            placeholder="Name" required=true
                            value={order.customer.name.clone()} />
                     <label for="formCustomerName">
                         {"Customer Name"}<RequiredSmall/>
-                    </label>
-                </div>
-            </div>
-
-            <div class="row mb-2 g-2">
-                <HoodSelector/>
-                <div class="form-floating col-md-2" id="formZipcodeFloatDiv">
-                    <input class="form-control" type="number" autocomplete="fr-new-cust-info" id="formZipcode"
-                           pattern="[0-9]{5}"
-                           placeholder="Zipcode"
-                           value={order.customer.zipcode.map(|v|v.to_string())}/>
-                    <label for="formZipcode">
-                        {"Zipcode"}
-                    </label>
-                </div>
-                <div class="form-floating col-md-2" id="formCityFloatDiv">
-                    <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formCity"
-                           placeholder="City"
-                           value={order.customer.city.clone()}/>
-                    <label for="formCity">
-                        {"City"}
                     </label>
                 </div>
                 <div class="form-floating col-md-2" id="formPhoneFloatDiv">
@@ -632,7 +611,7 @@ pub fn order_form_fields() -> Html
                         <RequiredSmall/>
                     </label>
                 </div>
-                <div class="form-floating col-md-3">
+                <div class="form-floating col-md-4">
                     <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formEmail"
                            placeholder="Email"
                            value={order.customer.email.clone()}/>
@@ -641,24 +620,49 @@ pub fn order_form_fields() -> Html
             </div>
 
             <div class="row mb-2 g-2">
-                <button class="btn btn-outline-info order-edt-btn col-md-1 mt-2"
-                    id="btnGeolocate"
-                    onclick={on_geolocate}>
-                    <i class="bi bi-geo" fill="currentColor"></i>
-                </button>
-                <div class="form-floating col-md-6">
-                    <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formAddr1"
-                           placeholder="House Number/Street" required=true
-                           value={order.customer.addr1.clone()} />
-                    <label for="formAddr1">
-                    {"House Number/Street"}<RequiredSmall/>
-                    </label>
+                <div class="input-group col">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-outline-info order-edt-btn"
+                            id="btnGeolocate"
+                            onclick={on_geolocate}>
+                            <i class="bi bi-geo" fill="currentColor"></i>
+                        </button>
+                    </div>
+                    <div class="form-floating">
+                        <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formAddr1"
+                               placeholder="House Number/Street" required=true
+                               value={order.customer.addr1.clone()} />
+                        <label for="formAddr1">
+                            {"House Number/Street"}<RequiredSmall/>
+                        </label>
+                    </div>
                 </div>
-                <div class="form-floating col-md-5">
+                <div class="form-floating col">
                     <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formAddr2"
                            placeholder="Suite, etc..."
                            value={order.customer.addr2.clone()}/>
                     <label for="formAddr2">{"Suite, etc..."}</label>
+                </div>
+            </div>
+
+            <div class="row mb-2 g-2">
+                <HoodSelector/>
+                <div class="form-floating col-md-3" id="formZipcodeFloatDiv">
+                    <input class="form-control" type="number" autocomplete="fr-new-cust-info" id="formZipcode"
+                           pattern="[0-9]{5}"
+                           placeholder="Zipcode"
+                           value={order.customer.zipcode.map(|v|v.to_string())}/>
+                    <label for="formZipcode">
+                        {"Zipcode"}
+                    </label>
+                </div>
+                <div class="form-floating col-md-5" id="formCityFloatDiv">
+                    <input class="form-control" type="text" autocomplete="fr-new-cust-info" id="formCity"
+                           placeholder="City"
+                           value={order.customer.city.clone()}/>
+                    <label for="formCity">
+                        {"City"}
+                    </label>
                 </div>
             </div>
 
