@@ -18,6 +18,8 @@ thread_local! {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
+
+
 /////////////////////////////////////////////////
 //
 #[derive(Properties, PartialEq, Clone, Debug)]
@@ -34,12 +36,66 @@ struct UserCsvRecord {
     uid: Option<String>,
 }
 
+/////////////////////////////////////////////////
+//
+fn process_csv_records(data: Vec<u8>, potential_new_users: &mut BTreeMap<String, UserCsvRecord>)-> Result<(), Box<dyn std::error::Error>> {
+    let mut rdr = csv::Reader::from_reader(&data[..]);
+    for result in rdr.deserialize() {
+
+        let record: UserCsvRecord = result?;
+
+        log::info!("Rec: {:?}", record);
+        let mut new_id:String = record.uid
+            .clone()
+            .unwrap_or_else(|| {
+                format!("{}{}", record.first_name.trim().chars().nth(0).unwrap(), record.last_name)
+            })
+        .chars()
+            .filter(|c| !c.is_whitespace())
+            .collect::<String>()
+            .to_lowercase();
+
+        // Make sure there aren't dups in the uploaded list and create a unique id if it isn't
+        if let Some(found_user) = potential_new_users.get(&new_id) {
+            if found_user.first_name == record.first_name.trim() &&
+                found_user.last_name == record.last_name.trim()
+            {
+                //Duplicate in list
+                continue;
+            } else {
+                let mut idx = 1;
+                loop {
+                    let new_id_candidate = format!("{}{}", new_id, idx);
+                    if potential_new_users.contains_key(&new_id_candidate) {
+                        idx = idx+1;
+                        continue;
+                    }
+                    new_id = new_id_candidate;
+                    break;
+                }
+            }
+        }
+        potential_new_users.insert(new_id, record);
+    }
+    Ok(())
+}
+
 #[function_component(UploadUsersDlg)]
 fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
 {
     let users = use_state_eq(|| Vec::<UserAdminConfig>::new());
     let dup_users = use_state_eq(|| Vec::<UserCsvRecord>::new());
     let is_working = use_state_eq(|| false);
+
+    let on_cancel = {
+        move |_evt: MouseEvent| {
+            let document = gloo::utils::document();
+            document.get_element_by_id("fileupload")
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                .unwrap()
+                .set_value("");
+        }
+    };
 
     let on_submit = {
         let onadd = props.onadd.clone();
@@ -49,6 +105,11 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
             onadd.emit((*users).clone());
             users.set(Vec::<UserAdminConfig>::new());
             dup_users.set(Vec::<UserCsvRecord>::new());
+            let document = gloo::utils::document();
+            document.get_element_by_id("fileupload")
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                .unwrap()
+                .set_value("");
         }
     };
 
@@ -74,6 +135,9 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
                     .map(File::from);
                 results.extend(files);
                 log::info!("Found some files: {:#?}", &results);
+            } else {
+                log::info!("No files so returning");
+                return;
             }
 
             let is_working = is_working.clone();
@@ -92,44 +156,15 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
                         Ok(raw_data) => raw_data,
                         Err(err) => {
                             gloo::dialogs::alert(&format!("Failed to read selected file: {:#?}", err));
+                            input.set_value("");
                             return;
                         }
                     };
-                    let mut rdr = csv::Reader::from_reader(&data[..]);
-                    for result in rdr.deserialize() {
-                        let record: UserCsvRecord = result.unwrap();
-                        log::info!("Rec: {:?}", record);
-                        let mut new_id:String = record.uid
-                            .clone()
-                            .unwrap_or_else(|| {
-                                format!("{}{}", record.first_name.trim().chars().nth(0).unwrap(), record.last_name)
-                            })
-                            .chars()
-                            .filter(|c| !c.is_whitespace())
-                            .collect::<String>()
-                            .to_lowercase();
-
-                        // Make sure there aren't dups in the uploaded list and create a unique id if it isn't
-                        if let Some(found_user) = potential_new_users.get(&new_id) {
-                            if found_user.first_name == record.first_name.trim() &&
-                                found_user.last_name == record.last_name.trim()
-                            {
-                                //Duplicate in list
-                                continue;
-                            } else {
-                                let mut idx = 1;
-                                loop {
-                                    let new_id_candidate = format!("{}{}", new_id, idx);
-                                    if potential_new_users.contains_key(&new_id_candidate) {
-                                        idx = idx+1;
-                                        continue;
-                                    }
-                                    new_id = new_id_candidate;
-                                    break;
-                                }
-                            }
-                        }
-                        potential_new_users.insert(new_id, record);
+                    if let Err(err) = process_csv_records(data, &mut potential_new_users) {
+                        gloo::dialogs::alert(&format!("Error in users file make sure proper headers are in place:\n{:#?}", err));
+                        input.set_value("");
+                        potential_new_users.clear();
+                        break;
                     }
                 }
 
@@ -184,7 +219,6 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
 
                 users.set(new_users);
                 dup_users.set(found_dup_users);
-
                 is_working.set(false);
             });
         }
@@ -215,7 +249,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
                             </div>
                             <div class="row mt-2">
                                 <input
-                                    id="file-upload"
+                                    id="fileupload"
                                     type="file"
                                     accept=".csv"
                                     multiple={false}
@@ -261,7 +295,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{"Cancel"}</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick={on_cancel}>{"Cancel"}</button>
                         <button type="button" class="btn btn-primary float-end" data-bs-dismiss="modal" onclick={on_submit}>
                             {"Submit"}
                         </button>
