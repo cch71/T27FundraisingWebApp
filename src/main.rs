@@ -1,6 +1,7 @@
 
 mod bootstrap;
 mod datatable;
+mod leaflet;
 mod google_charts;
 mod auth_utils;
 mod geolocate;

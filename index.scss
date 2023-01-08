@@ -85,7 +85,7 @@ html {
             td:nth-child(2) { text-align: end; }
         }
     }
-    
+
     #topSellersCard {
         #topSellersTable {
             td:nth-child(3) { text-align: end; }
@@ -217,6 +217,10 @@ html {
     //  // width: 99%;
     //     // padding: 0;
     // }
+
+    #sellMap {
+        height: 75vh;
+    }
 
     #spreadingDlg {
         .make-disabled {

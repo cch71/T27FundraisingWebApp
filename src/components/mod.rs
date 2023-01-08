@@ -6,6 +6,7 @@ pub(crate) mod navbar;
 pub(crate) mod report_quick;
 pub(crate) mod report_deliveries;
 pub(crate) mod report_distribution_points;
+pub(crate) mod report_sell_map;
 pub(crate) mod report_full;
 pub(crate) mod report_verify;
 pub(crate) mod report_spreading_jobs;
