@@ -1,6 +1,7 @@
 
 mod bootstrap;
 mod datatable;
+mod leaflet;
 mod google_charts;
 mod auth_utils;
 mod geolocate;
@@ -37,6 +38,14 @@ use pages::{
     closeout_fundraiser::CloseoutFundraiser,
     fr_config::FrConfig,
 };
+
+/////////////////////////////////////////////////
+///
+pub(crate) fn get_cloud_api_url() -> &'static str {
+    //AWS API URL
+    //invokeUrl: 'https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod'
+    "https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod"
+}
 
 /////////////////////////////////////////////////
 ///

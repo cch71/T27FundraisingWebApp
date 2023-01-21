@@ -5,8 +5,13 @@ use gloo::storage::{LocalStorage, SessionStorage, Storage};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 use crate::auth_utils::{get_active_user};
 use crate::data_model::{get_fr_config};
+use lazy_static::lazy_static;
 
 pub(crate) static ALL_USERS_TAG: &'static str = "doShowAllUsers";
+
+lazy_static! {
+    static ref GEOJSONURL: String = format!("{}/salelocs", crate::get_cloud_api_url());
+}
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub(crate) enum ReportViews {
@@ -15,6 +20,7 @@ pub(crate) enum ReportViews {
     Full,
     SpreadingJobs,
     AllocationSummary,
+    SellMap,
 
     // Admin Only Reports
     UnfinishedSpreadingJobs,
@@ -33,6 +39,7 @@ impl std::fmt::Display for ReportViews {
            ReportViews::OrderVerification => write!(f, "Order Verfication"),
            ReportViews::DistributionPoints => write!(f, "Distribution Point"),
            ReportViews::Deliveries => write!(f, "Deliveries"),
+           ReportViews::SellMap => write!(f, "Sales Map"),
            ReportViews::AllocationSummary => write!(f, "Allocation Summary"),
        }
     }
@@ -50,6 +57,7 @@ impl std::str::FromStr for ReportViews {
             "Order Verfication" => Ok(ReportViews::OrderVerification),
             "Distribution Point" => Ok(ReportViews::DistributionPoints),
             "Deliveries" => Ok(ReportViews::Deliveries),
+            "Sales Map" => Ok(ReportViews::SellMap),
             "Allocation Summary" => Ok(ReportViews::AllocationSummary),
             _ => Err(format!("'{}' is not a valid value for ReportViews", s)),
         }
@@ -60,6 +68,7 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
     let mut reports = vec![
         ReportViews::Quick,
         ReportViews::Full,
+        ReportViews::SellMap,
     ];
 
     if get_fr_config().kind == "mulch" {
@@ -579,4 +588,37 @@ pub(crate) fn load_report_settings() -> ReportViewSettings
             seller_id_filter: get_active_user().get_id(),
         }
     )
+}
+
+pub(crate) async fn get_sales_geojson()
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    use gloo::net::http::Request;
+    // log::info!("Running Query: {}", &query);
+
+    let mut raw_resp: serde_json::Value = Request::get(&*GEOJSONURL)
+        .header("Content-Type", "application/json")
+        .header("Authorization", &format!("Bearer {}", &get_active_user().token))
+        .send()
+        .await?
+        .json()
+        .await?;
+    let host_str = gloo::utils::window().location().host().unwrap_or("".to_string());
+    // log::info!("Hostname: {host_str}");
+    if host_str.starts_with("localhost") {
+        log::info!("GeoJSON Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
+    }
+
+    if !raw_resp["message"].is_null() {
+        let err_str = serde_json::to_string(&raw_resp).unwrap_or("Failed to stringify json resp".to_string());
+        use std::io::{Error, ErrorKind};
+        return Err(Box::new(
+                Error::new(
+                    ErrorKind::Other,
+                    format!("GeoJSON request returned raw error:\n {}", err_str).as_str())));
+    }
+
+    // make_report_query(query).await
+    Ok(raw_resp["features"].take().as_array_mut().unwrap().drain(..).collect())
+
 }

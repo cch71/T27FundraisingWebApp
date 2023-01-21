@@ -273,12 +273,18 @@ pub(crate) fn new_delivery_info(delivery_date: &String, new_order_cutoff: &Strin
 ////////////////////////////////////////////////////////////////////////////
 //
 fn process_config_data(config: FrConfigApi) {
+
+    let is_finalized = match config.finalization_data.as_ref() {
+        Some(finalized_data) => 0!=finalized_data.money_pool_for_scout_delivery.len(),
+        None => false,
+    };
+
     *FRCONFIG.write().unwrap() = Some(Arc::new(FrConfig {
         kind: config.kind,
         description: config.description,
         // last_modified_time: config.last_modified_time,
         is_locked: config.is_locked,
-        is_finalized: config.finalization_data.is_some(),
+        is_finalized: is_finalized,
     }));
     *NEIGHBORHOODS.write().unwrap() = Some(Arc::new(config.neighborhoods));
 
