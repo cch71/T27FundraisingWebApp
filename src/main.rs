@@ -41,6 +41,14 @@ use pages::{
 
 /////////////////////////////////////////////////
 ///
+pub(crate) fn get_cloud_api_url() -> &'static str {
+    //AWS API URL
+    //invokeUrl: 'https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod'
+    "https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod"
+}
+
+/////////////////////////////////////////////////
+///
 pub(crate) fn get_html_input_value(id: &str, document: &web_sys::Document) -> Option<String> {
     let value = document.get_element_by_id(id)
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())

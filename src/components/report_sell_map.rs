@@ -50,7 +50,7 @@ pub(crate) fn report_sell_view() -> Html {
         ReportViewState::IsLoading => html! { <ReportLoadingSpinny/> },
         ReportViewState::ReportHtmlGenerated(_) => {
             html!{
-                <div class="container">
+                <div class="sale-map-container">
                     <div id={SELLMAPID} />
                 </div>
             }

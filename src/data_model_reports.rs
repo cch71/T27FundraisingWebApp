@@ -5,8 +5,13 @@ use gloo::storage::{LocalStorage, SessionStorage, Storage};
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 use crate::auth_utils::{get_active_user};
 use crate::data_model::{get_fr_config};
+use lazy_static::lazy_static;
 
 pub(crate) static ALL_USERS_TAG: &'static str = "doShowAllUsers";
+
+lazy_static! {
+    static ref GEOJSONURL: String = format!("{}/salelocs", crate::get_cloud_api_url());
+}
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub(crate) enum ReportViews {
@@ -592,11 +597,32 @@ const GEOJSONSTR: &str = r#"
 pub(crate) async fn get_sales_geojson()
     -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
 {
+use gloo::net::http::Request;
     // log::info!("Running Query: {}", &query);
-    // make_report_query(query).await
 
-    let resp:Vec<serde_json::Value> = serde_json::from_str(GEOJSONSTR)
-        .unwrap_or_else(|_|Vec::<serde_json::Value>::new());
-    Ok(resp)
+    let raw_resp: serde_json::Value = Request::get(&*GEOJSONURL)
+        .header("Content-Type", "application/json")
+        .header("Authorization", &format!("Bearer {}", &get_active_user().token))
+        .send()
+        .await?
+        .json()
+        .await?;
+    let host_str = gloo::utils::window().location().host().unwrap_or("".to_string());
+    // log::info!("Hostname: {host_str}");
+    if host_str.starts_with("localhost") {
+        log::info!("GeoJSON Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
+    }
+
+    if !raw_resp["message"].is_null() {
+        let err_str = serde_json::to_string(&raw_resp).unwrap_or("Failed to stringify json resp".to_string());
+        use std::io::{Error, ErrorKind};
+        return Err(Box::new(
+                Error::new(
+                    ErrorKind::Other,
+                    format!("GeoJSON request returned raw error:\n {}", err_str).as_str())));
+    }
+
+    // make_report_query(query).await
+    Ok(vec![raw_resp])
 
 }

@@ -218,9 +218,14 @@ html {
     //     // padding: 0;
     // }
 
-    #sellMap {
-        height: 75vh;
-    }
+	.sale-map-container {
+		width: 100%;
+
+		#sellMap {
+			height: 75vh;
+			width: 100%;
+		}
+	}
 
     #spreadingDlg {
         .make-disabled {

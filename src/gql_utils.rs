@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 use crate::auth_utils::{get_active_user};
 
 lazy_static! {
-    static ref GQLURL: String = format!("{}/graphql", get_cloud_api_url());
+    static ref GQLURL: String = format!("{}/graphql", crate::get_cloud_api_url());
 }
 
 
@@ -19,12 +19,6 @@ impl GraphQlReq {
             query: query.as_ref().to_string(),
         }
     }
-}
-
-fn get_cloud_api_url() -> &'static str {
-    //AWS API URL
-    //invokeUrl: 'https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod'
-    "https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod"
 }
 
 pub(crate) async fn make_gql_request<T>(req: &GraphQlReq)
