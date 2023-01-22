@@ -45,6 +45,7 @@ pub(crate) fn report_quick_view() -> Html {
                 <tr>
                     <th>{"Order Owner"}</th>
                     <th>{"Name"}</th>
+                    <th>{"Delivery Date"}</th>
                     <th>{"Bags Left To Spread"}</th>
                 </tr>
             };

@@ -216,6 +216,7 @@ const getSpreadingJobsUnfinishedViewReportDataTable = (params) => {
     let tableColumns = [
         { title: "Order Owner", name: "OrderOwner" },
         { title: "Name" },
+        { title: "Delivery Date" },
         { title: "Bags Left To Spread", className: "all" }
     ];
 
