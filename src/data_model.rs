@@ -489,7 +489,7 @@ pub(crate) fn get_delivery_date(delivery_id: &u32) -> String {
 static UPDATE_NEIGHBORHOODS_GQL:&'static str =
 r#"
 mutation {
-  updateNeighborhoods( neighborhoods: [
+  addOrUpdateNeighborhoods( neighborhoods: [
     ***HOOD_PARAMS***
   ])
 }"#;
