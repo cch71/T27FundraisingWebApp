@@ -101,7 +101,7 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
             };
             html!{
                 <div class="data-table-report">
-                    <table class="display responsive nowrap collapsed" role="grid" style="width: 100%;">
+                    <table class="display responsive nowrap collapsed" role="grid" cellspacing="0" width="100%">
                         <thead>
                             {header_footer.clone()}
                         </thead>
