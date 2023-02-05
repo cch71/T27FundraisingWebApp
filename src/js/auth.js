@@ -60,6 +60,7 @@ const loginUser = async () => {
             }
         }).catch(() => {
             console.error('Failed to refresh token');
+            logoutUser()
         });
     }, 6000)
 };
@@ -67,7 +68,7 @@ const loginUser = async () => {
 /**
  * Logs the user out
  */
-const logoutUser = async (targetUrl) => {
+const logoutUser = async () => {
     // console.log("Starting logout");
     keycloak.logout({
         redirectUri: window.location.origin
