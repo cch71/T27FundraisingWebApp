@@ -1,6 +1,25 @@
 
 /////////////////////////////////////////////////////////////////////
 //
+const getCommonDtOptions = (tableColumns) => {
+    return {
+        scrollResize: true,
+        scrollY: 100,
+        scrollCollapse: true,
+        paging: false,
+        lengthChange: false,
+        responsive: true,
+        deferRender: true,
+        dom: 'Bfrtip', //https://datatables.net/reference/option/dom
+        buttons: [
+            "csv", "copy", "excel", "print", 'colvis'
+        ],
+        columns: tableColumns
+    };
+}
+
+/////////////////////////////////////////////////////////////////////
+//
 const getQuickViewReportDataTable = (params) => {
     console.log("Setting Quick Report View");
     const tableColumns = [
@@ -22,24 +41,22 @@ const getQuickViewReportDataTable = (params) => {
         { title: "Actions", "orderable": false, className: "all" }
     ];
 
-    return new DataTable(
-        params.id,
-        {
-            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
-            buttons: [
-                "csv", "copy", "excel", "print", 'colvis'
-            ],
-            responsive: true,
-            deferRender: true,
-            language: {
-                paginate: {
-                    previous: "<<",
-                    next: ">>"
-                }
-            },
-            columns: tableColumns
-        }
-    );
+    return new DataTable(params.id, getCommonDtOptions(tableColumns));
+};
+
+/////////////////////////////////////////////////////////////////////
+//
+const getMoneyCollectionReportDataTable = (params) => {
+    console.log("Setting Money Collection Report View");
+    const tableColumns = [
+        { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner },
+        { title: "Delivery Date", name: "DeliveryDate" },
+        { title: "Total From Checks", name: "TotalFromChecks"},
+        { title: "Total From Checks", name: "TotalFromCash"},
+        { title: "Total"}
+    ];
+
+    return new DataTable(params.id, getCommonDtOptions(tableColumns));
 };
 
 /////////////////////////////////////////////////////////////////
@@ -58,26 +75,9 @@ const getDeliveriesViewReportDataTable = (params) => {
         { title: "Notes" },
         { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner },
     ];
-
-    return new DataTable(
-        params.id,
-        {
-            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
-            buttons: [
-                "csv", "copy", "excel", "print", 'colvis'
-            ],
-            order: [[ 1, "asc" ]],
-            responsive: true,
-            deferRender: true,
-            language: {
-                paginate: {
-                    previous: "<<",
-                    next: ">>"
-                }
-            },
-            columns: tableColumns
-        }
-    );
+    const dtOpts = getCommonDtOptions(tableColumns);
+    dtOpts["order"] = [[ 1, "asc" ]];
+    return new DataTable(params.id, dtOpts);
 };
 
 /////////////////////////////////////////////////////////////////
@@ -93,24 +93,7 @@ const getDistPointsViewReportDataTable = (params) => {
         tableColumns.push({title: header, className: "all"});
     }
 
-    return new DataTable(
-        params.id,
-        {
-            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
-            buttons: [
-                "csv", "copy", "excel", "print", 'colvis'
-            ],
-            responsive: true,
-            deferRender: true,
-            language: {
-                paginate: {
-                    previous: "<<",
-                    next: ">>"
-                }
-            },
-            columns: tableColumns
-        }
-    );
+    return new DataTable(params.id, getCommonDtOptions(tableColumns));
 };
 
 
@@ -151,24 +134,7 @@ const getFullViewReportDataTable = (params) => {
         { title: "Actions", "orderable": false, className: "all" }
     ];
 
-    return new DataTable(
-        params.id,
-        {
-            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
-            buttons: [
-                "csv", "copy", "excel", "print", 'colvis'
-            ],
-            responsive: true,
-            deferRender: true,
-            language: {
-                paginate: {
-                    previous: "<<",
-                    next: ">>"
-                }
-            },
-            columns: tableColumns
-        }
-    );
+    return new DataTable(params.id, getCommonDtOptions(tableColumns));
 };
 
 /////////////////////////////////////////////////////////////////////
@@ -189,24 +155,7 @@ const getOrderVerificationViewReportDataTable = (params) => {
         { title: "Actions", "orderable": false, className: "all" }
     ];
 
-    return new DataTable(
-        params.id,
-        {
-            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
-            buttons: [
-                "csv", "copy", "excel", "print", 'colvis'
-            ],
-            responsive: true,
-            deferRender: true,
-            language: {
-                paginate: {
-                    previous: "<<",
-                    next: ">>"
-                }
-            },
-            columns: tableColumns
-        }
-    );
+    return new DataTable(params.id, getCommonDtOptions(tableColumns));
 };
 
 /////////////////////////////////////////////////////////////////////
@@ -220,24 +169,7 @@ const getSpreadingJobsUnfinishedViewReportDataTable = (params) => {
         { title: "Bags Left To Spread", className: "all" }
     ];
 
-    return new DataTable(
-        params.id,
-        {
-            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
-            buttons: [
-                "csv", "copy", "excel", "print", 'colvis'
-            ],
-            responsive: true,
-            deferRender: true,
-            language: {
-                paginate: {
-                    previous: "<<",
-                    next: ">>"
-                }
-            },
-            columns: tableColumns
-        }
-    );
+    return new DataTable(params.id, getCommonDtOptions(tableColumns));
 };
 
 /////////////////////////////////////////////////////////////////////
@@ -267,24 +199,7 @@ const getSpreadingJobsViewReportDataTable = (params) => {
         { title: "Actions", "orderable": false, className: "all" }
     ];
 
-    return new DataTable(
-        params.id,
-        {
-            dom: 'Bfrtip', //https://datatables.net/reference/option/dom
-            buttons: [
-                "csv", "copy", "excel", "print", 'colvis'
-            ],
-            responsive: true,
-            deferRender: true,
-            language: {
-                paginate: {
-                    previous: "<<",
-                    next: ">>"
-                }
-            },
-            columns: tableColumns
-        }
-    );
+    return new DataTable(params.id, getCommonDtOptions(tableColumns));
 };
 
 /////////////////////////////////////////////////////////////////////
@@ -306,6 +221,8 @@ const getDataTable = (mapOfParams) => {
         return getOrderVerificationViewReportDataTable(params);
     } else if (params.reportType === "spreadingJobs") {
         return getSpreadingJobsViewReportDataTable(params);
+    } else if (params.reportType === "moneyCollection") {
+        return getMoneyCollectionReportDataTable(params);
     } else if (params.reportType === "spreadingJobsUnfinished") {
         return getSpreadingJobsUnfinishedViewReportDataTable(params);
     }

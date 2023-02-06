@@ -108,7 +108,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
             };
             html!{
                 <div class="data-table-report">
-                    <table class="display responsive nowrap collapsed" role="grid" style="width: 100%;">
+                    <table class="display responsive nowrap collapsed" role="grid" cellspacing="0" width="100%">
                         <thead>
                             {header_footer.clone()}
                         </thead>
