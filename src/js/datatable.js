@@ -44,6 +44,21 @@ const getQuickViewReportDataTable = (params) => {
     return new DataTable(params.id, getCommonDtOptions(tableColumns));
 };
 
+/////////////////////////////////////////////////////////////////////
+//
+const getMoneyCollectionReportDataTable = (params) => {
+    console.log("Setting Money Collection Report View");
+    const tableColumns = [
+        { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner },
+        { title: "Delivery Date", name: "DeliveryDate" },
+        { title: "Total From Checks", name: "TotalFromChecks"},
+        { title: "Total From Checks", name: "TotalFromCash"},
+        { title: "Total"}
+    ];
+
+    return new DataTable(params.id, getCommonDtOptions(tableColumns));
+};
+
 /////////////////////////////////////////////////////////////////
 //
 const getDeliveriesViewReportDataTable = (params) => {
@@ -206,6 +221,8 @@ const getDataTable = (mapOfParams) => {
         return getOrderVerificationViewReportDataTable(params);
     } else if (params.reportType === "spreadingJobs") {
         return getSpreadingJobsViewReportDataTable(params);
+    } else if (params.reportType === "moneyCollection") {
+        return getMoneyCollectionReportDataTable(params);
     } else if (params.reportType === "spreadingJobsUnfinished") {
         return getSpreadingJobsUnfinishedViewReportDataTable(params);
     }

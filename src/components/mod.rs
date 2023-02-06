@@ -4,6 +4,7 @@ pub(crate) mod delete_report_order_dlg;
 pub(crate) mod action_report_buttons;
 pub(crate) mod navbar;
 pub(crate) mod report_quick;
+pub(crate) mod report_money_collection;
 pub(crate) mod report_deliveries;
 pub(crate) mod report_distribution_points;
 pub(crate) mod report_sell_map;

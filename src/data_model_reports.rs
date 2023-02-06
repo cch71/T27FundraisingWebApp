@@ -21,6 +21,7 @@ pub(crate) enum ReportViews {
     SpreadingJobs,
     AllocationSummary,
     SellMap,
+    MoneyCollection,
 
     // Admin Only Reports
     UnfinishedSpreadingJobs,
@@ -41,6 +42,7 @@ impl std::fmt::Display for ReportViews {
            ReportViews::Deliveries => write!(f, "Deliveries"),
            ReportViews::SellMap => write!(f, "Sales Map"),
            ReportViews::AllocationSummary => write!(f, "Allocation Summary"),
+           ReportViews::MoneyCollection => write!(f, "Money Collection"),
        }
     }
 }
@@ -59,6 +61,7 @@ impl std::str::FromStr for ReportViews {
             "Deliveries" => Ok(ReportViews::Deliveries),
             "Sales Map" => Ok(ReportViews::SellMap),
             "Allocation Summary" => Ok(ReportViews::AllocationSummary),
+            "Money Collection" => Ok(ReportViews::MoneyCollection),
             _ => Err(format!("'{}' is not a valid value for ReportViews", s)),
         }
     }
@@ -69,6 +72,7 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
         ReportViews::Quick,
         ReportViews::Full,
         ReportViews::SellMap,
+        ReportViews::MoneyCollection,
     ];
 
     if get_fr_config().kind == "mulch" {
@@ -90,11 +94,15 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
     reports
 }
 
+/////////////////////////////////////////////////////////////////////////////////
+/// This will determine if the switch user option is available in the report
+/// settings dialog
 pub(crate) fn do_show_current_seller(current_view: &ReportViews) -> bool {
     match *current_view {
         ReportViews::Quick=>true,
         ReportViews::Full=>true,
         ReportViews::SpreadingJobs=>true,
+        ReportViews::MoneyCollection=>true,
         _=>false,
     }
 }
@@ -113,6 +121,78 @@ async fn make_report_query(query: String)
     Ok(rslts.mulch_orders)
 }
 
+pub(crate) enum ReportViewState {
+    IsLoading,
+    ReportHtmlGenerated(Vec<serde_json::Value>),
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub(crate) struct ReportViewSettings {
+    pub(crate) current_view: ReportViews,
+    pub(crate) seller_id_filter: String,
+}
+
+pub(crate) fn save_report_settings(settings: &ReportViewSettings)
+    -> std::result::Result<(), Box<dyn std::error::Error>>
+{
+    SessionStorage::set("ReportViewSettings", settings)?;
+    Ok(())
+}
+
+pub(crate) fn delete_report_settings()
+{
+    SessionStorage::delete("ReportViewSettings");
+}
+
+pub(crate) fn load_report_settings() -> ReportViewSettings
+{
+    SessionStorage::get("ReportViewSettings").unwrap_or(
+        ReportViewSettings{
+            current_view: ReportViews::Quick,
+            seller_id_filter: get_active_user().get_id(),
+        }
+    )
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+///
+pub(crate) async fn get_sales_geojson()
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    use gloo::net::http::Request;
+    // log::info!("Running Query: {}", &query);
+
+    let mut raw_resp: serde_json::Value = Request::get(&*GEOJSONURL)
+        .header("Content-Type", "application/json")
+        .header("Authorization", &format!("Bearer {}", &get_active_user().token))
+        .send()
+        .await?
+        .json()
+        .await?;
+    let host_str = gloo::utils::window().location().host().unwrap_or("".to_string());
+    // log::info!("Hostname: {host_str}");
+    if host_str.starts_with("localhost") {
+        log::info!("GeoJSON Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
+    }
+
+    if !raw_resp["message"].is_null() {
+        let err_str = serde_json::to_string(&raw_resp).unwrap_or("Failed to stringify json resp".to_string());
+        use std::io::{Error, ErrorKind};
+        return Err(Box::new(
+                Error::new(
+                    ErrorKind::Other,
+                    format!("GeoJSON request returned raw error:\n {}", err_str).as_str())));
+    }
+
+    // make_report_query(query).await
+    Ok(raw_resp["features"].take().as_array_mut().unwrap().drain(..).collect())
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+///
 static QUICK_RPT_GRAPHQL: &'static str = r"
 {
   mulchOrders(***ORDER_OWNER_PARAM***) {
@@ -146,6 +226,9 @@ pub(crate) async fn get_quick_report_data(order_owner_id: Option<&String>)
     make_report_query(query).await
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+///
 static FULL_RPT_GRAPHQL: &'static str = r"
 {
   mulchOrders(***ORDER_OWNER_PARAM***) {
@@ -189,6 +272,36 @@ pub(crate) async fn get_full_report_data(order_owner_id: Option<&String>)
     make_report_query(query).await
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+///
+static MONEY_COLLECTION_RPT_GRAPHQL: &'static str = r"
+{
+  mulchOrders(***ORDER_OWNER_PARAM***) {
+    ownerId
+    deliveryId
+    amountTotalFromCashCollected
+    amountTotalFromChecksCollected
+    amountTotalCollected
+  }
+}
+";
+
+pub(crate) async fn get_money_collection_report_data(order_owner_id: Option<&String>)
+    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
+{
+    let query = if let Some(order_owner_id) = order_owner_id {
+        MONEY_COLLECTION_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", &format!("ownerId: \"{}\"", order_owner_id))
+    } else {
+        MONEY_COLLECTION_RPT_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
+    };
+    log::info!("Running Query: {}", &query);
+    make_report_query(query).await
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+///
 static DISTRIBUTION_POINTS_RPT_GRAPHQL: &'static str = r#"
 {
   mulchOrders {
@@ -262,6 +375,9 @@ pub(crate) async fn get_distribution_points_report_data()
     })])
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+///
 static DELIVERIES_RPT_GRAPHQL: &'static str = r#"
 {
   mulchOrders {
@@ -292,6 +408,9 @@ pub(crate) async fn get_deliveries_report_data()
             .filter(|v|v["deliveryId"].as_u64().is_some()).collect::<Vec<_>>()))
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+///
 static SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
 {
   mulchOrders(***ORDER_OWNER_PARAM***) {
@@ -329,6 +448,9 @@ pub(crate) async fn get_spreading_jobs_report_data(order_owner_id: Option<&Strin
     make_report_query(query).await
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+///
 static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
 {
   mulchOrders {
@@ -375,6 +497,9 @@ pub(crate) async fn get_unfinished_spreading_jobs_report_data()
         .collect::<Vec<serde_json::Value>>())
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+///
 #[derive(Serialize, Deserialize, Debug)]
 struct SummaryReportStorage {
     summary_report: SummaryReport,
@@ -523,12 +648,10 @@ pub(crate) async fn get_summary_report_data(seller_id: &str, num_top_sellers: u3
     Ok(rslt.summary)
 }
 
-pub(crate) enum ReportViewState {
-    IsLoading,
-    ReportHtmlGenerated(Vec<serde_json::Value>),
-}
 
-
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+///
 static ORDER_VERIFICATION_GRAPHQL: &'static str = r"
 {
   mulchOrders(***ORDER_OWNER_PARAM***) {
@@ -561,63 +684,3 @@ pub(crate) async fn get_order_verfification_report_data(order_owner_id: Option<&
     make_report_query(query).await
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub(crate) struct ReportViewSettings {
-    pub(crate) current_view: ReportViews,
-    pub(crate) seller_id_filter: String,
-}
-
-pub(crate) fn save_report_settings(settings: &ReportViewSettings)
-    -> std::result::Result<(), Box<dyn std::error::Error>>
-{
-    SessionStorage::set("ReportViewSettings", settings)?;
-    Ok(())
-}
-
-pub(crate) fn delete_report_settings()
-{
-    SessionStorage::delete("ReportViewSettings");
-}
-
-pub(crate) fn load_report_settings() -> ReportViewSettings
-{
-    SessionStorage::get("ReportViewSettings").unwrap_or(
-        ReportViewSettings{
-            current_view: ReportViews::Quick,
-            seller_id_filter: get_active_user().get_id(),
-        }
-    )
-}
-
-pub(crate) async fn get_sales_geojson()
-    -> std::result::Result<Vec<serde_json::Value> ,Box<dyn std::error::Error>>
-{
-    use gloo::net::http::Request;
-    // log::info!("Running Query: {}", &query);
-
-    let mut raw_resp: serde_json::Value = Request::get(&*GEOJSONURL)
-        .header("Content-Type", "application/json")
-        .header("Authorization", &format!("Bearer {}", &get_active_user().token))
-        .send()
-        .await?
-        .json()
-        .await?;
-    let host_str = gloo::utils::window().location().host().unwrap_or("".to_string());
-    // log::info!("Hostname: {host_str}");
-    if host_str.starts_with("localhost") {
-        log::info!("GeoJSON Resp: {}", serde_json::to_string_pretty(&raw_resp).unwrap());
-    }
-
-    if !raw_resp["message"].is_null() {
-        let err_str = serde_json::to_string(&raw_resp).unwrap_or("Failed to stringify json resp".to_string());
-        use std::io::{Error, ErrorKind};
-        return Err(Box::new(
-                Error::new(
-                    ErrorKind::Other,
-                    format!("GeoJSON request returned raw error:\n {}", err_str).as_str())));
-    }
-
-    // make_report_query(query).await
-    Ok(raw_resp["features"].take().as_array_mut().unwrap().drain(..).collect())
-
-}
