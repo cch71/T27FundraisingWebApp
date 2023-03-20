@@ -4,7 +4,6 @@ use wasm_bindgen::JsCast;
 use web_sys::{InputEvent, MouseEvent, SubmitEvent, HtmlSelectElement, HtmlInputElement, HtmlButtonElement};
 use crate::AppRoutes;
 use crate::data_model::*;
-use chrono::prelude::*;
 use std::collections::HashMap;
 
 /////////////////////////////////////////////////
@@ -216,7 +215,7 @@ pub fn order_products() -> Html
                                                     {delivery.get_delivery_date_str()}
                                                 </option>
                                             }
-                                        } else if is_admin || delivery.new_order_cutoff_date > Utc::now() {
+                                        } else if is_admin || delivery.can_take_orders() {
                                             html!{
                                                 <option value={delivery_id.to_string()} selected={is_selected}>
                                                     {delivery.get_delivery_date_str()}

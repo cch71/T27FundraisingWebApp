@@ -130,6 +130,23 @@ impl DeliveryInfo {
     pub(crate) fn get_api_new_order_cutoff_date_str(&self) -> String {
         self.new_order_cutoff_date.format("%m/%d/%Y").to_string()
     }
+
+    pub(crate) fn can_take_orders(&self) -> bool {
+        self.new_order_cutoff_date >= Utc::now()
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+pub(crate) fn are_sales_still_allowed() -> bool {
+    let deliveries = get_deliveries();
+    let mut are_any_still_active = false;
+    for delivery_info in deliveries.values() {
+        if delivery_info.can_take_orders() {
+            are_any_still_active = true;
+        }
+    }
+    are_any_still_active
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -577,20 +594,6 @@ pub(crate) fn get_products() -> Arc<BTreeMap<String, ProductInfo>>
 //
 pub(crate) fn get_fr_config() -> Arc<FrConfig> {
     FRCONFIG.read().unwrap().as_ref().unwrap().clone()
-}
-
-////////////////////////////////////////////////////////////////////////////
-//
-pub(crate) fn are_sales_still_allowed() -> bool {
-    let deliveries = get_deliveries();
-    let now = Utc::now();
-    let mut are_any_still_active = false;
-    for delivery_info in deliveries.values() {
-        if delivery_info.new_order_cutoff_date >= now {
-            are_any_still_active = true;
-        }
-    }
-    are_any_still_active
 }
 
 ////////////////////////////////////////////////////////////////////////////
