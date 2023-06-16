@@ -7,27 +7,27 @@ edition = "2021"
 
 [dependencies]
 lazy_static = "1"
-chrono = { version = "0.4", features = ["wasmbind"] }
+chrono = { version = "0", features = ["wasmbind"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
-wasm-bindgen = "0.2"
-serde-wasm-bindgen = "0.4"
-wasm-bindgen-futures = "0.4"
-js-sys = "0.3"
-log = "0.4"
-wasm-logger = "0.2"
-yew = { version = "0.20", features = ["csr"] }
-yew-router = "0.17"
+wasm-bindgen = "0"
+serde-wasm-bindgen = "0"
+wasm-bindgen-futures = "0"
+js-sys = "0"
+log = "0"
+wasm-logger = "0"
+yew = { version = "0", features = ["csr"] }
+yew-router = "0"
 # yewtil = "0.4"
 rust_decimal = "1"
-rusty-money = { version = "0.4", features = ["iso"] }
+rusty-money = { version = "0", features = ["iso"] }
 uuid = { version = "1", features = ["serde", "v4", "js"] }
-gloo = "0.8"
+gloo = "0"
 regex = "1"
 csv = "1"
 
 [dependencies.web-sys]
-version = "0.3"
+version = "0"
 features = [
   "Window",
   "Document",
