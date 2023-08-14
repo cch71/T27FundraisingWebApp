@@ -1,20 +1,19 @@
-use serde::{Deserialize, Serialize};
-use lazy_static::lazy_static;
-use std::sync::{RwLock, Arc};
 use chrono::prelude::*;
-use std::collections::BTreeMap;
-use rust_decimal::prelude::*;
 use gloo::storage::{LocalStorage, Storage};
-use std::time::{ Duration };
+use lazy_static::lazy_static;
+use rust_decimal::prelude::*;
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::sync::{Arc, RwLock};
+use std::time::Duration;
 use yew::prelude::*;
 
-pub(crate) use crate::data_model_reports::*;
-pub(crate) use crate::data_model_orders::*;
 pub(crate) use crate::auth_utils::{get_active_user, get_active_user_async};
+pub(crate) use crate::data_model_orders::*;
+pub(crate) use crate::data_model_reports::*;
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 
-static ALWAYS_CONFIG_GQL:&'static str =
-r#"
+static ALWAYS_CONFIG_GQL: &'static str = r#"
 {
   config {
     isLocked
@@ -22,8 +21,7 @@ r#"
   }
 }"#;
 
-static CONFIG_GQL:&'static str =
-r#"
+static CONFIG_GQL: &'static str = r#"
 {
   config {
     description
@@ -77,7 +75,7 @@ r#"
 //   to force update reload of config even if last_modified_time hasn't changed
 static LOCAL_STORE_SCHEMA_VER: u32 = 020501;
 
-pub(crate) type UserMapType = BTreeMap<String,UserInfo>;
+pub(crate) type UserMapType = BTreeMap<String, UserInfo>;
 
 lazy_static! {
     static ref NEIGHBORHOODS: RwLock<Option<Arc<Vec<Neighborhood>>>> = RwLock::new(None);
@@ -275,13 +273,15 @@ struct MulchDeliveryConfigApi {
 pub(crate) fn new_delivery_info(delivery_date: &String, new_order_cutoff: &String) -> DeliveryInfo {
     let delivery_date = {
         let nd = NaiveDate::parse_from_str(delivery_date, "%m/%d/%Y").unwrap();
-        Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
+        Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
+            .unwrap()
     };
     let cutoff_date = {
         let nd = NaiveDate::parse_from_str(new_order_cutoff, "%m/%d/%Y").unwrap();
-        Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
+        Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
+            .unwrap()
     };
-    DeliveryInfo{
+    DeliveryInfo {
         delivery_date: delivery_date,
         new_order_cutoff_date: cutoff_date,
     }
@@ -290,9 +290,8 @@ pub(crate) fn new_delivery_info(delivery_date: &String, new_order_cutoff: &Strin
 ////////////////////////////////////////////////////////////////////////////
 //
 fn process_config_data(config: FrConfigApi) {
-
     let is_finalized = match config.finalization_data.as_ref() {
-        Some(finalized_data) => 0!=finalized_data.money_pool_for_scout_delivery.len(),
+        Some(finalized_data) => 0 != finalized_data.money_pool_for_scout_delivery.len(),
         None => false,
     };
 
@@ -307,28 +306,49 @@ fn process_config_data(config: FrConfigApi) {
 
     let mut deliveries = BTreeMap::new();
     for delivery in config.mulch_delivery_configs {
-        let delivery_info = new_delivery_info(&delivery.delivery_date, &delivery.new_order_cutoff_date);
+        let delivery_info =
+            new_delivery_info(&delivery.delivery_date, &delivery.new_order_cutoff_date);
         deliveries.insert(delivery.id, delivery_info);
     }
     *DELIVERIES.write().unwrap() = Some(Arc::new(deliveries));
 
     let mut products = BTreeMap::new();
     for product in config.products {
-        products.insert(product.id, ProductInfo{
-            label: product.label,
-            min_units: product.min_units,
-            unit_price: product.unit_price,
-            price_breaks: product.price_breaks,
-        });
+        products.insert(
+            product.id,
+            ProductInfo {
+                label: product.label,
+                min_units: product.min_units,
+                unit_price: product.unit_price,
+                price_breaks: product.price_breaks,
+            },
+        );
     }
     *PRODUCTS.write().unwrap() = Some(Arc::new(products));
 
     {
-        let mut new_map: BTreeMap<String, UserInfo> =
-            config.users.into_iter().map(|v| (v.id.clone(), UserInfo{name: v.name.clone(), group: v.group.clone()})).collect::<_>();
+        let mut new_map: BTreeMap<String, UserInfo> = config
+            .users
+            .into_iter()
+            .map(|v| {
+                (
+                    v.id.clone(),
+                    UserInfo {
+                        name: v.name.clone(),
+                        group: v.group.clone(),
+                    },
+                )
+            })
+            .collect::<_>();
         if let Ok(mut arc_umap) = USER_MAP.write() {
             Arc::get_mut(&mut *arc_umap).unwrap().append(&mut new_map);
-            Arc::get_mut(&mut *arc_umap).unwrap().insert("fradmin".to_string(), UserInfo{name:"Super User".to_string(), group: "Admins".to_string()});
+            Arc::get_mut(&mut *arc_umap).unwrap().insert(
+                "fradmin".to_string(),
+                UserInfo {
+                    name: "Super User".to_string(),
+                    group: "Admins".to_string(),
+                },
+            );
         }
     }
     log::info!("Fundraising Config retrieved");
@@ -344,8 +364,8 @@ pub(crate) async fn load_config() {
 
         let req = GraphQlReq::new(ALWAYS_CONFIG_GQL.to_string());
         if let Ok(val) = make_gql_request::<serde_json::Value>(&req).await {
-            let is_last_mod_time_check_passed =
-                val["config"]["lastModifiedTime"].as_str().unwrap() == stored_config.config.last_modified_time;
+            let is_last_mod_time_check_passed = val["config"]["lastModifiedTime"].as_str().unwrap()
+                == stored_config.config.last_modified_time;
             let is_ver_schema_check_passed =
                 stored_config.local_store_schema_ver.unwrap_or(0) == LOCAL_STORE_SCHEMA_VER;
             if is_last_mod_time_check_passed && is_ver_schema_check_passed {
@@ -382,7 +402,6 @@ pub(crate) async fn load_config() {
 
     process_config_data(config);
     //log::info!("```` Config: \n {:#?}", config);
-
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -394,13 +413,16 @@ pub(crate) fn get_users() -> Arc<BTreeMap<String, UserInfo>> {
 ////////////////////////////////////////////////////////////////////////////
 //
 pub(crate) fn get_username_from_id(uid: &str) -> Option<String> {
-    USER_MAP.read().unwrap().get(uid).and_then(|v|Some(v.name.clone()))
+    USER_MAP
+        .read()
+        .unwrap()
+        .get(uid)
+        .and_then(|v| Some(v.name.clone()))
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-static SET_PRODUCTS_GQL:&'static str =
-r#"
+static SET_PRODUCTS_GQL: &'static str = r#"
 mutation {
   updateConfig(config: {
     products: [
@@ -423,20 +445,24 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn set_products(products: BTreeMap<String,ProductInfo>)
-    -> std::result::Result<(),Box<dyn std::error::Error>>
-{
-
-
+pub(crate) async fn set_products(
+    products: BTreeMap<String, ProductInfo>,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mulch_info = products.get("bags").unwrap();
     let spreading_info = products.get("spreading").unwrap();
 
-    let mulch_price_breaks_str = mulch_info.price_breaks.iter().map(|v| {
-        format!("\t\t{{\n{}\n{}\n\t\t}}",
-            format!("\t\t\tgt: {},", v.gt),
-            format!("\t\t\tunitPrice: \"{}\",", v.unit_price))
-    })
-    .collect::<Vec<String>>().join(",");
+    let mulch_price_breaks_str = mulch_info
+        .price_breaks
+        .iter()
+        .map(|v| {
+            format!(
+                "\t\t{{\n{}\n{}\n\t\t}}",
+                format!("\t\t\tgt: {},", v.gt),
+                format!("\t\t\tunitPrice: \"{}\",", v.unit_price)
+            )
+        })
+        .collect::<Vec<String>>()
+        .join(",");
 
     let query = SET_PRODUCTS_GQL
         .replace("***SPREADING_UNIT_PRICE***", &spreading_info.unit_price)
@@ -454,8 +480,7 @@ pub(crate) async fn set_products(products: BTreeMap<String,ProductInfo>)
 
 ////////////////////////////////////////////////////////////////////////////
 //
-static SET_DELIVERIES_GQL:&'static str =
-r#"
+static SET_DELIVERIES_GQL: &'static str = r#"
 mutation {
   updateConfig(config: {
     mulchDeliveryConfigs: [
@@ -466,19 +491,26 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn set_deliveries(deliveries: BTreeMap<u32,DeliveryInfo>)
-    -> std::result::Result<(),Box<dyn std::error::Error>>
-{
-    let deliveries_str = deliveries.iter().map(|(k,v)| {
-        format!("\t\t{{\n{}\n{}\n{}\n\t\t}}",
-            format!("\t\t\tid: {},", k),
-            format!("\t\t\tdate: \"{}\",", v.get_api_delivery_date_str()),
-            format!("\t\t\tnewOrderCutoffDate: \"{}\"", v.get_api_new_order_cutoff_date_str()))
-    })
-    .collect::<Vec<String>>().join(",");
+pub(crate) async fn set_deliveries(
+    deliveries: BTreeMap<u32, DeliveryInfo>,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let deliveries_str = deliveries
+        .iter()
+        .map(|(k, v)| {
+            format!(
+                "\t\t{{\n{}\n{}\n{}\n\t\t}}",
+                format!("\t\t\tid: {},", k),
+                format!("\t\t\tdate: \"{}\",", v.get_api_delivery_date_str()),
+                format!(
+                    "\t\t\tnewOrderCutoffDate: \"{}\"",
+                    v.get_api_new_order_cutoff_date_str()
+                )
+            )
+        })
+        .collect::<Vec<String>>()
+        .join(",");
 
-    let query = SET_DELIVERIES_GQL
-        .replace("***DELIVERIES_PARAMS***", &deliveries_str);
+    let query = SET_DELIVERIES_GQL.replace("***DELIVERIES_PARAMS***", &deliveries_str);
 
     // log::info!("Set Delivery Mutation:\n{}", &query);
     let req = GraphQlReq::new(query);
@@ -490,21 +522,24 @@ pub(crate) async fn set_deliveries(deliveries: BTreeMap<u32,DeliveryInfo>)
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_deliveries() -> Arc<BTreeMap<u32,DeliveryInfo>> {
+pub(crate) fn get_deliveries() -> Arc<BTreeMap<u32, DeliveryInfo>> {
     DELIVERIES.read().unwrap().as_ref().unwrap().clone()
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
 pub(crate) fn get_delivery_date(delivery_id: &u32) -> String {
-    get_deliveries().get(delivery_id).unwrap()
-        .delivery_date.format("%Y-%m-%d").to_string()
+    get_deliveries()
+        .get(delivery_id)
+        .unwrap()
+        .delivery_date
+        .format("%Y-%m-%d")
+        .to_string()
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-static UPDATE_NEIGHBORHOODS_GQL:&'static str =
-r#"
+static UPDATE_NEIGHBORHOODS_GQL: &'static str = r#"
 mutation {
   addOrUpdateNeighborhoods( neighborhoods: [
     ***HOOD_PARAMS***
@@ -513,27 +548,45 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn update_neighborhoods(hoods: Vec<Neighborhood>)
-    -> std::result::Result<(),Box<dyn std::error::Error>>
-{
-    let neighborhoods_str = hoods.iter().map(|v| {
-        format!("\t\t{{\n{},\n{},{}{}\n{}\n\t\t}}",
-            format!("\t\t\tname: \"{}\"", v.name),
-            format!("\t\t\tdistributionPoint: \"{}\"", v.distribution_point),
-            "***CITY***",
-            "***ZIP***",
-            format!("\t\t\tisVisible: {}", v.is_visible))
-            .replace("***CITY***", &v.city.as_ref().map(|v| format!("\t\t\tcity: \"{}\",", v)).unwrap_or("".to_string()))
-            .replace("***ZIP***", &v.zipcode.as_ref().map(|v| format!("\t\t\tzipcode: {},", v)).unwrap_or("".to_string()))
-    })
-    .collect::<Vec<String>>().join(",");
+pub(crate) async fn update_neighborhoods(
+    hoods: Vec<Neighborhood>,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let neighborhoods_str = hoods
+        .iter()
+        .map(|v| {
+            format!(
+                "\t\t{{\n{},\n{},{}{}\n{}\n\t\t}}",
+                format!("\t\t\tname: \"{}\"", v.name),
+                format!("\t\t\tdistributionPoint: \"{}\"", v.distribution_point),
+                "***CITY***",
+                "***ZIP***",
+                format!("\t\t\tisVisible: {}", v.is_visible)
+            )
+            .replace(
+                "***CITY***",
+                &v.city
+                    .as_ref()
+                    .map(|v| format!("\t\t\tcity: \"{}\",", v))
+                    .unwrap_or("".to_string()),
+            )
+            .replace(
+                "***ZIP***",
+                &v.zipcode
+                    .as_ref()
+                    .map(|v| format!("\t\t\tzipcode: {},", v))
+                    .unwrap_or("".to_string()),
+            )
+        })
+        .collect::<Vec<String>>()
+        .join(",");
 
-    let query = UPDATE_NEIGHBORHOODS_GQL
-        .replace("***HOOD_PARAMS***", &neighborhoods_str);
+    let query = UPDATE_NEIGHBORHOODS_GQL.replace("***HOOD_PARAMS***", &neighborhoods_str);
 
     // log::info!("Set Delivery Mutation:\n{}", &query);
     let req = GraphQlReq::new(query);
-    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())?;
+    make_gql_request::<serde_json::Value>(&req)
+        .await
+        .map(|_| ())?;
 
     // I don't know if there is any better way. Making DB Query costs money
     // Trying to merge in place would also take multiple passes through the neighborhood list
@@ -542,38 +595,38 @@ pub(crate) async fn update_neighborhoods(hoods: Vec<Neighborhood>)
     // Map neighborhood names to neighborhood and add ability to mark dirty
     let mut merged_hoods = (*get_neighborhoods())
         .iter()
-        .map(|ni| (ni.name.clone(),ni.clone()) )
+        .map(|ni| (ni.name.clone(), ni.clone()))
         .collect::<BTreeMap<String, Neighborhood>>();
 
     for hood in hoods {
         merged_hoods.insert(hood.name.clone(), hood);
     }
 
-    *NEIGHBORHOODS.write().unwrap() = Some(Arc::new(merged_hoods.into_values().collect::<Vec<Neighborhood>>()));
+    *NEIGHBORHOODS.write().unwrap() = Some(Arc::new(
+        merged_hoods.into_values().collect::<Vec<Neighborhood>>(),
+    ));
     Ok(())
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_neighborhoods() -> Arc<Vec<Neighborhood>>
-{
+pub(crate) fn get_neighborhoods() -> Arc<Vec<Neighborhood>> {
     NEIGHBORHOODS.read().unwrap().as_ref().unwrap().clone()
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_neighborhood<T: AsRef<str>>(hood: T) -> Option<Neighborhood>
-{
-    NEIGHBORHOODS.read()
+pub(crate) fn get_neighborhood<T: AsRef<str>>(hood: T) -> Option<Neighborhood> {
+    NEIGHBORHOODS
+        .read()
         .unwrap()
         .as_ref()
-        .and_then(|v|v.iter().find(|&v|v.name == hood.as_ref()).cloned())
+        .and_then(|v| v.iter().find(|&v| v.name == hood.as_ref()).cloned())
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_city_and_zip_from_neighborhood<T: AsRef<str>>(hood: T) -> Option<(String, u32)>
-{
+pub(crate) fn get_city_and_zip_from_neighborhood<T: AsRef<str>>(hood: T) -> Option<(String, u32)> {
     get_neighborhood(hood).and_then(|v| {
         if v.city.is_some() && v.zipcode.is_some() {
             Some((v.city.unwrap(), v.zipcode.unwrap()))
@@ -585,8 +638,7 @@ pub(crate) fn get_city_and_zip_from_neighborhood<T: AsRef<str>>(hood: T) -> Opti
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_products() -> Arc<BTreeMap<String, ProductInfo>>
-{
+pub(crate) fn get_products() -> Arc<BTreeMap<String, ProductInfo>> {
     PRODUCTS.read().unwrap().as_ref().unwrap().clone()
 }
 
@@ -599,7 +651,9 @@ pub(crate) fn get_fr_config() -> Arc<FrConfig> {
 ////////////////////////////////////////////////////////////////////////////
 //
 pub(crate) fn get_purchase_cost_for(product_id: &str, num_sold: u32) -> String {
-    if 0==num_sold { return "0.00".to_string(); }
+    if 0 == num_sold {
+        return "0.00".to_string();
+    }
     let products = get_products();
     let product_info = products.get(product_id).unwrap();
 
@@ -619,8 +673,8 @@ pub(crate) fn get_purchase_cost_for(product_id: &str, num_sold: u32) -> String {
 //
 pub(crate) fn is_purchase_valid(product_id: &str, num_sold: u32) -> bool {
     match get_products().get(product_id) {
-        None=>false,
-        Some(product)=>product.min_units <= num_sold,
+        None => false,
+        Some(product) => product.min_units <= num_sold,
     }
 }
 
@@ -630,7 +684,6 @@ pub(crate) fn is_purchase_valid(product_id: &str, num_sold: u32) -> bool {
 //    //TOOD: Need to add GraphQL to get list of active sellers
 //    vec![get_active_user().get_id()]
 //}
-
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -644,7 +697,6 @@ pub(crate) fn is_fundraiser_finalized() -> bool {
     get_fr_config().is_finalized
 }
 
-
 ////////////////////////////////////////////////////////////////////////////
 //
 pub(crate) fn is_fundraiser_editable() -> bool {
@@ -652,11 +704,9 @@ pub(crate) fn is_fundraiser_editable() -> bool {
     !is_fr_readonly || (get_active_user().get_id() == "fradmin")
 }
 
-
 ////////////////////////////////////////////////////////////////////////////
 //
-static CREATE_ISSUE_GQL:&'static str =
-r#"
+static CREATE_ISSUE_GQL: &'static str = r#"
 mutation {
   createIssue(input: {
     id: "***USERID***",
@@ -667,20 +717,21 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn report_new_issue(reporting_id: &str, title: &str, body: &str)
-    -> std::result::Result<() ,Box<dyn std::error::Error>>
-{
+pub(crate) async fn report_new_issue(
+    reporting_id: &str,
+    title: &str,
+    body: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let query = CREATE_ISSUE_GQL
         .replace("***USERID***", &reporting_id)
         .replace("***TITLE***", &title)
         .replace("***BODY***", &body);
 
     let req = GraphQlReq::new(query);
-    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+    make_gql_request::<serde_json::Value>(&req)
+        .await
+        .map(|_| ())
 }
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -699,7 +750,7 @@ static GET_TIMECARDS_GRAPHQL: &'static str = r"
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-pub(crate) struct TimeCard{
+pub(crate) struct TimeCard {
     #[serde(rename = "id")]
     pub(crate) uid: String,
     #[serde(rename = "deliveryId")]
@@ -714,11 +765,15 @@ pub(crate) struct TimeCard{
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn get_timecards_data(delivery_id: Option<u32>, _uid: Option<String>)
-    -> std::result::Result<Vec<(String, String, Option<TimeCard>)> ,Box<dyn std::error::Error>>
-{
+pub(crate) async fn get_timecards_data(
+    delivery_id: Option<u32>,
+    _uid: Option<String>,
+) -> std::result::Result<Vec<(String, String, Option<TimeCard>)>, Box<dyn std::error::Error>> {
     let query = if let Some(delivery_id) = delivery_id {
-        GET_TIMECARDS_GRAPHQL.replace("***GET_TIMECARDS_PARAMS***", &format!("deliveryId: {}", delivery_id))
+        GET_TIMECARDS_GRAPHQL.replace(
+            "***GET_TIMECARDS_PARAMS***",
+            &format!("deliveryId: {}", delivery_id),
+        )
     } else {
         GET_TIMECARDS_GRAPHQL.replace("(***GET_TIMECARDS_PARAMS***)", "")
     };
@@ -733,14 +788,19 @@ pub(crate) async fn get_timecards_data(delivery_id: Option<u32>, _uid: Option<St
 
         let req = GraphQlReq::new(query);
         let resp = make_gql_request::<GqlResp>(&req).await?;
-        let timecard_map: BTreeMap<_, _> = resp.mulch_timecards.into_iter().map(|v|(v.uid.clone(), v)).collect();
+        let timecard_map: BTreeMap<_, _> = resp
+            .mulch_timecards
+            .into_iter()
+            .map(|v| (v.uid.clone(), v))
+            .collect();
         timecard_map
     };
 
-    let timecard_data = (*get_users()).clone()
+    let timecard_data = (*get_users())
+        .clone()
         .into_iter()
-        .filter(|(_,user_info)| "Bear"!=user_info.group && "Bogus"!=user_info.group)
-        .map(|(uid,user_info)| {
+        .filter(|(_, user_info)| "Bear" != user_info.group && "Bogus" != user_info.group)
+        .map(|(uid, user_info)| {
             let tc = timecard_map.remove(&uid);
             (uid, user_info.name, tc)
         })
@@ -760,19 +820,27 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn save_timecards_data(timecards: Vec<TimeCard>)
-    -> std::result::Result<() ,Box<dyn std::error::Error>>
-{
-    if timecards.len() == 0 { return Ok(()); }
+pub(crate) async fn save_timecards_data(
+    timecards: Vec<TimeCard>,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    if timecards.len() == 0 {
+        return Ok(());
+    }
 
-    let timecards_param = timecards.iter().map(|v|{
-        format!("\t\t{{\n{}\n{}\n{}\n{}\n{}\n\t\t}}",
-            format!("\t\t\tid: \"{}\",", &v.uid),
-            format!("\t\t\tdeliveryId: {},", v.delivery_id),
-            format!("\t\t\ttimeIn: \"{}\",", &v.time_in),
-            format!("\t\t\ttimeOut: \"{}\",", &v.time_out),
-            format!("\t\t\ttimeTotal: \"{}\"", &v.time_total))
-    }).collect::<Vec<String>>().join(",\n");
+    let timecards_param = timecards
+        .iter()
+        .map(|v| {
+            format!(
+                "\t\t{{\n{}\n{}\n{}\n{}\n{}\n\t\t}}",
+                format!("\t\t\tid: \"{}\",", &v.uid),
+                format!("\t\t\tdeliveryId: {},", v.delivery_id),
+                format!("\t\t\ttimeIn: \"{}\",", &v.time_in),
+                format!("\t\t\ttimeOut: \"{}\",", &v.time_out),
+                format!("\t\t\ttimeTotal: \"{}\"", &v.time_total)
+            )
+        })
+        .collect::<Vec<String>>()
+        .join(",\n");
 
     let query = SET_TIMECARDS_GRAPHQL.replace("***SET_TIMECARDS_PARAMS***", &timecards_param);
     log::info!("Running Query: {}", &query);
@@ -781,7 +849,6 @@ pub(crate) async fn save_timecards_data(timecards: Vec<TimeCard>)
     let _ = make_gql_request::<serde_json::Value>(&req).await?;
     Ok(())
 }
-
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -822,19 +889,25 @@ pub(crate) struct FrClosureMapData {
 /////////////////////////////////////////////////
 ///
 pub(crate) fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
-    let mut time_val_str = time_val_str.split(":").map(|v|v.to_string()).collect::<Vec<String>>();
-    if time_val_str.len() == 3 { //If vector is server time
+    let mut time_val_str = time_val_str
+        .split(":")
+        .map(|v| v.to_string())
+        .collect::<Vec<String>>();
+    if time_val_str.len() == 3 {
+        //If vector is server time
         time_val_str.pop();
     }
 
     if time_val_str.len() == 2 {
         return time_val_str[0]
-            .parse::<u64>().ok()
-            .and_then(|v1|Some(Duration::from_secs(v1*60*60)))
+            .parse::<u64>()
+            .ok()
+            .and_then(|v1| Some(Duration::from_secs(v1 * 60 * 60)))
             .and_then(|v1| {
                 time_val_str[1]
-                    .parse::<u64>().ok()
-                    .and_then(|v2|Some(Duration::from_secs(v2*60)))
+                    .parse::<u64>()
+                    .ok()
+                    .and_then(|v2| Some(Duration::from_secs(v2 * 60)))
                     .and_then(|v2| v1.checked_add(v2))
             });
     }
@@ -844,9 +917,8 @@ pub(crate) fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
 pub(crate) type FrClosureStaticData = Arc<BTreeMap<String, FrClosureMapData>>;
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn get_fundraiser_closure_static_data()
-    -> std::result::Result<FrClosureStaticData ,Box<dyn std::error::Error>>
-{
+pub(crate) async fn get_fundraiser_closure_static_data(
+) -> std::result::Result<FrClosureStaticData, Box<dyn std::error::Error>> {
     if let Ok(closure_data) = FR_CLOSURE_DATA.read() {
         if closure_data.len() > 0 {
             return Ok(closure_data.clone());
@@ -896,26 +968,37 @@ pub(crate) async fn get_fundraiser_closure_static_data()
     };
 
     fn add_tc(cd: &mut FrClosureMapData, add_dur: Duration) {
-        cd.delivery_time_total =
-            cd.delivery_time_total.checked_add(add_dur).unwrap();
+        cd.delivery_time_total = cd.delivery_time_total.checked_add(add_dur).unwrap();
     }
 
     fn add_order_data(cd: &mut FrClosureMapData, new_data: &FrClosureMapData) {
-        cd.amount_from_donations =
-            cd.amount_from_donations.checked_add(new_data.amount_from_donations).unwrap();
-        cd.amount_total_collected =
-            cd.amount_total_collected.checked_add(new_data.amount_total_collected).unwrap();
+        cd.amount_from_donations = cd
+            .amount_from_donations
+            .checked_add(new_data.amount_from_donations)
+            .unwrap();
+        cd.amount_total_collected = cd
+            .amount_total_collected
+            .checked_add(new_data.amount_total_collected)
+            .unwrap();
         cd.num_bags_sold += new_data.num_bags_sold;
-        cd.amount_from_bags_sales =
-            cd.amount_from_bags_sales.checked_add(new_data.amount_from_bags_sales).unwrap();
+        cd.amount_from_bags_sales = cd
+            .amount_from_bags_sales
+            .checked_add(new_data.amount_from_bags_sales)
+            .unwrap();
         cd.num_bags_to_spread_sold += new_data.num_bags_to_spread_sold;
-        cd.amount_from_bags_to_spread_sales =
-            cd.amount_from_bags_to_spread_sales.checked_add(new_data.amount_from_bags_to_spread_sales).unwrap();
+        cd.amount_from_bags_to_spread_sales = cd
+            .amount_from_bags_to_spread_sales
+            .checked_add(new_data.amount_from_bags_to_spread_sales)
+            .unwrap();
     }
 
-    fn register_spreaders(closure_data: &mut BTreeMap<String, FrClosureMapData>, mut spreaders: Vec<String>, num_bags: u64) {
+    fn register_spreaders(
+        closure_data: &mut BTreeMap<String, FrClosureMapData>,
+        mut spreaders: Vec<String>,
+        num_bags: u64,
+    ) {
         //Due to bug there can be empty spreaders
-        spreaders.retain(|v| v.len()>0 );
+        spreaders.retain(|v| v.len() > 0);
 
         if spreaders.len() == 0 {
             return;
@@ -930,7 +1013,9 @@ pub(crate) async fn get_fundraiser_closure_static_data()
             if spreaders.len() == 1 {
                 Decimal::from(num_bags)
             } else {
-                Decimal::from(num_bags).checked_div(spreaders.len().into()).unwrap()
+                Decimal::from(num_bags)
+                    .checked_div(spreaders.len().into())
+                    .unwrap()
             }
         };
 
@@ -939,10 +1024,16 @@ pub(crate) async fn get_fundraiser_closure_static_data()
                 closure_data.insert(uid.clone(), FrClosureMapData::default());
             }
 
-            let mut datum:&mut FrClosureMapData = closure_data.get_mut(&uid).unwrap();
-            datum.num_bags_spread = datum.num_bags_spread.checked_add(num_bags_to_record_as_spread_per_user).unwrap();
-            let mut datum:&mut FrClosureMapData = closure_data.get_mut("TROOP_TOTALS").unwrap();
-            datum.num_bags_spread = datum.num_bags_spread.checked_add(num_bags_to_record_as_spread_per_user).unwrap();
+            let datum: &mut FrClosureMapData = closure_data.get_mut(&uid).unwrap();
+            datum.num_bags_spread = datum
+                .num_bags_spread
+                .checked_add(num_bags_to_record_as_spread_per_user)
+                .unwrap();
+            let datum: &mut FrClosureMapData = closure_data.get_mut("TROOP_TOTALS").unwrap();
+            datum.num_bags_spread = datum
+                .num_bags_spread
+                .checked_add(num_bags_to_record_as_spread_per_user)
+                .unwrap();
         }
     }
 
@@ -969,20 +1060,22 @@ pub(crate) async fn get_fundraiser_closure_static_data()
         let new_data = {
             let mut new_data = FrClosureMapData::default();
 
-            new_data.amount_from_donations = order.amount_from_donations
-                .map_or(Decimal::ZERO,|v| Decimal::from_str(v.as_str()).unwrap());
-            new_data.amount_total_collected = order.amount_total_collected
-                .map_or(Decimal::ZERO,|v| Decimal::from_str(v.as_str()).unwrap());
+            new_data.amount_from_donations = order
+                .amount_from_donations
+                .map_or(Decimal::ZERO, |v| Decimal::from_str(v.as_str()).unwrap());
+            new_data.amount_total_collected = order
+                .amount_total_collected
+                .map_or(Decimal::ZERO, |v| Decimal::from_str(v.as_str()).unwrap());
             for purchase in order.purchases {
                 if "bags" == purchase.product_id.as_str() && purchase.num_sold != 0 {
                     new_data.num_bags_sold = purchase.num_sold;
                     // Issue #108 hack replace ","->""
                     new_data.amount_from_bags_sales =
-                        Decimal::from_str(& purchase.amount_charged.replace(",","")).unwrap();
-                } else if "spreading" == purchase.product_id.as_str() && purchase.num_sold !=0 {
+                        Decimal::from_str(&purchase.amount_charged.replace(",", "")).unwrap();
+                } else if "spreading" == purchase.product_id.as_str() && purchase.num_sold != 0 {
                     new_data.num_bags_to_spread_sold = purchase.num_sold;
                     new_data.amount_from_bags_to_spread_sales =
-                        Decimal::from_str(& purchase.amount_charged).unwrap();
+                        Decimal::from_str(&purchase.amount_charged).unwrap();
                 }
             }
 
@@ -992,11 +1085,17 @@ pub(crate) async fn get_fundraiser_closure_static_data()
         add_order_data(closure_data.get_mut(&order.uid).unwrap(), &new_data);
         add_order_data(closure_data.get_mut("TROOP_TOTALS").unwrap(), &new_data);
 
-        register_spreaders(&mut closure_data, order.spreaders, new_data.num_bags_to_spread_sold);
+        register_spreaders(
+            &mut closure_data,
+            order.spreaders,
+            new_data.num_bags_to_spread_sold,
+        );
     }
 
     if let Ok(mut arc_map) = FR_CLOSURE_DATA.write() {
-        Arc::get_mut(&mut *arc_map).unwrap().append(&mut closure_data);
+        Arc::get_mut(&mut *arc_map)
+            .unwrap()
+            .append(&mut closure_data);
     }
 
     Ok(FR_CLOSURE_DATA.read().unwrap().clone())
@@ -1012,9 +1111,7 @@ pub(crate) struct FrClosureDynamicData {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_fundraiser_closure_dynamic_data()
-    -> Option<FrClosureDynamicData>
-{
+pub(crate) fn get_fundraiser_closure_dynamic_data() -> Option<FrClosureDynamicData> {
     log::info!("Getting Fundraiser Closure Data From LocalStorage");
     LocalStorage::get("FrClosureDynamicData").ok()
 }
@@ -1025,7 +1122,6 @@ pub(crate) fn set_fundraiser_closure_dynamic_data(data: FrClosureDynamicData) {
     log::info!("Getting Fundraiser Closure Data From LocalStorage");
     let _ = LocalStorage::set("FrClosureDynamicData", data);
 }
-
 
 ////////////////////////////////////////////////////////
 ///
@@ -1045,10 +1141,9 @@ pub(crate) struct FrCloseoutDynamicVars {
 }
 
 impl FrCloseoutDynamicVars {
-    pub(crate) fn new()->Self {
+    pub(crate) fn new() -> Self {
         FrCloseoutDynamicVars::default()
     }
-
 }
 
 ////////////////////////////////////////////////////////
@@ -1118,74 +1213,183 @@ static SET_FR_CLOSEOUT_ALLOC_DATUM_GRAPHQL: &'static str = r#"
 "#;
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn set_fr_closeout_data(dvars: &FrCloseoutDynamicVars, allocation_list: &Vec<FrCloseoutAllocationVals>) {
-
+pub(crate) async fn set_fr_closeout_data(
+    dvars: &FrCloseoutDynamicVars,
+    allocation_list: &Vec<FrCloseoutAllocationVals>,
+) {
     // Set Config closeout data
     let query = SET_FR_CLOSEOUT_CONFIG_DATA_GRAPHQL
-        .replace("bankDeposited: \"0.0000\"", &format!("bankDeposited: \"{}\"", dvars.bank_deposited.round_dp(4).to_string()))
-        .replace("mulchCost: \"0.0000\"", &format!("mulchCost: \"{}\"", dvars.mulch_cost.round_dp(4).to_string()))
-        .replace("perBagCost: \"0.0000\"", &format!("perBagCost: \"{}\"", dvars.per_bag_cost.round_dp(4).to_string()))
-        .replace("profitsFromBags: \"0.0000\"", &format!("profitsFromBags: \"{}\"", dvars.profits_from_bags.round_dp(4).to_string()))
-        .replace("mulchSalesGross: \"0.0000\"", &format!("mulchSalesGross: \"{}\"", dvars.mulch_sales_gross.round_dp(4).to_string()))
-        .replace("moneyPoolForTroop: \"0.0000\"", &format!("moneyPoolForTroop: \"{}\"", dvars.money_pool_for_troop.round_dp(4).to_string()))
-        .replace("moneyPoolForScoutsSubPools: \"0.0000\"", &format!("moneyPoolForScoutsSubPools: \"{}\"", dvars.money_pool_for_scouts_sub_pools.round_dp(4).to_string()))
-        .replace("moneyPoolForScoutsSales: \"0.0000\"", &format!("moneyPoolForScoutsSales: \"{}\"", dvars.money_pool_for_scout_sales.round_dp(4).to_string()))
-        .replace("perBagAvgEarnings: \"0.0000\"", &format!("perBagAvgEarnings: \"{}\"", dvars.per_bag_avg_earnings.round_dp(4).to_string()))
-        .replace("moneyPoolForScoutsDelivery: \"0.0000\"", &format!("moneyPoolForScoutsDelivery: \"{}\"", dvars.money_pool_for_scout_delivery.round_dp(4).to_string()))
-        .replace("deliveryEarningsPerMinute: \"0.0000\"", &format!("deliveryEarningsPerMinute: \"{}\"", dvars.delivery_earnings_per_minute.round_dp(4).to_string()));
+        .replace(
+            "bankDeposited: \"0.0000\"",
+            &format!(
+                "bankDeposited: \"{}\"",
+                dvars.bank_deposited.round_dp(4).to_string()
+            ),
+        )
+        .replace(
+            "mulchCost: \"0.0000\"",
+            &format!(
+                "mulchCost: \"{}\"",
+                dvars.mulch_cost.round_dp(4).to_string()
+            ),
+        )
+        .replace(
+            "perBagCost: \"0.0000\"",
+            &format!(
+                "perBagCost: \"{}\"",
+                dvars.per_bag_cost.round_dp(4).to_string()
+            ),
+        )
+        .replace(
+            "profitsFromBags: \"0.0000\"",
+            &format!(
+                "profitsFromBags: \"{}\"",
+                dvars.profits_from_bags.round_dp(4).to_string()
+            ),
+        )
+        .replace(
+            "mulchSalesGross: \"0.0000\"",
+            &format!(
+                "mulchSalesGross: \"{}\"",
+                dvars.mulch_sales_gross.round_dp(4).to_string()
+            ),
+        )
+        .replace(
+            "moneyPoolForTroop: \"0.0000\"",
+            &format!(
+                "moneyPoolForTroop: \"{}\"",
+                dvars.money_pool_for_troop.round_dp(4).to_string()
+            ),
+        )
+        .replace(
+            "moneyPoolForScoutsSubPools: \"0.0000\"",
+            &format!(
+                "moneyPoolForScoutsSubPools: \"{}\"",
+                dvars
+                    .money_pool_for_scouts_sub_pools
+                    .round_dp(4)
+                    .to_string()
+            ),
+        )
+        .replace(
+            "moneyPoolForScoutsSales: \"0.0000\"",
+            &format!(
+                "moneyPoolForScoutsSales: \"{}\"",
+                dvars.money_pool_for_scout_sales.round_dp(4).to_string()
+            ),
+        )
+        .replace(
+            "perBagAvgEarnings: \"0.0000\"",
+            &format!(
+                "perBagAvgEarnings: \"{}\"",
+                dvars.per_bag_avg_earnings.round_dp(4).to_string()
+            ),
+        )
+        .replace(
+            "moneyPoolForScoutsDelivery: \"0.0000\"",
+            &format!(
+                "moneyPoolForScoutsDelivery: \"{}\"",
+                dvars.money_pool_for_scout_delivery.round_dp(4).to_string()
+            ),
+        )
+        .replace(
+            "deliveryEarningsPerMinute: \"0.0000\"",
+            &format!(
+                "deliveryEarningsPerMinute: \"{}\"",
+                dvars.delivery_earnings_per_minute.round_dp(4).to_string()
+            ),
+        );
 
     let req = GraphQlReq::new(query);
     let _ = make_gql_request::<serde_json::Value>(&req).await.unwrap();
 
     let query = SET_FR_CLOSEOUT_ALLOC_DATA_GRAPHQL.replace(
-        "***ALLOCATIONS***" ,
+        "***ALLOCATIONS***",
         allocation_list
-        .iter()
-        .map(|v|{
-            let bags_sold_str = if 0!=v.bags_sold { format!("bagsSold: {},\n", v.bags_sold) } else {"".to_string()};
-            let bags_spread_str = if Decimal::ZERO != v.bags_spread {
-                format!("bagsSpread: \"{}\",\n", v.bags_spread.round_dp(4).to_string())
-            } else {
-                "".to_string()
-            };
-            let delivery_minutes_str = if Decimal::ZERO != v.delivery_minutes {
-                format!("deliveryMinutes: \"{}\",\n", v.delivery_minutes.round_dp(4).to_string())
-            } else {
-                "".to_string()
-            };
-            let total_donations_str = if Decimal::ZERO != v.total_donations {
-                format!("totalDonations: \"{}\",\n", v.total_donations.round_dp(4).to_string())
-            } else {
-                "".to_string()
-            };
-            let allocation_from_bags_sold_str = if Decimal::ZERO != v.allocation_from_bags_sold {
-                format!("allocationsFromBagsSold: \"{}\",\n", v.allocation_from_bags_sold.round_dp(4).to_string())
-            } else {
-                "".to_string()
-            };
-            let allocation_from_bags_spread_str = if Decimal::ZERO != v.allocation_from_bags_spread {
-                format!("allocationsFromBagsSpread: \"{}\",\n", v.allocation_from_bags_spread.round_dp(4).to_string())
-            } else {
-                "".to_string()
-            };
-            let allocation_from_delivery_str = if Decimal::ZERO != v.allocation_from_delivery {
-                format!("allocationsFromDelivery: \"{}\",\n", v.allocation_from_delivery.round_dp(4).to_string())
-            } else {
-                "".to_string()
-            };
-            SET_FR_CLOSEOUT_ALLOC_DATUM_GRAPHQL
-                .replace("uid:", &format!("uid: \"{}\"", v.uid))
-                .replace("allocationsTotal:", &format!("allocationsTotal: \"{}\"", v.allocation_total.round_dp(4).to_string()))
-                .replace("bagsSold:,\n", &bags_sold_str)
-                .replace("bagsSpread:,\n", &bags_spread_str)
-                .replace("deliveryMinutes:,\n", &delivery_minutes_str)
-                .replace("totalDonations:,\n", &total_donations_str)
-                .replace("allocationsFromBagsSold:,\n", &allocation_from_bags_sold_str)
-                .replace("allocationsFromBagsSpread:,\n", &allocation_from_bags_spread_str)
-                .replace("allocationsFromDelivery:,\n", &allocation_from_delivery_str)
-
-        }).collect::<Vec<String>>()
-        .join(",\n").as_str());
+            .iter()
+            .map(|v| {
+                let bags_sold_str = if 0 != v.bags_sold {
+                    format!("bagsSold: {},\n", v.bags_sold)
+                } else {
+                    "".to_string()
+                };
+                let bags_spread_str = if Decimal::ZERO != v.bags_spread {
+                    format!(
+                        "bagsSpread: \"{}\",\n",
+                        v.bags_spread.round_dp(4).to_string()
+                    )
+                } else {
+                    "".to_string()
+                };
+                let delivery_minutes_str = if Decimal::ZERO != v.delivery_minutes {
+                    format!(
+                        "deliveryMinutes: \"{}\",\n",
+                        v.delivery_minutes.round_dp(4).to_string()
+                    )
+                } else {
+                    "".to_string()
+                };
+                let total_donations_str = if Decimal::ZERO != v.total_donations {
+                    format!(
+                        "totalDonations: \"{}\",\n",
+                        v.total_donations.round_dp(4).to_string()
+                    )
+                } else {
+                    "".to_string()
+                };
+                let allocation_from_bags_sold_str = if Decimal::ZERO != v.allocation_from_bags_sold
+                {
+                    format!(
+                        "allocationsFromBagsSold: \"{}\",\n",
+                        v.allocation_from_bags_sold.round_dp(4).to_string()
+                    )
+                } else {
+                    "".to_string()
+                };
+                let allocation_from_bags_spread_str =
+                    if Decimal::ZERO != v.allocation_from_bags_spread {
+                        format!(
+                            "allocationsFromBagsSpread: \"{}\",\n",
+                            v.allocation_from_bags_spread.round_dp(4).to_string()
+                        )
+                    } else {
+                        "".to_string()
+                    };
+                let allocation_from_delivery_str = if Decimal::ZERO != v.allocation_from_delivery {
+                    format!(
+                        "allocationsFromDelivery: \"{}\",\n",
+                        v.allocation_from_delivery.round_dp(4).to_string()
+                    )
+                } else {
+                    "".to_string()
+                };
+                SET_FR_CLOSEOUT_ALLOC_DATUM_GRAPHQL
+                    .replace("uid:", &format!("uid: \"{}\"", v.uid))
+                    .replace(
+                        "allocationsTotal:",
+                        &format!(
+                            "allocationsTotal: \"{}\"",
+                            v.allocation_total.round_dp(4).to_string()
+                        ),
+                    )
+                    .replace("bagsSold:,\n", &bags_sold_str)
+                    .replace("bagsSpread:,\n", &bags_spread_str)
+                    .replace("deliveryMinutes:,\n", &delivery_minutes_str)
+                    .replace("totalDonations:,\n", &total_donations_str)
+                    .replace(
+                        "allocationsFromBagsSold:,\n",
+                        &allocation_from_bags_sold_str,
+                    )
+                    .replace(
+                        "allocationsFromBagsSpread:,\n",
+                        &allocation_from_bags_spread_str,
+                    )
+                    .replace("allocationsFromDelivery:,\n", &allocation_from_delivery_str)
+            })
+            .collect::<Vec<String>>()
+            .join(",\n")
+            .as_str(),
+    );
 
     log::info!("Allocation Mutation:\n{}", &query);
     let req = GraphQlReq::new(query);
@@ -1194,8 +1398,7 @@ pub(crate) async fn set_fr_closeout_data(dvars: &FrCloseoutDynamicVars, allocati
 
 ////////////////////////////////////////////////////////////////////////////
 //
-static GET_ADDR_API_GQL:&'static str =
-r#"
+static GET_ADDR_API_GQL: &'static str = r#"
 {
   getAddress(***LAT_LNG_PARAMS***) {
     zipcode
@@ -1208,7 +1411,7 @@ r#"
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-pub(crate) struct AddressInfo{
+pub(crate) struct AddressInfo {
     #[serde(rename = "houseNumber")]
     pub(crate) house_number: Option<String>,
     pub(crate) street: Option<String>,
@@ -1218,11 +1421,14 @@ pub(crate) struct AddressInfo{
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn get_address_from_lat_lng(lat: f64, lng:f64)
-    -> std::result::Result<AddressInfo,Box<dyn std::error::Error>>
-{
-    let query = GET_ADDR_API_GQL
-        .replace("***LAT_LNG_PARAMS***", &format!("lat: {}, lng: {}", lat, lng));
+pub(crate) async fn get_address_from_lat_lng(
+    lat: f64,
+    lng: f64,
+) -> std::result::Result<AddressInfo, Box<dyn std::error::Error>> {
+    let query = GET_ADDR_API_GQL.replace(
+        "***LAT_LNG_PARAMS***",
+        &format!("lat: {}, lng: {}", lat, lng),
+    );
 
     #[derive(Deserialize)]
     struct RespAddressInfo {
@@ -1232,34 +1438,32 @@ pub(crate) async fn get_address_from_lat_lng(lat: f64, lng:f64)
 
     // log::info!("Get Addr Query:\n{}", &query);
     let req = GraphQlReq::new(query);
-    make_gql_request::<RespAddressInfo>(&req).await.map(|v|v.address_info)
-
+    make_gql_request::<RespAddressInfo>(&req)
+        .await
+        .map(|v| v.address_info)
 }
-
 
 ////////////////////////////////////////////////////////////////////////////
 //
-static RESET_FUNDRAISER_API_GQL:&'static str =
-r#"
+static RESET_FUNDRAISER_API_GQL: &'static str = r#"
 mutation {
   resetFundraisingData(doResetUsers: true, doResetOrders: true)
 }"#;
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn reset_fundraiser()
-    -> std::result::Result<(),Box<dyn std::error::Error>>
-{
+pub(crate) async fn reset_fundraiser() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let req = GraphQlReq::new(RESET_FUNDRAISER_API_GQL);
-    make_gql_request::<serde_json::Value>(&req).await.map(|_|())?;
+    make_gql_request::<serde_json::Value>(&req)
+        .await
+        .map(|_| ())?;
     load_config().await;
     Ok(())
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-static GET_USERS_FOR_CONFIG_API_GQL:&'static str =
-r#"
+static GET_USERS_FOR_CONFIG_API_GQL: &'static str = r#"
 {
   users {
     id
@@ -1282,10 +1486,8 @@ pub(crate) struct UserAdminConfig {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn get_users_for_admin_config()
-    -> std::result::Result<BTreeMap<String,UserAdminConfig>,Box<dyn std::error::Error>>
-{
-
+pub(crate) async fn get_users_for_admin_config(
+) -> std::result::Result<BTreeMap<String, UserAdminConfig>, Box<dyn std::error::Error>> {
     #[derive(Deserialize)]
     struct RespUserInfo {
         users: Vec<UserAdminConfig>,
@@ -1294,14 +1496,16 @@ pub(crate) async fn get_users_for_admin_config()
     // log::info!("Get Addr Query:\n{}", &query);
     let req = GraphQlReq::new(GET_USERS_FOR_CONFIG_API_GQL);
     make_gql_request::<RespUserInfo>(&req).await.map(|v| {
-        v.users.into_iter().map(|v| (v.id.clone(),v)).collect::<BTreeMap<String,UserAdminConfig>>()
+        v.users
+            .into_iter()
+            .map(|v| (v.id.clone(), v))
+            .collect::<BTreeMap<String, UserAdminConfig>>()
     })
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-static ADD_OR_UPDATE_USERS_FOR_CONFIG_API_GQL:&'static str =
-r#"
+static ADD_OR_UPDATE_USERS_FOR_CONFIG_API_GQL: &'static str = r#"
 mutation {
   addOrUpdateUsers(users: [
      ***USERS_PARAMS***
@@ -1309,33 +1513,45 @@ mutation {
 }"#;
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn add_or_update_users_for_admin_config(users: Vec<UserAdminConfig>)
-    -> std::result::Result<(),Box<dyn std::error::Error>>
-{
+pub(crate) async fn add_or_update_users_for_admin_config(
+    users: Vec<UserAdminConfig>,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("Adding or Updating Users: {:#?}", &users);
 
-    let users_str = users.iter().map(|v| {
-        format!("\t\t{{\n{}\n{}\n{}\n{}\n\t\t}}",
-            format!("\t\t\tid: \"{}\"", v.id),
-            format!("\t\t\tfirstName: \"{}\"", v.first_name),
-            format!("\t\t\tlastName: \"{}\"", v.last_name),
-            format!("\t\t\tgroup: \"{}\"", v.group))
-    })
-    .collect::<Vec<String>>().join(",");
+    let users_str = users
+        .iter()
+        .map(|v| {
+            format!(
+                "\t\t{{\n{}\n{}\n{}\n{}\n\t\t}}",
+                format!("\t\t\tid: \"{}\"", v.id),
+                format!("\t\t\tfirstName: \"{}\"", v.first_name),
+                format!("\t\t\tlastName: \"{}\"", v.last_name),
+                format!("\t\t\tgroup: \"{}\"", v.group)
+            )
+        })
+        .collect::<Vec<String>>()
+        .join(",");
 
-    let query = ADD_OR_UPDATE_USERS_FOR_CONFIG_API_GQL
-        .replace("***USERS_PARAMS***", &users_str);
+    let query = ADD_OR_UPDATE_USERS_FOR_CONFIG_API_GQL.replace("***USERS_PARAMS***", &users_str);
 
     let req = GraphQlReq::new(query);
-    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())?;
+    make_gql_request::<serde_json::Value>(&req)
+        .await
+        .map(|_| ())?;
 
     // I don't know if there is any better way. Making DB Query costs money
     // Trying to merge in place would also take multiple passes through the neighborhood list
     // so converting it into a map and then replacing list with values
-    let mut new_map: UserMapType = users.into_iter().map(|v| {
-        let ui = UserInfo{name:format!("{} {}", v.first_name, v.last_name), group: v.group};
-        (v.id, ui)
-    }).collect();
+    let mut new_map: UserMapType = users
+        .into_iter()
+        .map(|v| {
+            let ui = UserInfo {
+                name: format!("{} {}", v.first_name, v.last_name),
+                group: v.group,
+            };
+            (v.id, ui)
+        })
+        .collect();
     if let Ok(mut arc_umap) = USER_MAP.write() {
         Arc::get_mut(&mut *arc_umap).unwrap().append(&mut new_map);
     }
@@ -1360,4 +1576,3 @@ pub(crate) async fn add_or_update_users_for_admin_config(users: Vec<UserAdminCon
 //     let req = GraphQlReq::new(query);
 //     make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
 // }
-

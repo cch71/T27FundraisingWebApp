@@ -22,7 +22,7 @@ yew-router = "0"
 rust_decimal = "1"
 rusty-money = { version = "0", features = ["iso"] }
 uuid = { version = "1", features = ["serde", "v4", "js"] }
-gloo = "0"
+gloo = { version = "0", features = ["futures"] }
 regex = "1"
 csv = "1"
 

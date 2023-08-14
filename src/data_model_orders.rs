@@ -1,13 +1,13 @@
+use crate::currency_utils::*;
 use lazy_static::lazy_static;
+use regex::Regex;
+use rust_decimal::prelude::*;
+use rusty_money::{iso, Money};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::{RwLock};
-use rust_decimal::prelude::*;
-use rusty_money::{Money, iso};
-use crate::currency_utils::*;
-use regex::Regex;
+use std::sync::RwLock;
 
-use crate::data_model::{get_active_user};
+use crate::data_model::get_active_user;
 use crate::gql_utils::{make_gql_request, GraphQlReq};
 
 lazy_static! {
@@ -40,7 +40,7 @@ pub(crate) struct MulchOrder {
     pub(crate) customer: CustomerInfo,
     pub(crate) purchases: Option<HashMap<String, PurchasedItem>>,
     pub(crate) delivery_id: Option<u32>,
-    pub(crate) year_ordered: Option<String>
+    pub(crate) year_ordered: Option<String>,
 }
 
 #[derive(Default, Clone, PartialEq, Debug)]
@@ -49,8 +49,8 @@ pub(crate) struct PurchasedItem {
     pub(crate) amount_charged: String,
 }
 impl PurchasedItem {
-    pub(crate) fn new(num_sold: u32, amount_charged:String)->Self {
-        Self{
+    pub(crate) fn new(num_sold: u32, amount_charged: String) -> Self {
+        Self {
             num_sold: num_sold,
             amount_charged: amount_charged,
         }
@@ -70,8 +70,8 @@ pub(crate) struct CustomerInfo {
 }
 
 impl MulchOrder {
-    fn new(owner_id: &str)->Self {
-        Self{
+    fn new(owner_id: &str) -> Self {
+        Self {
             order_owner_id: owner_id.to_owned(),
             order_id: uuid::Uuid::new_v4().to_string(),
             ..Default::default()
@@ -110,13 +110,16 @@ impl MulchOrder {
         self.purchases = None;
     }
 
-    pub(crate) fn set_purchases(&mut self, delivery_id: u32, purchases: HashMap<String, PurchasedItem>)
-    {
+    pub(crate) fn set_purchases(
+        &mut self,
+        delivery_id: u32,
+        purchases: HashMap<String, PurchasedItem>,
+    ) {
         let mut total_purchase_amt = Decimal::ZERO;
         for purchase in purchases.values() {
-            total_purchase_amt = total_purchase_amt.checked_add(
-                Decimal::from_str(&purchase.amount_charged).unwrap()).unwrap();
-
+            total_purchase_amt = total_purchase_amt
+                .checked_add(Decimal::from_str(&purchase.amount_charged).unwrap())
+                .unwrap();
         }
 
         self.delivery_id = Some(delivery_id);
@@ -127,43 +130,45 @@ impl MulchOrder {
     pub(crate) fn get_num_sold(&self, product_id: &str) -> Option<u32> {
         match self.purchases.as_ref() {
             Some(purchases) => purchases.get(product_id).map_or(None, |v| Some(v.num_sold)),
-            None=>None,
+            None => None,
         }
     }
 
-    pub(crate) fn get_total_to_collect(&self)->Decimal {
+    pub(crate) fn get_total_to_collect(&self) -> Decimal {
         let mut total = Decimal::ZERO;
         if let Some(amt) = self.amount_from_donations.as_ref() {
-            total = total.checked_add(
-                *Money::from_str(amt, iso::USD).unwrap().amount()).unwrap();
+            total = total
+                .checked_add(*Money::from_str(amt, iso::USD).unwrap().amount())
+                .unwrap();
         }
         if let Some(amt) = self.amount_from_purchases.as_ref() {
-            total = total.checked_add(
-                *Money::from_str(amt, iso::USD).unwrap().amount()).unwrap();
+            total = total
+                .checked_add(*Money::from_str(amt, iso::USD).unwrap().amount())
+                .unwrap();
         }
         total
     }
 
-    pub(crate) fn get_total_collected(&self)->Decimal {
+    pub(crate) fn get_total_collected(&self) -> Decimal {
         let mut total = Decimal::ZERO;
         if let Some(amt) = self.amount_cash_collected.as_ref() {
-            total = total.checked_add(
-                *Money::from_str(amt, iso::USD).unwrap().amount()).unwrap();
+            total = total
+                .checked_add(*Money::from_str(amt, iso::USD).unwrap().amount())
+                .unwrap();
         }
         if let Some(amt) = self.amount_checks_collected.as_ref() {
-            total = total.checked_add(
-                *Money::from_str(amt, iso::USD).unwrap().amount()).unwrap();
+            total = total
+                .checked_add(*Money::from_str(amt, iso::USD).unwrap().amount())
+                .unwrap();
         }
         total
     }
 
     pub(crate) fn is_payment_valid(&self) -> bool {
-        self.is_check_numbers_valid() &&
-            ((
-                self.get_total_to_collect()!=Decimal::ZERO &&
-                (self.get_total_to_collect() == self.get_total_collected())
-            )
-            || self.will_collect_money_later.unwrap_or(false))
+        self.is_check_numbers_valid()
+            && ((self.get_total_to_collect() != Decimal::ZERO
+                && (self.get_total_to_collect() == self.get_total_collected()))
+                || self.will_collect_money_later.unwrap_or(false))
     }
 
     pub(crate) fn is_check_numbers_valid(&self) -> bool {
@@ -187,22 +192,19 @@ impl MulchOrder {
     }
 
     pub(crate) fn are_purchases_valid(&self) -> bool {
-
-        let is_product_purchase_valid = self.delivery_id.is_some() && self.amount_from_purchases.is_some() && self.purchases.is_some();
+        let is_product_purchase_valid = self.delivery_id.is_some()
+            && self.amount_from_purchases.is_some()
+            && self.purchases.is_some();
         let is_donations_valid = self.amount_from_donations.is_some();
-        let is_total_valid = self.amount_total_collected
-            .as_ref()
-            .map_or(true, |v| {
-                Decimal::from_str(v).map_or(false, |v|v!=Decimal::ZERO && v.is_sign_positive())
-            });
+        let is_total_valid = self.amount_total_collected.as_ref().map_or(true, |v| {
+            Decimal::from_str(v).map_or(false, |v| v != Decimal::ZERO && v.is_sign_positive())
+        });
 
         is_total_valid && (is_product_purchase_valid || is_donations_valid)
     }
-
 }
 
 pub(crate) fn is_order_from_report_data_readonly(jorder: &serde_json::Value) -> bool {
-
     /* if is_system_locked() { return true } */
 
     if get_active_user().is_admin() {
@@ -234,7 +236,11 @@ pub(crate) fn is_active_order() -> bool {
 }
 
 pub(crate) fn is_active_order_from_db() -> bool {
-    ACTIVE_ORDER.read().unwrap().as_ref().map_or(false, |v| !v.is_new_order)
+    ACTIVE_ORDER
+        .read()
+        .unwrap()
+        .as_ref()
+        .map_or(false, |v| !v.is_new_order)
 }
 
 pub(crate) fn reset_active_order() {
@@ -243,16 +249,16 @@ pub(crate) fn reset_active_order() {
 
 pub(crate) fn get_active_order() -> Option<MulchOrder> {
     match &*ACTIVE_ORDER.read().unwrap() {
-        Some(order_state)=>Some(order_state.order.clone()),
-        None=>None,
+        Some(order_state) => Some(order_state.order.clone()),
+        None => None,
     }
 }
 
-pub(crate) fn update_active_order(order: MulchOrder)
-    -> std::result::Result<(),Box<dyn std::error::Error>>
-{
+pub(crate) fn update_active_order(
+    order: MulchOrder,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut order_state_opt = ACTIVE_ORDER.write()?;
-    let mut order_state = order_state_opt.as_mut().unwrap();
+    let order_state = order_state_opt.as_mut().unwrap();
     if !order_state.is_dirty && order_state.order != order {
         order_state.is_dirty = true;
     }
@@ -260,9 +266,7 @@ pub(crate) fn update_active_order(order: MulchOrder)
     Ok(())
 }
 
-pub(crate) async fn submit_active_order()
-    -> std::result::Result<(),Box<dyn std::error::Error>>
-{
+pub(crate) async fn submit_active_order() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let order_state_opt = ACTIVE_ORDER.write()?;
     let order_state = order_state_opt.as_ref().unwrap();
     if !order_state.is_dirty {
@@ -272,7 +276,7 @@ pub(crate) async fn submit_active_order()
 
     let order = &order_state.order;
 
-    let mut query = String::with_capacity(1024*32);
+    let mut query = String::with_capacity(1024 * 32);
     query.push_str("mutation {\n");
     if order_state.is_new_order {
         query.push_str("\t createMulchOrder(order: {\n");
@@ -281,7 +285,10 @@ pub(crate) async fn submit_active_order()
     }
 
     query.push_str(&format!("\t\t orderId: \"{}\"\n", order.order_id.trim()));
-    query.push_str(&format!("\t\t ownerId: \"{}\"\n", order.order_owner_id.trim()));
+    query.push_str(&format!(
+        "\t\t ownerId: \"{}\"\n",
+        order.order_owner_id.trim()
+    ));
 
     if let Some(value) = order.comments.as_ref() {
         query.push_str(&format!("\t\t comments: \"{}\"\n", value.trim()));
@@ -296,7 +303,10 @@ pub(crate) async fn submit_active_order()
     }
 
     if let Some(value) = order.amount_total_collected.as_ref() {
-        query.push_str(&format!("\t\t amountTotalCollected: \"{}\"\n", value.trim()));
+        query.push_str(&format!(
+            "\t\t amountTotalCollected: \"{}\"\n",
+            value.trim()
+        ));
     } else {
         if !order.will_collect_money_later.unwrap_or(false) {
             log::error!("Total collected is zero. will collect later should be true");
@@ -317,7 +327,10 @@ pub(crate) async fn submit_active_order()
             purchase_str.push_str("\t\t\t {\n");
             purchase_str.push_str(&format!("\t\t\t\t productId: \"{}\"\n", product_id.trim()));
             purchase_str.push_str(&format!("\t\t\t\t numSold: {}\n", info.num_sold));
-            purchase_str.push_str(&format!("\t\t\t\t amountCharged: \"{}\"\n", info.amount_charged.trim()));
+            purchase_str.push_str(&format!(
+                "\t\t\t\t amountCharged: \"{}\"\n",
+                info.amount_charged.trim()
+            ));
             purchase_str.push_str("\t\t\t }\n");
             purchases.push(purchase_str);
         }
@@ -326,22 +339,39 @@ pub(crate) async fn submit_active_order()
         query.push_str(&purchases.join(","));
         query.push_str("\t\t ]\n");
 
-        query.push_str(&format!("\t\t deliveryId: {}\n", order.delivery_id.as_ref().unwrap()));
+        query.push_str(&format!(
+            "\t\t deliveryId: {}\n",
+            order.delivery_id.as_ref().unwrap()
+        ));
     }
 
     if let Some(value) = order.amount_cash_collected.as_ref() {
-        query.push_str(&format!("\t\t amountFromCashCollected: \"{}\"\n", value.trim()));
+        query.push_str(&format!(
+            "\t\t amountFromCashCollected: \"{}\"\n",
+            value.trim()
+        ));
     }
 
     if let Some(value) = order.amount_checks_collected.as_ref() {
-        query.push_str(&format!("\t\t amountFromChecksCollected: \"{}\"\n", value.trim()));
-        query.push_str(&format!("\t\t checkNumbers: \"{}\"\n", order.check_numbers.as_ref().unwrap().trim()));
+        query.push_str(&format!(
+            "\t\t amountFromChecksCollected: \"{}\"\n",
+            value.trim()
+        ));
+        query.push_str(&format!(
+            "\t\t checkNumbers: \"{}\"\n",
+            order.check_numbers.as_ref().unwrap().trim()
+        ));
     }
 
-
     query.push_str("\t\t customer: {\n");
-    query.push_str(&format!("\t\t\t name: \"{}\"\n", order.customer.name.trim()));
-    query.push_str(&format!("\t\t\t addr1: \"{}\"\n", order.customer.addr1.trim()));
+    query.push_str(&format!(
+        "\t\t\t name: \"{}\"\n",
+        order.customer.name.trim()
+    ));
+    query.push_str(&format!(
+        "\t\t\t addr1: \"{}\"\n",
+        order.customer.addr1.trim()
+    ));
     if let Some(value) = order.customer.addr2.as_ref() {
         query.push_str(&format!("\t\t\t addr2: \"{}\"\n", value.trim()));
     }
@@ -351,12 +381,22 @@ pub(crate) async fn submit_active_order()
     if let Some(value) = order.customer.zipcode.as_ref() {
         query.push_str(&format!("\t\t\t zipcode: {}\n", value));
     }
-    query.push_str(&format!("\t\t\t phone: \"{}\"\n", order.customer.phone.trim()));
+    query.push_str(&format!(
+        "\t\t\t phone: \"{}\"\n",
+        order.customer.phone.trim()
+    ));
     if let Some(value) = order.customer.email.as_ref() {
         query.push_str(&format!("\t\t email: \"{}\"\n", value.trim()));
     }
-    query.push_str(&format!("\t\t\t neighborhood: \"{}\"\n",
-            order.customer.neighborhood.as_ref().unwrap_or(&"".to_string()).trim()));
+    query.push_str(&format!(
+        "\t\t\t neighborhood: \"{}\"\n",
+        order
+            .customer
+            .neighborhood
+            .as_ref()
+            .unwrap_or(&"".to_string())
+            .trim()
+    ));
     query.push_str("\t\t }\n");
 
     query.push_str("\t})\n");
@@ -366,9 +406,10 @@ pub(crate) async fn submit_active_order()
 
     //Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "TODO Issue")))
     let req = GraphQlReq::new(query);
-    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+    make_gql_request::<serde_json::Value>(&req)
+        .await
+        .map(|_| ())
 }
-
 
 static DELETE_ORDER_GQL: &'static str = r"
 mutation {
@@ -376,17 +417,22 @@ mutation {
 }
 ";
 
-pub(crate) async fn delete_order(order_id: &str)
-    -> std::result::Result<(),Box<dyn std::error::Error>>
-{
-    let query = DELETE_ORDER_GQL.replace("***ORDER_ID_PARAM***", &format!("orderId: \"{}\"", order_id));
+pub(crate) async fn delete_order(
+    order_id: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let query = DELETE_ORDER_GQL.replace(
+        "***ORDER_ID_PARAM***",
+        &format!("orderId: \"{}\"", order_id),
+    );
 
     let req = GraphQlReq::new(query);
     log::info!("Delete GraphQL: {}", &req.query);
-    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+    make_gql_request::<serde_json::Value>(&req)
+        .await
+        .map(|_| ())
 }
 
-static LOAD_ORDER_GQL:& 'static str = r"
+static LOAD_ORDER_GQL: &'static str = r"
 {
   mulchOrder(***ORDER_ID_PARAM***) {
     orderId
@@ -421,10 +467,9 @@ static LOAD_ORDER_GQL:& 'static str = r"
 }
 ";
 
-pub(crate) async fn load_active_order_from_db(order_id: &str)
-    -> std::result::Result<(), Box<dyn std::error::Error>>
-{
-
+pub(crate) async fn load_active_order_from_db(
+    order_id: &str,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     #[derive(Deserialize, Debug)]
     struct RespWrapper {
         #[serde(alias = "mulchOrder")]
@@ -472,7 +517,10 @@ pub(crate) async fn load_active_order_from_db(order_id: &str)
         pub(crate) amount_charged: String,
     }
 
-    let query = LOAD_ORDER_GQL.replace("***ORDER_ID_PARAM***", &format!("orderId: \"{}\"", order_id));
+    let query = LOAD_ORDER_GQL.replace(
+        "***ORDER_ID_PARAM***",
+        &format!("orderId: \"{}\"", order_id),
+    );
 
     let req = GraphQlReq::new(query);
     log::info!("Load GraphQL: {}", &req.query);
@@ -480,7 +528,7 @@ pub(crate) async fn load_active_order_from_db(order_id: &str)
     let order = resp.mulch_order;
 
     let new_active_order_state = ActiveOrderState {
-        order: MulchOrder{
+        order: MulchOrder {
             order_id: order.order_id,
             order_owner_id: order.order_owner_id,
             comments: order.comments,
@@ -496,11 +544,15 @@ pub(crate) async fn load_active_order_from_db(order_id: &str)
             customer: order.customer,
             delivery_id: order.delivery_id,
             purchases: order.purchases.and_then(|v| {
-                let purchases = v.into_iter()
-                    .map(|i|{
+                let purchases = v
+                    .into_iter()
+                    .map(|i| {
                         (
                             i.product_id,
-                            PurchasedItem{num_sold:i.num_sold, amount_charged: to_money_str_no_symbol(Some(&i.amount_charged))}
+                            PurchasedItem {
+                                num_sold: i.num_sold,
+                                amount_charged: to_money_str_no_symbol(Some(&i.amount_charged)),
+                            },
                         )
                     })
                     .collect();
@@ -536,23 +588,33 @@ mutation {
 }
 ";
 
-
-pub(crate) async fn set_spreaders(order_id: &str, spreaders: &Vec<String>)
-    -> std::result::Result<(), Box<dyn std::error::Error>>
-{
-    log::info!("Setting Spreaders for orderid: {}:{:#?}", order_id, &spreaders);
-    let spreaders = spreaders.into_iter()
-        .map(|v|format!("\"{}\"",v)).collect::<Vec<String>>()
+pub(crate) async fn set_spreaders(
+    order_id: &str,
+    spreaders: &Vec<String>,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    log::info!(
+        "Setting Spreaders for orderid: {}:{:#?}",
+        order_id,
+        &spreaders
+    );
+    let spreaders = spreaders
+        .into_iter()
+        .map(|v| format!("\"{}\"", v))
+        .collect::<Vec<String>>()
         .join(",");
     let query = SET_SPREADERS_GQL
-        .replace("***ORDER_ID_PARAM***", &format!("orderId: \"{}\"", order_id))
+        .replace(
+            "***ORDER_ID_PARAM***",
+            &format!("orderId: \"{}\"", order_id),
+        )
         .replace("***SPREADERS_PARAM***", &spreaders);
 
     let req = GraphQlReq::new(query);
     log::info!("Setting Spreaders GraphQL: {}", &req.query);
-    make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
+    make_gql_request::<serde_json::Value>(&req)
+        .await
+        .map(|_| ())
 }
-
 
 static TROOP_ORDER_AMOUNT_COLLECTED_GQL: &'static str = r"
 {
@@ -564,13 +626,13 @@ static TROOP_ORDER_AMOUNT_COLLECTED_GQL: &'static str = r"
 }
 ";
 
-pub(crate) async fn have_orders_been_created()
-    -> std::result::Result<bool,Box<dyn std::error::Error>>
-{
+pub(crate) async fn have_orders_been_created(
+) -> std::result::Result<bool, Box<dyn std::error::Error>> {
     // Fails safe
     let req = GraphQlReq::new(TROOP_ORDER_AMOUNT_COLLECTED_GQL);
     make_gql_request::<serde_json::Value>(&req).await.map(|v| {
-        v["summary"]["troop"]["totalAmountCollected"].as_str()
+        v["summary"]["troop"]["totalAmountCollected"]
+            .as_str()
             .map_or_else(|| true, |i| i != "0")
     })
 }
