@@ -1,42 +1,29 @@
-
-mod bootstrap;
-mod datatable;
-mod leaflet;
-mod google_charts;
-mod auth_utils;
-mod geolocate;
-mod data_model_orders;
-mod data_model_reports;
-mod data_model;
 mod currency_utils;
-mod gql_utils;
+mod data_model;
+mod js;
 
+use rust_decimal::prelude::*;
+use wasm_bindgen::JsCast;
+use web_sys::{HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::{HtmlSelectElement, HtmlInputElement, HtmlTextAreaElement};
-use rust_decimal::prelude::*;
 
-use auth_utils::{login, logout, is_authenticated};
 use data_model::*;
+use js::auth_utils::{is_authenticated, login, logout};
+use js::{bootstrap, datatable, geolocate, google_charts, leaflet};
 
 mod components;
 use components::{
-    issue_report_dlg::{ReportIssueDlg, show_report_issue_dlg},
-    navbar::{AppNav},
-    add_new_order_button::{AddNewOrderButton},
+    add_new_order_button::AddNewOrderButton,
+    issue_report_dlg::{show_report_issue_dlg, ReportIssueDlg},
+    navbar::AppNav,
 };
 
 mod pages;
 use pages::{
-    home::Home,
-    reports::Reports,
-    order_form::OrderForm,
-    order_donations::OrderDonations,
-    order_products::OrderProducts,
-    timecards::Timecards,
-    closeout_fundraiser::CloseoutFundraiser,
-    fr_config::FrConfig,
+    closeout_fundraiser::CloseoutFundraiser, fr_config::FrConfig, home::Home,
+    order_donations::OrderDonations, order_form::OrderForm, order_products::OrderProducts,
+    reports::Reports, timecards::Timecards,
 };
 
 /////////////////////////////////////////////////
@@ -50,11 +37,12 @@ pub(crate) fn get_cloud_api_url() -> &'static str {
 /////////////////////////////////////////////////
 ///
 pub(crate) fn get_html_input_value(id: &str, document: &web_sys::Document) -> Option<String> {
-    let value = document.get_element_by_id(id)
+    let value = document
+        .get_element_by_id(id)
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
         .value();
-    if 0==value.len() {
+    if 0 == value.len() {
         None
     } else {
         Some(value)
@@ -64,7 +52,8 @@ pub(crate) fn get_html_input_value(id: &str, document: &web_sys::Document) -> Op
 /////////////////////////////////////////////////
 ///
 pub(crate) fn get_html_checked_input_value(id: &str, document: &web_sys::Document) -> bool {
-    document.get_element_by_id(id)
+    document
+        .get_element_by_id(id)
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
         .checked()
@@ -73,11 +62,12 @@ pub(crate) fn get_html_checked_input_value(id: &str, document: &web_sys::Documen
 /////////////////////////////////////////////////
 ///
 pub(crate) fn get_html_textarea_value(id: &str, document: &web_sys::Document) -> Option<String> {
-    let value = document.get_element_by_id(id)
+    let value = document
+        .get_element_by_id(id)
         .and_then(|t| t.dyn_into::<HtmlTextAreaElement>().ok())
         .unwrap()
         .value();
-    if 0==value.len() {
+    if 0 == value.len() {
         None
     } else {
         Some(value)
@@ -87,35 +77,44 @@ pub(crate) fn get_html_textarea_value(id: &str, document: &web_sys::Document) ->
 /////////////////////////////////////////////////
 ///
 pub(crate) fn save_to_active_order() {
-    if !is_active_order() { return; }
+    if !is_active_order() {
+        return;
+    }
 
     let document = gloo::utils::document();
     let mut order = get_active_order().unwrap();
 
-    if let Some(order_owner_element) = document.get_element_by_id("formOrderOwner")
+    if let Some(order_owner_element) = document
+        .get_element_by_id("formOrderOwner")
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
     {
         // If it isn't there then it is because we aren't in admin mode
         order.order_owner_id = order_owner_element.value();
     }
 
-    order.customer.name = get_html_input_value("formCustomerName", &document).unwrap_or("".to_string());
+    order.customer.name =
+        get_html_input_value("formCustomerName", &document).unwrap_or("".to_string());
     order.customer.phone = get_html_input_value("formPhone", &document).unwrap_or("".to_string());
     order.customer.email = get_html_input_value("formEmail", &document);
     order.customer.addr1 = get_html_input_value("formAddr1", &document).unwrap_or("".to_string());
     order.customer.addr2 = get_html_input_value("formAddr2", &document);
     order.customer.city = get_html_input_value("formCity", &document);
-    order.customer.zipcode = get_html_input_value("formZipcode", &document).map(|v| v.parse::<u32>().unwrap());
-    order.customer.neighborhood = Some(document.get_element_by_id("formNeighborhood")
-        .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
-        .unwrap()
-        .value());
+    order.customer.zipcode =
+        get_html_input_value("formZipcode", &document).map(|v| v.parse::<u32>().unwrap());
+    order.customer.neighborhood = Some(
+        document
+            .get_element_by_id("formNeighborhood")
+            .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
+            .unwrap()
+            .value(),
+    );
     order.comments = get_html_textarea_value("formOrderComments", &document);
     order.special_instructions = get_html_textarea_value("formSpecialInstructions", &document);
     order.amount_cash_collected = get_html_input_value("formCashPaid", &document);
     order.amount_checks_collected = get_html_input_value("formCheckPaid", &document);
     order.check_numbers = get_html_input_value("formCheckNumbers", &document);
-    order.will_collect_money_later = Some(get_html_checked_input_value("formCollectLater", &document));
+    order.will_collect_money_later =
+        Some(get_html_checked_input_value("formCollectLater", &document));
     order.is_verified = Some(get_html_checked_input_value("formIsVerified", &document));
     // This must come after setting checks/cash collected
     let total_collected = order.get_total_collected();
@@ -127,7 +126,6 @@ pub(crate) fn save_to_active_order() {
 
     log::info!("Saving Order: {:#?}", &order);
     update_active_order(order).unwrap();
-
 }
 
 /////////////////////////////////////////////////
@@ -140,8 +138,7 @@ pub struct AppFooterProps {
 }
 
 #[function_component(AppFooter)]
-pub fn app_footer(props: &AppFooterProps) -> Html
-{
+pub fn app_footer(props: &AppFooterProps) -> Html {
     let cur_win_loc = gloo::utils::window().location().pathname().unwrap();
     // log::info!("!!!!! WinLoc: {}", cur_win_loc);
 
@@ -156,7 +153,6 @@ pub fn app_footer(props: &AppFooterProps) -> Html
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-
 
 /////////////////////////////////////////////////
 // Route Logic
@@ -188,7 +184,6 @@ pub enum AppRoutes {
 
 #[function_component]
 fn App() -> Html {
-
     let is_loading = use_state_eq(|| true);
     let is_order_active = use_state_eq(|| is_active_order());
 
@@ -198,7 +193,6 @@ fn App() -> Html {
             // This is kindof a hack to save order form before we switch away
             let document = web_sys::window().unwrap().document().unwrap();
             if document.get_element_by_id("newOrEditOrderForm").is_some() {
-
                 if is_active_order() {
                     save_to_active_order();
                     is_order_active.set(true);
@@ -209,15 +203,15 @@ fn App() -> Html {
             //log::info!("````````` switcthing ``````````, {:?}  {}", route, is_some);
 
             match route {
-                AppRoutes::Home => html!{<Home/>},
-                AppRoutes::OrderForm => html!{<OrderForm/>},
+                AppRoutes::Home => html! {<Home/>},
+                AppRoutes::OrderForm => html! {<OrderForm/>},
                 //TODO: should these be in a seperate routing table?
-                AppRoutes::OrderProducts => html!{<OrderProducts/>},
-                AppRoutes::OrderDonations => html!{<OrderDonations/>},
-                AppRoutes::Reports => html!{<Reports/>},
-                AppRoutes::Timecards => html!{<Timecards/>},
-                AppRoutes::FundraiserCloseout => html!{<CloseoutFundraiser/>},
-                AppRoutes::FrConfig => html!{<FrConfig/>},
+                AppRoutes::OrderProducts => html! {<OrderProducts/>},
+                AppRoutes::OrderDonations => html! {<OrderDonations/>},
+                AppRoutes::Reports => html! {<Reports/>},
+                AppRoutes::Timecards => html! {<Timecards/>},
+                AppRoutes::FundraiserCloseout => html! {<CloseoutFundraiser/>},
+                AppRoutes::FrConfig => html! {<FrConfig/>},
 
                 AppRoutes::NotFound => html! { <h1>{ "404" }</h1> },
             }
@@ -261,7 +255,7 @@ fn App() -> Html {
                     }
                 });
             }
-            ||()
+            || ()
         });
     }
 
@@ -304,7 +298,9 @@ fn App() -> Html {
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-    log::info!("RelVer: {}", std::option_env!("AWS_COMMIT_ID").unwrap_or("?"));
+    log::info!(
+        "RelVer: {}",
+        std::option_env!("AWS_COMMIT_ID").unwrap_or("?")
+    );
     yew::Renderer::<App>::new().render();
 }
-

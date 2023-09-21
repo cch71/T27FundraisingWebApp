@@ -2,14 +2,14 @@ use gloo::net::http::Request;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
-use crate::auth_utils::get_active_user;
+use super::get_active_user;
 
 lazy_static! {
     static ref GQLURL: String = format!("{}/graphql", crate::get_cloud_api_url());
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct GraphQlReq {
+pub(super) struct GraphQlReq {
     pub(crate) query: String,
 }
 impl GraphQlReq {
@@ -20,7 +20,7 @@ impl GraphQlReq {
     }
 }
 
-pub(crate) async fn make_gql_request<T>(
+pub(super) async fn make_gql_request<T>(
     req: &GraphQlReq,
 ) -> std::result::Result<T, Box<dyn std::error::Error>>
 where

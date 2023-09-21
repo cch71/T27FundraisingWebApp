@@ -7,8 +7,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::RwLock;
 
-use crate::data_model::get_active_user;
-use crate::gql_utils::{make_gql_request, GraphQlReq};
+use super::{
+    get_active_user,
+    gql_utils::{make_gql_request, GraphQlReq},
+};
 
 lazy_static! {
     static ref ACTIVE_ORDER: RwLock<Option<ActiveOrderState>> = RwLock::new(None);
