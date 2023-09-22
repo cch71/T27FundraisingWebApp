@@ -4,14 +4,14 @@ use super::{
 };
 use chrono::prelude::*;
 use gloo::storage::{LocalStorage, SessionStorage, Storage};
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy as LazyLock;
 use serde::{Deserialize, Serialize};
 
+// Exposing this const out to keep consistent tag name
 pub(crate) static ALL_USERS_TAG: &'static str = "doShowAllUsers";
-
-lazy_static! {
-    static ref GEOJSONURL: String = format!("{}/salelocs", crate::get_cloud_api_url());
-}
+// URL to api that returns GeoJSON locations
+static GEOJSONURL: LazyLock<String> =
+    LazyLock::new(|| crate::CLOUD_API_URL.to_owned() + "/salelocs");
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub(crate) enum ReportViews {

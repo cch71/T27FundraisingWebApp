@@ -1,12 +1,9 @@
+use super::get_active_user;
 use gloo::net::http::Request;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy as LazyLock;
 use serde::{Deserialize, Serialize};
 
-use super::get_active_user;
-
-lazy_static! {
-    static ref GQLURL: String = format!("{}/graphql", crate::get_cloud_api_url());
-}
+static GQLURL: LazyLock<String> = LazyLock::new(|| crate::CLOUD_API_URL.to_string() + "/graphql");
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(super) struct GraphQlReq {

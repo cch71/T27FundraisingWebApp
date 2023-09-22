@@ -1,10 +1,8 @@
-use lazy_static::lazy_static;
-use std::sync::{RwLock, Arc};
+use once_cell::sync::Lazy as LazyLock;
+use std::sync::{Arc, RwLock};
 
-
-lazy_static! {
-    static ref ACTIVE_USER: RwLock<Option<Arc<AuthenticatedUserInfo>>> = RwLock::new(None);
-}
+static ACTIVE_USER: LazyLock<RwLock<Option<Arc<AuthenticatedUserInfo>>>> =
+    LazyLock::new(|| RwLock::new(None));
 
 /////////////////////////////////////////////////
 // Auth Comp Stuff
@@ -35,21 +33,22 @@ pub(crate) struct AuthenticatedUserInfo {
 }
 
 impl AuthenticatedUserInfo {
-    pub(crate) fn get_id(&self)->String {
+    pub(crate) fn get_id(&self) -> String {
         // TODO: Do this at creation time
-        self.id.as_ref().map_or_else(||{
-            let v: Vec<&str> = self.email.split('@').collect();
-            v[0].to_string()
-        },|v|{
-            v.clone()
-        })
+        self.id.as_ref().map_or_else(
+            || {
+                let v: Vec<&str> = self.email.split('@').collect();
+                v[0].to_string()
+            },
+            |v| v.clone(),
+        )
     }
 
-    pub(crate) fn get_name(&self)->String {
+    pub(crate) fn get_name(&self) -> String {
         self.name.as_ref().unwrap_or(&self.get_id()).clone()
     }
 
-    pub(crate) fn is_admin(&self)->bool {
+    pub(crate) fn is_admin(&self) -> bool {
         self.roles.contains(&"FrAdmins".to_string())
     }
 }
@@ -58,16 +57,17 @@ pub(crate) async fn get_active_user_async() -> Option<Arc<AuthenticatedUserInfo>
     match getUserInfo().await {
         Ok(user_info) => {
             //log::info!("User Info: {:#?}", user_info);
-            let user_info: AuthenticatedUserInfo = serde_wasm_bindgen::from_value(user_info).unwrap();
+            let user_info: AuthenticatedUserInfo =
+                serde_wasm_bindgen::from_value(user_info).unwrap();
             let user_info = Arc::new(user_info);
             *ACTIVE_USER.write().unwrap() = Some(user_info.clone());
             Some(user_info)
-        },
+        }
         Err(err) => {
             log::error!("User Info Err: {:#?}", err);
             gloo::dialogs::alert(&format!("Failed to get User Info: {:#?}", err));
             None
-        },
+        }
     }
 }
 
@@ -81,7 +81,7 @@ pub(crate) async fn is_authenticated() -> bool {
             log::info!("Is Authenticated: {:#?}", &is_auth);
             let is_auth: bool = serde_wasm_bindgen::from_value(is_auth).unwrap();
             return is_auth;
-        },
+        }
         Err(err) => log::error!("User Info Err: {:#?}", err),
     };
     false
@@ -102,4 +102,3 @@ pub(crate) async fn logout() {
         log::info!("Logged out");
     }
 }
-

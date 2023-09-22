@@ -1,5 +1,5 @@
 use crate::currency_utils::*;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy as LazyLock;
 use regex::Regex;
 use rust_decimal::prelude::*;
 use rusty_money::{iso, Money};
@@ -12,10 +12,9 @@ use super::{
     gql_utils::{make_gql_request, GraphQlReq},
 };
 
-lazy_static! {
-    static ref ACTIVE_ORDER: RwLock<Option<ActiveOrderState>> = RwLock::new(None);
-    static ref CHECKNUM_RE_DELIMETERS: Regex = Regex::new(r"[ ,;.]+").unwrap();
-}
+static ACTIVE_ORDER: LazyLock<RwLock<Option<ActiveOrderState>>> =
+    LazyLock::new(|| RwLock::new(None));
+static CHECKNUM_RE_DELIMETERS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[ ,;.]+").unwrap());
 
 #[derive(Default, Clone, PartialEq, Debug)]
 pub(crate) struct ActiveOrderState {

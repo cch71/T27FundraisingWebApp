@@ -4,7 +4,7 @@ use super::{
 };
 use chrono::prelude::*;
 use gloo::storage::{LocalStorage, Storage};
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy as LazyLock;
 use rust_decimal::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -76,15 +76,18 @@ static LOCAL_STORE_SCHEMA_VER: u32 = 020501;
 
 pub(crate) type UserMapType = BTreeMap<String, UserInfo>;
 
-lazy_static! {
-    static ref NEIGHBORHOODS: RwLock<Option<Arc<Vec<Neighborhood>>>> = RwLock::new(None);
-    static ref PRODUCTS: RwLock<Option<Arc<BTreeMap<String, ProductInfo>>>> = RwLock::new(None);
-    static ref DELIVERIES: RwLock<Option<Arc<BTreeMap<u32, DeliveryInfo>>>> = RwLock::new(None);
-    static ref FRCONFIG: RwLock<Option<Arc<FrConfig>>> = RwLock::new(None);
-    // map<uid,(name, group)>
-    static ref USER_MAP: RwLock<Arc<UserMapType>> = RwLock::new(Arc::new(BTreeMap::new()));
-    static ref FR_CLOSURE_DATA: RwLock<Arc<BTreeMap<String,FrClosureMapData>>> = RwLock::new(Arc::new(BTreeMap::new()));
-}
+static NEIGHBORHOODS: LazyLock<RwLock<Option<Arc<Vec<Neighborhood>>>>> =
+    LazyLock::new(|| RwLock::new(None));
+static PRODUCTS: LazyLock<RwLock<Option<Arc<BTreeMap<String, ProductInfo>>>>> =
+    LazyLock::new(|| RwLock::new(None));
+static DELIVERIES: LazyLock<RwLock<Option<Arc<BTreeMap<u32, DeliveryInfo>>>>> =
+    LazyLock::new(|| RwLock::new(None));
+static FRCONFIG: LazyLock<RwLock<Option<Arc<FrConfig>>>> = LazyLock::new(|| RwLock::new(None));
+// map<uid,(name, group)>
+static USER_MAP: LazyLock<RwLock<Arc<UserMapType>>> =
+    LazyLock::new(|| RwLock::new(Arc::new(BTreeMap::new())));
+static FR_CLOSURE_DATA: LazyLock<RwLock<Arc<BTreeMap<String, FrClosureMapData>>>> =
+    LazyLock::new(|| RwLock::new(Arc::new(BTreeMap::new())));
 
 ////////////////////////////////////////////////////////////////////////////
 //

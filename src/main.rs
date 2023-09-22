@@ -28,11 +28,8 @@ use pages::{
 
 /////////////////////////////////////////////////
 ///
-pub(crate) fn get_cloud_api_url() -> &'static str {
-    //AWS API URL
-    //invokeUrl: 'https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod'
-    "https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod"
-}
+pub(crate) const CLOUD_API_URL: &'static str =
+    "https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod";
 
 /////////////////////////////////////////////////
 ///
