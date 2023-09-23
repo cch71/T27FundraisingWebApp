@@ -1,5 +1,5 @@
 [package]
-name = "t27-fundraiser-webapp"
+name = "timecard_pages"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,24 +7,24 @@ edition = "2021"
 log = "0"
 js = { path = "../js" }
 data_model = { path = "../data_model" }
-timecard_pages = { path = "../timecard_pages" }
-once_cell = "1"
-chrono = { version = "0", features = ["wasmbind"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", default-features = false, features = ["alloc"] }
-wasm-bindgen = "0"
-serde-wasm-bindgen = "0"
-wasm-bindgen-futures = "0"
-js-sys = "0"
-wasm-logger = "0"
 yew = { version = "0", features = ["csr"] }
-yew-router = "0"
-rust_decimal = "1"
-rusty-money = { version = "0", features = ["iso"] }
-uuid = { version = "1", features = ["serde", "v4", "js"] }
 gloo = { version = "0", features = ["futures"] }
-regex = "1"
-csv = "1"
+wasm-bindgen = "0"
+wasm-bindgen-futures = "0"
+
+# once_cell = "1"
+# chrono = { version = "0", features = ["wasmbind"] }
+# serde = { version = "1", features = ["derive"] }
+# serde_json = { version = "1", default-features = false, features = ["alloc"] }
+# serde-wasm-bindgen = "0"
+# js-sys = "0"
+# wasm-logger = "0"
+# yew-router = "0"
+# rust_decimal = "1"
+# rusty-money = { version = "0", features = ["iso"] }
+# uuid = { version = "1", features = ["serde", "v4", "js"] }
+# regex = "1"
+# csv = "1"
 
 [dependencies.web-sys]
 version = "0"

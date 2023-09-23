@@ -7,10 +7,10 @@ static GQLURL: LazyLock<String> = LazyLock::new(|| crate::CLOUD_API_URL.to_strin
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(super) struct GraphQlReq {
-    pub(crate) query: String,
+    pub query: String,
 }
 impl GraphQlReq {
-    pub(crate) fn new<T: AsRef<str>>(query: T) -> Self {
+    pub fn new<T: AsRef<str>>(query: T) -> Self {
         return Self {
             query: query.as_ref().to_string(),
         };

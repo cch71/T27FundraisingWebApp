@@ -1,16 +1,20 @@
+use crate::AppRoutes;
+use data_model::*;
+use std::collections::HashMap;
+use wasm_bindgen::JsCast;
+use web_sys::{
+    HtmlButtonElement, HtmlInputElement, HtmlSelectElement, InputEvent, MouseEvent, SubmitEvent,
+};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::{InputEvent, MouseEvent, SubmitEvent, HtmlSelectElement, HtmlInputElement, HtmlButtonElement};
-use crate::AppRoutes;
-use crate::data_model::*;
-use std::collections::HashMap;
 
 /////////////////////////////////////////////////
 ///
 fn disable_submit_button(value: bool) {
-    if let Some(btn) = web_sys::window().unwrap()
-        .document().unwrap()
+    if let Some(btn) = web_sys::window()
+        .unwrap()
+        .document()
+        .unwrap()
         .get_element_by_id("formAddProductsSubmit")
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
     {
@@ -21,12 +25,13 @@ fn disable_submit_button(value: bool) {
 /////////////////////////////////////////////////
 ///
 fn get_delivery_id(document: &web_sys::Document) -> Option<String> {
-    let value = document.get_element_by_id("formSelectDeliveryDate")
+    let value = document
+        .get_element_by_id("formSelectDeliveryDate")
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
         .unwrap()
         .value();
     log::info!("Delivery Date Selection Val: {}", &value);
-    if 0==value.len() || "none" == value {
+    if 0 == value.len() || "none" == value {
         None
     } else {
         Some(value)
@@ -38,18 +43,24 @@ fn get_delivery_id(document: &web_sys::Document) -> Option<String> {
 fn get_product_items(document: &web_sys::Document) -> HashMap<String, PurchasedItem> {
     let mut product_map = HashMap::new();
     if let Ok(product_nodes) = document.query_selector_all("input[data-productid]") {
-        if 0 == product_nodes.length() { return product_map; }
+        if 0 == product_nodes.length() {
+            return product_map;
+        }
         for idx in 0..product_nodes.length() {
-            if let Some(element) = product_nodes.item(idx).and_then(|t| t.dyn_into::<HtmlInputElement>().ok()) {
+            if let Some(element) = product_nodes
+                .item(idx)
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+            {
                 let value = element.value();
                 if let Some(num_sold) = value.parse::<u32>().ok() {
                     let product_id = element.dataset().get("productid").unwrap();
-                    if 0==num_sold {
+                    if 0 == num_sold {
                         log::info!("Purchase Item (Removing): {}: {}", &product_id, num_sold);
-                    } else  {
+                    } else {
                         log::info!("Purchase Item: {}: {}", &product_id, num_sold);
                         let amount_charged = get_purchase_cost_for(&product_id, num_sold);
-                        product_map.insert( product_id, PurchasedItem::new(num_sold, amount_charged));
+                        product_map
+                            .insert(product_id, PurchasedItem::new(num_sold, amount_charged));
                     }
                 }
             }
@@ -62,28 +73,41 @@ fn get_product_items(document: &web_sys::Document) -> HashMap<String, PurchasedI
 ///
 fn are_product_items_valid(document: &web_sys::Document) -> bool {
     if let Ok(product_nodes) = document.query_selector_all("input[data-productid]") {
-        if 0 == product_nodes.length() { return false; }
+        if 0 == product_nodes.length() {
+            return false;
+        }
         let mut is_all_0 = true;
         for idx in 0..product_nodes.length() {
-            if let Some(element) = product_nodes.item(idx).and_then(|t| t.dyn_into::<HtmlInputElement>().ok()) {
+            if let Some(element) = product_nodes
+                .item(idx)
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+            {
                 let value = element.value();
-                if value.len() == 0 { continue; }
+                if value.len() == 0 {
+                    continue;
+                }
                 let num_to_purchase = match value.parse::<u32>() {
-                    Ok(value)=> {
-                        if 0==value { continue; }
+                    Ok(value) => {
+                        if 0 == value {
+                            continue;
+                        }
                         value
-                    },
-                    Err(_)=>return false,
+                    }
+                    Err(_) => return false,
                 };
                 is_all_0 = false;
                 let product_id = match element.dataset().get("productid") {
-                    Some(product_id)=>product_id,
-                    None=>return false,
+                    Some(product_id) => product_id,
+                    None => return false,
                 };
-                if !is_purchase_valid(&product_id, num_to_purchase) { return false; }
+                if !is_purchase_valid(&product_id, num_to_purchase) {
+                    return false;
+                }
             }
         }
-        if is_all_0 { return false; }
+        if is_all_0 {
+            return false;
+        }
     }
     true
 }
@@ -102,8 +126,7 @@ pub struct ProductItemProps {
 }
 
 #[function_component(ProductItem)]
-pub fn product_item(props: &ProductItemProps) -> Html
-{
+pub fn product_item(props: &ProductItemProps) -> Html {
     html! {
         <div class="row mb-2 col-sm-12">
             <label for={props.id.clone()}>
@@ -126,11 +149,10 @@ pub fn product_item(props: &ProductItemProps) -> Html
 /////////////////////////////////////////////////
 
 #[function_component(OrderProducts)]
-pub fn order_products() -> Html
-{
+pub fn order_products() -> Html {
     let history = use_navigator().unwrap();
     if !is_active_order() {
-            history.push(&AppRoutes::Home);
+        history.push(&AppRoutes::Home);
     }
     let order = get_active_order().unwrap();
     let is_order_readonly = order.is_readonly();
@@ -185,9 +207,9 @@ pub fn order_products() -> Html
         use_effect(move || {
             let document = gloo::utils::document();
             disable_submit_button(
-                !are_product_items_valid(&document) || get_delivery_id(&document).is_none()
+                !are_product_items_valid(&document) || get_delivery_id(&document).is_none(),
             );
-            ||{}
+            || {}
         });
     }
     let mut found_selected_delivery = false;
@@ -198,9 +220,9 @@ pub fn order_products() -> Html
                 <div class="card-body">
                     <h5 class="card-title">{format!("{} Order", get_fr_config().description)}</h5>
                     <form onsubmit={on_form_submission} id="productForm">
-			<div class="row mb-3 col-sm-12">
-				<label for="formSelectDeliveryDate">{"Select Delivery Date"}</label>
-				<select
+            <div class="row mb-3 col-sm-12">
+                <label for="formSelectDeliveryDate">{"Select Delivery Date"}</label>
+                <select
                                     class="custom-select"
                                     id="formSelectDeliveryDate"
                                     required=true
@@ -229,8 +251,8 @@ pub fn order_products() -> Html
                                 if !found_selected_delivery {
                                     <option value="none" selected=true disabled=true hidden=true>{"Select delivery date"}</option>
                                 }
-				</select>
-			</div>
+                </select>
+            </div>
                         {
                             get_products().iter().map(|(product_id, product)| {
                                 html!{

@@ -17,40 +17,40 @@ static ACTIVE_ORDER: LazyLock<RwLock<Option<ActiveOrderState>>> =
 static CHECKNUM_RE_DELIMETERS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[ ,;.]+").unwrap());
 
 #[derive(Default, Clone, PartialEq, Debug)]
-pub(crate) struct ActiveOrderState {
+pub struct ActiveOrderState {
     order: MulchOrder,
     is_new_order: bool,
     is_dirty: bool,
 }
 
 #[derive(Default, Clone, PartialEq, Debug)]
-pub(crate) struct MulchOrder {
-    pub(crate) order_id: String,
-    pub(crate) order_owner_id: String,
-    pub(crate) last_modified_time: String,
-    pub(crate) comments: Option<String>,
-    pub(crate) special_instructions: Option<String>,
-    pub(crate) amount_from_donations: Option<String>,
-    pub(crate) amount_from_purchases: Option<String>,
-    pub(crate) amount_cash_collected: Option<String>,
-    pub(crate) amount_checks_collected: Option<String>,
-    pub(crate) amount_total_collected: Option<String>,
-    pub(crate) check_numbers: Option<String>,
-    pub(crate) will_collect_money_later: Option<bool>,
-    pub(crate) is_verified: Option<bool>,
-    pub(crate) customer: CustomerInfo,
-    pub(crate) purchases: Option<HashMap<String, PurchasedItem>>,
-    pub(crate) delivery_id: Option<u32>,
-    pub(crate) year_ordered: Option<String>,
+pub struct MulchOrder {
+    pub order_id: String,
+    pub order_owner_id: String,
+    pub last_modified_time: String,
+    pub comments: Option<String>,
+    pub special_instructions: Option<String>,
+    pub amount_from_donations: Option<String>,
+    pub amount_from_purchases: Option<String>,
+    pub amount_cash_collected: Option<String>,
+    pub amount_checks_collected: Option<String>,
+    pub amount_total_collected: Option<String>,
+    pub check_numbers: Option<String>,
+    pub will_collect_money_later: Option<bool>,
+    pub is_verified: Option<bool>,
+    pub customer: CustomerInfo,
+    pub purchases: Option<HashMap<String, PurchasedItem>>,
+    pub delivery_id: Option<u32>,
+    pub year_ordered: Option<String>,
 }
 
 #[derive(Default, Clone, PartialEq, Debug)]
-pub(crate) struct PurchasedItem {
-    pub(crate) num_sold: u32,
-    pub(crate) amount_charged: String,
+pub struct PurchasedItem {
+    pub num_sold: u32,
+    pub amount_charged: String,
 }
 impl PurchasedItem {
-    pub(crate) fn new(num_sold: u32, amount_charged: String) -> Self {
+    pub fn new(num_sold: u32, amount_charged: String) -> Self {
         Self {
             num_sold: num_sold,
             amount_charged: amount_charged,
@@ -59,15 +59,15 @@ impl PurchasedItem {
 }
 
 #[derive(Default, Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub(crate) struct CustomerInfo {
-    pub(crate) name: String,
-    pub(crate) addr1: String,
-    pub(crate) addr2: Option<String>,
-    pub(crate) city: Option<String>,
-    pub(crate) zipcode: Option<u32>,
-    pub(crate) phone: String,
-    pub(crate) email: Option<String>,
-    pub(crate) neighborhood: Option<String>,
+pub struct CustomerInfo {
+    pub name: String,
+    pub addr1: String,
+    pub addr2: Option<String>,
+    pub city: Option<String>,
+    pub zipcode: Option<u32>,
+    pub phone: String,
+    pub email: Option<String>,
+    pub neighborhood: Option<String>,
 }
 
 impl MulchOrder {
@@ -79,7 +79,7 @@ impl MulchOrder {
         }
     }
 
-    pub(crate) fn is_readonly(&self) -> bool {
+    pub fn is_readonly(&self) -> bool {
         /* if is_system_locked() { return true } */
 
         if get_active_user().is_admin() {
@@ -96,26 +96,22 @@ impl MulchOrder {
         false
     }
 
-    pub(crate) fn clear_donations(&mut self) {
+    pub fn clear_donations(&mut self) {
         self.amount_from_donations = None;
     }
 
-    pub(crate) fn set_donations(&mut self, donation_amt: String) {
+    pub fn set_donations(&mut self, donation_amt: String) {
         log::info!("!!!! Setting Donations to: {}", donation_amt);
         self.amount_from_donations = Some(donation_amt);
     }
 
-    pub(crate) fn clear_purchases(&mut self) {
+    pub fn clear_purchases(&mut self) {
         self.delivery_id = None;
         self.amount_from_purchases = None;
         self.purchases = None;
     }
 
-    pub(crate) fn set_purchases(
-        &mut self,
-        delivery_id: u32,
-        purchases: HashMap<String, PurchasedItem>,
-    ) {
+    pub fn set_purchases(&mut self, delivery_id: u32, purchases: HashMap<String, PurchasedItem>) {
         let mut total_purchase_amt = Decimal::ZERO;
         for purchase in purchases.values() {
             total_purchase_amt = total_purchase_amt
@@ -128,14 +124,14 @@ impl MulchOrder {
         self.amount_from_purchases = Some(total_purchase_amt.to_string());
     }
 
-    pub(crate) fn get_num_sold(&self, product_id: &str) -> Option<u32> {
+    pub fn get_num_sold(&self, product_id: &str) -> Option<u32> {
         match self.purchases.as_ref() {
             Some(purchases) => purchases.get(product_id).map_or(None, |v| Some(v.num_sold)),
             None => None,
         }
     }
 
-    pub(crate) fn get_total_to_collect(&self) -> Decimal {
+    pub fn get_total_to_collect(&self) -> Decimal {
         let mut total = Decimal::ZERO;
         if let Some(amt) = self.amount_from_donations.as_ref() {
             total = total
@@ -150,7 +146,7 @@ impl MulchOrder {
         total
     }
 
-    pub(crate) fn get_total_collected(&self) -> Decimal {
+    pub fn get_total_collected(&self) -> Decimal {
         let mut total = Decimal::ZERO;
         if let Some(amt) = self.amount_cash_collected.as_ref() {
             total = total
@@ -165,14 +161,14 @@ impl MulchOrder {
         total
     }
 
-    pub(crate) fn is_payment_valid(&self) -> bool {
+    pub fn is_payment_valid(&self) -> bool {
         self.is_check_numbers_valid()
             && ((self.get_total_to_collect() != Decimal::ZERO
                 && (self.get_total_to_collect() == self.get_total_collected()))
                 || self.will_collect_money_later.unwrap_or(false))
     }
 
-    pub(crate) fn is_check_numbers_valid(&self) -> bool {
+    pub fn is_check_numbers_valid(&self) -> bool {
         if self.amount_checks_collected.is_some() && self.check_numbers.is_some() {
             let check_nums_str = self.check_numbers.as_ref().unwrap();
             let check_nums: Vec<&str> = CHECKNUM_RE_DELIMETERS.split(check_nums_str).collect();
@@ -192,7 +188,7 @@ impl MulchOrder {
         }
     }
 
-    pub(crate) fn are_purchases_valid(&self) -> bool {
+    pub fn are_purchases_valid(&self) -> bool {
         let is_product_purchase_valid = self.delivery_id.is_some()
             && self.amount_from_purchases.is_some()
             && self.purchases.is_some();
@@ -205,7 +201,7 @@ impl MulchOrder {
     }
 }
 
-pub(crate) fn is_order_from_report_data_readonly(jorder: &serde_json::Value) -> bool {
+pub fn is_order_from_report_data_readonly(jorder: &serde_json::Value) -> bool {
     /* if is_system_locked() { return true } */
 
     if get_active_user().is_admin() {
@@ -222,7 +218,7 @@ pub(crate) fn is_order_from_report_data_readonly(jorder: &serde_json::Value) -> 
     false
 }
 
-pub(crate) fn create_new_active_order(owner_id: &str) {
+pub fn create_new_active_order(owner_id: &str) {
     let new_active_order_state = ActiveOrderState {
         order: MulchOrder::new(owner_id),
         is_new_order: true,
@@ -232,11 +228,11 @@ pub(crate) fn create_new_active_order(owner_id: &str) {
     *ACTIVE_ORDER.write().unwrap() = Some(new_active_order_state);
 }
 
-pub(crate) fn is_active_order() -> bool {
+pub fn is_active_order() -> bool {
     ACTIVE_ORDER.read().unwrap().is_some()
 }
 
-pub(crate) fn is_active_order_from_db() -> bool {
+pub fn is_active_order_from_db() -> bool {
     ACTIVE_ORDER
         .read()
         .unwrap()
@@ -244,18 +240,18 @@ pub(crate) fn is_active_order_from_db() -> bool {
         .map_or(false, |v| !v.is_new_order)
 }
 
-pub(crate) fn reset_active_order() {
+pub fn reset_active_order() {
     *ACTIVE_ORDER.write().unwrap() = None;
 }
 
-pub(crate) fn get_active_order() -> Option<MulchOrder> {
+pub fn get_active_order() -> Option<MulchOrder> {
     match &*ACTIVE_ORDER.read().unwrap() {
         Some(order_state) => Some(order_state.order.clone()),
         None => None,
     }
 }
 
-pub(crate) fn update_active_order(
+pub fn update_active_order(
     order: MulchOrder,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut order_state_opt = ACTIVE_ORDER.write()?;
@@ -267,7 +263,7 @@ pub(crate) fn update_active_order(
     Ok(())
 }
 
-pub(crate) async fn submit_active_order() -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub async fn submit_active_order() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let order_state_opt = ACTIVE_ORDER.write()?;
     let order_state = order_state_opt.as_ref().unwrap();
     if !order_state.is_dirty {
@@ -418,9 +414,7 @@ mutation {
 }
 ";
 
-pub(crate) async fn delete_order(
-    order_id: &str,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub async fn delete_order(order_id: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let query = DELETE_ORDER_GQL.replace(
         "***ORDER_ID_PARAM***",
         &format!("orderId: \"{}\"", order_id),
@@ -468,7 +462,7 @@ static LOAD_ORDER_GQL: &'static str = r"
 }
 ";
 
-pub(crate) async fn load_active_order_from_db(
+pub async fn load_active_order_from_db(
     order_id: &str,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     #[derive(Deserialize, Debug)]
@@ -478,44 +472,44 @@ pub(crate) async fn load_active_order_from_db(
     }
 
     #[derive(Deserialize, Debug)]
-    pub(crate) struct MulchOrderApi {
+    pub struct MulchOrderApi {
         #[serde(alias = "orderId")]
-        pub(crate) order_id: String,
+        pub order_id: String,
         #[serde(alias = "ownerId")]
-        pub(crate) order_owner_id: String,
-        pub(crate) comments: Option<String>,
+        pub order_owner_id: String,
+        pub comments: Option<String>,
         #[serde(alias = "specialInstructions")]
-        pub(crate) special_instructions: Option<String>,
+        pub special_instructions: Option<String>,
         #[serde(alias = "amountFromDonations")]
-        pub(crate) amount_from_donations: Option<String>,
+        pub amount_from_donations: Option<String>,
         #[serde(alias = "amountFromPurchases")]
-        pub(crate) amount_from_purchases: Option<String>,
+        pub amount_from_purchases: Option<String>,
         #[serde(alias = "amountFromCashCollected")]
-        pub(crate) amount_cash_collected: Option<String>,
+        pub amount_cash_collected: Option<String>,
         #[serde(alias = "amountFromChecksCollected")]
-        pub(crate) amount_checks_collected: Option<String>,
+        pub amount_checks_collected: Option<String>,
         #[serde(alias = "amountTotalCollected")]
-        pub(crate) amount_total_collected: Option<String>,
+        pub amount_total_collected: Option<String>,
         #[serde(alias = "checkNumbers")]
-        pub(crate) check_numbers: Option<String>,
+        pub check_numbers: Option<String>,
         #[serde(alias = "willCollectMoneyLater")]
-        pub(crate) will_collect_money_later: Option<bool>,
+        pub will_collect_money_later: Option<bool>,
         #[serde(alias = "isVerified")]
-        pub(crate) is_verified: Option<bool>,
-        pub(crate) customer: CustomerInfo,
-        pub(crate) purchases: Option<Vec<PurchasedItemApi>>,
+        pub is_verified: Option<bool>,
+        pub customer: CustomerInfo,
+        pub purchases: Option<Vec<PurchasedItemApi>>,
         #[serde(alias = "deliveryId")]
-        pub(crate) delivery_id: Option<u32>,
+        pub delivery_id: Option<u32>,
     }
 
     #[derive(Deserialize, Debug)]
-    pub(crate) struct PurchasedItemApi {
+    pub struct PurchasedItemApi {
         #[serde(alias = "productId")]
-        pub(crate) product_id: String,
+        pub product_id: String,
         #[serde(alias = "numSold")]
-        pub(crate) num_sold: u32,
+        pub num_sold: u32,
         #[serde(alias = "amountCharged")]
-        pub(crate) amount_charged: String,
+        pub amount_charged: String,
     }
 
     let query = LOAD_ORDER_GQL.replace(
@@ -589,7 +583,7 @@ mutation {
 }
 ";
 
-pub(crate) async fn set_spreaders(
+pub async fn set_spreaders(
     order_id: &str,
     spreaders: &Vec<String>,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -627,8 +621,7 @@ static TROOP_ORDER_AMOUNT_COLLECTED_GQL: &'static str = r"
 }
 ";
 
-pub(crate) async fn have_orders_been_created(
-) -> std::result::Result<bool, Box<dyn std::error::Error>> {
+pub async fn have_orders_been_created() -> std::result::Result<bool, Box<dyn std::error::Error>> {
     // Fails safe
     let req = GraphQlReq::new(TROOP_ORDER_AMOUNT_COLLECTED_GQL);
     make_gql_request::<serde_json::Value>(&req).await.map(|v| {

@@ -1,8 +1,7 @@
+use crate::AppRoutes;
+use web_sys::MouseEvent;
 use yew::prelude::*;
 use yew_router::prelude::*;
-use web_sys::{MouseEvent};
-use crate::AppRoutes;
-
 
 #[derive(Properties, PartialEq)]
 pub(crate) struct AppNavProps {
@@ -15,10 +14,9 @@ pub(crate) struct AppNavProps {
 }
 
 #[function_component(AppNav)]
-pub(crate) fn app_nav(props: &AppNavProps) -> Html
-{
+pub(crate) fn app_nav(props: &AppNavProps) -> Html {
     let _ = use_navigator().unwrap(); // This forces re-render on path changes
-    //log::info!("~~~~~~~ Re Rendered ~~~~~~~~~~~~~~");
+                                      //log::info!("~~~~~~~ Re Rendered ~~~~~~~~~~~~~~");
     let userlabel = if props.username != props.userid {
         format!("{} ({})", props.username, props.userid)
     } else {
@@ -46,16 +44,16 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html
                         </Link<AppRoutes>>
                     </li>
                     if props.isactiveorder {
-                        <li class="nav-item">
-                            <Link<AppRoutes> classes="nav-link" to={AppRoutes::OrderForm} >
-                                {"Order"}
-                            </Link<AppRoutes>>
-                        </li>
+                        // <li class="nav-item">
+                        //     <Link<AppRoutes> classes="nav-link" to={AppRoutes::OrderForm} >
+                        //         {"Order"}
+                        //     </Link<AppRoutes>>
+                        // </li>
                     }
                     <li class="nav-item">
-                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::Reports} >
-                            {"Reports"}
-                        </Link<AppRoutes>>
+                        // <Link<AppRoutes> classes="nav-link" to={AppRoutes::Reports} >
+                        //     {"Reports"}
+                        // </Link<AppRoutes>>
                     </li>
                 </ul>
                 <span class="navbar-nav nav-item dropdown">
@@ -68,12 +66,12 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html
                             <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::Timecards} >
                                 {"Timecards"}
                             </Link<AppRoutes>>
-                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FundraiserCloseout} >
-                                {"Closeout Fundraiser"}
-                            </Link<AppRoutes>>
-                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FrConfig} >
-                                {"Configure Fundraiser"}
-                            </Link<AppRoutes>>
+                            // <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FundraiserCloseout} >
+                            //     {"Closeout Fundraiser"}
+                            // </Link<AppRoutes>>
+                            // <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FrConfig} >
+                            //     {"Configure Fundraiser"}
+                            // </Link<AppRoutes>>
                         }
                         <a class="dropdown-item" onclick={props.onreportissue.clone()} href="#" data-bs-toggle="modal">
                             {"Report Issue"}
@@ -87,4 +85,3 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html
         </nav>
     }
 }
-

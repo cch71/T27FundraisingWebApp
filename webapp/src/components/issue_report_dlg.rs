@@ -1,10 +1,10 @@
-use yew::prelude::*;
-use std::rc::Rc;
+use data_model::*;
+use js::bootstrap;
 use std::cell::RefCell;
+use std::rc::Rc;
 use wasm_bindgen::JsCast;
-use web_sys::{MouseEvent, HtmlButtonElement, HtmlInputElement, HtmlTextAreaElement};
-use crate::bootstrap;
-use crate::data_model::*;
+use web_sys::{HtmlButtonElement, HtmlInputElement, HtmlTextAreaElement, MouseEvent};
+use yew::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -15,17 +15,19 @@ thread_local! {
 pub(crate) fn show_report_issue_dlg(do_show: bool) {
     let document = gloo::utils::document();
 
-    document.get_element_by_id("formSummary")
+    document
+        .get_element_by_id("formSummary")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
         .set_value("");
 
-    document.get_element_by_id("formDescription")
+    document
+        .get_element_by_id("formDescription")
         .and_then(|t| t.dyn_into::<HtmlTextAreaElement>().ok())
         .unwrap()
         .set_value("");
 
-    REPORT_ISSUE_DLG.with(|v|{
+    REPORT_ISSUE_DLG.with(|v| {
         if (*v).borrow().is_none() {
             *v.borrow_mut() = Some(bootstrap::get_modal_by_id("xmitIssueDlg").unwrap());
         };
@@ -40,23 +42,25 @@ pub(crate) fn show_report_issue_dlg(do_show: bool) {
 }
 
 #[function_component(ReportIssueDlg)]
-pub(crate) fn report_issue() -> Html
-{
-    let spinner_state = use_state_eq(||"d-none");
+pub(crate) fn report_issue() -> Html {
+    let spinner_state = use_state_eq(|| "d-none");
     let on_submit_issue = {
         let spinner_state = spinner_state.clone();
 
-        Callback::from(move |evt: MouseEvent|{
+        Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
             let document = gloo::utils::document();
-            let btn_elm = evt.target()
+            let btn_elm = evt
+                .target()
                 .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
                 .unwrap();
-            let summary_elm = document.get_element_by_id("formSummary")
+            let summary_elm = document
+                .get_element_by_id("formSummary")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap();
-            let desc_elm = document.get_element_by_id("formDescription")
+            let desc_elm = document
+                .get_element_by_id("formDescription")
                 .and_then(|t| t.dyn_into::<HtmlTextAreaElement>().ok())
                 .unwrap();
 
@@ -65,13 +69,13 @@ pub(crate) fn report_issue() -> Html
 
             let desc = desc_elm.value();
             let summary = summary_elm.value();
-            if 0==desc.len() || 0==summary.len() {
-                if 0==desc.len() {
+            if 0 == desc.len() || 0 == summary.len() {
+                if 0 == desc.len() {
                     let _ = desc_elm.class_list().add_1("is-invalid");
                 } else {
                     let _ = desc_elm.class_list().remove_1("is-invalid");
                 }
-                if 0==summary.len() {
+                if 0 == summary.len() {
                     let _ = summary_elm.class_list().add_1("is-invalid");
                 } else {
                     let _ = summary_elm.class_list().remove_1("is-invalid");
@@ -137,4 +141,3 @@ pub(crate) fn report_issue() -> Html
         </div>
     }
 }
-

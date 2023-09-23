@@ -74,7 +74,7 @@ static CONFIG_GQL: &'static str = r#"
 //   to force update reload of config even if last_modified_time hasn't changed
 static LOCAL_STORE_SCHEMA_VER: u32 = 020501;
 
-pub(crate) type UserMapType = BTreeMap<String, UserInfo>;
+pub type UserMapType = BTreeMap<String, UserInfo>;
 
 static NEIGHBORHOODS: LazyLock<RwLock<Option<Arc<Vec<Neighborhood>>>>> =
     LazyLock::new(|| RwLock::new(None));
@@ -92,53 +92,53 @@ static FR_CLOSURE_DATA: LazyLock<RwLock<Arc<BTreeMap<String, FrClosureMapData>>>
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub(crate) struct UserInfo {
-    pub(crate) name: String,
-    pub(crate) group: String,
+pub struct UserInfo {
+    pub name: String,
+    pub group: String,
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) struct FrConfig {
-    pub(crate) kind: String,
-    pub(crate) description: String,
-    // pub(crate) last_modified_time: String,
-    pub(crate) is_locked: bool,
-    pub(crate) is_finalized: bool,
+pub struct FrConfig {
+    pub kind: String,
+    pub description: String,
+    // pub last_modified_time: String,
+    pub is_locked: bool,
+    pub is_finalized: bool,
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Debug, Clone)]
-pub(crate) struct DeliveryInfo {
-    pub(crate) delivery_date: DateTime<Utc>,
-    pub(crate) new_order_cutoff_date: DateTime<Utc>,
+pub struct DeliveryInfo {
+    pub delivery_date: DateTime<Utc>,
+    pub new_order_cutoff_date: DateTime<Utc>,
 }
 impl DeliveryInfo {
-    pub(crate) fn get_delivery_date_str(&self) -> String {
+    pub fn get_delivery_date_str(&self) -> String {
         self.delivery_date.format("%Y-%m-%d").to_string()
     }
 
-    pub(crate) fn get_new_order_cutoff_date_str(&self) -> String {
+    pub fn get_new_order_cutoff_date_str(&self) -> String {
         self.new_order_cutoff_date.format("%Y-%m-%d").to_string()
     }
 
-    pub(crate) fn get_api_delivery_date_str(&self) -> String {
+    pub fn get_api_delivery_date_str(&self) -> String {
         self.delivery_date.format("%m/%d/%Y").to_string()
     }
 
-    pub(crate) fn get_api_new_order_cutoff_date_str(&self) -> String {
+    pub fn get_api_new_order_cutoff_date_str(&self) -> String {
         self.new_order_cutoff_date.format("%m/%d/%Y").to_string()
     }
 
-    pub(crate) fn can_take_orders(&self) -> bool {
+    pub fn can_take_orders(&self) -> bool {
         self.new_order_cutoff_date >= Utc::now()
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn are_sales_still_allowed() -> bool {
+pub fn are_sales_still_allowed() -> bool {
     let deliveries = get_deliveries();
     let mut are_any_still_active = false;
     for delivery_info in deliveries.values() {
@@ -152,33 +152,33 @@ pub(crate) fn are_sales_still_allowed() -> bool {
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Serialize, Deserialize, Properties, Debug, Clone, PartialEq)]
-pub(crate) struct Neighborhood {
-    pub(crate) name: String,
-    pub(crate) zipcode: Option<u32>,
-    pub(crate) city: Option<String>,
+pub struct Neighborhood {
+    pub name: String,
+    pub zipcode: Option<u32>,
+    pub city: Option<String>,
     #[serde(alias = "isVisible")]
-    pub(crate) is_visible: bool,
+    pub is_visible: bool,
     #[serde(alias = "distributionPoint")]
-    pub(crate) distribution_point: String,
+    pub distribution_point: String,
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct ProductPriceBreak {
-    pub(crate) gt: u32,
+pub struct ProductPriceBreak {
+    pub gt: u32,
     #[serde(alias = "unitPrice")]
-    pub(crate) unit_price: String,
+    pub unit_price: String,
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct ProductInfo {
-    pub(crate) label: String,
-    pub(crate) min_units: u32,
-    pub(crate) unit_price: String,
-    pub(crate) price_breaks: Vec<ProductPriceBreak>,
+pub struct ProductInfo {
+    pub label: String,
+    pub min_units: u32,
+    pub unit_price: String,
+    pub price_breaks: Vec<ProductPriceBreak>,
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -272,7 +272,7 @@ struct MulchDeliveryConfigApi {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn new_delivery_info(delivery_date: &String, new_order_cutoff: &String) -> DeliveryInfo {
+pub fn new_delivery_info(delivery_date: &String, new_order_cutoff: &String) -> DeliveryInfo {
     let delivery_date = {
         let nd = NaiveDate::parse_from_str(delivery_date, "%m/%d/%Y").unwrap();
         Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
@@ -358,7 +358,7 @@ fn process_config_data(config: FrConfigApi) {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn load_config() {
+pub async fn load_config() {
     log::info!("Getting Fundraising Config: Loading From LocalStorage");
     let rslt = LocalStorage::get("FrConfig");
     if rslt.is_ok() {
@@ -408,13 +408,13 @@ pub(crate) async fn load_config() {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_users() -> Arc<BTreeMap<String, UserInfo>> {
+pub fn get_users() -> Arc<BTreeMap<String, UserInfo>> {
     USER_MAP.read().unwrap().clone()
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_username_from_id(uid: &str) -> Option<String> {
+pub fn get_username_from_id(uid: &str) -> Option<String> {
     USER_MAP
         .read()
         .unwrap()
@@ -447,7 +447,7 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn set_products(
+pub async fn set_products(
     products: BTreeMap<String, ProductInfo>,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mulch_info = products.get("bags").unwrap();
@@ -493,7 +493,7 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn set_deliveries(
+pub async fn set_deliveries(
     deliveries: BTreeMap<u32, DeliveryInfo>,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let deliveries_str = deliveries
@@ -524,13 +524,13 @@ pub(crate) async fn set_deliveries(
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_deliveries() -> Arc<BTreeMap<u32, DeliveryInfo>> {
+pub fn get_deliveries() -> Arc<BTreeMap<u32, DeliveryInfo>> {
     DELIVERIES.read().unwrap().as_ref().unwrap().clone()
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_delivery_date(delivery_id: &u32) -> String {
+pub fn get_delivery_date(delivery_id: &u32) -> String {
     get_deliveries()
         .get(delivery_id)
         .unwrap()
@@ -550,7 +550,7 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn update_neighborhoods(
+pub async fn update_neighborhoods(
     hoods: Vec<Neighborhood>,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let neighborhoods_str = hoods
@@ -612,13 +612,13 @@ pub(crate) async fn update_neighborhoods(
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_neighborhoods() -> Arc<Vec<Neighborhood>> {
+pub fn get_neighborhoods() -> Arc<Vec<Neighborhood>> {
     NEIGHBORHOODS.read().unwrap().as_ref().unwrap().clone()
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_neighborhood<T: AsRef<str>>(hood: T) -> Option<Neighborhood> {
+pub fn get_neighborhood<T: AsRef<str>>(hood: T) -> Option<Neighborhood> {
     NEIGHBORHOODS
         .read()
         .unwrap()
@@ -628,7 +628,7 @@ pub(crate) fn get_neighborhood<T: AsRef<str>>(hood: T) -> Option<Neighborhood> {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_city_and_zip_from_neighborhood<T: AsRef<str>>(hood: T) -> Option<(String, u32)> {
+pub fn get_city_and_zip_from_neighborhood<T: AsRef<str>>(hood: T) -> Option<(String, u32)> {
     get_neighborhood(hood).and_then(|v| {
         if v.city.is_some() && v.zipcode.is_some() {
             Some((v.city.unwrap(), v.zipcode.unwrap()))
@@ -640,19 +640,19 @@ pub(crate) fn get_city_and_zip_from_neighborhood<T: AsRef<str>>(hood: T) -> Opti
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_products() -> Arc<BTreeMap<String, ProductInfo>> {
+pub fn get_products() -> Arc<BTreeMap<String, ProductInfo>> {
     PRODUCTS.read().unwrap().as_ref().unwrap().clone()
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_fr_config() -> Arc<FrConfig> {
+pub fn get_fr_config() -> Arc<FrConfig> {
     FRCONFIG.read().unwrap().as_ref().unwrap().clone()
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_purchase_cost_for(product_id: &str, num_sold: u32) -> String {
+pub fn get_purchase_cost_for(product_id: &str, num_sold: u32) -> String {
     if 0 == num_sold {
         return "0.00".to_string();
     }
@@ -673,7 +673,7 @@ pub(crate) fn get_purchase_cost_for(product_id: &str, num_sold: u32) -> String {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn is_purchase_valid(product_id: &str, num_sold: u32) -> bool {
+pub fn is_purchase_valid(product_id: &str, num_sold: u32) -> bool {
     match get_products().get(product_id) {
         None => false,
         Some(product) => product.min_units <= num_sold,
@@ -682,26 +682,26 @@ pub(crate) fn is_purchase_valid(product_id: &str, num_sold: u32) -> bool {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-// pub(crate) fn get_active_sellers() -> Vec<String> {
+// pub fn get_active_sellers() -> Vec<String> {
 //    //TOOD: Need to add GraphQL to get list of active sellers
 //    vec![get_active_user().get_id()]
 //}
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn is_fundraiser_locked() -> bool {
+pub fn is_fundraiser_locked() -> bool {
     get_fr_config().is_locked
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn is_fundraiser_finalized() -> bool {
+pub fn is_fundraiser_finalized() -> bool {
     get_fr_config().is_finalized
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn is_fundraiser_editable() -> bool {
+pub fn is_fundraiser_editable() -> bool {
     let is_fr_readonly = is_fundraiser_locked() || is_fundraiser_finalized();
     !is_fr_readonly || (get_active_user().get_id() == "fradmin")
 }
@@ -719,7 +719,7 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn report_new_issue(
+pub async fn report_new_issue(
     reporting_id: &str,
     title: &str,
     body: &str,
@@ -752,22 +752,22 @@ static GET_TIMECARDS_GRAPHQL: &'static str = r"
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-pub(crate) struct TimeCard {
+pub struct TimeCard {
     #[serde(rename = "id")]
-    pub(crate) uid: String,
+    pub uid: String,
     #[serde(rename = "deliveryId")]
-    pub(crate) delivery_id: u32,
+    pub delivery_id: u32,
     #[serde(rename = "timeIn")]
-    pub(crate) time_in: String,
+    pub time_in: String,
     #[serde(rename = "timeOut")]
-    pub(crate) time_out: String,
+    pub time_out: String,
     #[serde(rename = "timeTotal")]
-    pub(crate) time_total: String,
+    pub time_total: String,
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn get_timecards_data(
+pub async fn get_timecards_data(
     delivery_id: Option<u32>,
     _uid: Option<String>,
 ) -> std::result::Result<Vec<(String, String, Option<TimeCard>)>, Box<dyn std::error::Error>> {
@@ -822,7 +822,7 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn save_timecards_data(
+pub async fn save_timecards_data(
     timecards: Vec<TimeCard>,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     if timecards.len() == 0 {
@@ -877,20 +877,20 @@ static GET_FR_CLOSURE_DATA_GRAPHQL: &'static str = r"
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Default, Debug, Clone, PartialEq)]
-pub(crate) struct FrClosureMapData {
-    pub(crate) delivery_time_total: Duration,
-    pub(crate) num_bags_sold: u64,
-    pub(crate) amount_from_bags_sales: Decimal,
-    pub(crate) num_bags_to_spread_sold: u64,
-    pub(crate) amount_from_bags_to_spread_sales: Decimal,
-    pub(crate) amount_from_donations: Decimal,
-    pub(crate) amount_total_collected: Decimal,
-    pub(crate) num_bags_spread: Decimal,
+pub struct FrClosureMapData {
+    pub delivery_time_total: Duration,
+    pub num_bags_sold: u64,
+    pub amount_from_bags_sales: Decimal,
+    pub num_bags_to_spread_sold: u64,
+    pub amount_from_bags_to_spread_sales: Decimal,
+    pub amount_from_donations: Decimal,
+    pub amount_total_collected: Decimal,
+    pub num_bags_spread: Decimal,
 }
 
 /////////////////////////////////////////////////
 ///
-pub(crate) fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
+pub fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
     let mut time_val_str = time_val_str
         .split(":")
         .map(|v| v.to_string())
@@ -916,10 +916,10 @@ pub(crate) fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
     None
 }
 
-pub(crate) type FrClosureStaticData = Arc<BTreeMap<String, FrClosureMapData>>;
+pub type FrClosureStaticData = Arc<BTreeMap<String, FrClosureMapData>>;
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn get_fundraiser_closure_static_data(
+pub async fn get_fundraiser_closure_static_data(
 ) -> std::result::Result<FrClosureStaticData, Box<dyn std::error::Error>> {
     if let Ok(closure_data) = FR_CLOSURE_DATA.read() {
         if closure_data.len() > 0 {
@@ -935,13 +935,13 @@ pub(crate) async fn get_fundraiser_closure_static_data(
         time_total: String,
     }
     #[derive(Deserialize, Debug)]
-    pub(crate) struct PurchasedItemsClosureData {
+    pub struct PurchasedItemsClosureData {
         #[serde(alias = "productId")]
-        pub(crate) product_id: String,
+        pub product_id: String,
         #[serde(alias = "numSold")]
-        pub(crate) num_sold: u64,
+        pub num_sold: u64,
         #[serde(alias = "amountCharged")]
-        pub(crate) amount_charged: String,
+        pub amount_charged: String,
     }
     #[derive(Deserialize, Debug)]
     struct OrdersClosureData {
@@ -1106,21 +1106,21 @@ pub(crate) async fn get_fundraiser_closure_static_data(
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub(crate) struct FrClosureDynamicData {
-    pub(crate) bank_deposited: Option<String>,
-    pub(crate) mulch_cost: Option<String>,
+pub struct FrClosureDynamicData {
+    pub bank_deposited: Option<String>,
+    pub mulch_cost: Option<String>,
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn get_fundraiser_closure_dynamic_data() -> Option<FrClosureDynamicData> {
+pub fn get_fundraiser_closure_dynamic_data() -> Option<FrClosureDynamicData> {
     log::info!("Getting Fundraiser Closure Data From LocalStorage");
     LocalStorage::get("FrClosureDynamicData").ok()
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) fn set_fundraiser_closure_dynamic_data(data: FrClosureDynamicData) {
+pub fn set_fundraiser_closure_dynamic_data(data: FrClosureDynamicData) {
     log::info!("Getting Fundraiser Closure Data From LocalStorage");
     let _ = LocalStorage::set("FrClosureDynamicData", data);
 }
@@ -1128,22 +1128,22 @@ pub(crate) fn set_fundraiser_closure_dynamic_data(data: FrClosureDynamicData) {
 ////////////////////////////////////////////////////////
 ///
 #[derive(Serialize, Default, Debug, PartialEq, Clone)]
-pub(crate) struct FrCloseoutDynamicVars {
-    pub(crate) bank_deposited: Decimal,
-    pub(crate) mulch_cost: Decimal,
-    pub(crate) per_bag_cost: Decimal,
-    pub(crate) profits_from_bags: Decimal,
-    pub(crate) mulch_sales_gross: Decimal,
-    pub(crate) money_pool_for_troop: Decimal,
-    pub(crate) money_pool_for_scouts_sub_pools: Decimal,
-    pub(crate) money_pool_for_scout_sales: Decimal,
-    pub(crate) per_bag_avg_earnings: Decimal,
-    pub(crate) money_pool_for_scout_delivery: Decimal,
-    pub(crate) delivery_earnings_per_minute: Decimal,
+pub struct FrCloseoutDynamicVars {
+    pub bank_deposited: Decimal,
+    pub mulch_cost: Decimal,
+    pub per_bag_cost: Decimal,
+    pub profits_from_bags: Decimal,
+    pub mulch_sales_gross: Decimal,
+    pub money_pool_for_troop: Decimal,
+    pub money_pool_for_scouts_sub_pools: Decimal,
+    pub money_pool_for_scout_sales: Decimal,
+    pub per_bag_avg_earnings: Decimal,
+    pub money_pool_for_scout_delivery: Decimal,
+    pub delivery_earnings_per_minute: Decimal,
 }
 
 impl FrCloseoutDynamicVars {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         FrCloseoutDynamicVars::default()
     }
 }
@@ -1151,17 +1151,17 @@ impl FrCloseoutDynamicVars {
 ////////////////////////////////////////////////////////
 ///
 #[derive(Serialize, Default, Debug, PartialEq, Clone)]
-pub(crate) struct FrCloseoutAllocationVals {
-    pub(crate) name: String,
-    pub(crate) uid: String,
-    pub(crate) bags_sold: u64,
-    pub(crate) bags_spread: Decimal,
-    pub(crate) delivery_minutes: Decimal,
-    pub(crate) total_donations: Decimal,
-    pub(crate) allocation_from_bags_sold: Decimal,
-    pub(crate) allocation_from_bags_spread: Decimal,
-    pub(crate) allocation_from_delivery: Decimal,
-    pub(crate) allocation_total: Decimal,
+pub struct FrCloseoutAllocationVals {
+    pub name: String,
+    pub uid: String,
+    pub bags_sold: u64,
+    pub bags_spread: Decimal,
+    pub delivery_minutes: Decimal,
+    pub total_donations: Decimal,
+    pub allocation_from_bags_sold: Decimal,
+    pub allocation_from_bags_spread: Decimal,
+    pub allocation_from_delivery: Decimal,
+    pub allocation_total: Decimal,
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1215,7 +1215,7 @@ static SET_FR_CLOSEOUT_ALLOC_DATUM_GRAPHQL: &'static str = r#"
 "#;
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn set_fr_closeout_data(
+pub async fn set_fr_closeout_data(
     dvars: &FrCloseoutDynamicVars,
     allocation_list: &Vec<FrCloseoutAllocationVals>,
 ) {
@@ -1413,17 +1413,17 @@ static GET_ADDR_API_GQL: &'static str = r#"
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-pub(crate) struct AddressInfo {
+pub struct AddressInfo {
     #[serde(rename = "houseNumber")]
-    pub(crate) house_number: Option<String>,
-    pub(crate) street: Option<String>,
-    pub(crate) city: Option<String>,
-    pub(crate) zipcode: Option<u32>,
+    pub house_number: Option<String>,
+    pub street: Option<String>,
+    pub city: Option<String>,
+    pub zipcode: Option<u32>,
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn get_address_from_lat_lng(
+pub async fn get_address_from_lat_lng(
     lat: f64,
     lng: f64,
 ) -> std::result::Result<AddressInfo, Box<dyn std::error::Error>> {
@@ -1454,7 +1454,7 @@ mutation {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn reset_fundraiser() -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub async fn reset_fundraiser() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let req = GraphQlReq::new(RESET_FUNDRAISER_API_GQL);
     make_gql_request::<serde_json::Value>(&req)
         .await
@@ -1477,18 +1477,18 @@ static GET_USERS_FOR_CONFIG_API_GQL: &'static str = r#"
 ////////////////////////////////////////////////////////////////////////////
 //
 #[derive(Serialize, Deserialize, Properties, Debug, Clone, PartialEq)]
-pub(crate) struct UserAdminConfig {
-    pub(crate) id: String,
+pub struct UserAdminConfig {
+    pub id: String,
     #[serde(rename = "firstName")]
-    pub(crate) first_name: String,
+    pub first_name: String,
     #[serde(rename = "lastName")]
-    pub(crate) last_name: String,
-    pub(crate) group: String,
+    pub last_name: String,
+    pub group: String,
 }
 
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn get_users_for_admin_config(
+pub async fn get_users_for_admin_config(
 ) -> std::result::Result<BTreeMap<String, UserAdminConfig>, Box<dyn std::error::Error>> {
     #[derive(Deserialize)]
     struct RespUserInfo {
@@ -1515,7 +1515,7 @@ mutation {
 }"#;
 ////////////////////////////////////////////////////////////////////////////
 //
-pub(crate) async fn add_or_update_users_for_admin_config(
+pub async fn add_or_update_users_for_admin_config(
     users: Vec<UserAdminConfig>,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     log::info!("Adding or Updating Users: {:#?}", &users);
@@ -1560,21 +1560,3 @@ pub(crate) async fn add_or_update_users_for_admin_config(
 
     Ok(())
 }
-
-// static TEST_ADMIN_API_GQL:&'static str =
-// r#"
-// {
-//   testApi(param1: "***USERID***")
-// }"#;
-//
-// pub(crate) async fn call_admin_test_api()
-//     -> std::result::Result<() ,Box<dyn std::error::Error>>
-// {
-//     let active_user = get_active_user();
-//     let user_id = active_user.get_id();
-//     let query = TEST_ADMIN_API_GQL
-//         .replace("***USERID***", &user_id);
-//
-//     let req = GraphQlReq::new(query);
-//     make_gql_request::<serde_json::Value>(&req).await.map(|_| ())
-// }

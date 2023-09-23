@@ -1,49 +1,16 @@
 use yew::prelude::*;
-// use web_sys::{
-//     MouseEvent, HtmlButtonElement,
-// };
 
-use crate::data_model::*;
-use crate::currency_utils::*;
-use crate::google_charts::*;
-
-// #[function_component(AdminTestButton)]
-// pub fn admin_test_button() -> Html
-// {
-//     let on_press_red_button = {
-//         Callback::from(move |_| {
-//             wasm_bindgen_futures::spawn_local(async move {
-//                 log::info!("Calling Admin Test API");
-//                 let rslt = call_admin_test_api().await;
-//                 if let Err(err) = rslt {
-//                     gloo::dialogs::alert(&format!("Bad: {:#?}", err));
-//                 } else {
-//                     gloo::dialogs::alert(":)");
-//                 }
-//                 log::info!("Done Calling Admin Test API");
-//             });
-//         })
-//     };
-//
-//     html! {
-//         <div>
-//             <label>{"Admin Test Button"}</label>
-//             <button type="button"
-//                     class="btn btn-outline-primary"
-//                     onclick={on_press_red_button}>
-//             </button>
-//         </div>
-//     }
-// }
+use data_model::*;
+use js::google_charts::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-fn gen_summary_html(full_summary: &SummaryReport)->Html {
+fn gen_summary_html(full_summary: &SummaryReport) -> Html {
     let mut summary_html = Vec::new();
     let summary = &full_summary.seller_summary;
     if summary.total_num_bags_sold != 0 {
-        summary_html.push(html!{
+        summary_html.push(html! {
             <tr>
                 <td class="py-1">{"Num bags sold:"}</td>
                 <td class="py-1">{summary.total_num_bags_sold.to_string()}</td>
@@ -51,7 +18,7 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
         });
     }
     if summary.total_num_bags_to_spread_sold != 0 {
-        summary_html.push(html!{
+        summary_html.push(html! {
             <tr>
                 <td class="py-1">{"Num bags to spread:"}</td>
                 <td class="py-1">{summary.total_num_bags_to_spread_sold.to_string()}</td>
@@ -67,7 +34,7 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
         });
     }
     if summary.amount_total_collected_for_bags != "0" {
-        summary_html.push(html!{
+        summary_html.push(html! {
             <tr>
                 <td class="py-1">{"Your bag sales:"}</td>
                 <td class="py-1">{str_to_money_str(&summary.amount_total_collected_for_bags)}</td>
@@ -83,7 +50,7 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
         });
     }
     if summary.amount_total_collected != "0" {
-        summary_html.push(html!{
+        summary_html.push(html! {
             <tr>
                 <td class="py-1">{"Your total sales:"}</td>
                 <td class="py-1">{str_to_money_str(&summary.amount_total_collected)}</td>
@@ -93,9 +60,8 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
 
     // Allocation Information
     if is_fundraiser_finalized() {
-
         if summary.allocations_from_deliveries != "0" {
-            summary_html.push(html!{
+            summary_html.push(html! {
                 <tr>
                     <td class="py-1">{"Alloc from deliveries:"}</td>
                     <td class="py-1">{str_to_money_str(&summary.allocations_from_deliveries)}</td>
@@ -104,7 +70,7 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
         }
 
         if summary.allocations_from_bags_sold != "0" {
-            summary_html.push(html!{
+            summary_html.push(html! {
                 <tr>
                     <td class="py-1">{"Alloc from bags sold:"}</td>
                     <td class="py-1">{str_to_money_str(&summary.allocations_from_bags_sold)}</td>
@@ -113,7 +79,7 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
         }
 
         if summary.allocations_from_bags_spread != "0" {
-            summary_html.push(html!{
+            summary_html.push(html! {
                 <tr>
                     <td class="py-1">{"Alloc from bags spread:"}</td>
                     <td class="py-1">{str_to_money_str(&summary.allocations_from_bags_spread)}</td>
@@ -122,7 +88,7 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
         }
 
         if summary.allocations_total != "0" {
-            summary_html.push(html!{
+            summary_html.push(html! {
                 <tr>
                     <td class="py-1">{"Alloc total:"}</td>
                     <td class="py-1">{str_to_money_str(&summary.allocations_total)}</td>
@@ -133,7 +99,7 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
 
     let troop_summary = &full_summary.troop_summary;
     if troop_summary.amount_total_collected != "0" {
-        summary_html.push(html!{
+        summary_html.push(html! {
             <tr>
                 <td class="py-1">{"Troop has sold:"}</td>
                 <td class="py-1">{str_to_money_str(&troop_summary.amount_total_collected)}</td>
@@ -144,23 +110,25 @@ fn gen_summary_html(full_summary: &SummaryReport)->Html {
     summary_html.into_iter().collect::<Html>()
 }
 
-fn gen_top_sellers_html(top_sellers: &Vec<TopSeller>)->Html {
+fn gen_top_sellers_html(top_sellers: &Vec<TopSeller>) -> Html {
     let mut ranking = 0;
-    top_sellers.into_iter().map(|seller| {
-        ranking = ranking + 1;
-        html!{
-            <tr>
-                <td class="py-1">{ranking.to_string()}</td>
-                <td class="py-1">{seller.name.clone()}</td>
-                <td class="py-1">{str_to_money_str(&seller.amount_total_collected)}</td>
-            </tr>
-        }
-    }).collect::<Html>()
+    top_sellers
+        .into_iter()
+        .map(|seller| {
+            ranking = ranking + 1;
+            html! {
+                <tr>
+                    <td class="py-1">{ranking.to_string()}</td>
+                    <td class="py-1">{seller.name.clone()}</td>
+                    <td class="py-1">{str_to_money_str(&seller.amount_total_collected)}</td>
+                </tr>
+            }
+        })
+        .collect::<Html>()
 }
 
 #[function_component(Home)]
-pub fn home_page() -> Html
-{
+pub fn home_page() -> Html {
     let fr_config = get_fr_config();
     let active_user = get_active_user();
     //let summary_values: Rc<RefCell<Option<SummaryReport>>> = use_state_eq(|| None);
@@ -171,9 +139,17 @@ pub fn home_page() -> Html
         use_effect(move || {
             if let Some(summary) = (*summary_values).as_ref() {
                 use std::collections::HashMap;
-                let patrol_summary_map: HashMap<String, f32> = summary.troop_summary.group_summary.iter().map(|v|{
-                        (v.group_id.clone(), v.amount_total_collected.parse::<f32>().unwrap_or(0.0))
-                    }).collect();
+                let patrol_summary_map: HashMap<String, f32> = summary
+                    .troop_summary
+                    .group_summary
+                    .iter()
+                    .map(|v| {
+                        (
+                            v.group_id.clone(),
+                            v.amount_total_collected.parse::<f32>().unwrap_or(0.0),
+                        )
+                    })
+                    .collect();
                 //log::info!("Google Chart Params: {:#?}", &m);
                 draw_google_chart(&patrol_summary_map);
             }
@@ -182,9 +158,8 @@ pub fn home_page() -> Html
         });
     }
 
-
     let fundraiser_sales_finished_msg = if are_sales_still_allowed() {
-        html!{}
+        html! {}
     } else {
         if !is_fundraiser_finalized() {
             html! {
@@ -200,15 +175,17 @@ pub fn home_page() -> Html
                 </div>
             }
         }
-
     };
 
     {
         let summary_values = summary_values.clone();
         wasm_bindgen_futures::spawn_local(async move {
             let id = get_active_user().get_id();
-            match get_summary_report_data(&id, 10).await{
-                Err(err) => gloo::dialogs::alert(&format!("Failed to retrieve summary data to local storage: {:#?}", err)),
+            match get_summary_report_data(&id, 10).await {
+                Err(err) => gloo::dialogs::alert(&format!(
+                    "Failed to retrieve summary data to local storage: {:#?}",
+                    err
+                )),
                 Ok(summary) => summary_values.set(Some(summary)),
             };
         });
@@ -216,9 +193,12 @@ pub fn home_page() -> Html
 
     let (summary_html, top_sellers_html) = {
         if let Some(summary) = (*summary_values).as_ref() {
-            ( gen_summary_html(&summary), gen_top_sellers_html(&summary.troop_summary.top_sellers) )
+            (
+                gen_summary_html(&summary),
+                gen_top_sellers_html(&summary.troop_summary.top_sellers),
+            )
         } else {
-            (html!{}, html!{})
+            (html! {}, html! {})
         }
     };
 

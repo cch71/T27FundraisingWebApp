@@ -269,6 +269,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "data_model"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "gloo 0.8.1",
+ "js",
+ "js-sys",
+ "log",
+ "once_cell",
+ "regex",
+ "rust_decimal",
+ "rusty-money",
+ "serde",
+ "serde_json",
+ "uuid",
+ "wasm-bindgen",
+ "web-sys",
+ "yew",
+ "yew-router",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1367,6 +1389,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "csv",
+ "data_model",
  "gloo 0.10.0",
  "js",
  "js-sys",
@@ -1378,6 +1401,7 @@ dependencies = [
  "serde",
  "serde-wasm-bindgen 0.6.0",
  "serde_json",
+ "timecard_pages",
  "uuid",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -1411,6 +1435,20 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.37",
+]
+
+[[package]]
+name = "timecard_pages"
+version = "0.1.0"
+dependencies = [
+ "data_model",
+ "gloo 0.8.1",
+ "js",
+ "log",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "yew",
 ]
 
 [[package]]

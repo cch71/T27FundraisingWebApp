@@ -1,6 +1,8 @@
 [workspace]
 members = [
 	"js",
+    "data_model",
+    "timecard_pages",
 	"webapp",
 ]
 resolver = "2"

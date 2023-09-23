@@ -1,11 +1,14 @@
-use yew::prelude::*;
-use wasm_bindgen::{JsCast, JsValue};
-use web_sys::{Event, InputEvent, MouseEvent, Element, HtmlElement, HtmlButtonElement, HtmlInputElement, HtmlSelectElement};
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::{
+    Element, Event, HtmlButtonElement, HtmlElement, HtmlInputElement, HtmlSelectElement,
+    InputEvent, MouseEvent,
+};
+use yew::prelude::*;
 
-use crate::data_model::*;
-use std::time::{ Duration };
+use data_model::*;
+use std::time::Duration;
 
 thread_local! {
     static CURRENT_TIMECARDS: Rc<RefCell<std::collections::HashMap<String, Duration>>> =
@@ -16,12 +19,13 @@ thread_local! {
 ///
 fn get_delivery_id() -> Option<u32> {
     let document = gloo::utils::document();
-    let value = document.get_element_by_id("timeSheetSelectDeliveryDate")
+    let value = document
+        .get_element_by_id("timeSheetSelectDeliveryDate")
         .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
         .unwrap()
         .value();
     log::info!("Delivery Date Selection Val: {}", &value);
-    if 0==value.len() || "none" == value {
+    if 0 == value.len() || "none" == value {
         None
     } else {
         value.parse::<u32>().ok()
@@ -48,8 +52,8 @@ fn get_uid_from_row(row_elm: &HtmlElement) -> String {
 /////////////////////////////////////////////////
 #[function_component(Timecards)]
 pub fn timecards_page() -> Html {
-
-    let timecards_data_ready: yew::UseStateHandle<Option<Vec<(String, String, Option<TimeCard>)>>> = use_state_eq(|| None);
+    let timecards_data_ready: yew::UseStateHandle<Option<Vec<(String, String, Option<TimeCard>)>>> =
+        use_state_eq(|| None);
     let is_delivery_date_selected = use_state_eq(|| false);
 
     let on_export_timecards = {
@@ -57,7 +61,6 @@ pub fn timecards_page() -> Html {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_export_timecards");
-
         })
     };
 
@@ -75,19 +78,25 @@ pub fn timecards_page() -> Html {
                 let timecards_data_ready = timecards_data_ready.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     match get_timecards_data(Some(delivery_id), None).await {
-                        Ok(resp)=>{
-                            CURRENT_TIMECARDS.with(|f|{
+                        Ok(resp) => {
+                            CURRENT_TIMECARDS.with(|f| {
                                 log::info!("Timecards data ready");
-                                *f.borrow_mut() = resp.iter()
+                                *f.borrow_mut() = resp
+                                    .iter()
                                     .filter(|v| v.2.is_some())
-                                    .map(|v|{
+                                    .map(|v| {
                                         // Rememeber time str from server is "00:00:00"
-                                         let time_comps = v.2.as_ref().unwrap().time_total
-                                            .split(":")
-                                            .map(|v|v.parse::<u64>().unwrap())
-                                            .collect::<Vec<u64>>();
+                                        let time_comps =
+                                            v.2.as_ref()
+                                                .unwrap()
+                                                .time_total
+                                                .split(":")
+                                                .map(|v| v.parse::<u64>().unwrap())
+                                                .collect::<Vec<u64>>();
                                         let mut dur = Duration::from_secs(time_comps[0] * 60 * 60); //Hours
-                                        dur = dur.checked_add(Duration::from_secs(time_comps[1] * 60)).unwrap(); //min
+                                        dur = dur
+                                            .checked_add(Duration::from_secs(time_comps[1] * 60))
+                                            .unwrap(); //min
                                         log::info!("Loading Duration {} : {}", &v.0, dur.as_secs());
                                         // ignore seconds
                                         (v.0.clone(), dur)
@@ -95,37 +104,37 @@ pub fn timecards_page() -> Html {
                                     .collect::<std::collections::HashMap<String, Duration>>();
                                 timecards_data_ready.set(Some(resp));
                             });
-                        },
-                        Err(err)=>{
-                            let err_str = format!("Failed to get retrieve timecard data: {:#?}", err);
-                            log::error!("{}",&err_str);
+                        }
+                        Err(err) => {
+                            let err_str =
+                                format!("Failed to get retrieve timecard data: {:#?}", err);
+                            log::error!("{}", &err_str);
                             gloo::dialogs::alert(err_str.as_str());
-                        },
+                        }
                     };
                 });
             }
         })
     };
 
-
     let on_time_change = {
         Callback::from(move |evt: InputEvent| {
-
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_time_change");
 
-            let row_elm = evt.target()
+            let row_elm = evt
+                .target()
                 .and_then(|t| t.dyn_into::<HtmlElement>().ok())
-                .and_then(|t|t.parent_element())
-                .and_then(|t|t.parent_element())
-                .and_then(|t|t.parent_element())
+                .and_then(|t| t.parent_element())
+                .and_then(|t| t.parent_element())
+                .and_then(|t| t.parent_element())
                 .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                 .unwrap();
 
             let uid = get_uid_from_row(&row_elm);
 
-            fn read_time_val(elm: Result<Option<Element>, JsValue>)->Option<Duration> {
+            fn read_time_val(elm: Result<Option<Element>, JsValue>) -> Option<Duration> {
                 elm.ok()
                     .flatten()
                     .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
@@ -140,13 +149,16 @@ pub fn timecards_page() -> Html {
             let time_out_val = read_time_val(row_elm.query_selector(".time-out"));
             // log::info!("TO Val: {}", time_out_val.unwrap_or(Duration::from_secs(0)).as_secs());
 
-
-            let time_calc_elm = row_elm.query_selector(".time-calc").ok()
+            let time_calc_elm = row_elm
+                .query_selector(".time-calc")
+                .ok()
                 .flatten()
                 .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                 .unwrap();
 
-            let btn_elm = row_elm.query_selector(".btn").ok()
+            let btn_elm = row_elm
+                .query_selector(".btn")
+                .ok()
                 .flatten()
                 .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                 .unwrap();
@@ -154,8 +166,11 @@ pub fn timecards_page() -> Html {
             if time_in_val.is_none() || time_out_val.is_none() {
                 let _ = btn_elm.class_list().add_1("invisible");
                 time_calc_elm.set_inner_text("00:00");
-                CURRENT_TIMECARDS.with(|f|{
-                    if time_in_val.is_none() && time_out_val.is_none() && f.borrow().contains_key(&uid) {
+                CURRENT_TIMECARDS.with(|f| {
+                    if time_in_val.is_none()
+                        && time_out_val.is_none()
+                        && f.borrow().contains_key(&uid)
+                    {
                         let _ = btn_elm.class_list().remove_1("invisible");
                         let _ = time_calc_elm.class_list().remove_1("is-invalid");
                     }
@@ -166,17 +181,17 @@ pub fn timecards_page() -> Html {
             let time_in = time_in_val.unwrap();
             let time_out = time_out_val.unwrap();
 
-            let mark_invalid = ||{
+            let mark_invalid = || {
                 let _ = time_calc_elm.class_list().add_1("is-invalid");
                 let _ = btn_elm.class_list().add_1("invisible");
                 time_calc_elm.set_inner_text("00:00");
             };
 
             match time_out.checked_sub(time_in) {
-                Some(new_time_total)=>{
-                    CURRENT_TIMECARDS.with(|f|{
+                Some(new_time_total) => {
+                    CURRENT_TIMECARDS.with(|f| {
                         let new_time_total_secs = new_time_total.as_secs();
-                        if 0==new_time_total_secs {
+                        if 0 == new_time_total_secs {
                             mark_invalid();
                             return;
                         }
@@ -190,8 +205,10 @@ pub fn timecards_page() -> Html {
                             }
                         }
 
-                        let new_hours:u64 = (new_time_total_secs as f64 / (60.0*60.0)).floor() as u64;
-                        let new_mins:u64 = ((new_time_total_secs as f64 % (60.0*60.0)) / 60.0).floor() as u64;
+                        let new_hours: u64 =
+                            (new_time_total_secs as f64 / (60.0 * 60.0)).floor() as u64;
+                        let new_mins: u64 =
+                            ((new_time_total_secs as f64 % (60.0 * 60.0)) / 60.0).floor() as u64;
                         let new_time_total_str = format!("{:02}:{:02}", new_hours, new_mins);
                         if 0 == new_hours && 0 == new_mins {
                             let _ = btn_elm.class_list().add_1("invisible");
@@ -201,37 +218,37 @@ pub fn timecards_page() -> Html {
                         let _ = btn_elm.class_list().remove_1("invisible");
                         time_calc_elm.set_inner_text(&new_time_total_str);
                     });
-                },
-                None=>mark_invalid(),
+                }
+                None => mark_invalid(),
             };
         })
     };
-
 
     let on_save_entry = {
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_save_entry");
-            let btn_elm = evt.target()
+            let btn_elm = evt
+                .target()
                 .and_then(|t| t.dyn_into::<Element>().ok())
-                .and_then(|t|
-                    match t.node_name().as_str() {
-                        "I"=>t.parent_element(),
-                        _=>Some(t),
-                    }
-                )
+                .and_then(|t| match t.node_name().as_str() {
+                    "I" => t.parent_element(),
+                    _ => Some(t),
+                })
                 .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
                 .unwrap();
 
-            let spinny_elm = btn_elm.query_selector(".spinner-border")
-                .ok().flatten()
+            let spinny_elm = btn_elm
+                .query_selector(".spinner-border")
+                .ok()
+                .flatten()
                 .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                 .unwrap();
 
             let row_elm = btn_elm
                 .parent_element()
-                .and_then(|t|t.parent_element())
+                .and_then(|t| t.parent_element())
                 .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                 .unwrap();
 
@@ -239,7 +256,7 @@ pub fn timecards_page() -> Html {
             let _ = spinny_elm.class_list().remove_1("d-none");
             btn_elm.set_disabled(true);
 
-            fn read_time_val(elm: Result<Option<Element>, JsValue>)->String {
+            fn read_time_val(elm: Result<Option<Element>, JsValue>) -> String {
                 if let Some(time_val_str) = elm
                     .ok()
                     .flatten()
@@ -262,9 +279,10 @@ pub fn timecards_page() -> Html {
             let time_out_val = read_time_val(row_elm.query_selector(".time-out"));
             // log::info!("TO Val: {}", time_out_val.unwrap_or(Duration::from_secs(0)).as_secs());
 
-
             let time_calc_val = {
-                let time_val_str = row_elm.query_selector(".time-calc").ok()
+                let time_val_str = row_elm
+                    .query_selector(".time-calc")
+                    .ok()
                     .flatten()
                     .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                     .unwrap()
@@ -279,15 +297,17 @@ pub fn timecards_page() -> Html {
             let uid = get_uid_from_row(&row_elm);
 
             wasm_bindgen_futures::spawn_local(async move {
-                log::info!("Saving: uid:{} ti: {} to:{} tt:{}",
+                log::info!(
+                    "Saving: uid:{} ti: {} to:{} tt:{}",
                     &uid,
                     &time_in_val,
                     &time_out_val,
-                    &time_calc_val);
+                    &time_calc_val
+                );
 
                 let delivery_id = get_delivery_id().unwrap();
                 //Save to cloud
-                let tc = TimeCard{
+                let tc = TimeCard {
                     uid: uid.clone(),
                     delivery_id: delivery_id,
                     time_in: time_in_val,
@@ -299,7 +319,7 @@ pub fn timecards_page() -> Html {
                     return;
                 }
 
-                CURRENT_TIMECARDS.with(|f|{
+                CURRENT_TIMECARDS.with(|f| {
                     let time_calc_val = time_val_str_to_duration(&time_calc_val).unwrap();
                     let _ = f.borrow_mut().insert(uid.clone(), time_calc_val);
                 });
@@ -401,4 +421,3 @@ pub fn timecards_page() -> Html {
         </div>
     }
 }
-

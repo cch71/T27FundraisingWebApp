@@ -8,13 +8,13 @@ use once_cell::sync::Lazy as LazyLock;
 use serde::{Deserialize, Serialize};
 
 // Exposing this const out to keep consistent tag name
-pub(crate) static ALL_USERS_TAG: &'static str = "doShowAllUsers";
+pub static ALL_USERS_TAG: &'static str = "doShowAllUsers";
 // URL to api that returns GeoJSON locations
 static GEOJSONURL: LazyLock<String> =
     LazyLock::new(|| crate::CLOUD_API_URL.to_owned() + "/salelocs");
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
-pub(crate) enum ReportViews {
+pub enum ReportViews {
     // Reports available to sellers
     Quick,
     Full,
@@ -67,7 +67,7 @@ impl std::str::FromStr for ReportViews {
     }
 }
 
-pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
+pub fn get_allowed_report_views() -> Vec<ReportViews> {
     let mut reports = vec![
         ReportViews::Quick,
         ReportViews::Full,
@@ -96,7 +96,7 @@ pub(crate) fn get_allowed_report_views() -> Vec<ReportViews> {
 /////////////////////////////////////////////////////////////////////////////////
 /// This will determine if the switch user option is available in the report
 /// settings dialog
-pub(crate) fn do_show_current_seller(current_view: &ReportViews) -> bool {
+pub fn do_show_current_seller(current_view: &ReportViews) -> bool {
     match *current_view {
         ReportViews::Quick => true,
         ReportViews::Full => true,
@@ -120,29 +120,29 @@ async fn make_report_query(
     Ok(rslts.mulch_orders)
 }
 
-pub(crate) enum ReportViewState {
+pub enum ReportViewState {
     IsLoading,
     ReportHtmlGenerated(Vec<serde_json::Value>),
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub(crate) struct ReportViewSettings {
-    pub(crate) current_view: ReportViews,
-    pub(crate) seller_id_filter: String,
+pub struct ReportViewSettings {
+    pub current_view: ReportViews,
+    pub seller_id_filter: String,
 }
 
-pub(crate) fn save_report_settings(
+pub fn save_report_settings(
     settings: &ReportViewSettings,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     SessionStorage::set("ReportViewSettings", settings)?;
     Ok(())
 }
 
-pub(crate) fn delete_report_settings() {
+pub fn delete_report_settings() {
     SessionStorage::delete("ReportViewSettings");
 }
 
-pub(crate) fn load_report_settings() -> ReportViewSettings {
+pub fn load_report_settings() -> ReportViewSettings {
     SessionStorage::get("ReportViewSettings").unwrap_or(ReportViewSettings {
         current_view: ReportViews::Quick,
         seller_id_filter: get_active_user().get_id(),
@@ -152,7 +152,7 @@ pub(crate) fn load_report_settings() -> ReportViewSettings {
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 ///
-pub(crate) async fn get_sales_geojson(
+pub async fn get_sales_geojson(
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use gloo::net::http::Request;
     // log::info!("Running Query: {}", &query);
@@ -221,7 +221,7 @@ static QUICK_RPT_GRAPHQL: &'static str = r"
 }
 ";
 
-pub(crate) async fn get_quick_report_data(
+pub async fn get_quick_report_data(
     order_owner_id: Option<&String>,
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     let query = if let Some(order_owner_id) = order_owner_id {
@@ -270,7 +270,7 @@ static FULL_RPT_GRAPHQL: &'static str = r"
 }
 ";
 
-pub(crate) async fn get_full_report_data(
+pub async fn get_full_report_data(
     order_owner_id: Option<&String>,
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     let query = if let Some(order_owner_id) = order_owner_id {
@@ -300,7 +300,7 @@ static MONEY_COLLECTION_RPT_GRAPHQL: &'static str = r"
 }
 ";
 
-pub(crate) async fn get_money_collection_report_data(
+pub async fn get_money_collection_report_data(
     order_owner_id: Option<&String>,
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     let query = if let Some(order_owner_id) = order_owner_id {
@@ -333,7 +333,7 @@ static DISTRIBUTION_POINTS_RPT_GRAPHQL: &'static str = r#"
 }
 "#;
 
-pub(crate) async fn get_distribution_points_report_data(
+pub async fn get_distribution_points_report_data(
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use std::collections::{BTreeMap, BTreeSet};
     let mut delivery_id_map: BTreeMap<u64, BTreeMap<String, u64>> = BTreeMap::new();
@@ -419,7 +419,7 @@ static DELIVERIES_RPT_GRAPHQL: &'static str = r#"
 }
 "#;
 
-pub(crate) async fn get_deliveries_report_data(
+pub async fn get_deliveries_report_data(
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     make_report_query(DELIVERIES_RPT_GRAPHQL.to_string())
         .await
@@ -459,7 +459,7 @@ static SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
 }
 ";
 
-pub(crate) async fn get_spreading_jobs_report_data(
+pub async fn get_spreading_jobs_report_data(
     order_owner_id: Option<&String>,
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     let query = if let Some(order_owner_id) = order_owner_id {
@@ -491,7 +491,7 @@ static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
 }
 ";
 
-pub(crate) async fn get_unfinished_spreading_jobs_report_data(
+pub async fn get_unfinished_spreading_jobs_report_data(
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use std::collections::BTreeMap;
     let mut unfinished_job_map: BTreeMap<(String, u64), u64> = BTreeMap::new();
@@ -544,77 +544,77 @@ struct SummaryReportStorage {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub(crate) struct SummaryReport {
+pub struct SummaryReport {
     #[serde(alias = "troop")]
-    pub(crate) troop_summary: TroopSummary,
+    pub troop_summary: TroopSummary,
     #[serde(alias = "orderOwner")]
-    pub(crate) seller_summary: SellerSummary,
+    pub seller_summary: SellerSummary,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub(crate) struct TroopSummary {
+pub struct TroopSummary {
     #[serde(alias = "totalAmountCollected")]
-    pub(crate) amount_total_collected: String,
+    pub amount_total_collected: String,
 
     #[serde(alias = "topSellers")]
-    pub(crate) top_sellers: Vec<TopSeller>,
+    pub top_sellers: Vec<TopSeller>,
 
     #[serde(alias = "groupSummary")]
-    pub(crate) group_summary: Vec<GroupSummary>,
+    pub group_summary: Vec<GroupSummary>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub(crate) struct TopSeller {
+pub struct TopSeller {
     #[serde(alias = "name")]
-    pub(crate) name: String,
+    pub name: String,
 
     #[serde(alias = "totalAmountCollected")]
-    pub(crate) amount_total_collected: String,
+    pub amount_total_collected: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub(crate) struct GroupSummary {
+pub struct GroupSummary {
     #[serde(alias = "groupId")]
-    pub(crate) group_id: String,
+    pub group_id: String,
 
     #[serde(alias = "totalAmountCollected")]
-    pub(crate) amount_total_collected: String,
+    pub amount_total_collected: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub(crate) struct SellerSummary {
+pub struct SellerSummary {
     #[serde(alias = "totalDeliveryMinutes")]
-    pub(crate) total_delivery_minutes: u32,
+    pub total_delivery_minutes: u32,
 
     #[serde(alias = "totalNumBagsSold")]
-    pub(crate) total_num_bags_sold: u32,
+    pub total_num_bags_sold: u32,
 
     #[serde(alias = "totalNumBagsSoldToSpread")]
-    pub(crate) total_num_bags_to_spread_sold: u32,
+    pub total_num_bags_to_spread_sold: u32,
 
     #[serde(alias = "totalAmountCollectedForDonations")]
-    pub(crate) amount_total_collected_for_donations: String,
+    pub amount_total_collected_for_donations: String,
 
     #[serde(alias = "totalAmountCollectedForBags")]
-    pub(crate) amount_total_collected_for_bags: String,
+    pub amount_total_collected_for_bags: String,
 
     #[serde(alias = "totalAmountCollectedForBagsToSpread")]
-    pub(crate) amount_total_collected_for_bags_to_spread: String,
+    pub amount_total_collected_for_bags_to_spread: String,
 
     #[serde(alias = "totalAmountCollected")]
-    pub(crate) amount_total_collected: String,
+    pub amount_total_collected: String,
 
     #[serde(alias = "allocationsFromDelivery")]
-    pub(crate) allocations_from_deliveries: String,
+    pub allocations_from_deliveries: String,
 
     #[serde(alias = "allocationsFromBagsSold")]
-    pub(crate) allocations_from_bags_sold: String,
+    pub allocations_from_bags_sold: String,
 
     #[serde(alias = "allocationsFromBagsSpread")]
-    pub(crate) allocations_from_bags_spread: String,
+    pub allocations_from_bags_spread: String,
 
     #[serde(alias = "allocationsTotal")]
-    pub(crate) allocations_total: String,
+    pub allocations_total: String,
 }
 
 static SUMMARY_RPT_GRAPHQL: &'static str = r"
@@ -648,7 +648,7 @@ static SUMMARY_RPT_GRAPHQL: &'static str = r"
 }
 ";
 
-pub(crate) async fn get_summary_report_data(
+pub async fn get_summary_report_data(
     seller_id: &str,
     num_top_sellers: u32,
 ) -> std::result::Result<SummaryReport, Box<dyn std::error::Error>> {
@@ -718,7 +718,7 @@ static ORDER_VERIFICATION_GRAPHQL: &'static str = r"
 }
 ";
 
-pub(crate) async fn get_order_verfification_report_data(
+pub async fn get_order_verfification_report_data(
     order_owner_id: Option<&String>,
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     let query = if let Some(order_owner_id) = order_owner_id {
