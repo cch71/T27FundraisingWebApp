@@ -1,5 +1,5 @@
-use wasm_bindgen::prelude::*;
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(module = "/src/js/geolocate.js")]
 extern "C" {
@@ -8,34 +8,34 @@ extern "C" {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
-pub(crate) struct GeolocationCoordinates {
-    pub(crate) latitude: f64,
-    pub(crate) longitude: f64,
-    pub(crate) accuracy: f64,
-    pub(crate) altitude: Option<f64>,
+pub struct GeolocationCoordinates {
+    pub latitude: f64,
+    pub longitude: f64,
+    pub accuracy: f64,
+    pub altitude: Option<f64>,
     #[serde(rename = "altitudeAccuracy")]
-    pub(crate) altitude_accuracy: Option<f64>,
-    pub(crate) heading: Option<f64>,
-    pub(crate) speed: Option<f64>,
+    pub altitude_accuracy: Option<f64>,
+    pub heading: Option<f64>,
+    pub speed: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
-pub(crate) struct GeolocationPosition {
-    pub(crate) coords: GeolocationCoordinates,
-    pub(crate) timestamp: i64,
+pub struct GeolocationPosition {
+    pub coords: GeolocationCoordinates,
+    pub timestamp: i64,
 }
 
-pub(crate) async fn get_current_position() -> Option<GeolocationPosition> {
+pub async fn get_current_position() -> Option<GeolocationPosition> {
     match getExactCurrentPosition().await {
         Ok(pos) => {
             let pos: GeolocationPosition = serde_wasm_bindgen::from_value(pos).unwrap();
             // log::info!("Position: {:#?}", &pos);
             Some(pos)
-        },
+        }
         Err(err) => {
             log::error!("Geolocation Err: {:#?}", err);
             gloo::dialogs::alert(&format!("Failed to get Geolocation Info: {:#?}", err));
             None
-        },
+        }
     }
 }

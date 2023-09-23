@@ -1,6 +1,5 @@
 mod currency_utils;
 mod data_model;
-mod js;
 
 use rust_decimal::prelude::*;
 use wasm_bindgen::JsCast;

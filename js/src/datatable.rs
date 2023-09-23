@@ -31,22 +31,23 @@ extern "C" {
     fn removeRowWithTr(dt: &JsValue, tr: &web_sys::Node) -> Result<(), JsValue>;
 
     #[wasm_bindgen(catch)]
-    fn setSpreadersWithTr(dt: &JsValue, tr: &web_sys::Node, spreaders: &str) -> Result<(), JsValue>;
+    fn setSpreadersWithTr(dt: &JsValue, tr: &web_sys::Node, spreaders: &str)
+        -> Result<(), JsValue>;
 }
 
-pub(crate) fn get_datatable(params: &serde_json::Value) -> Option<DataTable> {
+pub fn get_datatable(params: &serde_json::Value) -> Option<DataTable> {
     //log::info!("Get Data Table: {:#?}", &params);
     getDataTable(&serde_wasm_bindgen::to_value(params).unwrap()).ok()
 }
 
-pub(crate) fn remove_row_with_tr(dt: &JsValue, tr: &web_sys::Node)
-    -> Result<(), JsValue>
-{
+pub fn remove_row_with_tr(dt: &JsValue, tr: &web_sys::Node) -> Result<(), JsValue> {
     removeRowWithTr(dt, tr)
 }
 
-pub(crate) fn set_spreaders_with_tr(dt: &JsValue, tr: &web_sys::Node, spreaders: &str)
-    -> Result<(), JsValue>
-{
+pub fn set_spreaders_with_tr(
+    dt: &JsValue,
+    tr: &web_sys::Node,
+    spreaders: &str,
+) -> Result<(), JsValue> {
     setSpreadersWithTr(dt, tr, spreaders)
 }

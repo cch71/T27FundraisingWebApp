@@ -1,5 +1,6 @@
 [workspace]
 members = [
+	"js",
 	"webapp",
 ]
 resolver = "2"
@@ -11,9 +12,6 @@ license = "BSD-0"
 edition = "2021"
 
 # [workspace.dependencies]
-# diff = { version = "0.1.12", default_features = false }
-# regex = { version = "1", default_features = false }
-# regex-syntax = { version = "0.6", default_features = false }
 
 [profile.release]
 # less code to include into binary

@@ -1,6 +1,6 @@
+use serde::Serialize;
+use serde_wasm_bindgen::Serializer;
 use wasm_bindgen::prelude::*;
-use serde::{Serialize};
-use serde_wasm_bindgen::{Serializer};
 
 #[wasm_bindgen]
 extern "C" {
@@ -14,10 +14,9 @@ extern "C" {
     fn createSellMap(params: &JsValue) -> Result<Map, JsValue>;
 }
 
-pub(crate) fn create_sell_map(params: &serde_json::Value) -> Option<Map> {
+pub fn create_sell_map(params: &serde_json::Value) -> Option<Map> {
     //log::info!("Get Data Table: {:#?}", &params);
     let serializer = Serializer::new().serialize_maps_as_objects(true);
     let serialized_params = (*params).serialize(&serializer).unwrap();
     createSellMap(&serialized_params).ok()
 }
-

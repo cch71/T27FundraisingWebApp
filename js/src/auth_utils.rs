@@ -1,13 +1,13 @@
 use once_cell::sync::Lazy as LazyLock;
+use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
+use wasm_bindgen::prelude::*;
 
 static ACTIVE_USER: LazyLock<RwLock<Option<Arc<AuthenticatedUserInfo>>>> =
     LazyLock::new(|| RwLock::new(None));
 
 /////////////////////////////////////////////////
 // Auth Comp Stuff
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::*;
 #[wasm_bindgen(module = "/src/js/auth.js")]
 extern "C" {
     #[wasm_bindgen(catch)]
@@ -24,16 +24,16 @@ extern "C" {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
-pub(crate) struct AuthenticatedUserInfo {
-    pub(crate) email: String,
-    pub(crate) token: String,
+pub struct AuthenticatedUserInfo {
+    pub email: String,
+    pub token: String,
     name: Option<String>,
     id: Option<String>,
-    pub(crate) roles: Vec<String>,
+    pub roles: Vec<String>,
 }
 
 impl AuthenticatedUserInfo {
-    pub(crate) fn get_id(&self) -> String {
+    pub fn get_id(&self) -> String {
         // TODO: Do this at creation time
         self.id.as_ref().map_or_else(
             || {
@@ -44,16 +44,16 @@ impl AuthenticatedUserInfo {
         )
     }
 
-    pub(crate) fn get_name(&self) -> String {
+    pub fn get_name(&self) -> String {
         self.name.as_ref().unwrap_or(&self.get_id()).clone()
     }
 
-    pub(crate) fn is_admin(&self) -> bool {
+    pub fn is_admin(&self) -> bool {
         self.roles.contains(&"FrAdmins".to_string())
     }
 }
 
-pub(crate) async fn get_active_user_async() -> Option<Arc<AuthenticatedUserInfo>> {
+pub async fn get_active_user_async() -> Option<Arc<AuthenticatedUserInfo>> {
     match getUserInfo().await {
         Ok(user_info) => {
             //log::info!("User Info: {:#?}", user_info);
@@ -71,11 +71,11 @@ pub(crate) async fn get_active_user_async() -> Option<Arc<AuthenticatedUserInfo>
     }
 }
 
-pub(crate) fn get_active_user() -> Arc<AuthenticatedUserInfo> {
+pub fn get_active_user() -> Arc<AuthenticatedUserInfo> {
     ACTIVE_USER.read().unwrap().as_ref().unwrap().clone()
 }
 
-pub(crate) async fn is_authenticated() -> bool {
+pub async fn is_authenticated() -> bool {
     match isAuthenticated().await {
         Ok(is_auth) => {
             log::info!("Is Authenticated: {:#?}", &is_auth);
@@ -87,7 +87,7 @@ pub(crate) async fn is_authenticated() -> bool {
     false
 }
 
-pub(crate) async fn login() {
+pub async fn login() {
     if let Err(err) = loginUser().await {
         log::error!("Error logging in Err: {:#?}", err);
     } else {
@@ -95,7 +95,7 @@ pub(crate) async fn login() {
     }
 }
 
-pub(crate) async fn logout() {
+pub async fn logout() {
     if let Err(err) = logoutUser().await {
         log::error!("Error logging out Err: {:#?}", err);
     } else {
