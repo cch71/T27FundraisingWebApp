@@ -3,6 +3,7 @@ members = [
 	"js",
     "data_model",
     "timecard_pages",
+    "order_pages",
 	"webapp",
 ]
 resolver = "2"

@@ -7,16 +7,17 @@ use js::{bootstrap, datatable, geolocate, leaflet};
 
 mod components;
 use components::{
-    //add_new_order_button::AddNewOrderButton,
     issue_report_dlg::{show_report_issue_dlg, ReportIssueDlg},
     navbar::AppNav,
 };
 
 mod pages;
 use pages::home::Home;
-// closeout_fundraiser::CloseoutFundraiser, fr_config::FrConfig,
-//order_donations::OrderDonations, order_form::OrderForm, order_products::OrderProducts,
-//reports::Reports, timecards::Timecards,
+// closeout_fundraiser::CloseoutFundraiser, fr_config::FrConfig, reports::Reports
+use order_pages::{
+    components::AddNewOrderButton,
+    pages::{OrderDonations, OrderForm, OrderProducts},
+};
 
 use timecard_pages::Timecards;
 
@@ -71,15 +72,15 @@ fn App() -> Html {
 
             match route {
                 AppRoutes::Home => html! {<Home/>},
-                // AppRoutes::OrderForm => html! {<OrderForm/>},
-                // //TODO: should these be in a seperate routing table?
-                // AppRoutes::OrderProducts => html! {<OrderProducts/>},
-                // AppRoutes::OrderDonations => html! {<OrderDonations/>},
-                // AppRoutes::Reports => html! {<Reports/>},
+                AppRoutes::OrderForm => html! {<OrderForm/>},
+                AppRoutes::OrderProducts => html! {<OrderProducts/>},
+                AppRoutes::OrderDonations => html! {<OrderDonations/>},
+                //AppRoutes::Reports => html! {<Reports/>},
                 AppRoutes::Timecards => html! {<Timecards/>},
                 // AppRoutes::FundraiserCloseout => html! {<CloseoutFundraiser/>},
                 // AppRoutes::FrConfig => html! {<FrConfig/>},
                 AppRoutes::NotFound => html! { <h1>{ "404" }</h1> },
+                _ => todo!(),
             }
         }
     };
@@ -154,7 +155,7 @@ fn App() -> Html {
                 </main>
                 <AppFooter>
                     if are_sales_still_allowed() || is_admin {
-                        // <AddNewOrderButton userid={user_id}/>
+                        <AddNewOrderButton userid={user_id}/>
                     }
                 </AppFooter>
             </BrowserRouter>

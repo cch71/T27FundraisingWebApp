@@ -1,7 +1,6 @@
+use data_model::*;
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::data_model::*;
-use crate::AppRoutes;
 
 #[derive(Properties, PartialEq)]
 pub struct AddNewOrderButtonProps {
@@ -9,8 +8,7 @@ pub struct AddNewOrderButtonProps {
 }
 
 #[function_component(AddNewOrderButton)]
-pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html
-{
+pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html {
     let history = use_navigator().unwrap();
     let on_add_new_order = {
         let history = history.clone();
@@ -33,4 +31,3 @@ pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html
         </div>
     }
 }
-

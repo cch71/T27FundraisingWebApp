@@ -1,4 +1,4 @@
-use crate::AppRoutes;
+use data_model::AppRoutes;
 use web_sys::MouseEvent;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -44,11 +44,11 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html {
                         </Link<AppRoutes>>
                     </li>
                     if props.isactiveorder {
-                        // <li class="nav-item">
-                        //     <Link<AppRoutes> classes="nav-link" to={AppRoutes::OrderForm} >
-                        //         {"Order"}
-                        //     </Link<AppRoutes>>
-                        // </li>
+                        <li class="nav-item">
+                            <Link<AppRoutes> classes="nav-link" to={AppRoutes::OrderForm} >
+                                {"Order"}
+                            </Link<AppRoutes>>
+                        </li>
                     }
                     <li class="nav-item">
                         // <Link<AppRoutes> classes="nav-link" to={AppRoutes::Reports} >

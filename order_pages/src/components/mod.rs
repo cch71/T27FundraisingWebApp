@@ -1,1 +1,3 @@
-pub mod add_new_order_button;
+mod add_new_order_button;
+
+pub use add_new_order_button::*;

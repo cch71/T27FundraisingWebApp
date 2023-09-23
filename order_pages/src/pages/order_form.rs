@@ -1,5 +1,3 @@
-//use yew::{function_component, html, Properties};
-use crate::AppRoutes;
 use data_model::*;
 use rust_decimal::prelude::*;
 use rusty_money::{iso, Money};
@@ -510,7 +508,7 @@ pub fn order_form_fields() -> Html {
             let _ = elm.class_list().remove_1("btn-outline-info");
             wasm_bindgen_futures::spawn_local(async move {
                 log::info!("Making Geolocate call");
-                if let Some(pos) = crate::geolocate::get_current_position().await {
+                if let Some(pos) = js::geolocate::get_current_position().await {
                     log::info!(
                         "Geo callback: {}",
                         serde_json::to_string_pretty(&pos).unwrap()

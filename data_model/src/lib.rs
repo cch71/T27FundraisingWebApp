@@ -29,20 +29,20 @@ pub const CLOUD_API_URL: &'static str =
 pub enum AppRoutes {
     #[at("/")]
     Home,
-    // #[at("/order")]
-    // OrderForm,
-    // #[at("/orderproducts")]
-    // OrderProducts,
-    // #[at("/orderdonations")]
-    // OrderDonations,
-    // #[at("/reports")]
-    // Reports,
+    #[at("/order")]
+    OrderForm,
+    #[at("/orderproducts")]
+    OrderProducts,
+    #[at("/orderdonations")]
+    OrderDonations,
+    #[at("/reports")]
+    Reports,
     #[at("/timecards")]
     Timecards,
-    // #[at("/frcloseout")]
-    // FundraiserCloseout,
-    // #[at("/frcconfig")]
-    // FrConfig,
+    #[at("/frcloseout")]
+    FundraiserCloseout,
+    #[at("/frcconfig")]
+    FrConfig,
     #[not_found]
     #[at("/404")]
     NotFound,

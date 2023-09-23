@@ -1,4 +1,3 @@
-use crate::AppRoutes;
 use data_model::*;
 use std::collections::HashMap;
 use wasm_bindgen::JsCast;

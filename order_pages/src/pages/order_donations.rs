@@ -1,20 +1,19 @@
+use data_model::*;
+use wasm_bindgen::JsCast;
+use web_sys::{HtmlButtonElement, HtmlInputElement, InputEvent, MouseEvent, SubmitEvent};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::{InputEvent, MouseEvent, SubmitEvent, HtmlInputElement, HtmlButtonElement};
-use crate::AppRoutes;
-use crate::currency_utils::*;
-use crate::data_model::*;
 
 /////////////////////////////////////////////////
 ///
 fn get_donation_amount() -> Option<String> {
     let document = gloo::utils::document();
-    let donation_amt = document.get_element_by_id("formDonationAmount")
+    let donation_amt = document
+        .get_element_by_id("formDonationAmount")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
         .value();
-    if 0==donation_amt.len() {
+    if 0 == donation_amt.len() {
         None
     } else {
         Some(donation_amt)
@@ -25,7 +24,8 @@ fn get_donation_amount() -> Option<String> {
 ///
 fn set_donation_amount(value: &str) {
     let document = gloo::utils::document();
-    document.get_element_by_id("formDonationAmount")
+    document
+        .get_element_by_id("formDonationAmount")
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
         .set_value(value);
@@ -34,8 +34,10 @@ fn set_donation_amount(value: &str) {
 /////////////////////////////////////////////////
 ///
 fn disable_submit_button(value: bool) {
-    if let Some(btn) = web_sys::window().unwrap()
-        .document().unwrap()
+    if let Some(btn) = web_sys::window()
+        .unwrap()
+        .document()
+        .unwrap()
         .get_element_by_id("formDonationSubmit")
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
     {
@@ -46,11 +48,10 @@ fn disable_submit_button(value: bool) {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 #[function_component(OrderDonations)]
-pub fn order_donations() -> Html
-{
+pub fn order_donations() -> Html {
     let history = use_navigator().unwrap();
     if !is_active_order() {
-            history.push(&AppRoutes::Home);
+        history.push(&AppRoutes::Home);
     }
     let order = get_active_order().unwrap();
     let is_order_readonly = order.is_readonly();
@@ -65,7 +66,8 @@ pub fn order_donations() -> Html
             let mut donation_amt = get_donation_amount();
             if donation_amt.is_some() {
                 donation_amt = Some(to_money_str_no_symbol(donation_amt.as_ref()));
-                let dec_donation_amt = parse_money_str_as_decimal(donation_amt.as_ref().unwrap()).unwrap();
+                let dec_donation_amt =
+                    parse_money_str_as_decimal(donation_amt.as_ref().unwrap()).unwrap();
                 updated_order.set_donations(dec_donation_amt.to_string());
             } else {
                 updated_order.clear_donations();
@@ -96,9 +98,12 @@ pub fn order_donations() -> Html
 
             if donation_amt.is_some() {
                 let new_donation_amt = on_money_input_filter(donation_amt.as_ref());
-                log::info!("New Donation: {} Old Donation: {}", new_donation_amt, donation_amt.as_ref().unwrap());
+                log::info!(
+                    "New Donation: {} Old Donation: {}",
+                    new_donation_amt,
+                    donation_amt.as_ref().unwrap()
+                );
                 if &new_donation_amt != donation_amt.as_ref().unwrap() {
-
                     donation_amt = Some(new_donation_amt);
                     set_donation_amount(donation_amt.as_ref().unwrap());
                 }
@@ -113,7 +118,7 @@ pub fn order_donations() -> Html
         use_effect(move || {
             let donation_amt = get_donation_amount();
             disable_submit_button(order.amount_from_donations == donation_amt);
-            ||{}
+            || {}
         });
     }
 

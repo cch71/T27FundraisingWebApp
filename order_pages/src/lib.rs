@@ -1,4 +1,2 @@
-mod pages;
-
-pub use components::*;
-pub use pages::*;
+pub mod components;
+pub mod pages;
