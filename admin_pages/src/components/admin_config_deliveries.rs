@@ -1,14 +1,11 @@
-use yew::prelude::*;
-//use yew_router::prelude::*;
-use web_sys::{
-    MouseEvent, Element, HtmlElement, HtmlButtonElement, HtmlInputElement,
-};
-use crate::data_model::*;
-use crate::bootstrap;
-use std::rc::Rc;
-use std::cell::RefCell;
-use wasm_bindgen::JsCast;
 use chrono::prelude::*;
+use data_model::*;
+use js::bootstrap;
+use std::cell::RefCell;
+use std::rc::Rc;
+use wasm_bindgen::JsCast;
+use web_sys::{Element, HtmlButtonElement, HtmlElement, HtmlInputElement, MouseEvent};
+use yew::prelude::*;
 
 thread_local! {
     //Tuple of Devlivery ID, Delivery Data, Cutoff Date
@@ -26,8 +23,7 @@ struct DeliveryAddEditDlgProps {
 }
 
 #[function_component(DeliveryAddEditDlg)]
-fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html
-{
+fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html {
     //Tuple of Devlivery ID, Delivery Data, Cutoff Date
     let delivery_info = use_state_eq(|| ("".to_string(), "".to_string(), "".to_string()));
     // let delivery_date_str = use_state_eq(|| "".to_string());
@@ -36,7 +32,7 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html
     {
         // This is just to initialize it with the state value so we can trigger it later
         let delivery_info = delivery_info.clone();
-        SELECTED_DELIVERY.with(|selected_delivery_rc|{
+        SELECTED_DELIVERY.with(|selected_delivery_rc| {
             *selected_delivery_rc.borrow_mut() = Some(delivery_info);
         });
     }
@@ -46,20 +42,26 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html
         let onaddorupdate = props.onaddorupdate.clone();
         move |_evt: MouseEvent| {
             let document = gloo::utils::document();
-            let delivery_date = document.get_element_by_id("formDeliveryDate")
+            let delivery_date = document
+                .get_element_by_id("formDeliveryDate")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap()
                 .value();
-            let order_cutoff_date = document.get_element_by_id("formOrderCutoffDate")
+            let order_cutoff_date = document
+                .get_element_by_id("formOrderCutoffDate")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap()
                 .value();
-            onaddorupdate.emit(((*delivery_info).0.parse::<u32>().unwrap(), delivery_date, order_cutoff_date));
+            onaddorupdate.emit((
+                (*delivery_info).0.parse::<u32>().unwrap(),
+                delivery_date,
+                order_cutoff_date,
+            ));
         }
     };
 
     // log::info!("Cutoff Date String: {}", &*cutoff_date_str);
-    html!{
+    html! {
         <div class="modal fade" id="deliveryAddOrEditDlg"
              tabIndex="-1" role="dialog" aria-labelledby="deliveryAddOrEditDlgTitle" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -120,9 +122,7 @@ struct DeliveryLiProps {
 /////////////////////////////////////////////////
 //
 #[function_component(DeliveryLi)]
-fn delivery_item(props: &DeliveryLiProps) -> Html
-{
-
+fn delivery_item(props: &DeliveryLiProps) -> Html {
     html! {
         <li class="list-group-item d-flex justify-content-between">
             <div>
@@ -149,7 +149,8 @@ fn delivery_item(props: &DeliveryLiProps) -> Html
 /////////////////////////////////////////////////
 //
 fn get_delivery_id(evt: MouseEvent) -> u32 {
-    let btn_elm = evt.target()
+    let btn_elm = evt
+        .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
             // log::info!("Node Name: {}", t.node_name());
@@ -158,51 +159,64 @@ fn get_delivery_id(evt: MouseEvent) -> u32 {
             } else {
                 Some(t)
             }
-        }).unwrap();
+        })
+        .unwrap();
     let elm = btn_elm.dyn_into::<HtmlElement>().ok().unwrap();
 
-    elm.dataset().get("deliveryid").unwrap().parse::<u32>().unwrap()
+    elm.dataset()
+        .get("deliveryid")
+        .unwrap()
+        .parse::<u32>()
+        .unwrap()
 }
 
 /////////////////////////////////////////////////
 ///
 fn disable_save_button(document: &web_sys::Document, value: bool, with_spinner: bool) {
-    if let Some(btn) = document.get_element_by_id("btnSaveDeliveries")
+    if let Some(btn) = document
+        .get_element_by_id("btnSaveDeliveries")
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
     {
-       btn.set_disabled(value);
-       let spinner_display = if with_spinner { "inline-block" } else { "none" };
-       let _ = document.get_element_by_id("saveDeliveryConfigSpinner")
-           .and_then(|t| t.dyn_into::<HtmlElement>().ok())
-           .unwrap()
-           .style()
-           .set_property("display", spinner_display);
+        btn.set_disabled(value);
+        let spinner_display = if with_spinner { "inline-block" } else { "none" };
+        let _ = document
+            .get_element_by_id("saveDeliveryConfigSpinner")
+            .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+            .unwrap()
+            .style()
+            .set_property("display", spinner_display);
     }
 }
 
 /////////////////////////////////////////////////
 //
 #[function_component(DeliveryUl)]
-pub(crate) fn delivery_list() -> Html
-{
+pub(crate) fn delivery_list() -> Html {
     let deliveries = use_state(|| (*get_deliveries()).clone());
     let is_dirty = use_state_eq(|| false);
 
     let on_add_or_update_dlg_submit = {
         let is_dirty = is_dirty.clone();
         let deliveries = deliveries.clone();
-        move | vals: DeliveryDlgAddOrUpdateCb | {
-            let  (delivery_id, delivery_date, cutoff_date) = vals.to_owned();
-            log::info!("Add/Updating Delivery {} - {} - {}", delivery_id, delivery_date, cutoff_date);
+        move |vals: DeliveryDlgAddOrUpdateCb| {
+            let (delivery_id, delivery_date, cutoff_date) = vals.to_owned();
+            log::info!(
+                "Add/Updating Delivery {} - {} - {}",
+                delivery_id,
+                delivery_date,
+                cutoff_date
+            );
             let delivery_date = {
                 let nd = NaiveDate::parse_from_str(&delivery_date, "%Y-%m-%d").unwrap();
-                Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
+                Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
+                    .unwrap()
             };
             let cutoff_date = {
                 let nd = NaiveDate::parse_from_str(&cutoff_date, "%Y-%m-%d").unwrap();
-                Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0,0,0).unwrap()
+                Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
+                    .unwrap()
             };
-            let delivery_info = DeliveryInfo{
+            let delivery_info = DeliveryInfo {
                 delivery_date: delivery_date,
                 new_order_cutoff_date: cutoff_date,
             };
@@ -216,7 +230,7 @@ pub(crate) fn delivery_list() -> Html
     let on_delete = {
         let deliveries = deliveries.clone();
         let is_dirty = is_dirty.clone();
-        move | evt: MouseEvent | {
+        move |evt: MouseEvent| {
             let delivery_id = get_delivery_id(evt);
             let mut delivery_map = (*deliveries).clone();
             log::info!("Deleting ID: {}", delivery_id);
@@ -228,9 +242,9 @@ pub(crate) fn delivery_list() -> Html
 
     let on_add_delivery = {
         let deliveries = deliveries.clone();
-        move | _evt: MouseEvent | {
+        move |_evt: MouseEvent| {
             // Since we are adding we don't have a selected delivery id
-            SELECTED_DELIVERY.with(|selected_delivery_rc|{
+            SELECTED_DELIVERY.with(|selected_delivery_rc| {
                 let selected_delivery = selected_delivery_rc.borrow().as_ref().unwrap().clone();
                 let delivery_id_str = (deliveries.len() + 1).to_string();
                 selected_delivery.set((delivery_id_str, "".to_string(), "".to_string()));
@@ -241,13 +255,12 @@ pub(crate) fn delivery_list() -> Html
         }
     };
 
-
     let on_edit = {
         let deliveries = deliveries.clone();
-        move | evt: MouseEvent | {
+        move |evt: MouseEvent| {
             let delivery_id = get_delivery_id(evt);
             log::info!("Editing ID: {}", delivery_id);
-            SELECTED_DELIVERY.with(|selected_delivery_rc|{
+            SELECTED_DELIVERY.with(|selected_delivery_rc| {
                 let di = deliveries.get(&delivery_id).unwrap();
                 let delivery_date_str = di.get_delivery_date_str();
                 let cutoff_date_str = di.get_new_order_cutoff_date_str();
@@ -263,7 +276,7 @@ pub(crate) fn delivery_list() -> Html
     let on_save_deliveries = {
         let deliveries = deliveries.clone();
         let is_dirty = is_dirty.clone();
-        move | _evt: MouseEvent | {
+        move |_evt: MouseEvent| {
             let document = gloo::utils::document();
             disable_save_button(&document, true, true);
             let deliveries = deliveries.clone();

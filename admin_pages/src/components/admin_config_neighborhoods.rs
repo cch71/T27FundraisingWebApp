@@ -1,14 +1,10 @@
-use yew::prelude::*;
-use web_sys::{
-   MouseEvent, Element, HtmlElement, HtmlButtonElement,
-};
-use crate::data_model::*;
-use crate::bootstrap;
-use crate::{get_html_input_value, get_html_checked_input_value};
-use std::rc::Rc;
+use data_model::*;
+use js::bootstrap;
 use std::cell::RefCell;
+use std::rc::Rc;
 use wasm_bindgen::JsCast;
-
+use web_sys::{Element, HtmlButtonElement, HtmlElement, MouseEvent};
+use yew::prelude::*;
 
 thread_local! {
     static SELECTED_NEIGHBORHOOD: Rc<RefCell<Option<UseStateHandle<Neighborhood>>>> = Rc::new(RefCell::new(None));
@@ -24,15 +20,18 @@ struct NeighborhoodAddEditDlgProps {
 }
 
 #[function_component(NeighborhoodAddEditDlg)]
-fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html
-{
-    let neighborhood = use_state_eq(||
-        Neighborhood{name: "".to_string(), zipcode: None, city: None, is_visible:false, distribution_point:"".to_string()}
-    );
+fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
+    let neighborhood = use_state_eq(|| Neighborhood {
+        name: "".to_string(),
+        zipcode: None,
+        city: None,
+        is_visible: false,
+        distribution_point: "".to_string(),
+    });
     {
         // This addes the use_state handler so it can be access externally
         let neighborhood = neighborhood.clone();
-        SELECTED_NEIGHBORHOOD.with(|rc|{
+        SELECTED_NEIGHBORHOOD.with(|rc| {
             *rc.borrow_mut() = Some(neighborhood);
         });
     }
@@ -62,7 +61,9 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html
                 distribution_point: distribution_point,
                 is_visible: get_html_checked_input_value("frmDlgHoodIsVisible", &document),
                 city: get_html_input_value("frmDlgHoodCity", &document),
-                zipcode: get_html_input_value("frmDlgHoodZip", &document).map(|v| v.parse::<u32>().ok()).flatten(),
+                zipcode: get_html_input_value("frmDlgHoodZip", &document)
+                    .map(|v| v.parse::<u32>().ok())
+                    .flatten(),
             };
 
             onaddorupdate.emit(hood);
@@ -70,7 +71,7 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html
     };
 
     // log::info!("Cutoff Date String: {}", &*cutoff_date_str);
-    html!{
+    html! {
         <div class="modal fade" id="neighborhoodAddOrEditDlg"
              tabIndex="-1" role="dialog" aria-labelledby="neighborhoodAddOrEditDlgTitle" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -147,8 +148,7 @@ struct NeighborhoodLiProps {
 }
 
 #[function_component(NeighborhoodLi)]
-fn neighborhood_item(props: &NeighborhoodLiProps) -> Html
-{
+fn neighborhood_item(props: &NeighborhoodLiProps) -> Html {
     let mut liclass = "list-group-item d-flex justify-content-between".to_string();
     if !props.hood.is_visible {
         liclass = format!("{} list-group-item-dark", liclass);
@@ -179,7 +179,8 @@ fn neighborhood_item(props: &NeighborhoodLiProps) -> Html
 /////////////////////////////////////////////////
 //
 fn get_selected_neighborhood(evt: MouseEvent) -> String {
-    let btn_elm = evt.target()
+    let btn_elm = evt
+        .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
             // log::info!("Node Name: {}", t.node_name());
@@ -188,7 +189,8 @@ fn get_selected_neighborhood(evt: MouseEvent) -> String {
             } else {
                 Some(t)
             }
-        }).unwrap();
+        })
+        .unwrap();
     let elm = btn_elm.dyn_into::<HtmlElement>().ok().unwrap();
 
     elm.dataset().get("neighborhood").unwrap()
@@ -197,34 +199,37 @@ fn get_selected_neighborhood(evt: MouseEvent) -> String {
 /////////////////////////////////////////////////
 ///
 fn disable_save_button(document: &web_sys::Document, value: bool) {
-    if let Some(btn) = document.get_element_by_id("btnSaveUpdatedHoods")
+    if let Some(btn) = document
+        .get_element_by_id("btnSaveUpdatedHoods")
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
     {
-       btn.set_disabled(value);
-       let spinner_display = if value { "inline-block" } else { "none" };
-       let _ = document.get_element_by_id("saveNeighborhoodConfigSpinner")
-           .and_then(|t| t.dyn_into::<HtmlElement>().ok())
-           .unwrap()
-           .style()
-           .set_property("display", spinner_display);
+        btn.set_disabled(value);
+        let spinner_display = if value { "inline-block" } else { "none" };
+        let _ = document
+            .get_element_by_id("saveNeighborhoodConfigSpinner")
+            .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+            .unwrap()
+            .style()
+            .set_property("display", spinner_display);
     }
 }
 
 #[function_component(NeighborhoodUl)]
-pub(crate) fn neighborhood_list() -> Html
-{
+pub(crate) fn neighborhood_list() -> Html {
     use std::collections::BTreeMap;
     // Map neighborhood names to neighborhood and add ability to mark dirty
-    let neighborhoods = use_state(|| (*get_neighborhoods())
-        .iter()
-        .map(|hi| (hi.name.clone(),(false, hi.clone())))
-        .collect::<BTreeMap<String, (bool, Neighborhood)>>());
+    let neighborhoods = use_state(|| {
+        (*get_neighborhoods())
+            .iter()
+            .map(|hi| (hi.name.clone(), (false, hi.clone())))
+            .collect::<BTreeMap<String, (bool, Neighborhood)>>()
+    });
     let is_dirty = use_state_eq(|| false);
 
     let on_add_or_update_dlg_submit = {
         let is_dirty = is_dirty.clone();
         let neighborhoods = neighborhoods.clone();
-        move | hood: Neighborhood | {
+        move |hood: Neighborhood| {
             log::info!("Add/Updating Neighborhood: {:#?}", &hood);
             let mut neighborhood_map = (*neighborhoods).clone();
             neighborhood_map.insert(hood.name.clone(), (true, hood));
@@ -234,13 +239,17 @@ pub(crate) fn neighborhood_list() -> Html
     };
 
     let on_add_neighborhood = {
-        move | _evt: MouseEvent | {
+        move |_evt: MouseEvent| {
             // Since we are adding we don't have a selected index
-            SELECTED_NEIGHBORHOOD.with(|rc|{
+            SELECTED_NEIGHBORHOOD.with(|rc| {
                 let selected_neighborhood = rc.borrow().as_ref().unwrap().clone();
-                selected_neighborhood.set(
-                    Neighborhood{name: "".to_string(), zipcode: None, city: None, is_visible:false, distribution_point:"".to_string()}
-                );
+                selected_neighborhood.set(Neighborhood {
+                    name: "".to_string(),
+                    zipcode: None,
+                    city: None,
+                    is_visible: false,
+                    distribution_point: "".to_string(),
+                });
             });
 
             let dlg = bootstrap::get_modal_by_id("neighborhoodAddOrEditDlg").unwrap();
@@ -250,12 +259,12 @@ pub(crate) fn neighborhood_list() -> Html
 
     let on_edit = {
         let neighborhoods = neighborhoods.clone();
-        move | evt: MouseEvent | {
+        move |evt: MouseEvent| {
             let hood_name_str = get_selected_neighborhood(evt);
             let (_, hood) = (*neighborhoods).get(&hood_name_str).unwrap();
             log::info!("Editing Neighborhood: {:#?}", &hood);
 
-            SELECTED_NEIGHBORHOOD.with(|rc|{
+            SELECTED_NEIGHBORHOOD.with(|rc| {
                 let selected_neighborhood = rc.borrow().as_ref().unwrap().clone();
                 selected_neighborhood.set(hood.clone());
             });
@@ -267,13 +276,13 @@ pub(crate) fn neighborhood_list() -> Html
     let on_save_neighborhoods = {
         let neighborhoods = neighborhoods.clone();
         let is_dirty = is_dirty.clone();
-        move | _evt: MouseEvent | {
+        move |_evt: MouseEvent| {
             let document = gloo::utils::document();
             disable_save_button(&document, true);
             let updated_hoods = neighborhoods
                 .values()
                 .into_iter()
-                .filter_map(|(is_dirty, hood)| if *is_dirty {Some(hood.clone())} else {None})
+                .filter_map(|(is_dirty, hood)| if *is_dirty { Some(hood.clone()) } else { None })
                 .collect::<Vec<Neighborhood>>();
 
             let is_dirty = is_dirty.clone();

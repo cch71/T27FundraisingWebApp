@@ -1,14 +1,10 @@
-use yew::prelude::*;
-use web_sys::{
-   MouseEvent, Element, HtmlElement, HtmlButtonElement, HtmlInputElement, InputEvent,
-};
-use crate::data_model::*;
-use crate::currency_utils::*;
-use crate::bootstrap;
-use crate::get_html_input_value;
-use std::rc::Rc;
+use data_model::*;
+use js::bootstrap;
 use std::cell::RefCell;
+use std::rc::Rc;
 use wasm_bindgen::JsCast;
+use web_sys::{Element, HtmlButtonElement, HtmlElement, HtmlInputElement, InputEvent, MouseEvent};
+use yew::prelude::*;
 
 thread_local! {
     static SELECTED_PRICE_BREAK: Rc<RefCell<Option<UseStateHandle<Option<(u32, String)>>>>> = Rc::new(RefCell::new(None));
@@ -25,12 +21,11 @@ struct PriceBreakAddEditDlgProps {
 }
 
 #[function_component(PriceBreakAddEditDlg)]
-fn pricebreak_add_or_edit_dlg(props: &PriceBreakAddEditDlgProps) -> Html
-{
+fn pricebreak_add_or_edit_dlg(props: &PriceBreakAddEditDlgProps) -> Html {
     let price_break = use_state_eq(|| None);
     {
         let price_break = price_break.clone();
-        SELECTED_PRICE_BREAK.with(|rc|{
+        SELECTED_PRICE_BREAK.with(|rc| {
             *rc.borrow_mut() = Some(price_break);
         });
     }
@@ -39,13 +34,15 @@ fn pricebreak_add_or_edit_dlg(props: &PriceBreakAddEditDlgProps) -> Html
         let onaddorupdate = props.onaddorupdate.clone();
         move |_evt: MouseEvent| {
             let document = gloo::utils::document();
-            let gt = document.get_element_by_id("formGt")
+            let gt = document
+                .get_element_by_id("formGt")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap()
                 .value()
                 .parse::<u32>()
                 .unwrap();
-            let unit_price = document.get_element_by_id("formUnitPrice")
+            let unit_price = document
+                .get_element_by_id("formUnitPrice")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap()
                 .value();
@@ -53,13 +50,12 @@ fn pricebreak_add_or_edit_dlg(props: &PriceBreakAddEditDlgProps) -> Html
         }
     };
 
-    let (is_new, gt, unit_price) = (*price_break)
-        .as_ref()
-        .map_or_else(
-            ||(true, "".to_string(), "".to_string()),
-            |(gt, unit_price)| (false, gt.to_string(), unit_price.clone()));
+    let (is_new, gt, unit_price) = (*price_break).as_ref().map_or_else(
+        || (true, "".to_string(), "".to_string()),
+        |(gt, unit_price)| (false, gt.to_string(), unit_price.clone()),
+    );
 
-    html!{
+    html! {
         <div class="modal fade" id="pricebreakAddOrEditDlg"
              tabIndex="-1" role="dialog" aria-labelledby="pricebreakAddOrEditDlgTitle" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -113,8 +109,7 @@ struct MulchPriceBreakLiProps {
 }
 
 #[function_component(MulchPriceBreakLi)]
-fn mulch_pricebreak_item(props: &MulchPriceBreakLiProps) -> Html
-{
+fn mulch_pricebreak_item(props: &MulchPriceBreakLiProps) -> Html {
     html! {
         <li class="list-group-item d-flex justify-content-between">
             <div>
@@ -138,7 +133,8 @@ fn mulch_pricebreak_item(props: &MulchPriceBreakLiProps) -> Html
 /////////////////////////////////////////////////
 //
 fn get_selected_pricebreak(evt: MouseEvent) -> u32 {
-    let btn_elm = evt.target()
+    let btn_elm = evt
+        .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
             if t.node_name() == "I" {
@@ -146,7 +142,8 @@ fn get_selected_pricebreak(evt: MouseEvent) -> u32 {
             } else {
                 Some(t)
             }
-        }).unwrap();
+        })
+        .unwrap();
     let elm = btn_elm.dyn_into::<HtmlElement>().ok().unwrap();
 
     elm.dataset().get("gt").unwrap().parse::<u32>().unwrap()
@@ -155,22 +152,23 @@ fn get_selected_pricebreak(evt: MouseEvent) -> u32 {
 /////////////////////////////////////////////////
 ///
 fn disable_save_button(document: &web_sys::Document, value: bool) {
-    if let Some(btn) = document.get_element_by_id("btnProductsSave")
+    if let Some(btn) = document
+        .get_element_by_id("btnProductsSave")
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
     {
-       btn.set_disabled(value);
-       let spinner_display = if value { "inline-block" } else { "none" };
-       let _ = document.get_element_by_id("saveProductsConfigSpinner")
-           .and_then(|t| t.dyn_into::<HtmlElement>().ok())
-           .unwrap()
-           .style()
-           .set_property("display", spinner_display);
+        btn.set_disabled(value);
+        let spinner_display = if value { "inline-block" } else { "none" };
+        let _ = document
+            .get_element_by_id("saveProductsConfigSpinner")
+            .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+            .unwrap()
+            .style()
+            .set_property("display", spinner_display);
     }
 }
 
 #[function_component(MulchCost)]
-pub(crate) fn set_mulch_cost() -> Html
-{
+pub(crate) fn set_mulch_cost() -> Html {
     use std::collections::BTreeMap;
 
     let product = get_products();
@@ -180,19 +178,21 @@ pub(crate) fn set_mulch_cost() -> Html
     let mulch_min_units_cost = use_mut_ref(|| mulch_product_info.min_units.clone());
     let mulch_base_bags_cost = use_mut_ref(|| mulch_product_info.unit_price.clone());
 
-    let price_breaks = use_state(|| mulch_product_info
-        .price_breaks
-        .iter()
-        .map(|v| (v.gt,v.unit_price.clone()))
-        .collect::<BTreeMap<u32, String>>());
+    let price_breaks = use_state(|| {
+        mulch_product_info
+            .price_breaks
+            .iter()
+            .map(|v| (v.gt, v.unit_price.clone()))
+            .collect::<BTreeMap<u32, String>>()
+    });
     let is_dirty = use_state_eq(|| false);
 
     let on_add_or_update_dlg_submit = {
         let is_dirty = is_dirty.clone();
         let price_breaks = price_breaks.clone();
 
-        move | vals: PriceBreakAddUpdateDlgCb | {
-            let  (gt, unit_price) = vals.to_owned();
+        move |vals: PriceBreakAddUpdateDlgCb| {
+            let (gt, unit_price) = vals.to_owned();
             log::info!("Add/Updating Price Break {} - {}", gt, unit_price);
             let mut price_breaks_map = (*price_breaks).clone();
             price_breaks_map.insert(gt, unit_price);
@@ -204,7 +204,7 @@ pub(crate) fn set_mulch_cost() -> Html
     let on_delete = {
         let is_dirty = is_dirty.clone();
         let price_breaks = price_breaks.clone();
-        move | evt: MouseEvent | {
+        move |evt: MouseEvent| {
             let gt = get_selected_pricebreak(evt);
             log::info!("Deleting Price Break {}", gt);
             let mut price_breaks_map = (*price_breaks).clone();
@@ -215,10 +215,10 @@ pub(crate) fn set_mulch_cost() -> Html
     };
 
     let on_add_pricebreak = {
-        move | _evt: MouseEvent | {
+        move |_evt: MouseEvent| {
             log::info!("Adding Pricebreak...");
             // Since we are adding we don't have a selected index
-            SELECTED_PRICE_BREAK.with(|rc|{
+            SELECTED_PRICE_BREAK.with(|rc| {
                 let selected_price_break = rc.borrow().as_ref().unwrap().clone();
                 selected_price_break.set(None);
             });
@@ -230,11 +230,11 @@ pub(crate) fn set_mulch_cost() -> Html
 
     let on_edit = {
         let price_breaks = price_breaks.clone();
-        move | evt: MouseEvent | {
+        move |evt: MouseEvent| {
             let gt = get_selected_pricebreak(evt);
             let unit_price = (*price_breaks).get(&gt).unwrap();
             log::info!("Editing Pricebreak: {}", &gt);
-            SELECTED_PRICE_BREAK.with(|rc|{
+            SELECTED_PRICE_BREAK.with(|rc| {
                 let selected_price_break = rc.borrow().as_ref().unwrap().clone();
                 selected_price_break.set(Some((gt, unit_price.clone())));
             });
@@ -253,28 +253,37 @@ pub(crate) fn set_mulch_cost() -> Html
             let cost_str = spreading_cost.borrow().clone();
             let spreading_cost_str = to_money_str_no_symbol(Some(&cost_str));
 
-            let mulch_base_per_bag_cost_str = get_html_input_value("formMulchCost", &document).unwrap_or("".to_string());
-            let mulch_min_units_str = get_html_input_value("formMulchMinUnits", &document).unwrap_or("".to_string());
+            let mulch_base_per_bag_cost_str =
+                get_html_input_value("formMulchCost", &document).unwrap_or("".to_string());
+            let mulch_min_units_str =
+                get_html_input_value("formMulchMinUnits", &document).unwrap_or("".to_string());
 
             let mut products = BTreeMap::new();
-            products.insert("bags".to_string(), ProductInfo{
-                label: "Bags of Mulch".to_string(),
-                min_units: mulch_min_units_str.parse::<u32>().unwrap(),
-                unit_price: to_money_str_no_symbol(Some(&mulch_base_per_bag_cost_str)),
-                price_breaks: (*price_breaks).iter().map(|(gt, unit_price)|{
-                    ProductPriceBreak {
-                        gt: *gt,
-                        unit_price: to_money_str_no_symbol(Some(&unit_price)),
-                    }
-                }).collect::<Vec<ProductPriceBreak>>()
-            });
+            products.insert(
+                "bags".to_string(),
+                ProductInfo {
+                    label: "Bags of Mulch".to_string(),
+                    min_units: mulch_min_units_str.parse::<u32>().unwrap(),
+                    unit_price: to_money_str_no_symbol(Some(&mulch_base_per_bag_cost_str)),
+                    price_breaks: (*price_breaks)
+                        .iter()
+                        .map(|(gt, unit_price)| ProductPriceBreak {
+                            gt: *gt,
+                            unit_price: to_money_str_no_symbol(Some(&unit_price)),
+                        })
+                        .collect::<Vec<ProductPriceBreak>>(),
+                },
+            );
 
-            products.insert("spreading".to_string(), ProductInfo{
-                label: "Bags to Spread".to_string(),
-                min_units: 0,
-                unit_price: spreading_cost_str,
-                price_breaks: Vec::new(),
-            });
+            products.insert(
+                "spreading".to_string(),
+                ProductInfo {
+                    label: "Bags to Spread".to_string(),
+                    min_units: 0,
+                    unit_price: spreading_cost_str,
+                    price_breaks: Vec::new(),
+                },
+            );
 
             // log::info!("Saving Products: {:#?}", &products);
 
@@ -391,4 +400,3 @@ pub(crate) fn set_mulch_cost() -> Html
         </div>
     }
 }
-

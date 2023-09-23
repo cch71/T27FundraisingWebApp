@@ -42,7 +42,7 @@ pub enum AppRoutes {
     #[at("/frcloseout")]
     FundraiserCloseout,
     #[at("/frcconfig")]
-    FrConfig,
+    FrConfigEditor,
     #[not_found]
     #[at("/404")]
     NotFound,

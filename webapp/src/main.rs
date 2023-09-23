@@ -1,9 +1,11 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use data_model::*;
+use data_model::{
+    are_sales_still_allowed, delete_report_settings, get_active_user, get_active_user_async,
+    get_summary_report_data, is_active_order, load_config, save_to_active_order, AppRoutes,
+};
 use js::auth_utils::{is_authenticated, login, logout};
-use js::{bootstrap, datatable, geolocate, leaflet};
 
 mod components;
 use components::{
@@ -13,13 +15,13 @@ use components::{
 
 mod pages;
 use pages::home::Home;
-// closeout_fundraiser::CloseoutFundraiser, fr_config::FrConfig
+
+use admin_pages::pages::{CloseoutFundraiser, FrConfigEditor};
 use order_pages::{
     components::AddNewOrderButton,
     pages::{OrderDonations, OrderForm, OrderProducts},
 };
 use report_pages::pages::Reports;
-
 use timecard_pages::Timecards;
 
 /////////////////////////////////////////////////
@@ -78,10 +80,9 @@ fn App() -> Html {
                 AppRoutes::OrderDonations => html! {<OrderDonations/>},
                 AppRoutes::Reports => html! {<Reports/>},
                 AppRoutes::Timecards => html! {<Timecards/>},
-                // AppRoutes::FundraiserCloseout => html! {<CloseoutFundraiser/>},
-                // AppRoutes::FrConfig => html! {<FrConfig/>},
+                AppRoutes::FundraiserCloseout => html! {<CloseoutFundraiser/>},
+                AppRoutes::FrConfigEditor => html! {<FrConfigEditor/>},
                 AppRoutes::NotFound => html! { <h1>{ "404" }</h1> },
-                _ => todo!(),
             }
         }
     };

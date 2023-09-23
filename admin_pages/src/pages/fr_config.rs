@@ -1,14 +1,12 @@
-use yew::prelude::*;
 use crate::components::admin_config_deliveries::*;
 use crate::components::admin_config_neighborhoods::*;
 use crate::components::admin_config_product_costs::*;
 use crate::components::admin_config_users::*;
+use yew::prelude::*;
 
-use web_sys::{
-   MouseEvent, HtmlElement, HtmlButtonElement,
-};
+use data_model::*;
 use wasm_bindgen::JsCast;
-use crate::data_model::*;
+use web_sys::{HtmlButtonElement, HtmlElement, MouseEvent};
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -16,22 +14,23 @@ use crate::data_model::*;
 /////////////////////////////////////////////////
 ///
 fn disable_reset_button(document: &web_sys::Document, value: bool) {
-    if let Some(btn) = document.get_element_by_id("btnResetFrData")
+    if let Some(btn) = document
+        .get_element_by_id("btnResetFrData")
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
     {
-       btn.set_disabled(value);
-       let spinner_display = if value { "inline-block" } else { "none" };
-       let _ = document.get_element_by_id("resetUserAndOrderDataSpinner")
-           .and_then(|t| t.dyn_into::<HtmlElement>().ok())
-           .unwrap()
-           .style()
-           .set_property("display", spinner_display);
+        btn.set_disabled(value);
+        let spinner_display = if value { "inline-block" } else { "none" };
+        let _ = document
+            .get_element_by_id("resetUserAndOrderDataSpinner")
+            .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+            .unwrap()
+            .style()
+            .set_property("display", spinner_display);
     }
 }
 
 #[function_component(ResetOrders)]
-fn reset_orders_database() -> Html
-{
+fn reset_orders_database() -> Html {
     let on_reset_db = {
         move |_evt: MouseEvent| {
             let document = gloo::utils::document();
@@ -42,13 +41,17 @@ fn reset_orders_database() -> Html
                 let msg = format!(
                     "This will remove all order data from the system.\nIT IS DESTRUCTIVE!!!\nAre You Sure?\nType \"{}\" to delete",
                     verify_phrase);
-                let do_reset = gloo::dialogs::prompt(&msg, None).map_or(false, |v| v==verify_phrase);
+                let do_reset =
+                    gloo::dialogs::prompt(&msg, None).map_or(false, |v| v == verify_phrase);
 
                 log::info!("Resetting Order Database: {}", do_reset);
                 if do_reset {
                     log::info!("Resetting User and Order Data!!!!!!!!...");
                     if let Err(err) = reset_fundraiser().await {
-                        gloo::dialogs::alert(&format!("Failed to reset fundraiser data: {:#?}", err));
+                        gloo::dialogs::alert(&format!(
+                            "Failed to reset fundraiser data: {:#?}",
+                            err
+                        ));
                     }
                 }
 
@@ -79,9 +82,8 @@ fn reset_orders_database() -> Html
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(FrConfig)]
-pub fn fr_config() -> Html
-{
+#[function_component(FrConfigEditor)]
+pub fn fr_config() -> Html {
     let are_orders_created = use_state_eq(|| true);
 
     {

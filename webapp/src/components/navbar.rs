@@ -69,7 +69,7 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html {
                             <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FundraiserCloseout} >
                                 {"Closeout Fundraiser"}
                             </Link<AppRoutes>>
-                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FrConfig} >
+                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FrConfigEditor} >
                                 {"Configure Fundraiser"}
                             </Link<AppRoutes>>
                         }

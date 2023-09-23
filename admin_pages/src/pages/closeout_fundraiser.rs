@@ -1,54 +1,79 @@
-
-use yew::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::{Url, InputEvent, MouseEvent, FocusEvent, SubmitEvent, HtmlInputElement, HtmlAnchorElement};
 use rust_decimal::prelude::*;
-
-use crate::data_model::*;
-use crate::currency_utils::{
-    str_to_money_str,
-    decimal_to_money_string,
-    parse_money_str_as_decimal
+use wasm_bindgen::JsCast;
+use web_sys::{
+    FocusEvent, HtmlAnchorElement, HtmlInputElement, InputEvent, MouseEvent, SubmitEvent, Url,
 };
+use yew::prelude::*;
+
+use data_model::*;
 
 use chrono::prelude::*;
 use gloo::file::File;
 
-
 ////////////////////////////////////////////////////////
 ///
-fn calculate_new_dvars(mut dvars: FrCloseoutDynamicVars, svar_map: FrClosureStaticData)->Option<FrCloseoutDynamicVars> {
+fn calculate_new_dvars(
+    mut dvars: FrCloseoutDynamicVars,
+    svar_map: FrClosureStaticData,
+) -> Option<FrCloseoutDynamicVars> {
     //use Decimal::dec;
     let svars = svar_map.get("TROOP_TOTALS").unwrap();
 
-    log::info!("BD: {}, MS: {}, SP: {} DN: {}",
+    log::info!(
+        "BD: {}, MS: {}, SP: {} DN: {}",
         &dvars.bank_deposited,
         &dvars.mulch_cost,
         &svars.amount_from_bags_to_spread_sales,
-        &svars.amount_from_donations);
-    dvars.mulch_sales_gross = dvars.bank_deposited
+        &svars.amount_from_donations
+    );
+    dvars.mulch_sales_gross = dvars
+        .bank_deposited
         .checked_sub(svars.amount_from_bags_to_spread_sales)
         .and_then(|v| v.checked_sub(dvars.mulch_cost))
         .and_then(|v| v.checked_sub(svars.amount_from_donations))
         .unwrap();
-    dvars.money_pool_for_troop = dvars.mulch_sales_gross.checked_mul(Decimal::from_f32(0.20).unwrap()).unwrap();
-    dvars.money_pool_for_scouts_sub_pools = dvars.mulch_sales_gross.checked_mul(Decimal::from_f32(0.80).unwrap()).unwrap();
+    dvars.money_pool_for_troop = dvars
+        .mulch_sales_gross
+        .checked_mul(Decimal::from_f32(0.20).unwrap())
+        .unwrap();
+    dvars.money_pool_for_scouts_sub_pools = dvars
+        .mulch_sales_gross
+        .checked_mul(Decimal::from_f32(0.80).unwrap())
+        .unwrap();
     //Distribute profits between selling/delivery buckets
-    dvars.money_pool_for_scout_sales = dvars.money_pool_for_scouts_sub_pools.checked_div(Decimal::from_f32(2.0).unwrap()).unwrap();
+    dvars.money_pool_for_scout_sales = dvars
+        .money_pool_for_scouts_sub_pools
+        .checked_div(Decimal::from_f32(2.0).unwrap())
+        .unwrap();
     dvars.money_pool_for_scout_delivery = dvars.money_pool_for_scout_sales;
-    dvars.per_bag_avg_earnings = dvars.money_pool_for_scout_sales.checked_div(svars.num_bags_sold.into()).unwrap();
-    dvars.per_bag_cost = dvars.mulch_cost.checked_div(svars.num_bags_sold.into()).unwrap();
+    dvars.per_bag_avg_earnings = dvars
+        .money_pool_for_scout_sales
+        .checked_div(svars.num_bags_sold.into())
+        .unwrap();
+    dvars.per_bag_cost = dvars
+        .mulch_cost
+        .checked_div(svars.num_bags_sold.into())
+        .unwrap();
     // Profits from bags should be equal to mulch_sales_gross.  When satified this is true should just use
     // mulch_sales_gross
-    dvars.profits_from_bags = svars.amount_from_bags_sales.checked_sub(dvars.mulch_cost).unwrap();
-    let delivery_time_in_minutes = Decimal::from_f64(svars.delivery_time_total.as_secs_f64()/60.0).unwrap();
-    dvars.delivery_earnings_per_minute = dvars.money_pool_for_scout_delivery.checked_div(delivery_time_in_minutes).unwrap();
+    dvars.profits_from_bags = svars
+        .amount_from_bags_sales
+        .checked_sub(dvars.mulch_cost)
+        .unwrap();
+    let delivery_time_in_minutes =
+        Decimal::from_f64(svars.delivery_time_total.as_secs_f64() / 60.0).unwrap();
+    dvars.delivery_earnings_per_minute = dvars
+        .money_pool_for_scout_delivery
+        .checked_div(delivery_time_in_minutes)
+        .unwrap();
     Some(dvars)
 }
 ////////////////////////////////////////////////////////
 ///
-fn calculate_per_scout_report(dvars:&FrCloseoutDynamicVars, svar_map: FrClosureStaticData) -> Vec<FrCloseoutAllocationVals> {
-
+fn calculate_per_scout_report(
+    dvars: &FrCloseoutDynamicVars,
+    svar_map: FrClosureStaticData,
+) -> Vec<FrCloseoutAllocationVals> {
     // These totals are calculated from what is in the scout report as given to the scouts
     let mut total_calc_donations = Decimal::ZERO;
     let mut calc_allocations_from_bags_sold = Decimal::ZERO;
@@ -59,75 +84,111 @@ fn calculate_per_scout_report(dvars:&FrCloseoutDynamicVars, svar_map: FrClosureS
     let mut calc_allocations_total = Decimal::ZERO;
 
     let uid_2_name_map = get_users();
-    let spreading_price = get_products().get("spreading").map(|v| Decimal::from_str(&v.unit_price).ok()).flatten().unwrap();
+    let spreading_price = get_products()
+        .get("spreading")
+        .map(|v| Decimal::from_str(&v.unit_price).ok())
+        .flatten()
+        .unwrap();
 
-    let mut scout_vals = svar_map.iter().filter(|(uid, _)| uid.as_str() != "TROOP_TOTALS").map(|(uid, data)| {
-        total_calc_donations = total_calc_donations.checked_add(data.amount_from_donations).unwrap();
-        // This calculates the percentage of sales and then allocates that percentage from the bag sale allocation
-        //   so from a raw perspective.
-        //   Step 1: get cost to troop for this scouts bags sold by multiplying troop cost per bag by bags
-        //   that were sold.
-        //   Step 2: Subtract that number from the amount of money in mulch bag sales the scout made for the trop.  This gives
-        //    you how much profit the scout had
-        //   Step 3: Divide that scouts's profit by the troop profit to get the profit percentage
-        //   Step 4: Mulitpy the Allocations for mulch by that percentage pulling out the the amount
-        let allocations_from_bags_sold = dvars.per_bag_cost.checked_mul(data.num_bags_sold.into())
-            .and_then(|cost_for_this_scouts_bags_sold|data.amount_from_bags_sales.checked_sub(cost_for_this_scouts_bags_sold))
-            .and_then(|profit_from_these_bags|profit_from_these_bags.checked_div(dvars.profits_from_bags))
-            .and_then(|these_bags_percentage_of_the_overall_sales| {
-                //log::info!("%{} of: {}", these_bags_percentage_of_the_overall_sales.round_dp(2), dvars.money_pool_for_scout_sales);
-                these_bags_percentage_of_the_overall_sales.checked_mul(dvars.money_pool_for_scout_sales)
-            })
-            .unwrap();
-        calc_allocations_from_bags_sold = calc_allocations_from_bags_sold.checked_add(allocations_from_bags_sold).unwrap();
+    let mut scout_vals = svar_map
+        .iter()
+        .filter(|(uid, _)| uid.as_str() != "TROOP_TOTALS")
+        .map(|(uid, data)| {
+            total_calc_donations = total_calc_donations
+                .checked_add(data.amount_from_donations)
+                .unwrap();
+            // This calculates the percentage of sales and then allocates that percentage from the bag sale allocation
+            //   so from a raw perspective.
+            //   Step 1: get cost to troop for this scouts bags sold by multiplying troop cost per bag by bags
+            //   that were sold.
+            //   Step 2: Subtract that number from the amount of money in mulch bag sales the scout made for the trop.  This gives
+            //    you how much profit the scout had
+            //   Step 3: Divide that scouts's profit by the troop profit to get the profit percentage
+            //   Step 4: Mulitpy the Allocations for mulch by that percentage pulling out the the amount
+            let allocations_from_bags_sold = dvars
+                .per_bag_cost
+                .checked_mul(data.num_bags_sold.into())
+                .and_then(|cost_for_this_scouts_bags_sold| {
+                    data.amount_from_bags_sales
+                        .checked_sub(cost_for_this_scouts_bags_sold)
+                })
+                .and_then(|profit_from_these_bags| {
+                    profit_from_these_bags.checked_div(dvars.profits_from_bags)
+                })
+                .and_then(|these_bags_percentage_of_the_overall_sales| {
+                    //log::info!("%{} of: {}", these_bags_percentage_of_the_overall_sales.round_dp(2), dvars.money_pool_for_scout_sales);
+                    these_bags_percentage_of_the_overall_sales
+                        .checked_mul(dvars.money_pool_for_scout_sales)
+                })
+                .unwrap();
+            calc_allocations_from_bags_sold = calc_allocations_from_bags_sold
+                .checked_add(allocations_from_bags_sold)
+                .unwrap();
 
-        let allocation_from_bags_spread= spreading_price.checked_mul(data.num_bags_spread.into()).unwrap();
-        calc_allocations_from_bags_spread = calc_allocations_from_bags_spread.checked_add(allocation_from_bags_spread).unwrap();
-        calc_num_bags_spread = calc_num_bags_spread.checked_add(data.num_bags_spread).unwrap();
+            let allocation_from_bags_spread = spreading_price
+                .checked_mul(data.num_bags_spread.into())
+                .unwrap();
+            calc_allocations_from_bags_spread = calc_allocations_from_bags_spread
+                .checked_add(allocation_from_bags_spread)
+                .unwrap();
+            calc_num_bags_spread = calc_num_bags_spread
+                .checked_add(data.num_bags_spread)
+                .unwrap();
 
-        let delivery_minutes = Decimal::from_f64(data.delivery_time_total.as_secs_f64()/60.0).unwrap();
-        let allocations_from_delivery = dvars.delivery_earnings_per_minute
-            .checked_mul(delivery_minutes)
-            .unwrap();
-        calc_allocations_from_delivery = calc_allocations_from_delivery.checked_add(allocations_from_delivery).unwrap();
-        calc_delivery_minutes = calc_delivery_minutes.checked_add(delivery_minutes).unwrap();
+            let delivery_minutes =
+                Decimal::from_f64(data.delivery_time_total.as_secs_f64() / 60.0).unwrap();
+            let allocations_from_delivery = dvars
+                .delivery_earnings_per_minute
+                .checked_mul(delivery_minutes)
+                .unwrap();
+            calc_allocations_from_delivery = calc_allocations_from_delivery
+                .checked_add(allocations_from_delivery)
+                .unwrap();
+            calc_delivery_minutes = calc_delivery_minutes.checked_add(delivery_minutes).unwrap();
 
-        let total_allocations = allocations_from_delivery
-            .checked_add(allocations_from_bags_sold)
-            .and_then(|v|v.checked_add(allocation_from_bags_spread))
-            .and_then(|v|v.checked_add(data.amount_from_donations))
-            .unwrap();
-        calc_allocations_total = calc_allocations_total.checked_add(total_allocations).unwrap();
+            let total_allocations = allocations_from_delivery
+                .checked_add(allocations_from_bags_sold)
+                .and_then(|v| v.checked_add(allocation_from_bags_spread))
+                .and_then(|v| v.checked_add(data.amount_from_donations))
+                .unwrap();
+            calc_allocations_total = calc_allocations_total
+                .checked_add(total_allocations)
+                .unwrap();
 
-
-        FrCloseoutAllocationVals {
-            name: uid_2_name_map.get(uid.as_str()).map_or("".to_string(), |v|v.name.clone()),
-            uid: uid.clone(),
-            bags_sold: data.num_bags_sold,
-            bags_spread: data.num_bags_spread,
-            delivery_minutes: delivery_minutes,
-            total_donations: data.amount_from_donations,
-            allocation_from_bags_sold: allocations_from_bags_sold,
-            allocation_from_bags_spread: allocation_from_bags_spread,
-            allocation_from_delivery: allocations_from_delivery,
-            allocation_total: total_allocations,
-        }
-    }).collect::<Vec<FrCloseoutAllocationVals>>();
+            FrCloseoutAllocationVals {
+                name: uid_2_name_map
+                    .get(uid.as_str())
+                    .map_or("".to_string(), |v| v.name.clone()),
+                uid: uid.clone(),
+                bags_sold: data.num_bags_sold,
+                bags_spread: data.num_bags_spread,
+                delivery_minutes: delivery_minutes,
+                total_donations: data.amount_from_donations,
+                allocation_from_bags_sold: allocations_from_bags_sold,
+                allocation_from_bags_spread: allocation_from_bags_spread,
+                allocation_from_delivery: allocations_from_delivery,
+                allocation_total: total_allocations,
+            }
+        })
+        .collect::<Vec<FrCloseoutAllocationVals>>();
 
     let svars = svar_map.get("TROOP_TOTALS").unwrap();
     // First Record is special Troop Totals
-    scout_vals.insert(0, FrCloseoutAllocationVals{
-        name: "Scout Alloc Totals".to_string(),
-        uid: "TROOP_TOTALS".to_string(),
-        bags_sold: svars.num_bags_sold,
-        bags_spread: calc_num_bags_spread,
-        delivery_minutes: calc_delivery_minutes,
-        total_donations: total_calc_donations,
-        allocation_from_bags_sold: calc_allocations_from_bags_sold,
-        allocation_from_bags_spread: calc_allocations_from_bags_spread,
-        allocation_from_delivery: calc_allocations_from_delivery,
-        allocation_total: calc_allocations_total,
-    });
+    scout_vals.insert(
+        0,
+        FrCloseoutAllocationVals {
+            name: "Scout Alloc Totals".to_string(),
+            uid: "TROOP_TOTALS".to_string(),
+            bags_sold: svars.num_bags_sold,
+            bags_spread: calc_num_bags_spread,
+            delivery_minutes: calc_delivery_minutes,
+            total_donations: total_calc_donations,
+            allocation_from_bags_sold: calc_allocations_from_bags_sold,
+            allocation_from_bags_spread: calc_allocations_from_bags_spread,
+            allocation_from_delivery: calc_allocations_from_delivery,
+            allocation_total: calc_allocations_total,
+        },
+    );
     scout_vals
 }
 
@@ -165,7 +226,6 @@ struct AllocationReportProps {
 }
 #[function_component(AllocationReport)]
 fn allocation_report(props: &AllocationReportProps) -> Html {
-
     let on_download_report = {
         let report_list = props.reportlist.clone();
 
@@ -186,9 +246,10 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
                 "FundsReleaseReport.csv",
                 data.as_str(),
                 Some("text/plain;charset=utf-8"),
-                Some(Utc::now().into())
+                Some(Utc::now().into()),
             );
-            let link = gloo::utils::document().create_element("a")
+            let link = gloo::utils::document()
+                .create_element("a")
                 .ok()
                 .and_then(|t| t.dyn_into::<HtmlAnchorElement>().ok())
                 .unwrap();
@@ -408,7 +469,8 @@ fn currency_widget(props: &CurrencyWidgetProps) -> Html {
             evt.stop_propagation();
             log::info!("on_allocation_form_inputs_change");
 
-            let input_elm = evt.target()
+            let input_elm = evt
+                .target()
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap();
             let mut input_value = input_elm.value();
@@ -483,9 +545,9 @@ fn static_data_loading_spinny() -> Html {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-macro_rules! get_new_input_val_maybe{
-// using a ty token type for macthing datatypes passed to maccro
-    ($a:expr,$b:ident,$c:expr)=>{
+macro_rules! get_new_input_val_maybe {
+    // using a ty token type for macthing datatypes passed to maccro
+    ($a:expr,$b:ident,$c:expr) => {
         if $a.$b != $c {
             let mut new_dvars = $a.clone();
             new_dvars.$b = $c;
@@ -493,24 +555,27 @@ macro_rules! get_new_input_val_maybe{
         } else {
             None
         }
-    }
+    };
 }
 
 #[function_component(CloseoutFundraiser)]
 pub fn closeout_fundraiser_page() -> Html {
-
     let dvars = use_state_eq(|| {
         let mut dvars = FrCloseoutDynamicVars::new();
         if let Some(stored_dynamic_data) = get_fundraiser_closure_dynamic_data() {
-            dvars.bank_deposited = stored_dynamic_data.bank_deposited
+            dvars.bank_deposited = stored_dynamic_data
+                .bank_deposited
                 .map_or(Decimal::ZERO, |v| Decimal::from_str(v.as_str()).unwrap());
-            dvars.mulch_cost = stored_dynamic_data.mulch_cost
+            dvars.mulch_cost = stored_dynamic_data
+                .mulch_cost
                 .map_or(Decimal::ZERO, |v| Decimal::from_str(v.as_str()).unwrap());
         }
         dvars
     });
-    let scout_report_list: yew::UseStateHandle<Vec<FrCloseoutAllocationVals>> = use_state_eq(|| Vec::new());
-    let fr_closure_static_data: yew::UseStateHandle<Option<FrClosureStaticData>> = use_state_eq(|| None);
+    let scout_report_list: yew::UseStateHandle<Vec<FrCloseoutAllocationVals>> =
+        use_state_eq(|| Vec::new());
+    let fr_closure_static_data: yew::UseStateHandle<Option<FrClosureStaticData>> =
+        use_state_eq(|| None);
 
     let on_download_summary = {
         let dvars = dvars.clone();
@@ -523,9 +588,10 @@ pub fn closeout_fundraiser_page() -> Html {
                 "AllocationSummary.json",
                 serde_json::to_string_pretty(&(*dvars)).unwrap().as_str(),
                 Some("application/json"),
-                Some(Utc::now().into())
+                Some(Utc::now().into()),
             );
-            let link = gloo::utils::document().create_element("a")
+            let link = gloo::utils::document()
+                .create_element("a")
                 .ok()
                 .and_then(|t| t.dyn_into::<HtmlAnchorElement>().ok())
                 .unwrap();
@@ -537,7 +603,6 @@ pub fn closeout_fundraiser_page() -> Html {
             link.click();
         })
     };
-
 
     let on_release_funds_form_submission = {
         let dvars = dvars.clone();
@@ -552,7 +617,6 @@ pub fn closeout_fundraiser_page() -> Html {
                 set_fr_closeout_data(&*dvars.clone(), &*scout_report_list).await;
                 gloo::dialogs::alert("Submitted");
             });
-
         })
     };
 
@@ -565,7 +629,8 @@ pub fn closeout_fundraiser_page() -> Html {
             evt.stop_propagation();
             log::info!("on_allocation_form_inputs_change");
 
-            let input_elm = evt.target()
+            let input_elm = evt
+                .target()
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap();
 
@@ -576,29 +641,31 @@ pub fn closeout_fundraiser_page() -> Html {
             let new_dvars_opt = match input_elm.id().as_str() {
                 "formBankDeposited" => {
                     get_new_input_val_maybe!(*dvars, bank_deposited, new_val)
-                },
+                }
                 "formMulchCost" => {
                     get_new_input_val_maybe!(*dvars, mulch_cost, new_val)
-                },
+                }
                 _ => {
                     log::error!("Invalid input elememnt");
                     None
-                },
+                }
             };
             if let Some(new_dvars) = new_dvars_opt {
-                match calculate_new_dvars(new_dvars, (*fr_closure_static_data).as_ref().unwrap().clone()) {
-                    Some(new_dvars)=>{
+                match calculate_new_dvars(
+                    new_dvars,
+                    (*fr_closure_static_data).as_ref().unwrap().clone(),
+                ) {
+                    Some(new_dvars) => {
                         log::info!("Setting new dynamic vars from inputs");
-                        set_fundraiser_closure_dynamic_data(FrClosureDynamicData{
+                        set_fundraiser_closure_dynamic_data(FrClosureDynamicData {
                             bank_deposited: Some(new_dvars.bank_deposited.to_string()),
                             mulch_cost: Some(new_dvars.mulch_cost.to_string()),
                         });
                         dvars.set(new_dvars);
-                    },
-                    None=>{},
+                    }
+                    None => {}
                 };
             }
-
         })
     };
 
@@ -612,33 +679,39 @@ pub fn closeout_fundraiser_page() -> Html {
                 let resp = get_fundraiser_closure_static_data().await.unwrap();
                 log::info!("Data has been downloaded");
                 fr_closure_static_data.set(Some(resp));
-                if dvars.bank_deposited > Decimal::ZERO &&
-                   dvars.mulch_cost > Decimal::ZERO &&
-                   (*fr_closure_static_data).is_some()
+                if dvars.bank_deposited > Decimal::ZERO
+                    && dvars.mulch_cost > Decimal::ZERO
+                    && (*fr_closure_static_data).is_some()
                 {
                     // If we pull the values from storage then we short circuit a lot of the original logic.
                     //  TODO: Refactor this logic to make is simpler since we are storing values
-                    if let Some(new_dvars) = calculate_new_dvars((*dvars).clone(), (*fr_closure_static_data).as_ref().unwrap().clone()) {
+                    if let Some(new_dvars) = calculate_new_dvars(
+                        (*dvars).clone(),
+                        (*fr_closure_static_data).as_ref().unwrap().clone(),
+                    ) {
                         log::info!("Setting new dynamic vars");
                         scout_report_list.set(calculate_per_scout_report(
-                                &new_dvars, (*fr_closure_static_data).as_ref().unwrap().clone()));
+                            &new_dvars,
+                            (*fr_closure_static_data).as_ref().unwrap().clone(),
+                        ));
                         dvars.set(new_dvars);
                     } else {
                         scout_report_list.set(calculate_per_scout_report(
-                                &*dvars, (*fr_closure_static_data).as_ref().unwrap().clone()));
+                            &*dvars,
+                            (*fr_closure_static_data).as_ref().unwrap().clone(),
+                        ));
                     }
                 }
             });
 
-            ||{}
+            || {}
         });
     }
-
 
     if (*fr_closure_static_data).is_none() {
         html! { <StaticDataLoadingSpinny/> }
     } else {
-        html!{
+        html! {
             <>
                 <div class="col-xs-1 d-flex justify-content-center">
                     <h4>{"Funds Release Page"}</h4>

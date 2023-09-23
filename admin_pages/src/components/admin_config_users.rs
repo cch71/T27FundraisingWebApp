@@ -1,15 +1,13 @@
-use yew::prelude::*;
+use data_model::*;
 use gloo::file::File;
-use web_sys::{
-   MouseEvent, Element, HtmlElement, FileList, HtmlButtonElement, HtmlInputElement,
-};
-use crate::data_model::*;
-use crate::bootstrap;
-use std::rc::Rc;
+use js::bootstrap;
+use serde::Deserialize;
 use std::cell::RefCell;
-use wasm_bindgen::JsCast;
-use serde::{Deserialize};
 use std::collections::BTreeMap;
+use std::rc::Rc;
+use wasm_bindgen::JsCast;
+use web_sys::{Element, FileList, HtmlButtonElement, HtmlElement, HtmlInputElement, MouseEvent};
+use yew::prelude::*;
 
 thread_local! {
     static SELECTED_USER: Rc<RefCell<Option<UseStateHandle<(String, String, String)>>>> = Rc::new(RefCell::new(None));
@@ -18,13 +16,11 @@ thread_local! {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-
-
 /////////////////////////////////////////////////
 //
 #[derive(Properties, PartialEq, Clone, Debug)]
 struct UploadUsersDlgProps {
-    onadd: Callback<Vec::<UserAdminConfig>>,
+    onadd: Callback<Vec<UserAdminConfig>>,
     knownusers: BTreeMap<String, UserAdminConfig>,
 }
 
@@ -38,27 +34,34 @@ struct UserCsvRecord {
 
 /////////////////////////////////////////////////
 //
-fn process_csv_records(data: Vec<u8>, potential_new_users: &mut BTreeMap<String, UserCsvRecord>)-> Result<(), Box<dyn std::error::Error>> {
+fn process_csv_records(
+    data: Vec<u8>,
+    potential_new_users: &mut BTreeMap<String, UserCsvRecord>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut rdr = csv::Reader::from_reader(&data[..]);
     for result in rdr.deserialize() {
-
         let record: UserCsvRecord = result?;
 
         log::info!("Rec: {:?}", record);
-        let mut new_id:String = record.uid
+        let mut new_id: String = record
+            .uid
             .clone()
             .unwrap_or_else(|| {
-                format!("{}{}", record.first_name.trim().chars().nth(0).unwrap(), record.last_name)
+                format!(
+                    "{}{}",
+                    record.first_name.trim().chars().nth(0).unwrap(),
+                    record.last_name
+                )
             })
-        .chars()
+            .chars()
             .filter(|c| !c.is_whitespace())
             .collect::<String>()
             .to_lowercase();
 
         // Make sure there aren't dups in the uploaded list and create a unique id if it isn't
         if let Some(found_user) = potential_new_users.get(&new_id) {
-            if found_user.first_name == record.first_name.trim() &&
-                found_user.last_name == record.last_name.trim()
+            if found_user.first_name == record.first_name.trim()
+                && found_user.last_name == record.last_name.trim()
             {
                 //Duplicate in list
                 continue;
@@ -67,7 +70,7 @@ fn process_csv_records(data: Vec<u8>, potential_new_users: &mut BTreeMap<String,
                 loop {
                     let new_id_candidate = format!("{}{}", new_id, idx);
                     if potential_new_users.contains_key(&new_id_candidate) {
-                        idx = idx+1;
+                        idx = idx + 1;
                         continue;
                     }
                     new_id = new_id_candidate;
@@ -81,8 +84,7 @@ fn process_csv_records(data: Vec<u8>, potential_new_users: &mut BTreeMap<String,
 }
 
 #[function_component(UploadUsersDlg)]
-fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
-{
+fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
     let users = use_state_eq(|| Vec::<UserAdminConfig>::new());
     let dup_users = use_state_eq(|| Vec::<UserCsvRecord>::new());
     let is_working = use_state_eq(|| false);
@@ -90,7 +92,8 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
     let on_cancel = {
         move |_evt: MouseEvent| {
             let document = gloo::utils::document();
-            document.get_element_by_id("fileupload")
+            document
+                .get_element_by_id("fileupload")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap()
                 .set_value("");
@@ -106,7 +109,8 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
             users.set(Vec::<UserAdminConfig>::new());
             dup_users.set(Vec::<UserCsvRecord>::new());
             let document = gloo::utils::document();
-            document.get_element_by_id("fileupload")
+            document
+                .get_element_by_id("fileupload")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap()
                 .set_value("");
@@ -118,7 +122,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
         let users = users.clone();
         let dup_users = dup_users.clone();
         let found_users = props.knownusers.clone();
-        move | evt: Event | {
+        move |evt: Event| {
             log::info!("On Change Triggered");
             is_working.set(true);
             users.set(Vec::<UserAdminConfig>::new());
@@ -145,9 +149,8 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
             let dup_users = dup_users.clone();
             let found_users = found_users.clone();
             wasm_bindgen_futures::spawn_local(async move {
-
                 // First read in a list of all the potential new users
-                let mut potential_new_users:BTreeMap<String, UserCsvRecord> = BTreeMap::new();
+                let mut potential_new_users: BTreeMap<String, UserCsvRecord> = BTreeMap::new();
                 for file in results.into_iter() {
                     let file_name = file.name();
                     let file_type = file.raw_mime_type();
@@ -155,19 +158,24 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
                     let data = match gloo::file::futures::read_as_bytes(&file).await {
                         Ok(raw_data) => raw_data,
                         Err(err) => {
-                            gloo::dialogs::alert(&format!("Failed to read selected file: {:#?}", err));
+                            gloo::dialogs::alert(&format!(
+                                "Failed to read selected file: {:#?}",
+                                err
+                            ));
                             input.set_value("");
                             return;
                         }
                     };
                     if let Err(err) = process_csv_records(data, &mut potential_new_users) {
-                        gloo::dialogs::alert(&format!("Error in users file make sure proper headers are in place:\n{:#?}", err));
+                        gloo::dialogs::alert(&format!(
+                            "Error in users file make sure proper headers are in place:\n{:#?}",
+                            err
+                        ));
                         input.set_value("");
                         potential_new_users.clear();
                         break;
                     }
                 }
-
 
                 // Then get a list of all the existing users
                 // let found_users = match get_users_for_admin_config().await {
@@ -182,9 +190,9 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
                 let mut new_users = Vec::new();
                 let mut found_dup_users = Vec::new();
 
-                for (k,v) in potential_new_users.into_iter() {
+                for (k, v) in potential_new_users.into_iter() {
                     if !found_users.contains_key(&k) {
-                        new_users.push(UserAdminConfig{
+                        new_users.push(UserAdminConfig {
                             id: k,
                             first_name: v.first_name.trim().to_string(),
                             last_name: v.last_name.trim().to_string(),
@@ -194,8 +202,8 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
                     }
 
                     let found_user = found_users.get(&k).unwrap();
-                    if found_user.first_name == v.first_name.trim() &&
-                        found_user.last_name == v.last_name.trim()
+                    if found_user.first_name == v.first_name.trim()
+                        && found_user.last_name == v.last_name.trim()
                     {
                         found_dup_users.push(v);
                     } else {
@@ -203,10 +211,10 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
                         loop {
                             let new_id = format!("{}{}", k, idx);
                             if found_users.contains_key(&new_id) {
-                                idx = idx+1;
+                                idx = idx + 1;
                                 continue;
                             }
-                            new_users.push(UserAdminConfig{
+                            new_users.push(UserAdminConfig {
                                 id: new_id,
                                 first_name: v.first_name.trim().to_string(),
                                 last_name: v.last_name.trim().to_string(),
@@ -224,7 +232,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
         }
     };
 
-    html!{
+    html! {
         <div class="modal fade" id="uploadUsersDlg"
              tabIndex="-1" role="dialog" aria-labelledby="uploadUsersDlgTitle" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -306,7 +314,6 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html
     }
 }
 
-
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 type EditUserDlgCb = (String, String, String);
@@ -318,12 +325,11 @@ struct EditUserDlgProps {
 }
 
 #[function_component(EditUserDlg)]
-fn edit_user_dlg(props: &EditUserDlgProps) -> Html
-{
+fn edit_user_dlg(props: &EditUserDlgProps) -> Html {
     let selected_user = use_state_eq(|| ("".to_string(), "".to_string(), "".to_string()));
     {
         let selected_user = selected_user.clone();
-        SELECTED_USER.with(|rc|{
+        SELECTED_USER.with(|rc| {
             *rc.borrow_mut() = Some(selected_user);
         });
     }
@@ -334,7 +340,8 @@ fn edit_user_dlg(props: &EditUserDlgProps) -> Html
         move |_evt: MouseEvent| {
             let (uid, name, _) = &*selected_user;
             let document = gloo::utils::document();
-            let group = document.get_element_by_id("formEditUserGroup")
+            let group = document
+                .get_element_by_id("formEditUserGroup")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap()
                 .value();
@@ -344,7 +351,7 @@ fn edit_user_dlg(props: &EditUserDlgProps) -> Html
 
     let (uid, name, group) = &*selected_user;
 
-    html!{
+    html! {
         <div class="modal fade" id="editUserDlg"
              tabIndex="-1" role="dialog" aria-labelledby="editUserDlgTitle" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -405,9 +412,7 @@ struct UserLiProps {
 }
 
 #[function_component(UserLi)]
-fn user_item(props: &UserLiProps) -> Html
-{
-
+fn user_item(props: &UserLiProps) -> Html {
     html! {
         <li class="list-group-item d-flex justify-content-between">
             <div>
@@ -430,7 +435,8 @@ fn user_item(props: &UserLiProps) -> Html
 /////////////////////////////////////////////////
 //
 fn get_selected_user(evt: MouseEvent) -> String {
-    let btn_elm = evt.target()
+    let btn_elm = evt
+        .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
             // log::info!("Node Name: {}", t.node_name());
@@ -439,7 +445,8 @@ fn get_selected_user(evt: MouseEvent) -> String {
             } else {
                 Some(t)
             }
-        }).unwrap();
+        })
+        .unwrap();
     let elm = btn_elm.dyn_into::<HtmlElement>().ok().unwrap();
 
     elm.dataset().get("uid").unwrap()
@@ -448,23 +455,24 @@ fn get_selected_user(evt: MouseEvent) -> String {
 /////////////////////////////////////////////////
 ///
 fn disable_save_button(document: &web_sys::Document, value: bool) {
-    if let Some(btn) = document.get_element_by_id("btnSaveUsersConfigUpdates")
+    if let Some(btn) = document
+        .get_element_by_id("btnSaveUsersConfigUpdates")
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
     {
-       btn.set_disabled(value);
-       let spinner_display = if value { "inline-block" } else { "none" };
-       let _ = document.get_element_by_id("saveUsersConfigSpinner")
-           .and_then(|t| t.dyn_into::<HtmlElement>().ok())
-           .unwrap()
-           .style()
-           .set_property("display", spinner_display);
+        btn.set_disabled(value);
+        let spinner_display = if value { "inline-block" } else { "none" };
+        let _ = document
+            .get_element_by_id("saveUsersConfigSpinner")
+            .and_then(|t| t.dyn_into::<HtmlElement>().ok())
+            .unwrap()
+            .style()
+            .set_property("display", spinner_display);
     }
 }
 
 #[function_component(UsersUl)]
-pub(crate) fn user_list() -> Html
-{
-    let users = use_state_eq(|| BTreeMap::<String,UserAdminConfig>::new());
+pub(crate) fn user_list() -> Html {
+    let users = use_state_eq(|| BTreeMap::<String, UserAdminConfig>::new());
     let is_dirty = use_state_eq(|| false);
     let dirty_entries = use_mut_ref(|| std::collections::HashSet::<String>::new());
 
@@ -472,7 +480,7 @@ pub(crate) fn user_list() -> Html
         let is_dirty = is_dirty.clone();
         let users = users.clone();
         let dirty_entries = dirty_entries.clone();
-        move | new_users: Vec<UserAdminConfig> | {
+        move |new_users: Vec<UserAdminConfig>| {
             log::info!("Adding Users...");
             let mut users_map = (*users).clone();
             for user_info in new_users {
@@ -488,8 +496,8 @@ pub(crate) fn user_list() -> Html
         let is_dirty = is_dirty.clone();
         let users = users.clone();
         let dirty_entries = dirty_entries.clone();
-        move | vals: EditUserDlgCb | {
-            let  (uid, name, group) = vals.to_owned();
+        move |vals: EditUserDlgCb| {
+            let (uid, name, group) = vals.to_owned();
             log::info!("Done Editing User: {}, \"{}\", \"{}\"", &uid, &name, &group);
             let mut users_map = (*users).clone();
             let mut user_info = users_map.get(&uid).unwrap().clone();
@@ -504,7 +512,7 @@ pub(crate) fn user_list() -> Html
     };
 
     let on_upload_users = {
-        move | _evt: MouseEvent | {
+        move |_evt: MouseEvent| {
             let dlg = bootstrap::get_modal_by_id("uploadUsersDlg").unwrap();
             dlg.toggle();
         }
@@ -512,13 +520,13 @@ pub(crate) fn user_list() -> Html
 
     let on_edit_users_group = {
         let users = users.clone();
-        move | evt: MouseEvent | {
+        move |evt: MouseEvent| {
             let uid = get_selected_user(evt);
             let user_info = (*users).get(&uid).unwrap();
             let name = format!("{} {}", user_info.first_name, user_info.last_name);
             log::info!("Editing User: {} {} {}", &uid, &name, &user_info.group);
 
-            SELECTED_USER.with(|rc|{
+            SELECTED_USER.with(|rc| {
                 let selected_user = rc.borrow().as_ref().unwrap().clone();
                 selected_user.set((uid.clone(), name, user_info.group.clone()));
             });
@@ -531,7 +539,7 @@ pub(crate) fn user_list() -> Html
         let users = users.clone();
         let dirty_entries = dirty_entries.clone();
         let is_dirty = is_dirty.clone();
-        move | _evt: MouseEvent | {
+        move |_evt: MouseEvent| {
             log::info!("Saving Users to cloud");
             let document = gloo::utils::document();
             disable_save_button(&document, true);
@@ -564,11 +572,14 @@ pub(crate) fn user_list() -> Html
                     log::info!("Getting user list from cloud");
                     match get_users_for_admin_config().await {
                         Ok(user_map) => users.set(user_map),
-                        Err(err) => gloo::dialogs::alert(&format!("Failed to get user list from server: {:#?}", err)),
+                        Err(err) => gloo::dialogs::alert(&format!(
+                            "Failed to get user list from server: {:#?}",
+                            err
+                        )),
                     };
                 });
             }
-            ||{}
+            || {}
         });
     }
     html! {
