@@ -1,20 +1,20 @@
-use yew::prelude::*;
-use crate::datatable::*;
-use crate::data_model::*;
 use crate::components::report_loading_spinny::*;
+use data_model::*;
+use js::datatable::*;
+use yew::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 #[function_component(DeliveriesReportView)]
 pub(crate) fn report_deliveries_view() -> Html {
-    let report_state = use_state(||ReportViewState::IsLoading);
+    let report_state = use_state(|| ReportViewState::IsLoading);
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
 
     {
         let report_state = report_state.clone();
         use_effect(move || {
             match &*report_state {
-                ReportViewState::IsLoading=>{
+                ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
                         log::info!("Downloading Deliveries Report View Data");
                         let mut resp = get_deliveries_report_data().await.unwrap();
@@ -26,7 +26,7 @@ pub(crate) fn report_deliveries_view() -> Html {
                         });
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
-                },
+                }
                 ReportViewState::ReportHtmlGenerated(_) => {
                     log::info!("Setting DataTable");
                     if datatable.borrow().is_none() {
@@ -37,10 +37,10 @@ pub(crate) fn report_deliveries_view() -> Html {
                             "isMulchOrder": true
                         }));
                     }
-                },
+                }
             };
 
-            ||{}
+            || {}
         });
     }
 
@@ -61,7 +61,7 @@ pub(crate) fn report_deliveries_view() -> Html {
                     <th>{"Order Owner"}</th>
                 </tr>
             };
-            html!{
+            html! {
                 <div class="data-table-report">
                     <table class="display responsive nowrap collapsed" role="grid" cellspacing="0" width="100%">
                         <thead>
@@ -111,7 +111,6 @@ pub(crate) fn report_deliveries_view() -> Html {
                     </table>
                 </div>
             }
-        },
+        }
     }
 }
-

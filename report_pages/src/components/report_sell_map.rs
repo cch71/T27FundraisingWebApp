@@ -1,8 +1,8 @@
-use yew::prelude::*;
-use serde::{Deserialize, Serialize};
-use crate::data_model::*;
-use crate::leaflet::*;
 use crate::components::report_loading_spinny::*;
+use data_model::*;
+use js::leaflet::*;
+use serde::{Deserialize, Serialize};
+use yew::prelude::*;
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct Point(pub f64, pub f64);
@@ -14,7 +14,7 @@ const SELLMAPID: &str = "sellMap";
 /////////////////////////////////////////////////
 #[function_component(SellMapReportView)]
 pub(crate) fn report_sell_view() -> Html {
-    let report_state = use_state(||ReportViewState::IsLoading);
+    let report_state = use_state(|| ReportViewState::IsLoading);
     let sell_map: std::rc::Rc<std::cell::RefCell<Option<Map>>> = use_mut_ref(|| None);
 
     {
@@ -22,14 +22,14 @@ pub(crate) fn report_sell_view() -> Html {
         let sell_map = sell_map.clone();
         use_effect(move || {
             match &*report_state {
-                ReportViewState::IsLoading=>{
+                ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
                         log::info!("Downloading Geo Location data");
                         let resp = get_sales_geojson().await.unwrap();
                         log::info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
-                },
+                }
                 ReportViewState::ReportHtmlGenerated(geojson) => {
                     log::info!("Handling ReportHtmlGenerated");
                     if sell_map.borrow().is_none() {
@@ -39,22 +39,21 @@ pub(crate) fn report_sell_view() -> Html {
                             "centerPt": SJV,
                         }));
                     }
-                },
+                }
             };
 
-            ||{}
+            || {}
         });
     }
 
     match &*report_state {
         ReportViewState::IsLoading => html! { <ReportLoadingSpinny/> },
         ReportViewState::ReportHtmlGenerated(_) => {
-            html!{
+            html! {
                 <div class="sale-map-container">
                     <div id={SELLMAPID} />
                 </div>
             }
-        },
+        }
     }
 }
-

@@ -51,9 +51,9 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html {
                         </li>
                     }
                     <li class="nav-item">
-                        // <Link<AppRoutes> classes="nav-link" to={AppRoutes::Reports} >
-                        //     {"Reports"}
-                        // </Link<AppRoutes>>
+                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::Reports} >
+                            {"Reports"}
+                        </Link<AppRoutes>>
                     </li>
                 </ul>
                 <span class="navbar-nav nav-item dropdown">
@@ -66,12 +66,12 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html {
                             <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::Timecards} >
                                 {"Timecards"}
                             </Link<AppRoutes>>
-                            // <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FundraiserCloseout} >
-                            //     {"Closeout Fundraiser"}
-                            // </Link<AppRoutes>>
-                            // <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FrConfig} >
-                            //     {"Configure Fundraiser"}
-                            // </Link<AppRoutes>>
+                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FundraiserCloseout} >
+                                {"Closeout Fundraiser"}
+                            </Link<AppRoutes>>
+                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FrConfig} >
+                                {"Configure Fundraiser"}
+                            </Link<AppRoutes>>
                         }
                         <a class="dropdown-item" onclick={props.onreportissue.clone()} href="#" data-bs-toggle="modal">
                             {"Report Issue"}

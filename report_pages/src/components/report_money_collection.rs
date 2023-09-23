@@ -1,8 +1,7 @@
-use yew::prelude::*;
-use crate::datatable::*;
-use crate::data_model::*;
-use crate::currency_utils::*;
 use crate::components::report_loading_spinny::*;
+use data_model::*;
+use js::datatable::*;
+use yew::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -12,12 +11,16 @@ pub(crate) struct MoneyCollectionReportViewProps {
 }
 #[function_component(MoneyCollectionReportView)]
 pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProps) -> Html {
-    let report_state = use_state(||ReportViewState::IsLoading);
+    let report_state = use_state(|| ReportViewState::IsLoading);
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
     if &*current_view_seller.borrow() != &props.seller {
-        log::info!("Current Seller doesn't match original seller: {}:{}", *current_view_seller.borrow(), &props.seller);
+        log::info!(
+            "Current Seller doesn't match original seller: {}:{}",
+            *current_view_seller.borrow(),
+            &props.seller
+        );
         *current_view_seller.borrow_mut() = props.seller.clone();
         report_state.set(ReportViewState::IsLoading);
     } else {
@@ -29,19 +32,24 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
         let seller = props.seller.to_string();
         use_effect(move || {
             match &*report_state {
-                ReportViewState::IsLoading=>{
+                ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!("Downloading Money Collection Report View Data for {}", &seller);
+                        log::info!(
+                            "Downloading Money Collection Report View Data for {}",
+                            &seller
+                        );
                         let seller = if &seller == ALL_USERS_TAG {
                             None
                         } else {
                             Some(seller)
                         };
-                        let resp = get_money_collection_report_data(seller.as_ref()).await.unwrap();
+                        let resp = get_money_collection_report_data(seller.as_ref())
+                            .await
+                            .unwrap();
                         log::info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
-                },
+                }
                 ReportViewState::ReportHtmlGenerated(_) => {
                     log::info!("Setting DataTable");
                     if datatable.borrow().is_none() {
@@ -52,10 +60,10 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
                             "isMulchOrder": true
                         }));
                     }
-                },
+                }
             };
 
-            ||{}
+            || {}
         });
     }
 
@@ -71,7 +79,7 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
                     <th>{"Total"}</th>
                 </tr>
             };
-            html!{
+            html! {
                 <div class="data-table-report">
                     <table class="display responsive nowrap collapsed" role="grid" cellspacing="0" width="100%">
                         <thead>
@@ -103,7 +111,6 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
                     </table>
                 </div>
             }
-        },
+        }
     }
 }
-

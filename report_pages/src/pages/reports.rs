@@ -1,46 +1,44 @@
-use yew::prelude::*;
-use wasm_bindgen::{JsCast};
-use web_sys::{ MouseEvent, Event, HtmlElement, HtmlSelectElement};
 use std::str::FromStr;
+use wasm_bindgen::JsCast;
+use web_sys::{Event, HtmlElement, HtmlSelectElement, MouseEvent};
+use yew::prelude::*;
 
-use crate::data_model::*;
-use crate::bootstrap;
-use crate::components::delete_report_order_dlg::{DeleteOrderDlg};
-use crate::components::report_spreaders_dlg::{ChooseSpreadersDlg};
-use crate::components::report_quick::{QuickReportView};
-use crate::components::report_spreading_jobs::{SpreadingJobsReportView};
-use crate::components::report_spreading_jobs_unfinished::{SpreadingJobsUnfinishedReportView};
-use crate::components::report_full::{FullReportView};
-use crate::components::report_verify::{OrderVerificationView};
-use crate::components::report_deliveries::{DeliveriesReportView};
-use crate::components::report_distribution_points::{DistributionPointsReportView};
-use crate::components::report_sell_map::{SellMapReportView};
-use crate::components::report_money_collection::{MoneyCollectionReportView};
+use data_model::*;
+use js::bootstrap;
 
-
+use crate::components::delete_report_order_dlg::DeleteOrderDlg;
+use crate::components::report_deliveries::DeliveriesReportView;
+use crate::components::report_distribution_points::DistributionPointsReportView;
+use crate::components::report_full::FullReportView;
+use crate::components::report_money_collection::MoneyCollectionReportView;
+use crate::components::report_quick::QuickReportView;
+use crate::components::report_sell_map::SellMapReportView;
+use crate::components::report_spreaders_dlg::ChooseSpreadersDlg;
+use crate::components::report_spreading_jobs::SpreadingJobsReportView;
+use crate::components::report_spreading_jobs_unfinished::SpreadingJobsUnfinishedReportView;
+use crate::components::report_verify::OrderVerificationView;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 #[derive(Properties, PartialEq, Clone, Debug)]
-pub(crate) struct ReportsSettingsDlgProps {
-    pub(crate) id: String,
-    pub(crate) onsave: Callback<MouseEvent>,
-    pub(crate) currentview: ReportViews,
-
+struct ReportsSettingsDlgProps {
+    id: String,
+    onsave: Callback<MouseEvent>,
+    currentview: ReportViews,
 }
 #[function_component(ReportsSettingsDlg)]
-pub(crate) fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
-
+fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
     let tag = props.id.clone();
     let active_user_id = get_active_user().get_id();
 
     let mut did_find_selected_view = false;
     let mut did_find_selected_seller = false;
 
-
     let on_view_selection_change = {
         Callback::from(move |evt: Event| {
-            let elm = evt.target().and_then(|t| t.dyn_into::<HtmlSelectElement>().ok());
+            let elm = evt
+                .target()
+                .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok());
             elm.map(|v| {
                 let selected_view = ReportViews::from_str(&v.value()).unwrap();
                 let do_show_seller = do_show_current_seller(&selected_view);
@@ -48,13 +46,15 @@ pub(crate) fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
 
                 if get_active_user().is_admin() {
                     if do_show_seller {
-                        let _ = gloo::utils::document().get_element_by_id("reportViewSettingsDlgUserSelectionCol")
+                        let _ = gloo::utils::document()
+                            .get_element_by_id("reportViewSettingsDlgUserSelectionCol")
                             .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                             .unwrap()
                             .class_list()
                             .remove_1("d-none");
                     } else {
-                        let _ = gloo::utils::document().get_element_by_id("reportViewSettingsDlgUserSelectionCol")
+                        let _ = gloo::utils::document()
+                            .get_element_by_id("reportViewSettingsDlgUserSelectionCol")
                             .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                             .unwrap()
                             .class_list()
@@ -152,10 +152,8 @@ pub(crate) fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-
 #[function_component(Reports)]
 pub fn reports_page() -> Html {
-
     let current_settings = use_state_eq(|| load_report_settings());
 
     // let on_download_report = {
@@ -175,21 +173,21 @@ pub fn reports_page() -> Html {
 
             let dlg = bootstrap::get_modal_by_id("reportViewSettingsDlg").unwrap();
             dlg.show();
-
         })
     };
-
 
     let on_save_settings = {
         let current_settings = current_settings.clone();
         Callback::from(move |_evt: MouseEvent| {
-            let report_view = gloo::utils::document().get_element_by_id("reportViewSettingsDlgViewSelection")
+            let report_view = gloo::utils::document()
+                .get_element_by_id("reportViewSettingsDlgViewSelection")
                 .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
                 .unwrap()
                 .value();
 
             let seller_id: String = if get_active_user().is_admin() {
-                gloo::utils::document().get_element_by_id("reportViewSettingsDlgUserSelection")
+                gloo::utils::document()
+                    .get_element_by_id("reportViewSettingsDlgUserSelection")
                     .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
                     .unwrap()
                     .value()
@@ -197,7 +195,7 @@ pub fn reports_page() -> Html {
                 get_active_user().get_id()
             };
 
-            let updated_settings = ReportViewSettings{
+            let updated_settings = ReportViewSettings {
                 current_view: ReportViews::from_str(&report_view).unwrap(),
                 seller_id_filter: seller_id,
             };
@@ -205,15 +203,21 @@ pub fn reports_page() -> Html {
                 log::error!("Failed saving report settings: {:#?}", err);
             }
 
-            log::info!("on_save_settings.  report view: {} seller: {}",
-                &updated_settings.current_view, &updated_settings.seller_id_filter);
+            log::info!(
+                "on_save_settings.  report view: {} seller: {}",
+                &updated_settings.current_view,
+                &updated_settings.seller_id_filter
+            );
 
             current_settings.set(updated_settings);
         })
     };
 
-    log::info!("Report View Rendering.  report view: {} seller: {}",
-        &current_settings.current_view, &current_settings.seller_id_filter);
+    log::info!(
+        "Report View Rendering.  report view: {} seller: {}",
+        &current_settings.current_view,
+        &current_settings.seller_id_filter
+    );
 
     let do_show_current_seller = do_show_current_seller(&(*current_settings).current_view);
 
@@ -285,4 +289,3 @@ pub fn reports_page() -> Html {
         </div>
     }
 }
-

@@ -1,15 +1,13 @@
-use yew::prelude::*;
-use yew_router::prelude::*;
-use web_sys::{ MouseEvent};
-use crate::datatable::*;
-use crate::data_model::*;
 use crate::components::action_report_buttons::{
-    on_delete_order_from_rpt,
-    on_view_or_edit_from_rpt,
-    on_edit_spreading_from_rpt,
+    on_delete_order_from_rpt, on_edit_spreading_from_rpt, on_view_or_edit_from_rpt,
     ReportActionButtons,
 };
 use crate::components::report_loading_spinny::*;
+use data_model::*;
+use js::datatable::*;
+use web_sys::MouseEvent;
+use yew::prelude::*;
+use yew_router::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -19,14 +17,18 @@ pub(crate) struct SpreadingJobsReportViewProps {
 }
 #[function_component(SpreadingJobsReportView)]
 pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
-    let report_state = use_state(||ReportViewState::IsLoading);
+    let report_state = use_state(|| ReportViewState::IsLoading);
     let history = use_navigator().unwrap();
     let is_fr_editable = is_fundraiser_editable();
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
     if &*current_view_seller.borrow() != &props.seller {
-        log::info!("Current Seller doesn't match original seller: {}:{}", *current_view_seller.borrow(), &props.seller);
+        log::info!(
+            "Current Seller doesn't match original seller: {}:{}",
+            *current_view_seller.borrow(),
+            &props.seller
+        );
         *current_view_seller.borrow_mut() = props.seller.clone();
         report_state.set(ReportViewState::IsLoading);
     } else {
@@ -58,19 +60,24 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
         let seller = props.seller.to_string();
         use_effect(move || {
             match &*report_state {
-                ReportViewState::IsLoading=>{
+                ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!("Downloading Spreading Jobs Report View Data for {}", &seller);
+                        log::info!(
+                            "Downloading Spreading Jobs Report View Data for {}",
+                            &seller
+                        );
                         let seller = if &seller == ALL_USERS_TAG {
                             None
                         } else {
                             Some(seller)
                         };
-                        let resp = get_spreading_jobs_report_data(seller.as_ref()).await.unwrap();
+                        let resp = get_spreading_jobs_report_data(seller.as_ref())
+                            .await
+                            .unwrap();
                         log::info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
-                },
+                }
                 ReportViewState::ReportHtmlGenerated(_) => {
                     // log::info!("Setting DataTable");
                     if datatable.borrow().is_none() {
@@ -81,10 +88,10 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                             "isMulchOrder": true
                         }));
                     }
-                },
+                }
             };
 
-            ||{}
+            || {}
         });
     }
 
@@ -106,7 +113,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                     <th>{"Actions"}</th>
                 </tr>
             };
-            html!{
+            html! {
                 <div class="data-table-report">
                     <table class="display responsive nowrap collapsed" role="grid" cellspacing="0" width="100%">
                         <thead>
@@ -170,6 +177,6 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                     </table>
                 </div>
             }
-        },
+        }
     }
 }

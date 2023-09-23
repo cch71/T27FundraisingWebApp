@@ -13,11 +13,12 @@ use components::{
 
 mod pages;
 use pages::home::Home;
-// closeout_fundraiser::CloseoutFundraiser, fr_config::FrConfig, reports::Reports
+// closeout_fundraiser::CloseoutFundraiser, fr_config::FrConfig
 use order_pages::{
     components::AddNewOrderButton,
     pages::{OrderDonations, OrderForm, OrderProducts},
 };
+use report_pages::pages::Reports;
 
 use timecard_pages::Timecards;
 
@@ -75,7 +76,7 @@ fn App() -> Html {
                 AppRoutes::OrderForm => html! {<OrderForm/>},
                 AppRoutes::OrderProducts => html! {<OrderProducts/>},
                 AppRoutes::OrderDonations => html! {<OrderDonations/>},
-                //AppRoutes::Reports => html! {<Reports/>},
+                AppRoutes::Reports => html! {<Reports/>},
                 AppRoutes::Timecards => html! {<Timecards/>},
                 // AppRoutes::FundraiserCloseout => html! {<CloseoutFundraiser/>},
                 // AppRoutes::FrConfig => html! {<FrConfig/>},

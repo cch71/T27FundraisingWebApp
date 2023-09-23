@@ -1,12 +1,11 @@
-use yew::prelude::*;
-use std::rc::Rc;
+use data_model::*;
+use js::{bootstrap, datatable::*};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use wasm_bindgen::{JsValue, JsCast};
-use web_sys::{ MouseEvent, Element, HtmlElement, HtmlInputElement};
-use crate::bootstrap;
-use crate::data_model::*;
-use crate::datatable::*;
+use std::rc::Rc;
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::{Element, HtmlElement, HtmlInputElement, MouseEvent};
+use yew::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -26,11 +25,14 @@ struct DlgMeta {
 
 /////////////////////////////////////////////////
 ///
-pub(crate) fn on_edit_spreading_from_rpt( evt: MouseEvent, datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>>)
-{
+pub(crate) fn on_edit_spreading_from_rpt(
+    evt: MouseEvent,
+    datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>>,
+) {
     evt.prevent_default();
     evt.stop_propagation();
-    let btn_elm = evt.target()
+    let btn_elm = evt
+        .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
             // log::info!("Node Name: {}", t.node_name());
@@ -39,44 +41,54 @@ pub(crate) fn on_edit_spreading_from_rpt( evt: MouseEvent, datatable: std::rc::R
             } else {
                 Some(t)
             }
-        }).unwrap();
+        })
+        .unwrap();
 
-    let tr_node = btn_elm.parent_node() .and_then(|t| t.parent_node()) .unwrap();
+    let tr_node = btn_elm.parent_node().and_then(|t| t.parent_node()).unwrap();
     let elm = btn_elm.dyn_into::<HtmlElement>().ok().unwrap();
 
     let order_id = elm.dataset().get("orderid").unwrap();
     let users = get_users();
-    let spreaders:BTreeMap<String, String> = elm.dataset().get("spreaders")
+    let spreaders: BTreeMap<String, String> = elm
+        .dataset()
+        .get("spreaders")
         .unwrap_or("".to_string())
-        .split(",").into_iter()
-        .map(|v|{
-            (v.to_string(), users.get(v).map_or(v.to_string(),|ui|ui.name.to_string()))
-        }).collect::<_>();
+        .split(",")
+        .into_iter()
+        .map(|v| {
+            (
+                v.to_string(),
+                users.get(v).map_or(v.to_string(), |ui| ui.name.to_string()),
+            )
+        })
+        .collect::<_>();
     log::info!("on_edit_spreading: {}", order_id);
 
     let dlg = bootstrap::get_modal_by_id("spreadingDlg").unwrap();
 
-    META.with(|f|{
-        *f.borrow_mut() = Some(DlgMeta{
+    META.with(|f| {
+        *f.borrow_mut() = Some(DlgMeta {
             datatable: (*datatable.borrow().as_ref().unwrap()).clone(),
             dlg: dlg.clone().dyn_into::<bootstrap::Modal>().unwrap(),
             tr_node: tr_node,
             order_id: order_id,
-            selected_users: spreaders.into_iter().filter(|(_id, name)| 0!=name.len()).collect(),
+            selected_users: spreaders
+                .into_iter()
+                .filter(|(_id, name)| 0 != name.len())
+                .collect(),
             dataset_elm: elm,
         });
     });
 
     dlg.toggle();
 
-    DLG_STATE.with(|v|{
+    DLG_STATE.with(|v| {
         let dlg_state = v.borrow().as_ref().unwrap().clone();
         dlg_state.set(SelectionState::Choosing);
     });
-
 }
 
-#[derive(PartialEq,Copy,Clone)]
+#[derive(PartialEq, Copy, Clone)]
 enum SelectionState {
     Choosing,
     Reviewing,
@@ -94,12 +106,11 @@ impl fmt::Display for SelectionState {
 }
 
 #[function_component(ChooseSpreadersDlg)]
-pub(crate) fn choose_spreaders_dlg() -> Html
-{
+pub(crate) fn choose_spreaders_dlg() -> Html {
     let dlg_state = use_state(|| SelectionState::Choosing);
     {
         let dlg_state = dlg_state.clone();
-        DLG_STATE.with(|v|{
+        DLG_STATE.with(|v| {
             *v.borrow_mut() = Some(dlg_state);
         });
     }
@@ -107,8 +118,8 @@ pub(crate) fn choose_spreaders_dlg() -> Html
 
     let on_cancel = {
         let dlg_state = dlg_state.clone();
-        Callback::from(move |_evt: MouseEvent|{
-            META.with(|metarc|{
+        Callback::from(move |_evt: MouseEvent| {
+            META.with(|metarc| {
                 *metarc.borrow_mut() = None;
             });
             dlg_state.set(SelectionState::Choosing);
@@ -117,25 +128,34 @@ pub(crate) fn choose_spreaders_dlg() -> Html
 
     let on_submit = {
         let dlg_state = dlg_state.clone();
-        Callback::from(move |_evt: MouseEvent|{
+        Callback::from(move |_evt: MouseEvent| {
             // evt.prevent_default();
             // evt.stop_propagation();
 
             dlg_state.set(SelectionState::Submitting);
 
-            META.with(|metarc|{
+            META.with(|metarc| {
                 let dlg_state = dlg_state.clone();
-                let metarc=metarc.clone();
+                let metarc = metarc.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     if let Some(meta) = &*metarc.borrow() {
-                        let spreaders:Vec<String> = meta.selected_users.keys().cloned().collect::<_>();
+                        let spreaders: Vec<String> =
+                            meta.selected_users.keys().cloned().collect::<_>();
                         if let Err(err) = set_spreaders(&meta.order_id, &spreaders).await {
-                            gloo::dialogs::alert(&format!("Failed to submit spreaders: {:#?}", err));
+                            gloo::dialogs::alert(&format!(
+                                "Failed to submit spreaders: {:#?}",
+                                err
+                            ));
                         } else {
                             let spreaders = spreaders.join(",");
                             let _ = meta.dataset_elm.dataset().set("spreaders", &spreaders);
-                            if let Err(err) = set_spreaders_with_tr(&meta.datatable, &meta.tr_node, &spreaders) {
-                                gloo::dialogs::alert(&format!("Order was set in the cloud db but not the local table: {:#?}", err));
+                            if let Err(err) =
+                                set_spreaders_with_tr(&meta.datatable, &meta.tr_node, &spreaders)
+                            {
+                                gloo::dialogs::alert(&format!(
+                                    "Order was set in the cloud db but not the local table: {:#?}",
+                                    err
+                                ));
                             }
                         }
 
@@ -150,37 +170,46 @@ pub(crate) fn choose_spreaders_dlg() -> Html
 
     let on_select = {
         let dlg_state = dlg_state.clone();
-        Callback::from(move |_evt: MouseEvent|{
+        Callback::from(move |_evt: MouseEvent| {
             dlg_state.set(SelectionState::Choosing);
         })
     };
 
     let on_review = {
         let dlg_state = dlg_state.clone();
-        Callback::from(move |_evt: MouseEvent|{
+        Callback::from(move |_evt: MouseEvent| {
             dlg_state.set(SelectionState::Reviewing);
         })
     };
 
     let handle_selected_user = {
-        Callback::from(move |evt: Event|{
-            let target_elm = evt.target()
+        Callback::from(move |evt: Event| {
+            let target_elm = evt
+                .target()
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap();
             // let parentNode = evt.target().as_ref().parent_node()
             //    .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
             let uid = target_elm.dataset().get("uid").unwrap();
-            META.with(|metarc|{
+            META.with(|metarc| {
                 if let Some(meta) = metarc.borrow_mut().as_mut() {
                     if target_elm.checked() {
                         let uname = target_elm.dataset().get("uname").unwrap();
                         log::info!("Selecting: {}:{}", uid, uname);
                         let _ = meta.selected_users.insert(uid, uname);
-                        let _ = target_elm.parent_element().unwrap().class_list().add_1("active");
+                        let _ = target_elm
+                            .parent_element()
+                            .unwrap()
+                            .class_list()
+                            .add_1("active");
                     } else {
                         log::info!("Unselecting: {}", uid);
                         let _ = meta.selected_users.remove(&uid);
-                        let _ = target_elm.parent_element().unwrap().class_list().remove_1("active");
+                        let _ = target_elm
+                            .parent_element()
+                            .unwrap()
+                            .class_list()
+                            .remove_1("active");
                     }
                 }
             });
@@ -188,19 +217,23 @@ pub(crate) fn choose_spreaders_dlg() -> Html
     };
 
     let (selecting_btn_classes, reviewing_btn_classes, save_btn_classes) = match *dlg_state {
-        SelectionState::Choosing=>("btn-check active", "btn-check", "btn-check make-disabled"),
-        SelectionState::Reviewing=>("btn-check", "btn-check active", "btn-check"),
-        SelectionState::Submitting=>("btn-check make-disabled", "btn-check make-disabled", "btn-check active make-disabled"),
+        SelectionState::Choosing => ("btn-check active", "btn-check", "btn-check make-disabled"),
+        SelectionState::Reviewing => ("btn-check", "btn-check active", "btn-check"),
+        SelectionState::Submitting => (
+            "btn-check make-disabled",
+            "btn-check make-disabled",
+            "btn-check active make-disabled",
+        ),
     };
 
     let mut selected_users = BTreeMap::new();
-    META.with(|metarc|{
+    META.with(|metarc| {
         if let Some(meta) = &*metarc.borrow() {
             selected_users = meta.selected_users.clone();
         }
     });
 
-    html!{
+    html! {
         <div class="modal fade" id="spreadingDlg"
              tabIndex="-1" role="dialog" aria-labelledby="spreadingDlgTitle" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">

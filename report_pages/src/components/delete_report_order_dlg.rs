@@ -1,11 +1,10 @@
-use yew::prelude::*;
-use std::rc::Rc;
+use data_model::*;
+use js::{bootstrap, datatable::*};
 use std::cell::RefCell;
-use wasm_bindgen::{JsValue, JsCast};
-use web_sys::{ MouseEvent, InputEvent, Element, HtmlElement, HtmlInputElement, HtmlButtonElement};
-use crate::bootstrap;
-use crate::data_model::*;
-use crate::datatable::*;
+use std::rc::Rc;
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::{Element, HtmlButtonElement, HtmlElement, HtmlInputElement, InputEvent, MouseEvent};
+use yew::prelude::*;
 
 thread_local! {
     static CHOPPING_BLOCK: Rc<RefCell<Option<OrderToDelete>>> = Rc::new(RefCell::new(None));
@@ -20,11 +19,14 @@ struct OrderToDelete {
 
 /////////////////////////////////////////////////
 ///
-pub(crate) fn on_delete_order_from_rpt( evt: MouseEvent, datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>>)
-{
+pub(crate) fn on_delete_order_from_rpt(
+    evt: MouseEvent,
+    datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>>,
+) {
     evt.prevent_default();
     evt.stop_propagation();
-    let btn_elm = evt.target()
+    let btn_elm = evt
+        .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
             // log::info!("Node Name: {}", t.node_name());
@@ -34,17 +36,16 @@ pub(crate) fn on_delete_order_from_rpt( evt: MouseEvent, datatable: std::rc::Rc<
                 Some(t)
             }
         })
-    .unwrap();
+        .unwrap();
 
     // for idx in 0..btn_elm.attributes().length() {
     //     if let Some(attr) = btn_elm.attributes().get_with_index(idx) {
     //         log::info!("{}: {}: {}", idx, attr.name(), attr.value());
     //     }
     // }
-    let tr_node = btn_elm.parent_node()
-        .and_then(|t| t.parent_node())
-        .unwrap();
-    let order_id = btn_elm.dyn_into::<HtmlElement>()
+    let tr_node = btn_elm.parent_node().and_then(|t| t.parent_node()).unwrap();
+    let order_id = btn_elm
+        .dyn_into::<HtmlElement>()
         .ok()
         .and_then(|t| t.dataset().get("orderid"))
         .unwrap();
@@ -52,8 +53,8 @@ pub(crate) fn on_delete_order_from_rpt( evt: MouseEvent, datatable: std::rc::Rc<
 
     let dlg = bootstrap::get_modal_by_id("deleteOrderDlg").unwrap();
 
-    CHOPPING_BLOCK.with(|f|{
-        *f.borrow_mut() = Some(OrderToDelete{
+    CHOPPING_BLOCK.with(|f| {
+        *f.borrow_mut() = Some(OrderToDelete {
             datatable: (*datatable.borrow().as_ref().unwrap()).clone(),
             delete_dlg: dlg.clone().dyn_into::<bootstrap::Modal>().unwrap(),
             tr_node: tr_node,
@@ -68,31 +69,36 @@ pub(crate) fn on_delete_order_from_rpt( evt: MouseEvent, datatable: std::rc::Rc<
 /////////////////////////////////////////////////
 #[function_component(DeleteOrderDlg)]
 pub(crate) fn delete_order_confirmation_dlg() -> Html {
-
     let on_confirm_input = {
-        Callback::from(move |evt: InputEvent|{
-            let value = evt.target()
+        Callback::from(move |evt: InputEvent| {
+            let value = evt
+                .target()
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap()
                 .value();
             if "delete" == &value {
-                gloo::utils::document().get_element_by_id("deleteDlgBtn")
+                gloo::utils::document()
+                    .get_element_by_id("deleteDlgBtn")
                     .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
-                    .unwrap().set_disabled(false);
+                    .unwrap()
+                    .set_disabled(false);
             } else {
-                gloo::utils::document().get_element_by_id("deleteDlgBtn")
+                gloo::utils::document()
+                    .get_element_by_id("deleteDlgBtn")
                     .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
-                    .unwrap().set_disabled(true);
+                    .unwrap()
+                    .set_disabled(true);
             }
         })
     };
 
     let on_submit = {
-        Callback::from(move |evt: MouseEvent|{
+        Callback::from(move |evt: MouseEvent| {
             evt.target()
                 .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
-                .unwrap().set_disabled(true);
-                //.and_then(|t| t.set_disabled(true));
+                .unwrap()
+                .set_disabled(true);
+            //.and_then(|t| t.set_disabled(true));
             CHOPPING_BLOCK.with(|f|{
                 let f=f.clone();
                 wasm_bindgen_futures::spawn_local(async move {
@@ -153,4 +159,3 @@ pub(crate) fn delete_order_confirmation_dlg() -> Html {
         </div>
     }
 }
-

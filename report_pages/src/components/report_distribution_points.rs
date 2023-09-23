@@ -1,28 +1,27 @@
-use yew::prelude::*;
-use crate::datatable::*;
-use crate::data_model::*;
 use crate::components::report_loading_spinny::*;
-
+use data_model::*;
+use js::datatable::*;
+use yew::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 #[function_component(DistributionPointsReportView)]
 pub(crate) fn report_distribution_points_view() -> Html {
-    let report_state = use_state(||ReportViewState::IsLoading);
+    let report_state = use_state(|| ReportViewState::IsLoading);
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
 
     {
         let report_state = report_state.clone();
         use_effect(move || {
             match &*report_state {
-                ReportViewState::IsLoading=>{
+                ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
                         log::info!("Downloading Distribution Points Report View Data");
                         let resp = get_distribution_points_report_data().await.unwrap();
                         log::info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
-                },
+                }
                 ReportViewState::ReportHtmlGenerated(resp) => {
                     log::info!("Setting DataTable");
                     if datatable.borrow().is_none() {
@@ -34,10 +33,10 @@ pub(crate) fn report_distribution_points_view() -> Html {
                             "isMulchOrder": true
                         }));
                     }
-                },
+                }
             };
 
-            ||{}
+            || {}
         });
     }
 
@@ -45,8 +44,9 @@ pub(crate) fn report_distribution_points_view() -> Html {
         ReportViewState::IsLoading => html! { <ReportLoadingSpinny/> },
         ReportViewState::ReportHtmlGenerated(resp) => {
             use std::collections::BTreeMap;
-            let dist_points: Vec<String> = serde_json::from_value(resp[0]["distPoints"].clone()).unwrap();
-            let delivery_id_to_dist_points_map: BTreeMap<u64,BTreeMap<String, u64>> =
+            let dist_points: Vec<String> =
+                serde_json::from_value(resp[0]["distPoints"].clone()).unwrap();
+            let delivery_id_to_dist_points_map: BTreeMap<u64, BTreeMap<String, u64>> =
                 serde_json::from_value(resp[0]["deliveryIdMap"].clone()).unwrap();
 
             let header_footer = html! {
@@ -60,7 +60,7 @@ pub(crate) fn report_distribution_points_view() -> Html {
                     }
                 </tr>
             };
-            html!{
+            html! {
                 <div class="data-table-report">
                     <table class="display responsive nowrap collapsed" role="grid" cellspacing="0" width="100%">
                         <thead>
@@ -91,7 +91,6 @@ pub(crate) fn report_distribution_points_view() -> Html {
                     </table>
                 </div>
             }
-        },
+        }
     }
 }
-

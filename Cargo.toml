@@ -4,6 +4,7 @@ members = [
     "data_model",
     "timecard_pages",
     "order_pages",
+    "report_pages",
 	"webapp",
 ]
 resolver = "2"

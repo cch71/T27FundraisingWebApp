@@ -1,20 +1,18 @@
-use yew::prelude::*;
-use yew_router::prelude::*;
-use wasm_bindgen::{JsCast};
-use web_sys::{ MouseEvent, Element, HtmlElement};
-use crate::AppRoutes;
-use crate::data_model::*;
 pub(crate) use crate::components::delete_report_order_dlg::*;
 pub(crate) use crate::components::report_spreaders_dlg::*;
-
+use data_model::*;
+use wasm_bindgen::JsCast;
+use web_sys::{Element, HtmlElement, MouseEvent};
+use yew::prelude::*;
+use yew_router::prelude::*;
 
 /////////////////////////////////////////////////
 ///
-pub(crate) fn on_view_or_edit_from_rpt( evt: MouseEvent, history: Navigator)
-{
+pub(crate) fn on_view_or_edit_from_rpt(evt: MouseEvent, history: Navigator) {
     evt.prevent_default();
     evt.stop_propagation();
-    let btn_elm = evt.target()
+    let btn_elm = evt
+        .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
             if t.node_name() == "I" {
@@ -23,15 +21,19 @@ pub(crate) fn on_view_or_edit_from_rpt( evt: MouseEvent, history: Navigator)
                 Some(t)
             }
         })
-    .unwrap();
-    let order_id = btn_elm.dyn_into::<HtmlElement>()
+        .unwrap();
+    let order_id = btn_elm
+        .dyn_into::<HtmlElement>()
         .ok()
         .and_then(|t| t.dataset().get("orderid"))
         .unwrap();
     wasm_bindgen_futures::spawn_local(async move {
         log::info!("on_view_or_edit_order: {}", order_id);
         if let Err(err) = load_active_order_from_db(&order_id).await {
-            gloo::dialogs::alert(&format!("Failed to load order: {}: Err: {:#?}", order_id, err));
+            gloo::dialogs::alert(&format!(
+                "Failed to load order: {}: Err: {:#?}",
+                order_id, err
+            ));
         }
         history.push(&AppRoutes::OrderForm);
     });
@@ -53,7 +55,7 @@ pub(crate) struct ReportActionButtonsProps {
 
 #[function_component(ReportActionButtons)]
 pub(crate) fn report_action_buttons(props: &ReportActionButtonsProps) -> Html {
-    html!{
+    html! {
         <>
         if props.showspreading {
             <button type="button" class="btn btn-outline-info me-1 order-spread-btn"

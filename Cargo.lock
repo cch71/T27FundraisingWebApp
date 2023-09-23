@@ -1206,6 +1206,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "report_pages"
+version = "0.1.0"
+dependencies = [
+ "data_model",
+ "gloo 0.8.1",
+ "js",
+ "log",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "yew",
+ "yew-router",
+]
+
+[[package]]
 name = "rkyv"
 version = "0.7.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1415,6 +1432,7 @@ dependencies = [
  "once_cell",
  "order_pages",
  "regex",
+ "report_pages",
  "rust_decimal",
  "rusty-money",
  "serde",
