@@ -186,10 +186,11 @@ fn required_small() -> Html {
 /////////////////////////////////////////////////
 #[derive(Properties, PartialEq, Clone, Debug)]
 pub struct OrderCostItemProps {
-    pub label: String,
+    pub label: AttrValue,
     pub isreadonly: bool,
-    pub amount: Option<String>,
-    pub deliveryid: Option<u32>,
+    pub amount: AttrValue,
+    #[prop_or_default]
+    pub deliveryid: u32,
     pub ondelete: Callback<MouseEvent>,
 }
 
@@ -213,11 +214,11 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
     };
 
     // If it is readonly and there isn't anything
-    if props.amount.is_none() && props.isreadonly {
+    if props.amount.is_empty() && props.isreadonly {
         return html! {};
     }
     // If it isn't read only and we can add
-    if props.amount.is_none() && !props.isreadonly {
+    if props.amount.is_empty() && !props.isreadonly {
         return html! {
             <li class="list-group-item">
                 {format!("Add {}", props.label)}
@@ -228,16 +229,15 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
         };
     }
 
-    let amount_label = format!("Amount: {}", to_money_str(props.amount.as_ref()));
-    let mut delivery_label = html! {};
-    let delivery_id = props.deliveryid.as_ref().map_or_else(
-        || "".to_string(),
-        |v| {
-            delivery_label =
-                html! {<><br/>{format!("To be delivered on: {}", get_delivery_date(v))}</>};
-            v.to_string()
-        },
-    );
+    let amount_label = format!("Amount: {}", to_money_str(Some(props.amount.as_str())));
+    let (delivery_id, delivery_label) = if 0 == props.deliveryid {
+        ("".to_string(), html! {})
+    } else {
+        (
+            props.deliveryid.to_string(),
+            html! {<><br/>{format!("To be delivered on: {}", get_delivery_date(&props.deliveryid))}</>},
+        )
+    };
 
     // if the order already exists...
     html! {
@@ -710,12 +710,12 @@ pub fn order_form_fields() -> Html {
                         <OrderCostItem label="Donation"
                             isreadonly={is_order_readonly}
                             ondelete={on_donations_delete}
-                            amount={from_cloud_to_money_str(order.amount_from_donations.clone())}/>
+                            amount={from_cloud_to_money_str(order.amount_from_donations.clone()).unwrap_or("".to_string())}/>
                         <OrderCostItem label="Product Order"
-                            deliveryid={order.delivery_id}
+                            deliveryid={order.delivery_id.unwrap_or(0)}
                             ondelete={on_purchases_delete}
                             isreadonly={is_order_readonly}
-                            amount={from_cloud_to_money_str(order.amount_from_purchases.clone())}/>
+                            amount={from_cloud_to_money_str(order.amount_from_purchases.clone()).unwrap_or("".to_string())}/>
                     </ul>
                 </div>
                 <div class="invalid-feedback">

@@ -49,8 +49,10 @@ pub(crate) struct ReportActionButtonsProps {
     pub(crate) ondeleteorder: Callback<MouseEvent>,
     pub(crate) onvieworder: Callback<MouseEvent>,
     pub(crate) oneditorder: Callback<MouseEvent>,
-    pub(crate) oneditspreading: Option<Callback<MouseEvent>>,
-    pub(crate) spreaders: Option<String>,
+    #[prop_or_default]
+    pub(crate) oneditspreading: Callback<MouseEvent>,
+    #[prop_or_default]
+    pub(crate) spreaders: AttrValue,
 }
 
 #[function_component(ReportActionButtons)]
@@ -59,9 +61,9 @@ pub(crate) fn report_action_buttons(props: &ReportActionButtonsProps) -> Html {
         <>
         if props.showspreading {
             <button type="button" class="btn btn-outline-info me-1 order-spread-btn"
-                onclick={props.oneditspreading.as_ref().unwrap().clone()}
+                onclick={props.oneditspreading.clone()}
                 data-orderid={props.orderid.clone()}
-                data-spreaders={props.spreaders.as_ref().unwrap_or(&"".to_string()).clone()}
+                data-spreaders={props.spreaders.as_str().to_string()}
                 data-bs-toggle="tooltip" title="Select Spreaders" data-bs-placement="left">
                  <i class="bi bi-layout-wtf" fill="currentColor" />
             </button>
