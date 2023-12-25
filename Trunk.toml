@@ -1,0 +1,15 @@
+[build]
+# The index HTML file to drive the bundling process.
+target = "webapp/index.html"
+dist = "dist"
+
+[watch]
+# Paths to watch. The `build.target`'s parent folder is watched by default.
+watch = [
+	"js",
+	"data_model",
+	"admin_pages",
+	"order_pages",
+	"report_pages",
+	"timecard_pages"
+]

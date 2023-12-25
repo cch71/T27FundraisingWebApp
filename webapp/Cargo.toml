@@ -1,0 +1,22 @@
+[package]
+name = "t27-fundraiser-webapp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+js = { path = "../js" }
+data_model = { path = "../data_model" }
+timecard_pages = { path = "../timecard_pages" }
+order_pages = { path = "../order_pages" }
+report_pages = { path = "../report_pages" }
+admin_pages = { path = "../admin_pages" }
+
+log= { workspace = true }
+yew= { workspace = true }
+yew-router= { workspace = true }
+gloo= { workspace = true }
+wasm-bindgen= { workspace = true }
+wasm-bindgen-futures= { workspace = true }
+web-sys = { workspace = true }
+
+wasm-logger = "0"

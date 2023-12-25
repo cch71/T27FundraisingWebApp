@@ -1,0 +1,15 @@
+[package]
+name = "timecard_pages"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+js = { path = "../js" }
+data_model = { path = "../data_model" }
+
+log= { workspace = true }
+yew= { workspace = true }
+gloo= { workspace = true }
+wasm-bindgen= { workspace = true }
+wasm-bindgen-futures= { workspace = true }
+web-sys = { workspace = true }
