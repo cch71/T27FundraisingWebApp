@@ -539,7 +539,7 @@ pub async fn get_unfinished_spreading_jobs_report_data(
 struct SummaryReportStorage {
     summary_report: SummaryReport,
     seller_id: String,
-    num_top_sellers: u32,
+    num_top_sellers: u8,
     timestamp: i64,
 }
 
@@ -650,7 +650,7 @@ static SUMMARY_RPT_GRAPHQL: &'static str = r"
 
 pub async fn get_summary_report_data(
     seller_id: &str,
-    num_top_sellers: u32,
+    num_top_sellers: u8,
 ) -> std::result::Result<SummaryReport, Box<dyn std::error::Error>> {
     let rslt = LocalStorage::get("SummaryData");
     if rslt.is_ok() {

@@ -181,7 +181,7 @@ pub fn home_page() -> Html {
         let summary_values = summary_values.clone();
         wasm_bindgen_futures::spawn_local(async move {
             let id = get_active_user().get_id();
-            match get_summary_report_data(&id, 10).await {
+            match get_summary_report_data(&id, NUM_TOP_SELLERS_TO_GET).await {
                 Err(err) => gloo::dialogs::alert(&format!(
                     "Failed to retrieve summary data to local storage: {:#?}",
                     err
