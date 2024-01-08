@@ -1,4 +1,3 @@
-use chrono::prelude::*;
 use data_model::*;
 use js::bootstrap;
 use std::cell::RefCell;
@@ -206,20 +205,7 @@ pub(crate) fn delivery_list() -> Html {
                 delivery_date,
                 cutoff_date
             );
-            let delivery_date = {
-                let nd = NaiveDate::parse_from_str(&delivery_date, "%Y-%m-%d").unwrap();
-                Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
-                    .unwrap()
-            };
-            let cutoff_date = {
-                let nd = NaiveDate::parse_from_str(&cutoff_date, "%Y-%m-%d").unwrap();
-                Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
-                    .unwrap()
-            };
-            let delivery_info = DeliveryInfo {
-                delivery_date: delivery_date,
-                new_order_cutoff_date: cutoff_date,
-            };
+            let delivery_info = DeliveryInfo::new_from_admin(delivery_date, cutoff_date);
             let mut delivery_map = (*deliveries).clone();
             delivery_map.insert(delivery_id, delivery_info);
             deliveries.set(delivery_map);

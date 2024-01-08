@@ -36,8 +36,11 @@ static CONFIG_GQL: &'static str = r#"
     }
     mulchDeliveryConfigs {
       id
+      timezone
       date
+      dateAsEpoch
       newOrderCutoffDate
+      newOrderCutoffDateAsEpoch
     }
     products {
       id
@@ -111,28 +114,85 @@ pub struct FrConfig {
 //
 #[derive(Debug, Clone)]
 pub struct DeliveryInfo {
-    pub delivery_date: DateTime<Utc>,
-    pub new_order_cutoff_date: DateTime<Utc>,
+    delivery_date_api_str: String,
+    new_order_cutoff_date_api_str: String,
+    delivery_date_str: String,
+    new_order_cutoff_date_str: String,
+    new_order_cutoff_date: Option<DateTime<Utc>>,
 }
 impl DeliveryInfo {
+    pub fn new(
+        delivery_date_api_str: String,
+        new_order_cutoff_api_str: String,
+        new_order_cutoff_epoch: u32,
+    ) -> DeliveryInfo {
+        let delivery_date_str = {
+            let nd = NaiveDate::parse_from_str(&delivery_date_api_str, "%m/%d/%Y").unwrap();
+            // Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
+            //    .unwrap()
+            nd.format("%Y-%m-%d").to_string()
+        };
+        let cutoff_date_str = {
+            let nd = NaiveDate::parse_from_str(&new_order_cutoff_api_str, "%m/%d/%Y").unwrap();
+            // let Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
+            //     .unwrap()
+            nd.format("%Y-%m-%d").to_string()
+        };
+
+        let cutoff_date = Utc.timestamp_opt(new_order_cutoff_epoch as i64, 0).unwrap();
+
+        DeliveryInfo {
+            delivery_date_api_str: delivery_date_api_str,
+            new_order_cutoff_date_api_str: new_order_cutoff_api_str,
+            delivery_date_str: delivery_date_str,
+            new_order_cutoff_date_str: cutoff_date_str,
+            new_order_cutoff_date: Some(cutoff_date),
+        }
+    }
+
+    pub fn new_from_admin(delivery_date_str: String, new_order_cutoff_str: String) -> DeliveryInfo {
+        let delivery_date_api_str = {
+            let nd = NaiveDate::parse_from_str(&delivery_date_str, "%Y-%m-%d").unwrap();
+            // Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0).unwrap()
+            nd.format("%m/%d/%Y").to_string()
+        };
+        let new_order_cutoff_date_api_str = {
+            let nd = NaiveDate::parse_from_str(&new_order_cutoff_str, "%Y-%m-%d").unwrap();
+            // Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0).unwrap()
+            nd.format("%m/%d/%Y").to_string()
+        };
+
+        DeliveryInfo {
+            delivery_date_api_str: delivery_date_api_str,
+            new_order_cutoff_date_api_str: new_order_cutoff_date_api_str,
+            delivery_date_str: delivery_date_str,
+            new_order_cutoff_date_str: new_order_cutoff_str,
+            new_order_cutoff_date: None,
+        }
+    }
+
     pub fn get_delivery_date_str(&self) -> String {
-        self.delivery_date.format("%Y-%m-%d").to_string()
+        // self.delivery_date.format("%Y-%m-%d").to_string()
+        self.delivery_date_str.clone()
     }
 
     pub fn get_new_order_cutoff_date_str(&self) -> String {
-        self.new_order_cutoff_date.format("%Y-%m-%d").to_string()
+        // self.new_order_cutoff_date.format("%Y-%m-%d").to_string()
+        self.new_order_cutoff_date_str.clone()
     }
 
     pub fn get_api_delivery_date_str(&self) -> String {
-        self.delivery_date.format("%m/%d/%Y").to_string()
+        // self.delivery_date.format("%m/%d/%Y").to_string()
+        self.delivery_date_api_str.clone()
     }
 
     pub fn get_api_new_order_cutoff_date_str(&self) -> String {
-        self.new_order_cutoff_date.format("%m/%d/%Y").to_string()
+        // self.new_order_cutoff_date.format("%m/%d/%Y").to_string()
+        self.new_order_cutoff_date_api_str.clone()
     }
 
     pub fn can_take_orders(&self) -> bool {
-        self.new_order_cutoff_date >= Utc::now()
+        self.new_order_cutoff_date.unwrap() >= Utc::now()
     }
 }
 
@@ -264,29 +324,16 @@ struct ProductsApi {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct MulchDeliveryConfigApi {
     id: u32,
+    #[serde(rename = "timezone")]
+    timezone: String,
     #[serde(rename = "date")]
     delivery_date: String,
+    #[serde(rename = "dateAsEpoch")]
+    delivery_date_as_epoch: u32,
     #[serde(rename = "newOrderCutoffDate")]
     new_order_cutoff_date: String,
-}
-
-////////////////////////////////////////////////////////////////////////////
-//
-pub fn new_delivery_info(delivery_date: &String, new_order_cutoff: &String) -> DeliveryInfo {
-    let delivery_date = {
-        let nd = NaiveDate::parse_from_str(delivery_date, "%m/%d/%Y").unwrap();
-        Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
-            .unwrap()
-    };
-    let cutoff_date = {
-        let nd = NaiveDate::parse_from_str(new_order_cutoff, "%m/%d/%Y").unwrap();
-        Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0)
-            .unwrap()
-    };
-    DeliveryInfo {
-        delivery_date: delivery_date,
-        new_order_cutoff_date: cutoff_date,
-    }
+    #[serde(rename = "newOrderCutoffDateAsEpoch")]
+    new_order_cutoff_date_as_epoch: u32,
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -308,8 +355,11 @@ fn process_config_data(config: FrConfigApi) {
 
     let mut deliveries = BTreeMap::new();
     for delivery in config.mulch_delivery_configs {
-        let delivery_info =
-            new_delivery_info(&delivery.delivery_date, &delivery.new_order_cutoff_date);
+        let delivery_info = DeliveryInfo::new(
+            delivery.delivery_date.clone(),
+            delivery.new_order_cutoff_date.clone(),
+            delivery.new_order_cutoff_date_as_epoch,
+        );
         deliveries.insert(delivery.id, delivery_info);
     }
     *DELIVERIES.write().unwrap() = Some(Arc::new(deliveries));
@@ -500,8 +550,9 @@ pub async fn set_deliveries(
         .iter()
         .map(|(k, v)| {
             format!(
-                "\t\t{{\n{}\n{}\n{}\n\t\t}}",
+                "\t\t{{\n{}\n{}\n{}\n{}\n\t\t}}",
                 format!("\t\t\tid: {},", k),
+                "\t\t\ttimezone: \"America/Chicago\",", //Hardcoded for now
                 format!("\t\t\tdate: \"{}\",", v.get_api_delivery_date_str()),
                 format!(
                     "\t\t\tnewOrderCutoffDate: \"{}\"",
@@ -534,9 +585,7 @@ pub fn get_delivery_date(delivery_id: &u32) -> String {
     get_deliveries()
         .get(delivery_id)
         .unwrap()
-        .delivery_date
-        .format("%Y-%m-%d")
-        .to_string()
+        .get_delivery_date_str()
 }
 
 ////////////////////////////////////////////////////////////////////////////
