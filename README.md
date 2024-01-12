@@ -92,8 +92,8 @@ on the published tag releases instead of main branch to make release more obviou
 
 Authentication is handled by [Phase//](https://phasetwo.io/). Phase//(aka PhaseTwo) is a provider that is based on
 [KeyCloak](https://www.keycloak.org/).  Authentication has evolved since the original implementation that started out
-with a pure AWS Cognito solution. We then moved to using Okta's Auth0 service as an attempt to gain cloud vendor lock-in.
-We are not using the KeyCloak based system.  This gives up greater flexibility as there are multiple KeyCloak cloud vendors or we could setup
+with a pure AWS Cognito solution. We then moved to using Okta's Auth0 service as an attempt to move away from cloud vendor lock-in.
+We are now using the KeyCloak based system offered by PhaseTwo.  This gives up greater flexibility as there are multiple KeyCloak cloud vendors or we could setup
 our own.  While Auth0 hand some less than ideal limits (for the free account) so far Phase// has been perfect for our needs.
 Using a KeyCloak based system also means that the admin scripts that we write can be used with other KeyCloak providers.
 
