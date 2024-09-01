@@ -4,8 +4,8 @@ use super::{
 };
 use chrono::prelude::*;
 use gloo::storage::{LocalStorage, SessionStorage, Storage};
-use once_cell::sync::Lazy as LazyLock;
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
 
 // Exposing this const out to keep consistent tag name
 pub static ALL_USERS_TAG: &'static str = "doShowAllUsers";

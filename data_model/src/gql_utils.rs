@@ -1,7 +1,7 @@
 use super::get_active_user;
 use gloo::net::http::Request;
-use once_cell::sync::Lazy as LazyLock;
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
 
 static GQLURL: LazyLock<String> = LazyLock::new(|| crate::CLOUD_API_URL.to_string() + "/graphql");
 

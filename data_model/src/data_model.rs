@@ -4,11 +4,10 @@ use super::{
 };
 use chrono::prelude::*;
 use gloo::storage::{LocalStorage, Storage};
-use once_cell::sync::Lazy as LazyLock;
 use rust_decimal::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, LazyLock, RwLock};
 use std::time::Duration;
 use yew::prelude::*;
 

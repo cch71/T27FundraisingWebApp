@@ -1,6 +1,5 @@
-use once_cell::sync::Lazy as LazyLock;
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, LazyLock, RwLock};
 use wasm_bindgen::prelude::*;
 
 static ACTIVE_USER: LazyLock<RwLock<Option<Arc<AuthenticatedUserInfo>>>> =

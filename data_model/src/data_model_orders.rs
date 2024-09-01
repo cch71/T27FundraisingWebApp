@@ -1,11 +1,10 @@
 use crate::currency_utils::*;
-use once_cell::sync::Lazy as LazyLock;
 use regex::Regex;
 use rust_decimal::prelude::*;
 use rusty_money::{iso, Money};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::RwLock;
+use std::sync::{LazyLock, RwLock};
 
 use super::{
     get_active_user,
