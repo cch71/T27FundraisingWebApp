@@ -55,7 +55,7 @@ impl AuthenticatedUserInfo {
 pub async fn get_active_user_async() -> Option<Arc<AuthenticatedUserInfo>> {
     match getUserInfo().await {
         Ok(user_info) => {
-            //log::info!("User Info: {:#?}", user_info);
+            // log::info!("User Info: {:#?}", user_info);
             let user_info: AuthenticatedUserInfo =
                 serde_wasm_bindgen::from_value(user_info).unwrap();
             let user_info = Arc::new(user_info);

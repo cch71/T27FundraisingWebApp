@@ -1,13 +1,14 @@
 
+import Keycloak from "https://cdn.jsdelivr.net/npm/keycloak-js@26.0.7/lib/keycloak.min.js"
 
 const initOptions = {
-  url: 'https://usw2.auth.ac/auth', realm: 't27fr', clientId: 't27frapp', onLoad: 'login-required'
+    url: 'https://usw2.auth.ac/auth', realm: 't27fr', clientId: 't27frapp', onLoad: 'login-required'
 }
 
 /**
  *  Creates an auth object
  */
-const keycloak = Keycloak(initOptions);
+const keycloak = new Keycloak(initOptions);
 
 
 
@@ -19,7 +20,7 @@ const getUserInfo = async () => {
     const token = keycloak.idToken;
     // console.log(`UserInfo: ${JSON.stringify(parsedToken, null, '\t')}`);
     // console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
-    let roles = parsedToken.groups.map((role)=>{ 
+    let roles = parsedToken.groups.map((role) => {
         return role.startsWith("/") ? role.substring(1) : role;
     });
     const resp = {
@@ -39,7 +40,7 @@ const getUserInfo = async () => {
 const loginUser = async () => {
     // console.log("Starting login");
 
-    const auth =  await keycloak.init({ onLoad: initOptions.onLoad });
+    const auth = await keycloak.init({ onLoad: initOptions.onLoad });
 
     if (!auth) {
         window.location.reload();
@@ -53,10 +54,10 @@ const loginUser = async () => {
         keycloak.updateToken(70).then((refreshed) => {
             if (refreshed) {
                 console.info('Token refreshed' + refreshed);
-            // } else {
-            //     console.warn('Token not refreshed, valid for '
-            //                  + Math.round(keycloak.tokenParsed.exp
-            //                               + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
+                // } else {
+                //     console.warn('Token not refreshed, valid for '
+                //                  + Math.round(keycloak.tokenParsed.exp
+                //                               + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
             }
         }).catch(() => {
             console.error('Failed to refresh token');
@@ -90,4 +91,4 @@ const isAuthenticated = async () => {
 };
 
 
-export {loginUser, logoutUser, isAuthenticated, getUserInfo};
+export { loginUser, logoutUser, isAuthenticated, getUserInfo };

@@ -19,12 +19,10 @@ use web_sys::{HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement};
 use yew_router::prelude::*;
 
 /////////////////////////////////////////////////
-///
 pub const CLOUD_API_URL: &'static str =
     "https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod";
 
 /////////////////////////////////////////////////
-///
 pub const NUM_TOP_SELLERS_TO_GET: u8 = 25;
 
 /////////////////////////////////////////////////
