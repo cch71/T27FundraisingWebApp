@@ -3,16 +3,15 @@ frontend:
   phases:
     preBuild:
       commands:
+        - curl -L https://github.com/trunk-rs/trunk/releases/download/v0.21.4/trunk-aarch64-unknown-linux-musl.tar.gz | tar -xzvf -
+        - PATH=./trunk --version
         - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         - echo $PATH
         - PATH=/root/.cargo/bin:$PATH rustc --version
-        - sudo yum install -y tar gzip
-        - sudo curl -L https://github.com/trunk-rs/trunk/releases/download/v0.21.4/trunk-aarch64-unknown-linux-musl.tar.gz | tar -C /usr/local/bin/ -xzvf -
         - $HOME/.cargo/bin/rustup target add wasm32-unknown-unknown
-        - PATH=trunk --version
     build:
       commands:
-        - PATH=/root/.cargo/bin:$PATH trunk build --release
+        - PATH=/root/.cargo/bin:$PATH ./trunk build --release
   artifacts:
     baseDirectory: /dist
     files:
