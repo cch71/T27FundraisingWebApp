@@ -15,7 +15,7 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
-    if &*current_view_seller.borrow() != &props.seller {
+    if (*current_view_seller.borrow()).ne(&props.seller) {
         log::info!(
             "Current Seller doesn't match original seller: {}:{}",
             *current_view_seller.borrow(),
@@ -38,7 +38,7 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
                             "Downloading Money Collection Report View Data for {}",
                             &seller
                         );
-                        let seller = if &seller == ALL_USERS_TAG {
+                        let seller = if seller.eq(ALL_USERS_TAG) {
                             None
                         } else {
                             Some(seller)
@@ -56,7 +56,7 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
                         *datatable.borrow_mut() = get_datatable(&serde_json::json!({
                             "reportType": "moneyCollection",
                             "id": ".data-table-report table",
-                            "showOrderOwner": &seller != &get_active_user().get_id(),
+                            "showOrderOwner": seller.ne(&get_active_user().get_id()),
                             "isMulchOrder": true
                         }));
                     }
@@ -87,7 +87,7 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
                         </thead>
                         <tbody>
                         {
-                            orders.into_iter().map(|v|{
+                            orders.iter().map(|v|{
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("Donation".to_string(), "Donation".to_string()),

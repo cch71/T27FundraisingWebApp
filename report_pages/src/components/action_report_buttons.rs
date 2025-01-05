@@ -7,7 +7,6 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 /////////////////////////////////////////////////
-///
 pub(crate) fn on_view_or_edit_from_rpt(evt: MouseEvent, history: Navigator) {
     evt.prevent_default();
     evt.stop_propagation();

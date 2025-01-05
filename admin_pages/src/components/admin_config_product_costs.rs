@@ -6,8 +6,11 @@ use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlButtonElement, HtmlElement, HtmlInputElement, InputEvent, MouseEvent};
 use yew::prelude::*;
 
+// Tuple gt, unit_price
+type SelectedPriceBreakType = (u32, String);
+
 thread_local! {
-    static SELECTED_PRICE_BREAK: Rc<RefCell<Option<UseStateHandle<Option<(u32, String)>>>>> = Rc::new(RefCell::new(None));
+    static SELECTED_PRICE_BREAK: Rc<RefCell<Option<UseStateHandle<Option<SelectedPriceBreakType>>>>> = Rc::new(RefCell::new(None));
 }
 
 /////////////////////////////////////////////////
@@ -131,7 +134,6 @@ fn mulch_pricebreak_item(props: &MulchPriceBreakLiProps) -> Html {
 }
 
 /////////////////////////////////////////////////
-//
 fn get_selected_pricebreak(evt: MouseEvent) -> u32 {
     let btn_elm = evt
         .target()
@@ -150,7 +152,6 @@ fn get_selected_pricebreak(evt: MouseEvent) -> u32 {
 }
 
 /////////////////////////////////////////////////
-///
 fn disable_save_button(document: &web_sys::Document, value: bool) {
     if let Some(btn) = document
         .get_element_by_id("btnProductsSave")
@@ -175,7 +176,7 @@ pub(crate) fn set_mulch_cost() -> Html {
     let mulch_product_info = product.get("bags").unwrap().clone();
 
     let spreading_cost = use_mut_ref(|| get_purchase_cost_for("spreading", 1));
-    let mulch_min_units_cost = use_mut_ref(|| mulch_product_info.min_units.clone());
+    let mulch_min_units_cost = use_mut_ref(|| mulch_product_info.min_units);
     let mulch_base_bags_cost = use_mut_ref(|| mulch_product_info.unit_price.clone());
 
     let price_breaks = use_state(|| {
@@ -219,8 +220,8 @@ pub(crate) fn set_mulch_cost() -> Html {
             log::info!("Adding Pricebreak...");
             // Since we are adding we don't have a selected index
             SELECTED_PRICE_BREAK.with(|rc| {
-                let selected_price_break = rc.borrow().as_ref().unwrap().clone();
-                selected_price_break.set(None);
+                //set selected price break to none
+                rc.borrow().as_ref().unwrap().set(None);
             });
 
             let dlg = bootstrap::get_modal_by_id("pricebreakAddOrEditDlg").unwrap();
@@ -235,8 +236,10 @@ pub(crate) fn set_mulch_cost() -> Html {
             let unit_price = (*price_breaks).get(&gt).unwrap();
             log::info!("Editing Pricebreak: {}", &gt);
             SELECTED_PRICE_BREAK.with(|rc| {
-                let selected_price_break = rc.borrow().as_ref().unwrap().clone();
-                selected_price_break.set(Some((gt, unit_price.clone())));
+                rc.borrow()
+                    .as_ref()
+                    .unwrap()
+                    .set(Some((gt, unit_price.clone())));
             });
             let dlg = bootstrap::get_modal_by_id("pricebreakAddOrEditDlg").unwrap();
             dlg.toggle();
@@ -269,7 +272,7 @@ pub(crate) fn set_mulch_cost() -> Html {
                         .iter()
                         .map(|(gt, unit_price)| ProductPriceBreak {
                             gt: *gt,
-                            unit_price: to_money_str_no_symbol(Some(&unit_price)),
+                            unit_price: to_money_str_no_symbol(Some(unit_price)),
                         })
                         .collect::<Vec<ProductPriceBreak>>(),
                 },

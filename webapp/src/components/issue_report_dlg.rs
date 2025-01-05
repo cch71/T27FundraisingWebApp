@@ -69,13 +69,13 @@ pub(crate) fn report_issue() -> Html {
 
             let desc = desc_elm.value();
             let summary = summary_elm.value();
-            if 0 == desc.len() || 0 == summary.len() {
-                if 0 == desc.len() {
+            if desc.is_empty() || summary.is_empty() {
+                if desc.is_empty() {
                     let _ = desc_elm.class_list().add_1("is-invalid");
                 } else {
                     let _ = desc_elm.class_list().remove_1("is-invalid");
                 }
-                if 0 == summary.len() {
+                if summary.is_empty() {
                     let _ = summary_elm.class_list().add_1("is-invalid");
                 } else {
                     let _ = summary_elm.class_list().remove_1("is-invalid");

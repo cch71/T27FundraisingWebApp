@@ -5,7 +5,6 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 /////////////////////////////////////////////////
-///
 fn get_donation_amount() -> Option<String> {
     let document = gloo::utils::document();
     let donation_amt = document
@@ -13,7 +12,7 @@ fn get_donation_amount() -> Option<String> {
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
         .value();
-    if 0 == donation_amt.len() {
+    if donation_amt.is_empty() {
         None
     } else {
         Some(donation_amt)
@@ -21,7 +20,6 @@ fn get_donation_amount() -> Option<String> {
 }
 
 /////////////////////////////////////////////////
-///
 fn set_donation_amount(value: &str) {
     let document = gloo::utils::document();
     document
@@ -32,7 +30,6 @@ fn set_donation_amount(value: &str) {
 }
 
 /////////////////////////////////////////////////
-///
 fn disable_submit_button(value: bool) {
     if let Some(btn) = web_sys::window()
         .unwrap()

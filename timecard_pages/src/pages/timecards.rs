@@ -16,8 +16,7 @@ thread_local! {
 }
 
 /////////////////////////////////////////////////
-///
-fn get_delivery_id() -> Option<u32> {
+fn get_selected_delivery_id() -> Option<u32> {
     let document = gloo::utils::document();
     let value = document
         .get_element_by_id("timeSheetSelectDeliveryDate")
@@ -25,7 +24,7 @@ fn get_delivery_id() -> Option<u32> {
         .unwrap()
         .value();
     log::info!("Delivery Date Selection Val: {}", &value);
-    if 0 == value.len() || "none" == value {
+    if value.is_empty() || "none" == value {
         None
     } else {
         value.parse::<u32>().ok()
@@ -33,7 +32,6 @@ fn get_delivery_id() -> Option<u32> {
 }
 
 /////////////////////////////////////////////////
-///
 fn server_time_to_display(server_time: &str) -> String {
     if server_time.len() == 8 {
         server_time[0..5].to_string()
@@ -43,7 +41,6 @@ fn server_time_to_display(server_time: &str) -> String {
 }
 
 /////////////////////////////////////////////////
-///
 fn get_uid_from_row(row_elm: &HtmlElement) -> String {
     row_elm.dataset().get("uid").unwrap()
 }
@@ -52,7 +49,9 @@ fn get_uid_from_row(row_elm: &HtmlElement) -> String {
 /////////////////////////////////////////////////
 #[function_component(Timecards)]
 pub fn timecards_page() -> Html {
-    let timecards_data_ready: yew::UseStateHandle<Option<Vec<(String, String, Option<TimeCard>)>>> =
+    // tuple of uid, user name, Timecard
+    type TimecardsDataType = (String, String, Option<TimeCard>);
+    let timecards_data_ready: yew::UseStateHandle<Option<Vec<TimecardsDataType>>> =
         use_state_eq(|| None);
     let is_delivery_date_selected = use_state_eq(|| false);
 
@@ -71,7 +70,7 @@ pub fn timecards_page() -> Html {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_delivery_selection_change");
-            if let Some(delivery_id) = get_delivery_id() {
+            if let Some(delivery_id) = get_selected_delivery_id() {
                 is_delivery_date_selected.set(true);
                 timecards_data_ready.set(None);
                 log::info!("Downloading timecard data for: {delivery_id}");
@@ -261,12 +260,12 @@ pub fn timecards_page() -> Html {
                     .ok()
                     .flatten()
                     .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                    .and_then(|t| {
+                    .map(|t| {
                         // log::info!("IEVal: {}", t.value());
-                        Some(t.value())
+                        t.value()
                     })
                 {
-                    if time_val_str.len() != 0 {
+                    if !time_val_str.is_empty() {
                         return format!("{}:00", time_val_str);
                     }
                 }
@@ -287,7 +286,7 @@ pub fn timecards_page() -> Html {
                     .and_then(|t| t.dyn_into::<HtmlElement>().ok())
                     .unwrap()
                     .inner_text();
-                if time_val_str.len() != 0 {
+                if !time_val_str.is_empty() {
                     format!("{}:00", time_val_str)
                 } else {
                     "".to_string()
@@ -305,11 +304,11 @@ pub fn timecards_page() -> Html {
                     &time_calc_val
                 );
 
-                let delivery_id = get_delivery_id().unwrap();
+                let selected_delivery_id = get_selected_delivery_id().unwrap();
                 //Save to cloud
                 let tc = TimeCard {
                     uid: uid.clone(),
-                    delivery_id: delivery_id,
+                    delivery_id: selected_delivery_id,
                     time_in: time_in_val,
                     time_out: time_out_val,
                     time_total: time_calc_val.clone(),
@@ -363,7 +362,7 @@ pub fn timecards_page() -> Html {
                         <div>{"Select a delivery date"}</div>
                     } else if let Some(timecards_data) = &*timecards_data_ready {
                         <ul class="list-group" id="timeSheet"> {
-                            timecards_data.into_iter().map(|(uid, user_name, tc)| {
+                            timecards_data.iter().map(|(uid, user_name, tc)| {
                                 let time_in_id = format!("timeInId-{}", &uid);
                                 let time_out_id = format!("timeOutId-{}", &uid);
                                 let time_calc_id = format!("timeCalcId-{}", &uid);

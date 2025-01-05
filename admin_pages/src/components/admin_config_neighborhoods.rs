@@ -13,7 +13,6 @@ thread_local! {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-//
 #[derive(Properties, PartialEq, Clone, Debug)]
 struct NeighborhoodAddEditDlgProps {
     onaddorupdate: Callback<Neighborhood>,
@@ -57,13 +56,12 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
             };
 
             let hood = Neighborhood {
-                name: name,
-                distribution_point: distribution_point,
+                name,
+                distribution_point,
                 is_visible: get_html_checked_input_value("frmDlgHoodIsVisible", &document),
                 city: get_html_input_value("frmDlgHoodCity", &document),
                 zipcode: get_html_input_value("frmDlgHoodZip", &document)
-                    .map(|v| v.parse::<u32>().ok())
-                    .flatten(),
+                    .and_then(|v| v.parse::<u32>().ok()),
             };
 
             onaddorupdate.emit(hood);
@@ -88,7 +86,7 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                                     <div class="form-check form-switch col-md">
                                         <input class="form-check-input" type="checkbox" id="frmDlgHoodIsVisible"
                                             required=true
-                                            checked={(*neighborhood).is_visible} />
+                                            checked={neighborhood.is_visible} />
                                         <label class="form-check-label" for="frmDlgHoodIsVisible">{"Is Visible"}</label>
                                     </div>
                                 </div>
@@ -96,8 +94,8 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                                     <div class="form-floating col-md">
                                         <input class="form-control" type="text" autocomplete="fr-new-neighborhood" id="frmDlgNeighborhood"
                                             required=true
-                                            readonly={(*neighborhood).name.len()!=0}
-                                            value={(*neighborhood).name.clone()} />
+                                            readonly={!neighborhood.name.is_empty()}
+                                            value={neighborhood.name.clone()} />
                                             <label for="frmDlgNeighborhood">{"Neighborhood"}</label>
                                     </div>
                                 </div>
@@ -105,14 +103,14 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                                     <div class="form-floating col-md">
                                         <input class="form-control" type="edit" autocomplete="fr-new-distpt" id="frmDlgHoodDistPt"
                                             required=true
-                                            value={(*neighborhood).distribution_point.clone()} />
+                                            value={neighborhood.distribution_point.clone()} />
                                         <label for="frmDlgHoodDistPt">{"Distribution Point"}</label>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="form-floating col-md">
                                         <input class="form-control" type="edit" autocomplete="fr-new-city" id="frmDlgHoodCity"
-                                            value={(*neighborhood).city.clone().unwrap_or("".to_string())} />
+                                            value={neighborhood.city.clone().unwrap_or("".to_string())} />
                                         <label for="frmDlgHoodCity">{"City"}</label>
                                     </div>
                                 </div>
@@ -120,7 +118,7 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                                     <div class="form-floating col-md">
                                         <input class="form-control" type="number" autocomplete="fr-new-zipcode" id="frmDlgHoodZip"
                                             pattern="[0-9]{5}"
-                                            value={(*neighborhood).zipcode.map(|v|v.to_string()).unwrap_or("".to_string())} />
+                                            value={neighborhood.zipcode.map(|v|v.to_string()).unwrap_or("".to_string())} />
                                         <label for="frmDlgHoodZip">{"Zipcode"}</label>
                                     </div>
                                 </div>
@@ -177,7 +175,6 @@ fn neighborhood_item(props: &NeighborhoodLiProps) -> Html {
 }
 
 /////////////////////////////////////////////////
-//
 fn get_selected_neighborhood(evt: MouseEvent) -> String {
     let btn_elm = evt
         .target()
@@ -197,7 +194,6 @@ fn get_selected_neighborhood(evt: MouseEvent) -> String {
 }
 
 /////////////////////////////////////////////////
-///
 fn disable_save_button(document: &web_sys::Document, value: bool) {
     if let Some(btn) = document
         .get_element_by_id("btnSaveUpdatedHoods")
@@ -281,9 +277,8 @@ pub(crate) fn neighborhood_list() -> Html {
             disable_save_button(&document, true);
             let updated_hoods = neighborhoods
                 .values()
-                .into_iter()
                 .filter_map(|(is_dirty, hood)| if *is_dirty { Some(hood.clone()) } else { None })
-                .collect::<Vec<Neighborhood>>();
+                .collect();
 
             let is_dirty = is_dirty.clone();
             wasm_bindgen_futures::spawn_local(async move {

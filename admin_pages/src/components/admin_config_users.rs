@@ -9,15 +9,21 @@ use wasm_bindgen::JsCast;
 use web_sys::{Element, FileList, HtmlButtonElement, HtmlElement, HtmlInputElement, MouseEvent};
 use yew::prelude::*;
 
+#[derive(PartialEq, Clone, Default, Debug)]
+struct SelectedUserType {
+    uid: String,
+    name: String,
+    group: String,
+}
+
 thread_local! {
-    static SELECTED_USER: Rc<RefCell<Option<UseStateHandle<(String, String, String)>>>> = Rc::new(RefCell::new(None));
+    static SELECTED_USER: Rc<RefCell<Option<UseStateHandle<SelectedUserType>>>> = Rc::new(RefCell::new(None));
 }
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
 /////////////////////////////////////////////////
-//
 #[derive(Properties, PartialEq, Clone, Debug)]
 struct UploadUsersDlgProps {
     onadd: Callback<Vec<UserAdminConfig>>,
@@ -33,7 +39,6 @@ struct UserCsvRecord {
 }
 
 /////////////////////////////////////////////////
-//
 fn process_csv_records(
     data: Vec<u8>,
     potential_new_users: &mut BTreeMap<String, UserCsvRecord>,
@@ -49,7 +54,7 @@ fn process_csv_records(
             .unwrap_or_else(|| {
                 format!(
                     "{}{}",
-                    record.first_name.trim().chars().nth(0).unwrap(),
+                    record.first_name.trim().chars().next().unwrap(),
                     record.last_name
                 )
             })
@@ -70,7 +75,7 @@ fn process_csv_records(
                 loop {
                     let new_id_candidate = format!("{}{}", new_id, idx);
                     if potential_new_users.contains_key(&new_id_candidate) {
-                        idx = idx + 1;
+                        idx += 1;
                         continue;
                     }
                     new_id = new_id_candidate;
@@ -85,8 +90,8 @@ fn process_csv_records(
 
 #[function_component(UploadUsersDlg)]
 fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
-    let users = use_state_eq(|| Vec::<UserAdminConfig>::new());
-    let dup_users = use_state_eq(|| Vec::<UserCsvRecord>::new());
+    let users = use_state_eq(Vec::<UserAdminConfig>::new);
+    let dup_users = use_state_eq(Vec::<UserCsvRecord>::new);
     let is_working = use_state_eq(|| false);
 
     let on_cancel = {
@@ -211,7 +216,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                         loop {
                             let new_id = format!("{}{}", k, idx);
                             if found_users.contains_key(&new_id) {
-                                idx = idx + 1;
+                                idx += 1;
                                 continue;
                             }
                             new_users.push(UserAdminConfig {
@@ -269,7 +274,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                                 <span class="spinner-border spinner-border-sm me-1" role="status"
                                 aria-hidden="true" style="display: block;" />
                             } else {
-                                if 0 != (*dup_users).len() {
+                                if !dup_users.is_empty() {
                                     <h6>{"Duplicate Users"}</h6>
                                     <ul class="list-group">
                                     {
@@ -284,7 +289,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                                     </ul>
                                 }
 
-                                if 0 != (*users).len() {
+                                if users.is_empty() {
                                     <h6>{"New Users"}</h6>
                                     <ul class="list-group">
                                     {
@@ -326,7 +331,7 @@ struct EditUserDlgProps {
 
 #[function_component(EditUserDlg)]
 fn edit_user_dlg(props: &EditUserDlgProps) -> Html {
-    let selected_user = use_state_eq(|| ("".to_string(), "".to_string(), "".to_string()));
+    let selected_user = use_state_eq(SelectedUserType::default);
     {
         let selected_user = selected_user.clone();
         SELECTED_USER.with(|rc| {
@@ -338,7 +343,7 @@ fn edit_user_dlg(props: &EditUserDlgProps) -> Html {
         let onupdate = props.onupdate.clone();
         let selected_user = selected_user.clone();
         move |_evt: MouseEvent| {
-            let (uid, name, _) = &*selected_user;
+            let SelectedUserType { uid, name, .. } = &*selected_user;
             let document = gloo::utils::document();
             let group = document
                 .get_element_by_id("formEditUserGroup")
@@ -349,7 +354,7 @@ fn edit_user_dlg(props: &EditUserDlgProps) -> Html {
         }
     };
 
-    let (uid, name, group) = &*selected_user;
+    let SelectedUserType { uid, name, group } = &*selected_user;
 
     html! {
         <div class="modal fade" id="editUserDlg"
@@ -433,7 +438,6 @@ fn user_item(props: &UserLiProps) -> Html {
 }
 
 /////////////////////////////////////////////////
-//
 fn get_selected_user(evt: MouseEvent) -> String {
     let btn_elm = evt
         .target()
@@ -453,7 +457,6 @@ fn get_selected_user(evt: MouseEvent) -> String {
 }
 
 /////////////////////////////////////////////////
-///
 fn disable_save_button(document: &web_sys::Document, value: bool) {
     if let Some(btn) = document
         .get_element_by_id("btnSaveUsersConfigUpdates")
@@ -472,9 +475,9 @@ fn disable_save_button(document: &web_sys::Document, value: bool) {
 
 #[function_component(UsersUl)]
 pub(crate) fn user_list() -> Html {
-    let users = use_state_eq(|| BTreeMap::<String, UserAdminConfig>::new());
+    let users = use_state_eq(BTreeMap::<String, UserAdminConfig>::new);
     let is_dirty = use_state_eq(|| false);
-    let dirty_entries = use_mut_ref(|| std::collections::HashSet::<String>::new());
+    let dirty_entries = use_mut_ref(std::collections::HashSet::<String>::new);
 
     let on_upload_users_dlg_submit = {
         let is_dirty = is_dirty.clone();
@@ -501,7 +504,7 @@ pub(crate) fn user_list() -> Html {
             log::info!("Done Editing User: {}, \"{}\", \"{}\"", &uid, &name, &group);
             let mut users_map = (*users).clone();
             let mut user_info = users_map.get(&uid).unwrap().clone();
-            if &user_info.group != &group {
+            if user_info.group.ne(&group) {
                 user_info.group = group;
                 users_map.insert(uid.clone(), user_info);
                 users.set(users_map);
@@ -527,8 +530,11 @@ pub(crate) fn user_list() -> Html {
             log::info!("Editing User: {} {} {}", &uid, &name, &user_info.group);
 
             SELECTED_USER.with(|rc| {
-                let selected_user = rc.borrow().as_ref().unwrap().clone();
-                selected_user.set((uid.clone(), name, user_info.group.clone()));
+                rc.borrow().as_ref().unwrap().set(SelectedUserType {
+                    uid: uid.clone(),
+                    name,
+                    group: user_info.group.clone(),
+                });
             });
             let dlg = bootstrap::get_modal_by_id("editUserDlg").unwrap();
             dlg.toggle();
@@ -567,7 +573,7 @@ pub(crate) fn user_list() -> Html {
     {
         let users = users.clone();
         use_effect(move || {
-            if (*users).len() == 0 {
+            if users.is_empty() {
                 wasm_bindgen_futures::spawn_local(async move {
                     log::info!("Getting user list from cloud");
                     match get_users_for_admin_config().await {

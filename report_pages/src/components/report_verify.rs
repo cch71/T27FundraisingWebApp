@@ -22,7 +22,7 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
-    if &*current_view_seller.borrow() != &props.seller {
+    if (*current_view_seller.borrow()).ne(&props.seller) {
         log::info!(
             "Current Seller doesn't match original seller: {}:{}",
             *current_view_seller.borrow(),
@@ -55,7 +55,7 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
                         log::info!("Downloading Verification Report View Data for {}", &seller);
-                        let seller = if &seller == ALL_USERS_TAG {
+                        let seller = if seller.eq(ALL_USERS_TAG) {
                             None
                         } else {
                             Some(seller)
@@ -110,12 +110,12 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
                         </thead>
                         <tbody>
                         {
-                            orders.into_iter().map(|v|{
+                            orders.iter().map(|v|{
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => ("Donation".to_string(), "Donation".to_string()),
                                 };
-                                let is_readonly = is_order_from_report_data_readonly(&v);
+                                let is_readonly = is_order_from_report_data_readonly(v);
                                 let uid = v["ownerId"].as_str().unwrap();
                                 html!{
                                     <tr>

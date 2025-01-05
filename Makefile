@@ -3,7 +3,7 @@ build:
 	cargo build
 
 serve:
-	cargo watch -c -- trunk serve
+	watchexec -r trunk serve
 
 clean:
 	cargo clean

@@ -51,8 +51,8 @@ pub struct PurchasedItem {
 impl PurchasedItem {
     pub fn new(num_sold: u32, amount_charged: String) -> Self {
         Self {
-            num_sold: num_sold,
-            amount_charged: amount_charged,
+            num_sold,
+            amount_charged,
         }
     }
 }
@@ -125,7 +125,7 @@ impl MulchOrder {
 
     pub fn get_num_sold(&self, product_id: &str) -> Option<u32> {
         match self.purchases.as_ref() {
-            Some(purchases) => purchases.get(product_id).map_or(None, |v| Some(v.num_sold)),
+            Some(purchases) => purchases.get(product_id).map(|v| v.num_sold),
             None => None,
         }
     }
@@ -178,12 +178,8 @@ impl MulchOrder {
                 }
             }
             true
-        } else if self.amount_checks_collected.is_none() && self.check_numbers.is_some() {
-            false
-        } else if self.amount_checks_collected.is_some() && self.check_numbers.is_none() {
-            false
         } else {
-            true
+            !(self.amount_checks_collected.is_none() && self.check_numbers.is_some())
         }
     }
 
@@ -244,10 +240,11 @@ pub fn reset_active_order() {
 }
 
 pub fn get_active_order() -> Option<MulchOrder> {
-    match &*ACTIVE_ORDER.read().unwrap() {
-        Some(order_state) => Some(order_state.order.clone()),
-        None => None,
-    }
+    ACTIVE_ORDER
+        .read()
+        .unwrap()
+        .as_ref()
+        .map(|v| v.order.clone())
 }
 
 pub fn update_active_order(
@@ -262,12 +259,12 @@ pub fn update_active_order(
     Ok(())
 }
 
-pub async fn submit_active_order() -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn gen_submit_active_order_req_str() -> std::result::Result<String, Box<dyn std::error::Error>> {
     let order_state_opt = ACTIVE_ORDER.write()?;
     let order_state = order_state_opt.as_ref().unwrap();
     if !order_state.is_dirty {
         log::info!("Order doesn't need updating so not submitting");
-        return Ok(());
+        return Ok("".to_string());
     }
 
     let order = &order_state.order;
@@ -396,7 +393,17 @@ pub async fn submit_active_order() -> std::result::Result<(), Box<dyn std::error
     query.push_str("\t\t }\n");
 
     query.push_str("\t})\n");
-    query.push_str("}");
+    query.push('}');
+    Ok(query)
+}
+
+pub async fn submit_active_order() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let query = gen_submit_active_order_req_str()?;
+
+    if query.is_empty() {
+        // If a query wasn't generated then we don't need to submit it
+        return Ok(());
+    }
 
     log::info!("Submitting Request:\n{}", &query);
 
@@ -407,7 +414,7 @@ pub async fn submit_active_order() -> std::result::Result<(), Box<dyn std::error
         .map(|_| ())
 }
 
-static DELETE_ORDER_GQL: &'static str = r"
+static DELETE_ORDER_GQL: &str = r"
 mutation {
   deleteMulchOrder(***ORDER_ID_PARAM***)
 }
@@ -426,7 +433,7 @@ pub async fn delete_order(order_id: &str) -> std::result::Result<(), Box<dyn std
         .map(|_| ())
 }
 
-static LOAD_ORDER_GQL: &'static str = r"
+static LOAD_ORDER_GQL: &str = r"
 {
   mulchOrder(***ORDER_ID_PARAM***) {
     orderId
@@ -537,9 +544,8 @@ pub async fn load_active_order_from_db(
             is_verified: order.is_verified,
             customer: order.customer,
             delivery_id: order.delivery_id,
-            purchases: order.purchases.and_then(|v| {
-                let purchases = v
-                    .into_iter()
+            purchases: order.purchases.map(|v| {
+                v.into_iter()
                     .map(|i| {
                         (
                             i.product_id,
@@ -549,8 +555,7 @@ pub async fn load_active_order_from_db(
                             },
                         )
                     })
-                    .collect();
-                Some(purchases)
+                    .collect()
             }),
             ..Default::default()
         },
@@ -573,7 +578,7 @@ pub async fn load_active_order_from_db(
 //     })
 // }
 
-static SET_SPREADERS_GQL: &'static str = r"
+static SET_SPREADERS_GQL: &str = r"
 mutation {
   setSpreaders(
     ***ORDER_ID_PARAM***,
@@ -592,7 +597,7 @@ pub async fn set_spreaders(
         &spreaders
     );
     let spreaders = spreaders
-        .into_iter()
+        .iter()
         .map(|v| format!("\"{}\"", v))
         .collect::<Vec<String>>()
         .join(",");
@@ -610,7 +615,7 @@ pub async fn set_spreaders(
         .map(|_| ())
 }
 
-static TROOP_ORDER_AMOUNT_COLLECTED_GQL: &'static str = r"
+static TROOP_ORDER_AMOUNT_COLLECTED_GQL: &str = r"
 {
   summary {
     troop(numTopSellers: 1) {

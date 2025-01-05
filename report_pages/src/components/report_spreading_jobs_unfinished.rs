@@ -57,7 +57,7 @@ pub(crate) fn report_quick_view() -> Html {
                         </thead>
                         <tbody>
                         {
-                            resp.into_iter().map(|v|{
+                            resp.iter().map(|v|{
                                 let owner_id = v["ownerId"].as_str().unwrap();
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),

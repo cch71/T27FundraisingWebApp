@@ -110,12 +110,12 @@ fn gen_summary_html(full_summary: &SummaryReport) -> Html {
     summary_html.into_iter().collect::<Html>()
 }
 
-fn gen_top_sellers_html(top_sellers: &Vec<TopSeller>) -> Html {
+fn gen_top_sellers_html(top_sellers: &[TopSeller]) -> Html {
     let mut ranking = 0;
     top_sellers
-        .into_iter()
+        .iter()
         .map(|seller| {
-            ranking = ranking + 1;
+            ranking += 1;
             html! {
                 <tr>
                     <td class="py-1">{ranking.to_string()}</td>
@@ -160,20 +160,18 @@ pub fn home_page() -> Html {
 
     let fundraiser_sales_finished_msg = if are_sales_still_allowed() {
         html! {}
+    } else if !is_fundraiser_finalized() {
+        html! {
+            <div style="color: red;">
+                <b>{"(The order phase has concluded. Contact the fundrasier admin for new orders/changes)"}</b>
+            </div>
+        }
     } else {
-        if !is_fundraiser_finalized() {
-            html! {
-                <div style="color: red;">
-                    <b>{"(The order phase has concluded. Contact the fundrasier admin for new orders/changes)"}</b>
-                </div>
-            }
-        } else {
-            // Fundraiser is finished and allocations have been distributed
-            html! {
-                <div style="color: red;">
-                    <b>{"(The fundraiser is now closed and funds have been released)"}</b>
-                </div>
-            }
+        // Fundraiser is finished and allocations have been distributed
+        html! {
+            <div style="color: red;">
+                <b>{"(The fundraiser is now closed and funds have been released)"}</b>
+            </div>
         }
     };
 
@@ -194,7 +192,7 @@ pub fn home_page() -> Html {
     let (summary_html, top_sellers_html) = {
         if let Some(summary) = (*summary_values).as_ref() {
             (
-                gen_summary_html(&summary),
+                gen_summary_html(summary),
                 gen_top_sellers_html(&summary.troop_summary.top_sellers),
             )
         } else {

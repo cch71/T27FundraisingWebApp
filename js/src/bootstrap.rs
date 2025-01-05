@@ -3,6 +3,7 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = bootstrap)]
+    #[derive(Clone, Debug)]
     pub type Modal;
 
     #[wasm_bindgen(constructor, js_namespace = bootstrap)]
@@ -20,5 +21,7 @@ extern "C" {
 }
 
 pub fn get_modal_by_id(id: &str) -> Option<Modal> {
-    gloo::utils::document().get_element_by_id(id).and_then(|v| Some(Modal::new(v)))
+    gloo::utils::document()
+        .get_element_by_id(id)
+        .map(Modal::new)
 }

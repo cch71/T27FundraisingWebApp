@@ -12,7 +12,6 @@ use web_sys::{HtmlButtonElement, HtmlElement, MouseEvent};
 /////////////////////////////////////////////////
 
 /////////////////////////////////////////////////
-///
 fn disable_reset_button(document: &web_sys::Document, value: bool) {
     if let Some(btn) = document
         .get_element_by_id("btnResetFrData")

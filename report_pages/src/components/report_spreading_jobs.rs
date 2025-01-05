@@ -23,7 +23,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
-    if &*current_view_seller.borrow() != &props.seller {
+    if (*current_view_seller.borrow()).ne(&props.seller) {
         log::info!(
             "Current Seller doesn't match original seller: {}:{}",
             *current_view_seller.borrow(),
@@ -66,7 +66,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                             "Downloading Spreading Jobs Report View Data for {}",
                             &seller
                         );
-                        let seller = if &seller == ALL_USERS_TAG {
+                        let seller = if seller.eq(ALL_USERS_TAG) {
                             None
                         } else {
                             Some(seller)
@@ -84,7 +84,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                         *datatable.borrow_mut() = get_datatable(&serde_json::json!({
                             "reportType": "spreadingJobs",
                             "id": ".data-table-report table",
-                            "showOrderOwner": &seller != &get_active_user().get_id(),
+                            "showOrderOwner": seller.ne(&get_active_user().get_id()),
                             "isMulchOrder": true
                         }));
                     }
@@ -121,7 +121,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                         </thead>
                         <tbody>
                         {
-                            orders.into_iter().map(|v|{
+                            orders.iter().map(|v|{
                                 let spreading = v["purchases"].as_array().unwrap_or(&Vec::new())
                                     .iter()
                                     .find(|&v| v["productId"].as_str().unwrap() == "spreading")
@@ -138,9 +138,9 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                 let address = format!("{} {}",
                                     v["customer"]["addr1"].as_str().unwrap(),
                                     v["customer"]["addr2"].as_str().unwrap_or("")).trim().to_string();
-                                let is_readonly = is_order_from_report_data_readonly(&v);
+                                let is_readonly = is_order_from_report_data_readonly(v);
                                 let spreaders: String = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
-                                    .unwrap_or(Vec::new())
+                                    .unwrap_or_default()
                                     .join(",");
                                 html!{
                                     <tr>

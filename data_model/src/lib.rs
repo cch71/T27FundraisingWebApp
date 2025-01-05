@@ -19,8 +19,7 @@ use web_sys::{HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement};
 use yew_router::prelude::*;
 
 /////////////////////////////////////////////////
-pub const CLOUD_API_URL: &'static str =
-    "https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod";
+pub const CLOUD_API_URL: &str = "https://j0azby8rm6.execute-api.us-east-1.amazonaws.com/prod";
 
 /////////////////////////////////////////////////
 pub const NUM_TOP_SELLERS_TO_GET: u8 = 25;
@@ -51,7 +50,6 @@ pub enum AppRoutes {
 }
 
 /////////////////////////////////////////////////
-///
 pub fn save_to_active_order() {
     if !is_active_order() {
         return;
@@ -105,14 +103,13 @@ pub fn save_to_active_order() {
 }
 
 /////////////////////////////////////////////////
-///
 pub fn get_html_input_value(id: &str, document: &web_sys::Document) -> Option<String> {
     let value = document
         .get_element_by_id(id)
         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
         .unwrap()
         .value();
-    if 0 == value.len() {
+    if value.is_empty() {
         None
     } else {
         Some(value)
@@ -120,7 +117,6 @@ pub fn get_html_input_value(id: &str, document: &web_sys::Document) -> Option<St
 }
 
 /////////////////////////////////////////////////
-///
 pub fn get_html_checked_input_value(id: &str, document: &web_sys::Document) -> bool {
     document
         .get_element_by_id(id)
@@ -130,14 +126,13 @@ pub fn get_html_checked_input_value(id: &str, document: &web_sys::Document) -> b
 }
 
 /////////////////////////////////////////////////
-///
 pub fn get_html_textarea_value(id: &str, document: &web_sys::Document) -> Option<String> {
     let value = document
         .get_element_by_id(id)
         .and_then(|t| t.dyn_into::<HtmlTextAreaElement>().ok())
         .unwrap()
         .value();
-    if 0 == value.len() {
+    if value.is_empty() {
         None
     } else {
         Some(value)

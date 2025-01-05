@@ -6,9 +6,15 @@ use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlButtonElement, HtmlElement, HtmlInputElement, MouseEvent};
 use yew::prelude::*;
 
+#[derive(PartialEq, Clone, Debug, Default)]
+struct SelectedDeliveryInfo {
+    delivery_id_str: String,
+    delivery_date_str: String,
+    cutoff_date_str: String,
+}
+
 thread_local! {
-    //Tuple of Devlivery ID, Delivery Data, Cutoff Date
-    static SELECTED_DELIVERY: Rc<RefCell<Option<UseStateHandle<(String, String, String)>>>> = Rc::new(RefCell::new(None));
+    static SELECTED_DELIVERY: Rc<RefCell<Option<UseStateHandle<SelectedDeliveryInfo>>>> = Rc::new(RefCell::new(None));
 }
 
 /////////////////////////////////////////////////
@@ -24,7 +30,7 @@ struct DeliveryAddEditDlgProps {
 #[function_component(DeliveryAddEditDlg)]
 fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html {
     //Tuple of Devlivery ID, Delivery Data, Cutoff Date
-    let delivery_info = use_state_eq(|| ("".to_string(), "".to_string(), "".to_string()));
+    let delivery_info = use_state_eq(SelectedDeliveryInfo::default);
     // let delivery_date_str = use_state_eq(|| "".to_string());
     // let cutoff_date_str = use_state_eq(|| "".to_string());
 
@@ -52,7 +58,7 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html {
                 .unwrap()
                 .value();
             onaddorupdate.emit((
-                (*delivery_info).0.parse::<u32>().unwrap(),
+                delivery_info.delivery_id_str.parse::<u32>().unwrap(),
                 delivery_date,
                 order_cutoff_date,
             ));
@@ -74,14 +80,14 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html {
                         <div class="container-sm">
                             <div class="row">
                                 <div class="form-floating col-md">
-                                    <div>{format!("Delivery ID: {}", &(*delivery_info).0)}</div>
+                                    <div>{format!("Delivery ID: {}", &delivery_info.delivery_id_str)}</div>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="form-floating col-md">
                                     <input class="form-control" type="date" autocomplete="fr-order-cutoff-date" id="formOrderCutoffDate"
                                         required=true
-                                        value={(*delivery_info).2.clone()} />
+                                        value={delivery_info.cutoff_date_str.clone()} />
                                     <label for="formOrderCutoffDate">{"New Order Cutoff Date"}</label>
                                 </div>
                             </div>
@@ -89,7 +95,7 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html {
                                 <div class="form-floating col-md">
                                     <input class="form-control" type="date" autocomplete="fr-new-delivery-date" id="formDeliveryDate"
                                         required=true
-                                        value={(*delivery_info).1.clone()} />
+                                        value={delivery_info.delivery_date_str.clone()} />
                                         <label for="formDeliveryDate">{"Delivery Date"}</label>
                                 </div>
                             </div>
@@ -108,7 +114,6 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html {
 }
 
 /////////////////////////////////////////////////
-//
 #[derive(Properties, PartialEq, Clone, Debug)]
 struct DeliveryLiProps {
     deliveryid: u32,
@@ -119,7 +124,6 @@ struct DeliveryLiProps {
 }
 
 /////////////////////////////////////////////////
-//
 #[function_component(DeliveryLi)]
 fn delivery_item(props: &DeliveryLiProps) -> Html {
     html! {
@@ -146,7 +150,6 @@ fn delivery_item(props: &DeliveryLiProps) -> Html {
 }
 
 /////////////////////////////////////////////////
-//
 fn get_delivery_id(evt: MouseEvent) -> u32 {
     let btn_elm = evt
         .target()
@@ -170,7 +173,6 @@ fn get_delivery_id(evt: MouseEvent) -> u32 {
 }
 
 /////////////////////////////////////////////////
-///
 fn disable_save_button(document: &web_sys::Document, value: bool, with_spinner: bool) {
     if let Some(btn) = document
         .get_element_by_id("btnSaveDeliveries")
@@ -188,7 +190,6 @@ fn disable_save_button(document: &web_sys::Document, value: bool, with_spinner: 
 }
 
 /////////////////////////////////////////////////
-//
 #[function_component(DeliveryUl)]
 pub(crate) fn delivery_list() -> Html {
     let deliveries = use_state(|| (*get_deliveries()).clone());
@@ -233,7 +234,10 @@ pub(crate) fn delivery_list() -> Html {
             SELECTED_DELIVERY.with(|selected_delivery_rc| {
                 let selected_delivery = selected_delivery_rc.borrow().as_ref().unwrap().clone();
                 let delivery_id_str = (deliveries.len() + 1).to_string();
-                selected_delivery.set((delivery_id_str, "".to_string(), "".to_string()));
+                selected_delivery.set(SelectedDeliveryInfo {
+                    delivery_id_str,
+                    ..Default::default()
+                });
             });
 
             let dlg = bootstrap::get_modal_by_id("deliveryAddOrEditDlg").unwrap();
@@ -252,7 +256,11 @@ pub(crate) fn delivery_list() -> Html {
                 let cutoff_date_str = di.get_new_order_cutoff_date_str();
                 let selected_delivery = selected_delivery_rc.borrow().as_ref().unwrap().clone();
                 let delivery_id_str = delivery_id.to_string();
-                selected_delivery.set((delivery_id_str, delivery_date_str, cutoff_date_str));
+                selected_delivery.set(SelectedDeliveryInfo {
+                    delivery_id_str,
+                    delivery_date_str,
+                    cutoff_date_str,
+                });
             });
             let dlg = bootstrap::get_modal_by_id("deliveryAddOrEditDlg").unwrap();
             dlg.toggle();

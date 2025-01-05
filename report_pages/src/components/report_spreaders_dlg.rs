@@ -14,6 +14,7 @@ thread_local! {
     static DLG_STATE: Rc<RefCell<Option<UseStateHandle<SelectionState>>>> = Rc::new(RefCell::new(None));
 }
 
+#[derive(Clone, Debug)]
 struct DlgMeta {
     datatable: JsValue,
     dlg: bootstrap::Modal,
@@ -24,7 +25,6 @@ struct DlgMeta {
 }
 
 /////////////////////////////////////////////////
-///
 pub(crate) fn on_edit_spreading_from_rpt(
     evt: MouseEvent,
     datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>>,
@@ -44,25 +44,24 @@ pub(crate) fn on_edit_spreading_from_rpt(
         })
         .unwrap();
 
-    let tr_node = btn_elm.parent_node().and_then(|t| t.parent_node()).unwrap();
+    let table_row_node = btn_elm.parent_node().and_then(|t| t.parent_node()).unwrap();
     let elm = btn_elm.dyn_into::<HtmlElement>().ok().unwrap();
 
-    let order_id = elm.dataset().get("orderid").unwrap();
+    let order_id_str = elm.dataset().get("orderid").unwrap();
     let users = get_users();
     let spreaders: BTreeMap<String, String> = elm
         .dataset()
         .get("spreaders")
-        .unwrap_or("".to_string())
+        .unwrap_or_default()
         .split(",")
-        .into_iter()
         .map(|v| {
             (
                 v.to_string(),
                 users.get(v).map_or(v.to_string(), |ui| ui.name.to_string()),
             )
         })
-        .collect::<_>();
-    log::info!("on_edit_spreading: {}", order_id);
+        .collect();
+    log::info!("on_edit_spreading: {}", order_id_str);
 
     let dlg = bootstrap::get_modal_by_id("spreadingDlg").unwrap();
 
@@ -70,11 +69,11 @@ pub(crate) fn on_edit_spreading_from_rpt(
         *f.borrow_mut() = Some(DlgMeta {
             datatable: (*datatable.borrow().as_ref().unwrap()).clone(),
             dlg: dlg.clone().dyn_into::<bootstrap::Modal>().unwrap(),
-            tr_node: tr_node,
-            order_id: order_id,
+            tr_node: table_row_node,
+            order_id: order_id_str,
             selected_users: spreaders
                 .into_iter()
-                .filter(|(_id, name)| 0 != name.len())
+                .filter(|(_id, name)| !name.is_empty())
                 .collect(),
             dataset_elm: elm,
         });
@@ -138,7 +137,8 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
                 let dlg_state = dlg_state.clone();
                 let metarc = metarc.clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    if let Some(meta) = &*metarc.borrow() {
+                    let maybe_meta = metarc.borrow().as_ref().map(|v| v.clone());
+                    if let Some(meta) = maybe_meta {
                         let spreaders: Vec<String> =
                             meta.selected_users.keys().cloned().collect::<_>();
                         if let Err(err) = set_spreaders(&meta.order_id, &spreaders).await {

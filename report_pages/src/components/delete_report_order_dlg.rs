@@ -10,6 +10,7 @@ thread_local! {
     static CHOPPING_BLOCK: Rc<RefCell<Option<OrderToDelete>>> = Rc::new(RefCell::new(None));
 }
 
+#[derive(Clone)]
 struct OrderToDelete {
     datatable: JsValue,
     delete_dlg: bootstrap::Modal,
@@ -18,7 +19,6 @@ struct OrderToDelete {
 }
 
 /////////////////////////////////////////////////
-///
 pub(crate) fn on_delete_order_from_rpt(
     evt: MouseEvent,
     datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>>,
@@ -43,13 +43,13 @@ pub(crate) fn on_delete_order_from_rpt(
     //         log::info!("{}: {}: {}", idx, attr.name(), attr.value());
     //     }
     // }
-    let tr_node = btn_elm.parent_node().and_then(|t| t.parent_node()).unwrap();
-    let order_id = btn_elm
+    let table_row_node = btn_elm.parent_node().and_then(|t| t.parent_node()).unwrap();
+    let order_id_str = btn_elm
         .dyn_into::<HtmlElement>()
         .ok()
         .and_then(|t| t.dataset().get("orderid"))
         .unwrap();
-    log::info!("on_delete_order: {}", order_id);
+    log::info!("on_delete_order: {}", order_id_str);
 
     let dlg = bootstrap::get_modal_by_id("deleteOrderDlg").unwrap();
 
@@ -57,8 +57,8 @@ pub(crate) fn on_delete_order_from_rpt(
         *f.borrow_mut() = Some(OrderToDelete {
             datatable: (*datatable.borrow().as_ref().unwrap()).clone(),
             delete_dlg: dlg.clone().dyn_into::<bootstrap::Modal>().unwrap(),
-            tr_node: tr_node,
-            order_id: order_id,
+            tr_node: table_row_node,
+            order_id: order_id_str,
         });
     });
 
@@ -99,20 +99,28 @@ pub(crate) fn delete_order_confirmation_dlg() -> Html {
                 .unwrap()
                 .set_disabled(true);
             //.and_then(|t| t.set_disabled(true));
-            CHOPPING_BLOCK.with(|f|{
-                let f=f.clone();
+            CHOPPING_BLOCK.with(|f| {
+                let f = f.clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    if let Some(to_delete) = &*f.borrow() {
+                    let maybe_to_delete_order = f.borrow().as_ref().map(|v| v.clone());
+                    if let Some(to_delete) = maybe_to_delete_order {
                         if let Err(err) = delete_order(&to_delete.order_id).await {
-                            gloo::dialogs::alert(&format!("Failed to delete order in the cloud: {:#?}", err));
-                        } else {
-                            if let Err(err) = remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node) {
-                                gloo::dialogs::alert(&format!("Order was deleted from the cloud but not the local table: {:#?}", err));
-                            }
+                            gloo::dialogs::alert(&format!(
+                                "Failed to delete order in the cloud: {:#?}",
+                                err
+                            ));
+                        } else if let Err(err) =
+                            remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node)
+                        {
+                            gloo::dialogs::alert(&format!(
+                                "Order was deleted from the cloud but not the local table: {:#?}",
+                                err
+                            ));
                         }
 
                         to_delete.delete_dlg.hide();
-                        gloo::utils::document().get_element_by_id("confirmDeleteOrderInput")
+                        gloo::utils::document()
+                            .get_element_by_id("confirmDeleteOrderInput")
                             .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                             .unwrap()
                             .set_value("");
@@ -121,7 +129,8 @@ pub(crate) fn delete_order_confirmation_dlg() -> Html {
 
                     evt.target()
                         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
-                        .unwrap().set_disabled(false);
+                        .unwrap()
+                        .set_disabled(false);
                 });
             });
         })

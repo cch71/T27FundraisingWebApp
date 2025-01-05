@@ -11,9 +11,9 @@ pub(super) struct GraphQlReq {
 }
 impl GraphQlReq {
     pub fn new<T: AsRef<str>>(query: T) -> Self {
-        return Self {
+        Self {
             query: query.as_ref().to_string(),
-        };
+        }
     }
 }
 
@@ -30,7 +30,7 @@ where
     }
 
     // log::info!("Bearer Token: {}", get_active_user().token);
-    let raw_resp: serde_json::Value = Request::post(&*GQLURL)
+    let raw_resp: serde_json::Value = Request::post(&GQLURL)
         .header("Content-Type", "application/json")
         .header(
             "Authorization",

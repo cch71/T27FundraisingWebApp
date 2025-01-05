@@ -10,7 +10,6 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 /////////////////////////////////////////////////
-///
 fn set_html_input_value(id: &str, document: &web_sys::Document, value: &str) {
     document
         .get_element_by_id(id)
@@ -20,31 +19,26 @@ fn set_html_input_value(id: &str, document: &web_sys::Document, value: &str) {
 }
 
 /////////////////////////////////////////////////
-///
 fn get_cash_amount_collected(document: &web_sys::Document) -> Option<String> {
     get_html_input_value("formCashPaid", document)
 }
 
 /////////////////////////////////////////////////
-///
 fn get_check_amount_collected(document: &web_sys::Document) -> Option<String> {
     get_html_input_value("formCheckPaid", document)
 }
 
 /////////////////////////////////////////////////
-///
 fn set_cash_amount_collected(document: &web_sys::Document, value: &str) {
     set_html_input_value("formCashPaid", document, value)
 }
 
 /////////////////////////////////////////////////
-///
 fn set_check_amount_collected(document: &web_sys::Document, value: &str) {
     set_html_input_value("formCheckPaid", document, value)
 }
 
 /////////////////////////////////////////////////
-///
 fn disable_submit_button(document: &web_sys::Document, value: bool, with_spinner: bool) {
     if let Some(btn) = document
         .get_element_by_id("formOrderSubmit")
@@ -62,7 +56,6 @@ fn disable_submit_button(document: &web_sys::Document, value: bool, with_spinner
 }
 
 /////////////////////////////////////////////////
-///
 fn disable_cancel_button(document: &web_sys::Document, value: bool) {
     document
         .get_element_by_id("formOrderCancel")
@@ -72,7 +65,6 @@ fn disable_cancel_button(document: &web_sys::Document, value: bool) {
 }
 
 /////////////////////////////////////////////////
-///
 fn update_order_amount_due_element(order: &MulchOrder, document: &web_sys::Document) {
     let total_to_collect = order.get_total_to_collect();
     document
@@ -83,20 +75,17 @@ fn update_order_amount_due_element(order: &MulchOrder, document: &web_sys::Docum
 }
 
 /////////////////////////////////////////////////
-///
 fn update_city_and_zip<T: AsRef<str>>(city: T, zipcode: T, document: &web_sys::Document) {
     set_html_input_value("formZipcode", document, zipcode.as_ref());
     set_html_input_value("formCity", document, city.as_ref());
 }
 
 /////////////////////////////////////////////////
-///
 fn update_addr1(addr: String, document: &web_sys::Document) {
     set_html_input_value("formAddr1", document, addr.as_str());
 }
 
 /////////////////////////////////////////////////
-///
 fn validate_order_form(document: &web_sys::Document) -> bool {
     save_to_active_order();
     let order = get_active_order().unwrap();
@@ -140,11 +129,9 @@ fn validate_order_form(document: &web_sys::Document) -> bool {
         {
             //log::info!("Validationg ID: {}", element.id());
             let is_form_element_valid = {
-                if let Some(form_element) = element.clone().dyn_into::<HtmlInputElement>().ok() {
+                if let Ok(form_element) = element.clone().dyn_into::<HtmlInputElement>() {
                     form_element.check_validity()
-                } else if let Some(form_element) =
-                    element.clone().dyn_into::<HtmlSelectElement>().ok()
-                {
+                } else if let Ok(form_element) = element.clone().dyn_into::<HtmlSelectElement>() {
                     form_element.check_validity() && form_element.value() != ""
                 } else {
                     false
@@ -283,7 +270,7 @@ pub fn hood_selector() -> Html {
             let hood_value = evt
                 .target()
                 .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok());
-            hood_value.map(|v| {
+            if let Some(v) = hood_value {
                 let val = v.value();
                 if val.starts_with("Out of Area") {
                     log::info!("Is Out Of Area");
@@ -296,7 +283,7 @@ pub fn hood_selector() -> Html {
                     log::info!("Using Neighborhood City: {}, Zipcode: {}", &city, zipcode);
                     update_city_and_zip(&city, &zipcode.to_string(), &gloo::utils::document());
                 }
-            });
+            };
         })
     };
 
@@ -360,7 +347,7 @@ pub fn order_form_fields() -> Html {
     // log::info!("Loading Order: {:#?}", &*order);
 
     let amount_due_str = use_state_eq(|| "$0.00".to_owned());
-    let amount_collected_str = match (*order).amount_total_collected.as_ref() {
+    let amount_collected_str = match order.amount_total_collected.as_ref() {
         None => "$0.00".to_string(),
         Some(v) => to_money_str(Some(v)),
     };
@@ -577,7 +564,7 @@ pub fn order_form_fields() -> Html {
                              }).collect::<Html>()
                          }
                          if !did_find_selected_order_owner {
-                             if order.order_owner_id.len() == 0 {
+                             if order.order_owner_id.is_empty() {
                                  <option value="none" selected=true disabled=true hidden=true>{
                                      "Select Order Owner (DNE. Report Issue)"}
                                  </option>
@@ -622,7 +609,7 @@ pub fn order_form_fields() -> Html {
                 </div>
                 <div class="form-floating col-md-2" id="formPhoneFloatDiv">
                     <input class="form-control" type="tel" autocomplete="fr-new-cust-info" id="formPhone"
-                           pattern="[0-9]{3}[-|.]{0,1}[0-9]{3}[-|.]{0,1}[0-9]{4}"
+                           pattern=r#"[0-9]{3}[\-\|.]?[0-9]{3}[\-\|.]?[0-9]{4}"#
                            placeholder="Phone" required=true
                            value={order.customer.phone.clone()} />
                     <label for="formPhone">

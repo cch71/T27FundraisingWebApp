@@ -8,7 +8,6 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 /////////////////////////////////////////////////
-///
 fn disable_submit_button(value: bool) {
     if let Some(btn) = web_sys::window()
         .unwrap()
@@ -22,7 +21,6 @@ fn disable_submit_button(value: bool) {
 }
 
 /////////////////////////////////////////////////
-///
 fn get_delivery_id(document: &web_sys::Document) -> Option<String> {
     let value = document
         .get_element_by_id("formSelectDeliveryDate")
@@ -30,7 +28,7 @@ fn get_delivery_id(document: &web_sys::Document) -> Option<String> {
         .unwrap()
         .value();
     log::info!("Delivery Date Selection Val: {}", &value);
-    if 0 == value.len() || "none" == value {
+    if value.is_empty() || "none" == value {
         None
     } else {
         Some(value)
@@ -38,7 +36,6 @@ fn get_delivery_id(document: &web_sys::Document) -> Option<String> {
 }
 
 /////////////////////////////////////////////////
-///
 fn get_product_items(document: &web_sys::Document) -> HashMap<String, PurchasedItem> {
     let mut product_map = HashMap::new();
     if let Ok(product_nodes) = document.query_selector_all("input[data-productid]") {
@@ -51,7 +48,7 @@ fn get_product_items(document: &web_sys::Document) -> HashMap<String, PurchasedI
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
             {
                 let value = element.value();
-                if let Some(num_sold) = value.parse::<u32>().ok() {
+                if let Ok(num_sold) = value.parse::<u32>() {
                     let product_id = element.dataset().get("productid").unwrap();
                     if 0 == num_sold {
                         log::info!("Purchase Item (Removing): {}: {}", &product_id, num_sold);
@@ -69,7 +66,6 @@ fn get_product_items(document: &web_sys::Document) -> HashMap<String, PurchasedI
 }
 
 /////////////////////////////////////////////////
-///
 fn are_product_items_valid(document: &web_sys::Document) -> bool {
     if let Ok(product_nodes) = document.query_selector_all("input[data-productid]") {
         if 0 == product_nodes.length() {
@@ -82,7 +78,7 @@ fn are_product_items_valid(document: &web_sys::Document) -> bool {
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
             {
                 let value = element.value();
-                if value.len() == 0 {
+                if value.is_empty() {
                     continue;
                 }
                 let num_to_purchase = match value.parse::<u32>() {
@@ -259,7 +255,7 @@ pub fn order_products() -> Html {
                                         id={format!("formProduct-{}",product_id)}
                                         productid={product_id.clone()}
                                         label={product.label.clone()}
-                                        numordered={order.get_num_sold(&product_id).map_or("".to_string(), |v| v.to_string())}
+                                        numordered={order.get_num_sold(product_id).map_or("".to_string(), |v| v.to_string())}
                                         oninput={do_form_validation.clone()}
                                         minunits={product.min_units}
                                     />}

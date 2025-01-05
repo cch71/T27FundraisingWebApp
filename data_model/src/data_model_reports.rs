@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 
 // Exposing this const out to keep consistent tag name
-pub static ALL_USERS_TAG: &'static str = "doShowAllUsers";
+pub static ALL_USERS_TAG: &str = "doShowAllUsers";
 // URL to api that returns GeoJSON locations
 static GEOJSONURL: LazyLock<String> =
     LazyLock::new(|| crate::CLOUD_API_URL.to_owned() + "/salelocs");
@@ -97,13 +97,13 @@ pub fn get_allowed_report_views() -> Vec<ReportViews> {
 /// This will determine if the switch user option is available in the report
 /// settings dialog
 pub fn do_show_current_seller(current_view: &ReportViews) -> bool {
-    match *current_view {
-        ReportViews::Quick => true,
-        ReportViews::Full => true,
-        ReportViews::SpreadingJobs => true,
-        ReportViews::MoneyCollection => true,
-        _ => false,
-    }
+    matches!(
+        *current_view,
+        ReportViews::Quick
+            | ReportViews::Full
+            | ReportViews::SpreadingJobs
+            | ReportViews::MoneyCollection
+    )
 }
 
 async fn make_report_query(
@@ -151,13 +151,12 @@ pub fn load_report_settings() -> ReportViewSettings {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-///
 pub async fn get_sales_geojson(
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use gloo::net::http::Request;
     // log::info!("Running Query: {}", &query);
 
-    let mut raw_resp: serde_json::Value = Request::get(&*GEOJSONURL)
+    let mut raw_resp: serde_json::Value = Request::get(&GEOJSONURL)
         .header("Content-Type", "application/json")
         .header(
             "Authorization",
@@ -200,8 +199,7 @@ pub async fn get_sales_geojson(
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-///
-static QUICK_RPT_GRAPHQL: &'static str = r"
+static QUICK_RPT_GRAPHQL: &str = r"
 {
   mulchOrders(***ORDER_OWNER_PARAM***) {
     orderId
@@ -238,8 +236,7 @@ pub async fn get_quick_report_data(
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-///
-static FULL_RPT_GRAPHQL: &'static str = r"
+static FULL_RPT_GRAPHQL: &str = r"
 {
   mulchOrders(***ORDER_OWNER_PARAM***) {
     orderId
@@ -287,8 +284,7 @@ pub async fn get_full_report_data(
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-///
-static MONEY_COLLECTION_RPT_GRAPHQL: &'static str = r"
+static MONEY_COLLECTION_RPT_GRAPHQL: &str = r"
 {
   mulchOrders(***ORDER_OWNER_PARAM***) {
     ownerId
@@ -317,8 +313,7 @@ pub async fn get_money_collection_report_data(
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-///
-static DISTRIBUTION_POINTS_RPT_GRAPHQL: &'static str = r#"
+static DISTRIBUTION_POINTS_RPT_GRAPHQL: &str = r#"
 {
   mulchOrders {
     customer {
@@ -339,15 +334,13 @@ pub async fn get_distribution_points_report_data(
     let mut delivery_id_map: BTreeMap<u64, BTreeMap<String, u64>> = BTreeMap::new();
     make_report_query(DISTRIBUTION_POINTS_RPT_GRAPHQL.to_string())
         .await
-        .and_then(|orders| {
+        .map(|orders| {
             orders
                 .into_iter()
                 .filter(|v| v["deliveryId"].as_u64().is_some())
                 .for_each(|v| {
                     let delivery_id = v["deliveryId"].as_u64().unwrap();
-                    if !delivery_id_map.contains_key(&delivery_id) {
-                        delivery_id_map.insert(delivery_id, BTreeMap::new());
-                    }
+                    delivery_id_map.entry(delivery_id).or_default();
                     let dist_point_map = delivery_id_map.get_mut(&delivery_id).unwrap();
                     let neighborhood = v["customer"]["neighborhood"].as_str().unwrap();
                     let dist_point = get_neighborhood(neighborhood)
@@ -375,7 +368,6 @@ pub async fn get_distribution_points_report_data(
                         }
                     };
                 });
-            Ok(())
         })?;
 
     let mut dist_points_set = BTreeSet::new();
@@ -396,8 +388,7 @@ pub async fn get_distribution_points_report_data(
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-///
-static DELIVERIES_RPT_GRAPHQL: &'static str = r#"
+static DELIVERIES_RPT_GRAPHQL: &str = r#"
 {
   mulchOrders {
     orderId
@@ -423,18 +414,17 @@ pub async fn get_deliveries_report_data(
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     make_report_query(DELIVERIES_RPT_GRAPHQL.to_string())
         .await
-        .and_then(|orders| {
-            Ok(orders
+        .map(|orders| {
+            orders
                 .into_iter()
                 .filter(|v| v["deliveryId"].as_u64().is_some())
-                .collect::<Vec<_>>())
+                .collect::<Vec<_>>()
         })
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-///
-static SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
+static SPREADING_JOBS_RPT_GRAPHQL: &str = r"
 {
   mulchOrders(***ORDER_OWNER_PARAM***) {
     orderId
@@ -476,8 +466,7 @@ pub async fn get_spreading_jobs_report_data(
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-///
-static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &'static str = r"
+static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &str = r"
 {
   mulchOrders {
     ownerId
@@ -497,7 +486,7 @@ pub async fn get_unfinished_spreading_jobs_report_data(
     let mut unfinished_job_map: BTreeMap<(String, u64), u64> = BTreeMap::new();
     make_report_query(UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL.to_string())
         .await
-        .and_then(|orders| {
+        .map(|orders| {
             orders.into_iter().for_each(|v| {
                 let num_spreaders = v["spreaders"].as_array().unwrap_or(&Vec::new()).len();
                 if num_spreaders != 0 {
@@ -522,7 +511,6 @@ pub async fn get_unfinished_spreading_jobs_report_data(
                     }
                 };
             });
-            Ok(())
         })?;
     Ok(unfinished_job_map
         .into_iter()
@@ -534,7 +522,6 @@ pub async fn get_unfinished_spreading_jobs_report_data(
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-///
 #[derive(Serialize, Deserialize, Debug)]
 struct SummaryReportStorage {
     summary_report: SummaryReport,
@@ -617,7 +604,7 @@ pub struct SellerSummary {
     pub allocations_total: String,
 }
 
-static SUMMARY_RPT_GRAPHQL: &'static str = r"
+static SUMMARY_RPT_GRAPHQL: &str = r"
 {
   summary {
     orderOwner(***ORDER_OWNER_PARAM***) {
@@ -650,15 +637,15 @@ static SUMMARY_RPT_GRAPHQL: &'static str = r"
 
 pub async fn get_summary_report_data(
     seller_id: &str,
-    num_top_sellers: u8,
+    top_sellers: u8,
 ) -> std::result::Result<SummaryReport, Box<dyn std::error::Error>> {
     let rslt = LocalStorage::get("SummaryData");
     if rslt.is_ok() {
         let data: SummaryReportStorage = rslt.unwrap();
         let now_ts = Utc::now().timestamp() - 86400;
         if now_ts <= data.timestamp
-            && seller_id == &data.seller_id
-            && num_top_sellers == data.num_top_sellers
+            && seller_id == data.seller_id
+            && top_sellers == data.num_top_sellers
         {
             log::info!("Summary data retrieved from cache");
             return Ok(data.summary_report);
@@ -672,7 +659,7 @@ pub async fn get_summary_report_data(
         )
         .replace(
             "***TOP_SELLERS_PARAM***",
-            &format!("numTopSellers: {}", num_top_sellers),
+            &format!("numTopSellers: {}", top_sellers),
         );
 
     #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -689,7 +676,7 @@ pub async fn get_summary_report_data(
         SummaryReportStorage {
             summary_report: rslt.summary.clone(),
             seller_id: seller_id.to_string(),
-            num_top_sellers: num_top_sellers,
+            num_top_sellers: top_sellers,
             timestamp: Utc::now().timestamp(),
         },
     )?;
@@ -698,8 +685,7 @@ pub async fn get_summary_report_data(
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-///
-static ORDER_VERIFICATION_GRAPHQL: &'static str = r"
+static ORDER_VERIFICATION_GRAPHQL: &str = r"
 {
   mulchOrders(***ORDER_OWNER_PARAM***) {
     orderId

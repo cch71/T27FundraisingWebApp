@@ -69,7 +69,7 @@ pub(crate) fn report_deliveries_view() -> Html {
                         </thead>
                         <tbody>
                         {
-                            orders.into_iter().map(|v|{
+                            orders.iter().map(|v|{
                                 let num_bags_sold: u64 = v["purchases"].as_array().unwrap_or(&Vec::new())
                                     .iter()
                                     .find(|&v| v["productId"].as_str().unwrap() == "bags")
@@ -85,7 +85,7 @@ pub(crate) fn report_deliveries_view() -> Html {
                                     None => return html!{}, // Donation order
                                 };
                                 let neighborhood = v["customer"]["neighborhood"].as_str().unwrap();
-                                let dist_point = get_neighborhood(&neighborhood)
+                                let dist_point = get_neighborhood(neighborhood)
                                     .map_or("".to_string(), |v|v.distribution_point.clone());
                                 let uid = v["ownerId"].as_str().unwrap();
                                 html!{

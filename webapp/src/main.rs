@@ -37,7 +37,6 @@ pub struct AppFooterProps {
 #[function_component(AppFooter)]
 pub fn app_footer(props: &AppFooterProps) -> Html {
     let cur_win_loc = gloo::utils::window().location().pathname().unwrap();
-    // log::info!("!!!!! WinLoc: {}", cur_win_loc);
 
     html! {
         <footer class="footer mt-auto py-3 bg-light">
@@ -57,7 +56,7 @@ pub fn app_footer(props: &AppFooterProps) -> Html {
 #[function_component]
 fn App() -> Html {
     let is_loading = use_state_eq(|| true);
-    let is_order_active = use_state_eq(|| is_active_order());
+    let is_order_active = use_state_eq(is_active_order);
 
     let route_switch = {
         let is_order_active = is_order_active.clone();

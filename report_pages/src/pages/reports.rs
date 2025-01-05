@@ -36,10 +36,10 @@ fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
 
     let on_view_selection_change = {
         Callback::from(move |evt: Event| {
-            let elm = evt
+            if let Some(v) = evt
                 .target()
-                .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok());
-            elm.map(|v| {
+                .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
+            {
                 let selected_view = ReportViews::from_str(&v.value()).unwrap();
                 let do_show_seller = do_show_current_seller(&selected_view);
                 log::info!("Do Show Seller Selection: {}", do_show_seller);
@@ -61,7 +61,7 @@ fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
                             .add_1("d-none");
                     }
                 }
-            });
+            };
         })
     };
 
@@ -154,7 +154,7 @@ fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
 
 #[function_component(Reports)]
 pub fn reports_page() -> Html {
-    let current_settings = use_state_eq(|| load_report_settings());
+    let current_settings = use_state_eq(load_report_settings);
 
     // let on_download_report = {
     //     Callback::from(move |evt: MouseEvent| {
@@ -219,7 +219,7 @@ pub fn reports_page() -> Html {
         &current_settings.seller_id_filter
     );
 
-    let do_show_current_seller = do_show_current_seller(&(*current_settings).current_view);
+    let do_show_current_seller = do_show_current_seller(&current_settings.current_view);
 
     html! {
         <div>
@@ -232,14 +232,14 @@ pub fn reports_page() -> Html {
                                 <li class="list-group-item me-3">
                                     <label class="text-muted pe-2">{"Report View:"}</label>
                                     <div class="d-inline" id="reportViewLabel">
-                                        {(*current_settings).current_view.to_string()}
+                                        {current_settings.current_view.to_string()}
                                     </div>
                                 </li>
                                 if get_active_user().is_admin() && do_show_current_seller {
                                     <li class="list-group-item" id="orderOwnerLabel">
                                         <label class="text-muted pe-2">{"Showing Orders for:"}</label>
                                         <div class="d-inline" id="reportViewOrderOwner">
-                                            {(*current_settings).seller_id_filter.clone()}
+                                            {current_settings.seller_id_filter.clone()}
                                         </div>
                                     </li>
                                 }
@@ -257,13 +257,13 @@ pub fn reports_page() -> Html {
                         </h6>
 
                         {
-                            match (*current_settings).current_view {
-                                ReportViews::Quick=>html!{<QuickReportView seller={(*current_settings).seller_id_filter.clone()}/>},
-                                ReportViews::Full=>html!{<FullReportView seller={(*current_settings).seller_id_filter.clone()}/>},
-                                ReportViews::MoneyCollection=>html!{<MoneyCollectionReportView seller={(*current_settings).seller_id_filter.clone()}/>},
-                                ReportViews::SpreadingJobs=>html!{<SpreadingJobsReportView seller={(*current_settings).seller_id_filter.clone()}/>},
+                            match current_settings.current_view {
+                                ReportViews::Quick=>html!{<QuickReportView seller={current_settings.seller_id_filter.clone()}/>},
+                                ReportViews::Full=>html!{<FullReportView seller={current_settings.seller_id_filter.clone()}/>},
+                                ReportViews::MoneyCollection=>html!{<MoneyCollectionReportView seller={current_settings.seller_id_filter.clone()}/>},
+                                ReportViews::SpreadingJobs=>html!{<SpreadingJobsReportView seller={current_settings.seller_id_filter.clone()}/>},
                                 ReportViews::UnfinishedSpreadingJobs=>html!{<SpreadingJobsUnfinishedReportView />},
-                                ReportViews::OrderVerification=>html!{<OrderVerificationView seller={(*current_settings).seller_id_filter.clone()}/>},
+                                ReportViews::OrderVerification=>html!{<OrderVerificationView seller={current_settings.seller_id_filter.clone()}/>},
                                 ReportViews::Deliveries=>html!{<DeliveriesReportView />},
                                 ReportViews::DistributionPoints=>html!{<DistributionPointsReportView />},
                                 ReportViews::SellMap=>html!{<SellMapReportView />},
@@ -283,7 +283,7 @@ pub fn reports_page() -> Html {
 
             <DeleteOrderDlg />
             <ReportsSettingsDlg id="reportViewSettingsDlg"
-                onsave={on_save_settings} currentview={(*current_settings).current_view.clone()}/>
+                onsave={on_save_settings} currentview={current_settings.current_view.clone()}/>
             <ChooseSpreadersDlg />
             // {confirmDlg}
         </div>
