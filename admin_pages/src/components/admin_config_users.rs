@@ -368,28 +368,34 @@ fn edit_user_dlg(props: &EditUserDlgProps) -> Html {
                     </div>
                     <div class="modal-body">
                         <div class="container-sm">
-                            <div class="row">
-                                <div class="form-floating col-md">
-                                    <input class="form-control" type="text" id="formEditUserUid"
-                                        readonly=true
-                                        value={uid.clone()} />
-                                        <label for="formEditUserUid">{"UserID"}</label>
+                            <div class="row mb-2">
+                                <div class="col-md">
+                                    <div class="form-floating">
+                                        <input class="form-control" type="text" id="formEditUserUid"
+                                            readonly=true
+                                            value={uid.clone()} />
+                                            <label for="formEditUserUid">{"UserID"}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md">
+                                    <div class="form-floating">
+                                        <input class="form-control" type="text" id="formEditUserName"
+                                            readonly=true
+                                            value={name.clone()} />
+                                            <label for="formEditUserName">{"Name"}</label>
+                                    </div>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="form-floating col-md">
-                                    <input class="form-control" type="text" id="formEditUserName"
-                                        readonly=true
-                                        value={name.clone()} />
-                                        <label for="formEditUserName">{"Name"}</label>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="form-floating col-md">
-                                    <input class="form-control" type="text" autocomplete="fr-new-distpt" id="formEditUserGroup"
-                                        required=true
-                                        value={group.clone()} />
-                                    <label for="formEditUserGroup">{"Group"}</label>
+                                <div class="col-md">
+                                    <div class="form-floating col-md">
+                                        <input class="form-control" type="text" autocomplete="fr-new-distpt" id="formEditUserGroup"
+                                            required=true
+                                            value={group.clone()} />
+                                        <label for="formEditUserGroup">{"Group"}</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>

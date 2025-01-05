@@ -70,21 +70,25 @@ fn pricebreak_add_or_edit_dlg(props: &PriceBreakAddEditDlgProps) -> Html {
                     </div>
                     <div class="modal-body">
                         <div class="container-sm">
-                            <div class="row">
-                                <div class="form-floating col-md">
-                                    <input class="form-control" type="number" autocomplete="fr-new-gt" id="formGt"
-                                        required=true
-                                        readonly={!is_new}
-                                        value={gt} />
-                                        <label for="formGt">{"Greater Than"}</label>
+                            <div class="row mb-1">
+                                <div class="col-md">
+                                    <div class="form-floating">
+                                        <input class="form-control" type="number" autocomplete="fr-new-gt" id="formGt"
+                                            required=true
+                                            readonly={!is_new}
+                                            value={gt} />
+                                            <label for="formGt">{"Greater Than"}</label>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="form-floating col-md">
-                                    <input class="form-control" type="number" autocomplete="fr-new-unitprice" id="formUnitPrice"
-                                        required=true
-                                        value={unit_price} />
-                                    <label for="formUnitPrice">{"Unit Price"}</label>
+                            <div class="row mb-1">
+                                <div class="col-md">
+                                    <div class="form-floating">
+                                        <input class="form-control" type="number" autocomplete="fr-new-unitprice" id="formUnitPrice"
+                                            required=true
+                                            value={unit_price} />
+                                        <label for="formUnitPrice">{"Unit Price"}</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -345,24 +349,27 @@ pub(crate) fn set_mulch_cost() -> Html {
                             </button>
                         }
                     </h5>
-                   <div class="row">
-                       <div class="form-floating col-md">
-                           <input class="form-control" type="number" autocomplete="fr-new-mulch-cost" id="formMulchCost"
-                               required=true
-                               oninput={on_mulch_base_bags_cost_change.clone()}
-                               value={mulch_base_bags_cost.borrow().clone()} />
-
-                               <label for="formMulchCost">{"Base Mulch Cost Per Bag"}</label>
-                       </div>
-                   </div>
-                   <div class="row">
-                       <div class="form-floating col-md">
-                           <input class="form-control" type="number" autocomplete="fr-new-mulch-units" id="formMulchMinUnits"
-                               required=true
-                               oninput={on_mulch_min_units_change.clone()}
-                               value={mulch_min_units_cost.borrow().to_string()} />
-                               <label for="formMulchMinUnits">{"Min Bags"}</label>
-                       </div>
+                    <div class="row mb-1">
+                        <div class="col-md">
+                            <div class="form-floating">
+                                <input class="form-control" type="number" autocomplete="fr-new-mulch-cost" id="formMulchCost"
+                                    required=true
+                                    oninput={on_mulch_base_bags_cost_change.clone()}
+                                    value={mulch_base_bags_cost.borrow().clone()} />
+                                    <label for="formMulchCost">{"Base Mulch Cost Per Bag"}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-md">
+                            <div class="form-floating">
+                                <input class="form-control" type="number" autocomplete="fr-new-mulch-units" id="formMulchMinUnits"
+                                    required=true
+                                    oninput={on_mulch_min_units_change.clone()}
+                                    value={mulch_min_units_cost.borrow().to_string()} />
+                                    <label for="formMulchMinUnits">{"Min Bags"}</label>
+                            </div>
+                        </div>
                    </div>
                    <div class="row">
                         {"Price Breaks"}
@@ -386,15 +393,17 @@ pub(crate) fn set_mulch_cost() -> Html {
                     <h5 class="card-title mt-2">
                         {"Set Spreading Cost"}
                     </h5>
-                    <div class="row">
-                       <div class="form-floating col-md">
-                           <input class="form-control" type="number" autocomplete="fr-new-spreading" id="formSpreading"
-                               required=true
-                               oninput={on_spreading_change}
-                               value={spreading_cost.borrow().clone()} />
+                    <div class="row mb-1">
+                        <div class="col-md">
+                            <div class="form-floating">
+                                <input class="form-control" type="number" autocomplete="fr-new-spreading" id="formSpreading"
+                                    required=true
+                                    oninput={on_spreading_change}
+                                    value={spreading_cost.borrow().clone()} />
 
-                               <label for="formSpreading">{"Spreading Cost Per Bag"}</label>
-                       </div>
+                                    <label for="formSpreading">{"Spreading Cost Per Bag"}</label>
+                            </div>
+                        </div>
                     </div>
 
                 </div>

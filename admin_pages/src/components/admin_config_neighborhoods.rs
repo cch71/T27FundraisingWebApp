@@ -82,44 +82,54 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                     <div class="modal-body">
                         <div class="container-sm">
                             <form>
-                                <div class="row">
-                                    <div class="form-check form-switch col-md">
-                                        <input class="form-check-input" type="checkbox" id="frmDlgHoodIsVisible"
-                                            required=true
-                                            checked={neighborhood.is_visible} />
-                                        <label class="form-check-label" for="frmDlgHoodIsVisible">{"Is Visible"}</label>
+                                <div class="row mb-1">
+                                    <div class="col-md">
+                                        <div class="form-check form-switch col-md">
+                                            <input class="form-check-input" type="checkbox" id="frmDlgHoodIsVisible"
+                                                required=true
+                                                checked={neighborhood.is_visible} />
+                                            <label class="form-check-label" for="frmDlgHoodIsVisible">{"Is Visible"}</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-1">
+                                    <div class="col-md">
+                                        <div class="form-floating col-md">
+                                            <input class="form-control" type="text" autocomplete="fr-new-neighborhood" id="frmDlgNeighborhood"
+                                                required=true
+                                                readonly={!neighborhood.name.is_empty()}
+                                                value={neighborhood.name.clone()} />
+                                                <label for="frmDlgNeighborhood">{"Neighborhood"}</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-1">
+                                    <div class="col-md">
+                                        <div class="form-floating col-md">
+                                            <input class="form-control" type="edit" autocomplete="fr-new-distpt" id="frmDlgHoodDistPt"
+                                                required=true
+                                                value={neighborhood.distribution_point.clone()} />
+                                            <label for="frmDlgHoodDistPt">{"Distribution Point"}</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-1">
+                                    <div class="col-md">
+                                        <div class="form-floating col-md">
+                                            <input class="form-control" type="edit" autocomplete="fr-new-city" id="frmDlgHoodCity"
+                                                value={neighborhood.city.clone().unwrap_or("".to_string())} />
+                                            <label for="frmDlgHoodCity">{"City"}</label>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="form-floating col-md">
-                                        <input class="form-control" type="text" autocomplete="fr-new-neighborhood" id="frmDlgNeighborhood"
-                                            required=true
-                                            readonly={!neighborhood.name.is_empty()}
-                                            value={neighborhood.name.clone()} />
-                                            <label for="frmDlgNeighborhood">{"Neighborhood"}</label>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="form-floating col-md">
-                                        <input class="form-control" type="edit" autocomplete="fr-new-distpt" id="frmDlgHoodDistPt"
-                                            required=true
-                                            value={neighborhood.distribution_point.clone()} />
-                                        <label for="frmDlgHoodDistPt">{"Distribution Point"}</label>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="form-floating col-md">
-                                        <input class="form-control" type="edit" autocomplete="fr-new-city" id="frmDlgHoodCity"
-                                            value={neighborhood.city.clone().unwrap_or("".to_string())} />
-                                        <label for="frmDlgHoodCity">{"City"}</label>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="form-floating col-md">
-                                        <input class="form-control" type="number" autocomplete="fr-new-zipcode" id="frmDlgHoodZip"
-                                            pattern="[0-9]{5}"
-                                            value={neighborhood.zipcode.map(|v|v.to_string()).unwrap_or("".to_string())} />
-                                        <label for="frmDlgHoodZip">{"Zipcode"}</label>
+                                    <div class="col-md">
+                                        <div class="form-floating col-md">
+                                            <input class="form-control" type="number" autocomplete="fr-new-zipcode" id="frmDlgHoodZip"
+                                                pattern="[0-9]{5}"
+                                                value={neighborhood.zipcode.map(|v|v.to_string()).unwrap_or("".to_string())} />
+                                            <label for="frmDlgHoodZip">{"Zipcode"}</label>
+                                        </div>
                                     </div>
                                 </div>
                             </form>
@@ -154,7 +164,7 @@ fn neighborhood_item(props: &NeighborhoodLiProps) -> Html {
     html! {
         <li class={liclass}>
             <div class="container">
-                <div class="mb-1 row">{props.hood.name.clone()}</div>
+                <div class="row mb-1">{props.hood.name.clone()}</div>
                 <small class="text-muted row">{format!("Distribution Point: {}", &props.hood.distribution_point)}</small>
                 if props.hood.city.is_some() {
                     <small class="text-muted row">{format!("City: {}", &props.hood.city.as_ref().unwrap())}</small>

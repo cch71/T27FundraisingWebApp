@@ -83,20 +83,24 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html {
                                     <div>{format!("Delivery ID: {}", &delivery_info.delivery_id_str)}</div>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="form-floating col-md">
-                                    <input class="form-control" type="date" autocomplete="fr-order-cutoff-date" id="formOrderCutoffDate"
-                                        required=true
-                                        value={delivery_info.cutoff_date_str.clone()} />
-                                    <label for="formOrderCutoffDate">{"New Order Cutoff Date"}</label>
+                            <div class="row mb-2">
+                                <div class="col-md">
+                                    <div class="form-floating">
+                                        <input class="form-control" type="date" autocomplete="fr-order-cutoff-date" id="formOrderCutoffDate"
+                                            required=true
+                                            value={delivery_info.cutoff_date_str.clone()} />
+                                        <label for="formOrderCutoffDate">{"New Order Cutoff Date"}</label>
+                                    </div>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="form-floating col-md">
-                                    <input class="form-control" type="date" autocomplete="fr-new-delivery-date" id="formDeliveryDate"
-                                        required=true
-                                        value={delivery_info.delivery_date_str.clone()} />
-                                        <label for="formDeliveryDate">{"Delivery Date"}</label>
+                                <div class="col-md">
+                                    <div class="form-floating">
+                                        <input class="form-control" type="date" autocomplete="fr-new-delivery-date" id="formDeliveryDate"
+                                            required=true
+                                            value={delivery_info.delivery_date_str.clone()} />
+                                            <label for="formDeliveryDate">{"Delivery Date"}</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
