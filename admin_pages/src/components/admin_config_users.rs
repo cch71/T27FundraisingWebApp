@@ -1,9 +1,11 @@
+use calamine::{open_workbook_from_rs, Ods, RangeDeserializerBuilder, Reader, Xlsx};
 use data_model::*;
 use gloo::file::File;
 use js::bootstrap;
 use serde::Deserialize;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
+use std::io::Cursor;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, FileList, HtmlButtonElement, HtmlElement, HtmlInputElement, MouseEvent};
@@ -31,7 +33,7 @@ struct UploadUsersDlgProps {
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-struct UserCsvRecord {
+struct UserFileRec {
     last_name: String,
     first_name: String,
     group: String,
@@ -39,59 +41,149 @@ struct UserCsvRecord {
 }
 
 /////////////////////////////////////////////////
+fn get_or_gen_imported_user_id(record: &UserFileRec) -> String {
+    match record.uid.as_ref() {
+        Some(id) => id.to_ascii_lowercase(),
+        None =>
+        // Generate the new user id
+        {
+            record
+                .uid
+                .clone()
+                .unwrap_or_else(|| {
+                    format!(
+                        "{}{}",
+                        record.first_name.trim().chars().next().unwrap(),
+                        record.last_name
+                    )
+                })
+                .chars()
+                .filter(|c| !c.is_whitespace())
+                .collect::<String>()
+                .to_ascii_lowercase()
+        }
+    }
+}
+
+/////////////////////////////////////////////////
+fn process_user_file_rec(
+    record: UserFileRec,
+    potential_new_users: &mut BTreeMap<String, UserFileRec>,
+) {
+    let mut new_id: String = get_or_gen_imported_user_id(&record);
+    log::info!("Rec: {:?} -> Id: {}", record, new_id);
+
+    // Make sure there aren't dups in the uploaded list and create a unique id if it isn't
+    if let Some(found_user) = potential_new_users.get(&new_id) {
+        if found_user.first_name == record.first_name.trim()
+            && found_user.last_name == record.last_name.trim()
+        {
+            //Duplicate in list
+            return;
+        } else {
+            let mut idx = 1;
+            loop {
+                let new_id_candidate = format!("{}{}", new_id, idx);
+                if potential_new_users.contains_key(&new_id_candidate) {
+                    idx += 1;
+                    continue;
+                }
+                new_id = new_id_candidate;
+                break;
+            }
+        }
+    }
+    potential_new_users.insert(new_id, record);
+}
+
+/////////////////////////////////////////////////
 fn process_csv_records(
     data: Vec<u8>,
-    potential_new_users: &mut BTreeMap<String, UserCsvRecord>,
+    potential_new_users: &mut BTreeMap<String, UserFileRec>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut rdr = csv::Reader::from_reader(&data[..]);
     for result in rdr.deserialize() {
-        let record: UserCsvRecord = result?;
-
-        log::info!("Rec: {:?}", record);
-        let mut new_id: String = record
-            .uid
-            .clone()
-            .unwrap_or_else(|| {
-                format!(
-                    "{}{}",
-                    record.first_name.trim().chars().next().unwrap(),
-                    record.last_name
-                )
-            })
-            .chars()
-            .filter(|c| !c.is_whitespace())
-            .collect::<String>()
-            .to_lowercase();
-
-        // Make sure there aren't dups in the uploaded list and create a unique id if it isn't
-        if let Some(found_user) = potential_new_users.get(&new_id) {
-            if found_user.first_name == record.first_name.trim()
-                && found_user.last_name == record.last_name.trim()
-            {
-                //Duplicate in list
-                continue;
-            } else {
-                let mut idx = 1;
-                loop {
-                    let new_id_candidate = format!("{}{}", new_id, idx);
-                    if potential_new_users.contains_key(&new_id_candidate) {
-                        idx += 1;
-                        continue;
-                    }
-                    new_id = new_id_candidate;
-                    break;
-                }
-            }
-        }
-        potential_new_users.insert(new_id, record);
+        let record: UserFileRec = result?;
+        process_user_file_rec(record, potential_new_users);
     }
     Ok(())
+}
+
+/////////////////////////////////////////////////
+fn process_spreadsheet_records<T>(
+    mut wb: T,
+    potential_new_users: &mut BTreeMap<String, UserFileRec>,
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    T: Reader<Cursor<Vec<u8>>>,
+{
+    let range = wb
+        .worksheet_range_at(0)
+        .unwrap()
+        .map_err(|_| calamine::Error::Msg("Cannot find Sheet1"))?;
+
+    let iter_records = RangeDeserializerBuilder::new()
+        .has_headers(true)
+        .from_range(&range)?;
+
+    for result in iter_records {
+        let record: UserFileRec = result?;
+        process_user_file_rec(record, potential_new_users);
+    }
+
+    Ok(())
+}
+
+/////////////////////////////////////////////////
+fn process_xlsx_records(
+    data: Vec<u8>,
+    potential_new_users: &mut BTreeMap<String, UserFileRec>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let c = Cursor::new(data);
+    let wb: Xlsx<_> = open_workbook_from_rs(c)?;
+
+    process_spreadsheet_records(wb, potential_new_users)
+}
+
+/////////////////////////////////////////////////
+fn process_ods_records(
+    data: Vec<u8>,
+    potential_new_users: &mut BTreeMap<String, UserFileRec>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let c = Cursor::new(data);
+    let wb: Ods<_> = open_workbook_from_rs(c)?;
+
+    process_spreadsheet_records(wb, potential_new_users)
+}
+
+/////////////////////////////////////////////////
+fn process_uploaded_file(
+    filename: String,
+    mimetype: String,
+    data: Vec<u8>,
+    potential_new_users: &mut BTreeMap<String, UserFileRec>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // 2ndBatch.xlsx type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+    // 2ndBatch.ods type: application/vnd.oasis.opendocument.spreadsheet
+    if filename.ends_with(".csv") || mimetype.eq("text/csv") {
+        process_csv_records(data, potential_new_users)
+    } else if filename.to_ascii_lowercase().ends_with(".xlsx")
+        || mimetype.eq("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    {
+        process_xlsx_records(data, potential_new_users)
+    } else if filename.to_ascii_lowercase().ends_with(".ods")
+        || mimetype.eq("application/vnd.oasis.opendocument.spreadsheet")
+    {
+        process_ods_records(data, potential_new_users)
+    } else {
+        panic!()
+    }
 }
 
 #[function_component(UploadUsersDlg)]
 fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
     let users = use_state_eq(Vec::<UserAdminConfig>::new);
-    let dup_users = use_state_eq(Vec::<UserCsvRecord>::new);
+    let dup_users = use_state_eq(Vec::<UserFileRec>::new);
     let is_working = use_state_eq(|| false);
 
     let on_cancel = {
@@ -112,7 +204,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
         move |_evt: MouseEvent| {
             onadd.emit((*users).clone());
             users.set(Vec::<UserAdminConfig>::new());
-            dup_users.set(Vec::<UserCsvRecord>::new());
+            dup_users.set(Vec::<UserFileRec>::new());
             let document = gloo::utils::document();
             document
                 .get_element_by_id("fileupload")
@@ -131,7 +223,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
             log::info!("On Change Triggered");
             is_working.set(true);
             users.set(Vec::<UserAdminConfig>::new());
-            dup_users.set(Vec::<UserCsvRecord>::new());
+            dup_users.set(Vec::<UserFileRec>::new());
             let input: HtmlInputElement = evt.target_unchecked_into();
             let files: Option<FileList> = input.files();
             let mut results = Vec::new();
@@ -155,7 +247,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
             let found_users = found_users.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 // First read in a list of all the potential new users
-                let mut potential_new_users: BTreeMap<String, UserCsvRecord> = BTreeMap::new();
+                let mut potential_new_users: BTreeMap<String, UserFileRec> = BTreeMap::new();
                 for file in results.into_iter() {
                     let file_name = file.name();
                     let file_type = file.raw_mime_type();
@@ -171,7 +263,10 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                             return;
                         }
                     };
-                    if let Err(err) = process_csv_records(data, &mut potential_new_users) {
+
+                    if let Err(err) =
+                        process_uploaded_file(file_name, file_type, data, &mut potential_new_users)
+                    {
                         gloo::dialogs::alert(&format!(
                             "Error in users file make sure proper headers are in place:\n{:#?}",
                             err
@@ -250,11 +345,19 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                     <div class="modal-body">
                         <div class="container-sm">
                             <div class="row">
-                                {"Uploads a .csv formmated file."}
+                                {"Uploads a .csv/.xlsx/.ods formatted file."}
                                 <br/>
-                                {"Fields should be in"}
                                 <br/>
-                                {"<last_name>,<first_name>,<group>,<uid>"}
+                                {"Files should have a header row with:"}
+                                <br/>
+                                {"last_name,first_name,group,uid"}
+                                <br/>
+                                <br/>
+                                {"CSV file example formatting:"}
+                                <br/>
+                                {"Jim,Johnson,Apache,"}
+                                <br/>
+                                {"James,Kirk,Apache,jkirk"}
                                 <br/>
                                 <br/>
                                 {"The UserID field is optional and if a duplicate is already found then this field will not be honoured"}
@@ -264,7 +367,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                                 <input
                                     id="fileupload"
                                     type="file"
-                                    accept=".csv"
+                                    accept=".csv,.ods,.xlsx"
                                     multiple={false}
                                     onchange={on_file_input_change}
                                 />
