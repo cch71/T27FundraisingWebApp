@@ -1,9 +1,10 @@
+use crate::components::delivery_selector::*;
 use data_model::*;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 use wasm_bindgen::JsCast;
-use web_sys::{
-    HtmlButtonElement, HtmlInputElement, HtmlSelectElement, InputEvent, MouseEvent, SubmitEvent,
-};
+use web_sys::{HtmlButtonElement, HtmlInputElement, InputEvent, MouseEvent, SubmitEvent};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -17,21 +18,6 @@ fn disable_submit_button(value: bool) {
         .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
     {
         btn.set_disabled(value);
-    }
-}
-
-/////////////////////////////////////////////////
-fn get_delivery_id(document: &web_sys::Document) -> Option<String> {
-    let value = document
-        .get_element_by_id("formSelectDeliveryDate")
-        .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
-        .unwrap()
-        .value();
-    log::info!("Delivery Date Selection Val: {}", &value);
-    if value.is_empty() || "none" == value {
-        None
-    } else {
-        Some(value)
     }
 }
 
@@ -146,6 +132,8 @@ pub fn product_item(props: &ProductItemProps) -> Html {
 #[function_component(OrderProducts)]
 pub fn order_products() -> Html {
     let history = use_navigator().unwrap();
+    let delivery_selection: Rc<RefCell<Option<u32>>> = use_mut_ref(|| None);
+
     if !is_active_order() {
         history.push(&AppRoutes::Home);
     }
@@ -154,6 +142,7 @@ pub fn order_products() -> Html {
 
     let on_form_submission = {
         let history = history.clone();
+        let delivery_selection = delivery_selection.clone();
         move |evt: SubmitEvent| {
             evt.prevent_default();
             evt.stop_propagation();
@@ -161,7 +150,7 @@ pub fn order_products() -> Html {
             let mut updated_order = get_active_order().unwrap();
 
             let document = gloo::utils::document();
-            let delivery_id = get_delivery_id(&document).unwrap().parse::<u32>().unwrap();
+            let delivery_id = (*delivery_selection.borrow()).unwrap();
             let purchases = get_product_items(&document);
             updated_order.set_purchases(delivery_id, purchases);
             update_active_order(updated_order).unwrap();
@@ -180,74 +169,60 @@ pub fn order_products() -> Html {
         })
     };
 
-    let do_form_validation = {
-        Callback::from(move |evt: InputEvent| {
-            evt.prevent_default();
-            evt.stop_propagation();
-            log::info!("do_form_validation");
+    let on_delivery_selection_change = {
+        let delivery_selection = delivery_selection.clone();
+        Callback::from(move |delivery_id: Option<u32>| {
+            *delivery_selection.borrow_mut() = delivery_id;
 
-            let document = gloo::utils::document();
-
-            if !are_product_items_valid(&document) || get_delivery_id(&document).is_none() {
-                disable_submit_button(true);
-                return;
-            }
-
-            // If it gets to here the we passed all the tests so enable
-            disable_submit_button(false);
+            do_form_validation(*delivery_selection.borrow());
         })
     };
 
+    let on_product_order_change = {
+        let delivery_selection = delivery_selection.clone();
+        Callback::from(move |evt: InputEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+
+            do_form_validation(*delivery_selection.borrow());
+        })
+    };
+
+    fn do_form_validation(delivery_selction: Option<u32>) {
+        log::info!("do_form_validation");
+        let document = gloo::utils::document();
+
+        if !are_product_items_valid(&document) || delivery_selction.is_none() {
+            disable_submit_button(true);
+            return;
+        }
+
+        // If it gets to here the we passed all the tests so enable
+        disable_submit_button(false);
+    }
+
     {
+        let delivery_selection = delivery_selection.clone();
         use_effect(move || {
             let document = gloo::utils::document();
             disable_submit_button(
-                !are_product_items_valid(&document) || get_delivery_id(&document).is_none(),
+                !are_product_items_valid(&document) || delivery_selection.borrow().is_none(),
             );
             || {}
         });
     }
-    let mut found_selected_delivery = false;
-    let is_admin = get_active_user().is_admin();
+
     html! {
         <div class="col-xs-1 justify-content-center">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">{format!("{} Order", get_fr_config().description)}</h5>
                     <form onsubmit={on_form_submission} id="productForm">
-            <div class="row mb-3 col-sm-12">
-                <label for="formSelectDeliveryDate">{"Select Delivery Date"}</label>
-                <select
-                                    class="custom-select"
-                                    id="formSelectDeliveryDate"
-                                    required=true
-                                    oninput={do_form_validation.clone()}>
-                                {
-                                    get_deliveries().iter().map(|(delivery_id, delivery)| {
-                                        let is_selected = delivery_id == order.delivery_id.as_ref().unwrap_or(&0);
-                                        if is_selected && !found_selected_delivery {
-                                            found_selected_delivery = true;
-                                            html!{
-                                                <option value={delivery_id.to_string()} selected={is_selected}>
-                                                    {delivery.get_delivery_date_str()}
-                                                </option>
-                                            }
-                                        } else if is_admin || delivery.can_take_orders() {
-                                            html!{
-                                                <option value={delivery_id.to_string()} selected={is_selected}>
-                                                    {delivery.get_delivery_date_str()}
-                                                </option>
-                                            }
-                                        } else {
-                                            html!{}
-                                        }
-                                    }).collect::<Html>()
-                                }
-                                if !found_selected_delivery {
-                                    <option value="none" selected=true disabled=true hidden=true>{"Select delivery date"}</option>
-                                }
-                </select>
-            </div>
+                        <div class="row mb-3 col-sm-12">
+                            <DeliveryDateSelector
+                                on_delivery_change={on_delivery_selection_change.clone()}
+                            />
+                        </div>
                         {
                             get_products().iter().map(|(product_id, product)| {
                                 html!{
@@ -256,7 +231,7 @@ pub fn order_products() -> Html {
                                         productid={product_id.clone()}
                                         label={product.label.clone()}
                                         numordered={order.get_num_sold(product_id).map_or("".to_string(), |v| v.to_string())}
-                                        oninput={do_form_validation.clone()}
+                                        oninput={on_product_order_change.clone()}
                                         minunits={product.min_units}
                                     />}
                             }).collect::<Html>()
