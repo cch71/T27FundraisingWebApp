@@ -1,37 +1,5 @@
 /* Global styling for this template */
 /* In the html @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"); */
-@import url("https://cdn.datatables.net/2.2.1/css/dataTables.dataTables.css");
-
-
-table.dataTable.collapsed>tbody>tr>td:first-child:before,
-table.dataTable.collapsed>tbody>tr>th:first-child:before
-{
-    top: 50%;
-    left: 50%;
-    height: 0.8em;
-    width: 0.8em;
-    margin-top: -0.5em;
-    margin-left: -0.5em;
-    margin-right: 0.5em;
-    display: inline-block;
-    color: white;
-    border: 0.15em solid white;
-    border-radius: 1em;
-    box-shadow: 0 0 0.2em #444;
-    box-sizing: content-box;
-    text-align: center;
-    text-indent: 0 !important;
-    font-family: 'Courier New', Courier, monospace;
-    line-height: 1em;
-    content: '+';
-    background-color: #31b131;
-}
-
-table.dataTable.dtr-inline.collapsed>tbody>tr.parent>td.dtr-control:before,
-table.dataTable.dtr-inline.collapsed>tbody>tr.parent>th.dtr-control:before {
-    content: "-";
-    background-color: red;
-}
 
 html {
 

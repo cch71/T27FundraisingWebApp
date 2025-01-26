@@ -129,7 +129,7 @@ pub enum ReportViewState {
 }
 
 /////////////////////////////////////////////////////////////////////////////////
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub struct ReportViewSettings {
     pub current_view: ReportViews,
     pub seller_id_filter: String,
