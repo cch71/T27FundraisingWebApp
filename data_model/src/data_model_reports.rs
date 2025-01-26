@@ -103,6 +103,7 @@ pub fn do_show_current_seller(current_view: &ReportViews) -> bool {
             | ReportViews::Full
             | ReportViews::SpreadingJobs
             | ReportViews::MoneyCollection
+            | ReportViews::OrderVerification
     )
 }
 

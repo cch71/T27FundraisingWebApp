@@ -144,6 +144,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                 let spreaders: String = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
                                     .unwrap_or_default()
                                     .join(",");
+                                let uid = v["ownerId"].as_str().unwrap();
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>
@@ -163,7 +164,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                         <td>{to_money_str(v["amountFromChecksCollected"].as_str())}</td>
                                         <td>{v["checkNumbers"].as_str().unwrap_or("")}</td>
                                         <td>{to_money_str(v["amountTotalCollected"].as_str())}</td>
-                                        <td>{v["ownerId"].as_str().unwrap()}</td>
+                                        <td>{get_username_from_id(uid).map_or(uid.to_string(), |v|format!("{v}[{uid}]"))}</td>
                                         <td>{v["isVerified"].as_bool().unwrap_or(false).to_string()}</td>
                                         <td>
                                             <ReportActionButtons

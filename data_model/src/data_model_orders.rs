@@ -189,7 +189,9 @@ impl MulchOrder {
             && self.purchases.is_some();
         let is_donations_valid = self.amount_from_donations.is_some();
         let is_total_valid = self.amount_total_collected.as_ref().map_or(true, |v| {
-            Decimal::from_str(v).map_or(false, |v| v != Decimal::ZERO && v.is_sign_positive())
+            Decimal::from_str(v)
+                .ok()
+                .is_none_or(|v| v != Decimal::ZERO && v.is_sign_positive())
         });
 
         is_total_valid && (is_product_purchase_valid || is_donations_valid)
@@ -232,7 +234,7 @@ pub fn is_active_order_from_db() -> bool {
         .read()
         .unwrap()
         .as_ref()
-        .map_or(false, |v| !v.is_new_order)
+        .is_none_or(|v| !v.is_new_order)
 }
 
 pub fn reset_active_order() {

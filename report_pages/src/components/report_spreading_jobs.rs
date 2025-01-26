@@ -140,6 +140,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                 let spreaders: String = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
                                     .unwrap_or_default()
                                     .join(",");
+                                let uid = v["ownerId"].as_str().unwrap();
                                 html!{
                                     <tr>
                                         <td>{v["orderId"].as_str().unwrap()}</td>
@@ -151,7 +152,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                         <td>{v["customer"]["neighborhood"].as_str().unwrap_or("")}</td>
                                         <td>{spreaders.clone()}</td>
                                         <td>{spreading.to_string()}</td>
-                                        <td>{v["ownerId"].as_str().unwrap()}</td>
+                                        <td>{get_username_from_id(uid).map_or(uid.to_string(), |v|format!("{v}[{uid}]"))}</td>
                                         <td>
                                             <ReportActionButtons
                                                 orderid={v["orderId"].as_str().unwrap().to_string()}
