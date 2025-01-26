@@ -24,15 +24,13 @@ pub(crate) fn report_distribution_points_view() -> Html {
                 }
                 ReportViewState::ReportHtmlGenerated(resp) => {
                     log::info!("Setting DataTable");
-                    if datatable.borrow().is_none() {
-                        *datatable.borrow_mut() = get_datatable(&serde_json::json!({
-                            "reportType": "distributionPoints",
-                            "id": ".data-table-report table",
-                            "distPoints": resp[0]["distPoints"],
-                            "showOrderOwner": false,
-                            "isMulchOrder": true
-                        }));
-                    }
+                    *datatable.borrow_mut() = get_datatable(&serde_json::json!({
+                        "reportType": "distributionPoints",
+                        "id": ".data-table-report table",
+                        "distPoints": resp[0]["distPoints"],
+                        "showOrderOwner": false,
+                        "isMulchOrder": true
+                    }));
                 }
             };
 

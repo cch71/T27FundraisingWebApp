@@ -71,7 +71,6 @@ fn App() -> Html {
                     is_order_active.set(false);
                 }
             }
-            //log::info!("````````` switcthing ``````````, {:?}  {}", route, is_some);
 
             match route {
                 AppRoutes::Home => html! {<Home/>},

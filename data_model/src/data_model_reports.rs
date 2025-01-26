@@ -106,6 +106,7 @@ pub fn do_show_current_seller(current_view: &ReportViews) -> bool {
     )
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 async fn make_report_query(
     query: String,
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
@@ -120,17 +121,20 @@ async fn make_report_query(
     Ok(rslts.mulch_orders)
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 pub enum ReportViewState {
     IsLoading,
     ReportHtmlGenerated(Vec<serde_json::Value>),
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct ReportViewSettings {
     pub current_view: ReportViews,
     pub seller_id_filter: String,
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 pub fn save_report_settings(
     settings: &ReportViewSettings,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -138,10 +142,12 @@ pub fn save_report_settings(
     Ok(())
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 pub fn delete_report_settings() {
     SessionStorage::delete("ReportViewSettings");
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 pub fn load_report_settings() -> ReportViewSettings {
     SessionStorage::get("ReportViewSettings").unwrap_or(ReportViewSettings {
         current_view: ReportViews::Quick,
@@ -219,6 +225,7 @@ static QUICK_RPT_GRAPHQL: &str = r"
 }
 ";
 
+/////////////////////////////////////////////////////////////////////////////////
 pub async fn get_quick_report_data(
     order_owner_id: Option<&String>,
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
@@ -296,6 +303,7 @@ static MONEY_COLLECTION_RPT_GRAPHQL: &str = r"
 }
 ";
 
+/////////////////////////////////////////////////////////////////////////////////
 pub async fn get_money_collection_report_data(
     order_owner_id: Option<&String>,
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
@@ -328,6 +336,7 @@ static DISTRIBUTION_POINTS_RPT_GRAPHQL: &str = r#"
 }
 "#;
 
+/////////////////////////////////////////////////////////////////////////////////
 pub async fn get_distribution_points_report_data(
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use std::collections::{BTreeMap, BTreeSet};
@@ -410,6 +419,7 @@ static DELIVERIES_RPT_GRAPHQL: &str = r#"
 }
 "#;
 
+/////////////////////////////////////////////////////////////////////////////////
 pub async fn get_deliveries_report_data(
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     make_report_query(DELIVERIES_RPT_GRAPHQL.to_string())
@@ -449,6 +459,7 @@ static SPREADING_JOBS_RPT_GRAPHQL: &str = r"
 }
 ";
 
+/////////////////////////////////////////////////////////////////////////////////
 pub async fn get_spreading_jobs_report_data(
     order_owner_id: Option<&String>,
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
@@ -480,6 +491,7 @@ static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &str = r"
 }
 ";
 
+/////////////////////////////////////////////////////////////////////////////////
 pub async fn get_unfinished_spreading_jobs_report_data(
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use std::collections::BTreeMap;
@@ -530,6 +542,7 @@ struct SummaryReportStorage {
     timestamp: i64,
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct SummaryReport {
     #[serde(alias = "troop")]
@@ -538,6 +551,7 @@ pub struct SummaryReport {
     pub seller_summary: SellerSummary,
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct TroopSummary {
     #[serde(alias = "totalAmountCollected")]
@@ -550,6 +564,7 @@ pub struct TroopSummary {
     pub group_summary: Vec<GroupSummary>,
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct TopSeller {
     #[serde(alias = "name")]
@@ -559,6 +574,7 @@ pub struct TopSeller {
     pub amount_total_collected: String,
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct GroupSummary {
     #[serde(alias = "groupId")]
@@ -568,6 +584,7 @@ pub struct GroupSummary {
     pub amount_total_collected: String,
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct SellerSummary {
     #[serde(alias = "totalDeliveryMinutes")]
@@ -604,6 +621,7 @@ pub struct SellerSummary {
     pub allocations_total: String,
 }
 
+/////////////////////////////////////////////////////////////////////////////////
 static SUMMARY_RPT_GRAPHQL: &str = r"
 {
   summary {
@@ -635,6 +653,7 @@ static SUMMARY_RPT_GRAPHQL: &str = r"
 }
 ";
 
+/////////////////////////////////////////////////////////////////////////////////
 pub async fn get_summary_report_data(
     seller_id: &str,
     top_sellers: u8,
@@ -704,6 +723,7 @@ static ORDER_VERIFICATION_GRAPHQL: &str = r"
 }
 ";
 
+/////////////////////////////////////////////////////////////////////////////////
 pub async fn get_order_verfification_report_data(
     order_owner_id: Option<&String>,
 ) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {

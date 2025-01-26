@@ -193,8 +193,7 @@ impl DeliveryInfo {
     }
 
     pub fn can_take_orders(&self) -> bool {
-        self.new_order_cutoff_date
-            .map_or(false, |v| v.ge(&Utc::now()))
+        self.new_order_cutoff_date.is_none_or(|v| v.ge(&Utc::now()))
     }
 }
 
@@ -384,7 +383,9 @@ fn process_config_data(config: FrConfigApi) {
             })
             .collect::<_>();
         if let Ok(mut arc_user_map) = USER_MAP.write() {
-            Arc::get_mut(&mut *arc_user_map).unwrap().append(&mut new_map);
+            Arc::get_mut(&mut *arc_user_map)
+                .unwrap()
+                .append(&mut new_map);
             Arc::get_mut(&mut *arc_user_map).unwrap().insert(
                 "fradmin".to_string(),
                 UserInfo {
@@ -1211,7 +1212,10 @@ pub async fn set_fr_closeout_data(
     let query = SET_FR_CLOSEOUT_CONFIG_DATA_GRAPHQL
         .replace(
             "bankDeposited: \"0.0000\"",
-            &format!("bankDeposited: \"{}\"", dynamic_vars.bank_deposited.round_dp(4)),
+            &format!(
+                "bankDeposited: \"{}\"",
+                dynamic_vars.bank_deposited.round_dp(4)
+            ),
         )
         .replace(
             "mulchCost: \"0.0000\"",
@@ -1509,7 +1513,9 @@ pub async fn add_or_update_users_for_admin_config(
         })
         .collect();
     if let Ok(mut arc_user_map) = USER_MAP.write() {
-        Arc::get_mut(&mut *arc_user_map).unwrap().append(&mut new_map);
+        Arc::get_mut(&mut *arc_user_map)
+            .unwrap()
+            .append(&mut new_map);
     }
 
     Ok(())

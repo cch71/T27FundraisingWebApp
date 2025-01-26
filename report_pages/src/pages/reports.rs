@@ -66,7 +66,7 @@ fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
     };
 
     html! {
-        <div class="modal fade" id={tag.to_string()} tabIndex="-1" aria-labelledby={format!("{}Title", &tag)} aria-hidden="true">
+        <div class="modal fade" id={tag.to_string()} tabIndex="-1" aria-labelledby={format!("{}Title", &tag)} aria-hidden="false">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -156,15 +156,6 @@ fn reports_settings_dlg(props: &ReportsSettingsDlgProps) -> Html {
 pub fn reports_page() -> Html {
     let current_settings = use_state_eq(load_report_settings);
 
-    // let on_download_report = {
-    //     Callback::from(move |evt: MouseEvent| {
-    //         evt.prevent_default();
-    //         evt.stop_propagation();
-    //         log::info!("on_download_report");
-
-    //     })
-    // };
-
     let on_view_settings = {
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
@@ -243,7 +234,13 @@ pub fn reports_page() -> Html {
                                     <li class="list-group-item" id="orderOwnerLabel">
                                         <label class="text-muted pe-2">{"Showing Orders for:"}</label>
                                         <div class="d-inline" id="reportViewOrderOwner">
-                                            {current_settings.seller_id_filter.clone()}
+                                            {
+                                                if ALL_USERS_TAG == current_settings.seller_id_filter {
+                                                    Some("All Users".to_string())
+                                                } else {
+                                                    get_username_from_id(&current_settings.seller_id_filter)
+                                                }
+                                            }
                                         </div>
                                     </li>
                                 }

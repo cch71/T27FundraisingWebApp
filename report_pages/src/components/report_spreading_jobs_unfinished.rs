@@ -24,13 +24,11 @@ pub(crate) fn report_quick_view() -> Html {
                 }
                 ReportViewState::ReportHtmlGenerated(_) => {
                     // log::info!("Setting DataTable");
-                    if datatable.borrow().is_none() {
-                        *datatable.borrow_mut() = get_datatable(&serde_json::json!({
-                            "reportType": "spreadingJobsUnfinished",
-                            "id": ".data-table-report table",
-                            "isMulchOrder": true
-                        }));
-                    }
+                    *datatable.borrow_mut() = get_datatable(&serde_json::json!({
+                        "reportType": "spreadingJobsUnfinished",
+                        "id": ".data-table-report table",
+                        "isMulchOrder": true
+                    }));
                 }
             };
 

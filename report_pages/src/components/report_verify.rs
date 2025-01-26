@@ -69,14 +69,12 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
                 }
                 ReportViewState::ReportHtmlGenerated(_) => {
                     // log::info!("Setting DataTable");
-                    if datatable.borrow().is_none() {
-                        *datatable.borrow_mut() = get_datatable(&serde_json::json!({
-                            "reportType": "verification",
-                            "id": ".data-table-report table",
-                            "showOrderOwner": true,
-                            "isMulchOrder": true
-                        }));
-                    }
+                    *datatable.borrow_mut() = get_datatable(&serde_json::json!({
+                        "reportType": "verification",
+                        "id": ".data-table-report table",
+                        "showOrderOwner": true,
+                        "isMulchOrder": true
+                    }));
                 }
             };
 
