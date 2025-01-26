@@ -39,7 +39,7 @@ pub fn app_footer(props: &AppFooterProps) -> Html {
     let cur_win_loc = gloo::utils::window().location().pathname().unwrap();
 
     html! {
-        <footer class="footer mt-auto py-3 bg-light">
+        <footer class="footer mt-auto py-3">
             if !cur_win_loc.starts_with("/order") {//TODO this kill every child
                 {for props.children.iter()}
             }

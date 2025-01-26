@@ -4,16 +4,23 @@
 const getCommonDtOptions = (tableColumns) => {
     return {
         scrollResize: true,
-        scrollY: 100,
         scrollCollapse: true,
         paging: false,
         lengthChange: false,
         responsive: true,
         deferRender: true,
-        dom: 'Bfrtip', //https://datatables.net/reference/option/dom
-        buttons: [
-            "csv", "copy", "excel", "print", 'colvis'
-        ],
+        layout: {
+            topStart: {
+                buttons: [
+                    "csv", "copy", "excel", "print", 'colvis'
+                ]
+            },
+            topEnd: {
+                search: {
+                    placeholder: 'Search'
+                }
+            }
+        },
         columns: tableColumns
     };
 }
@@ -26,11 +33,12 @@ const getQuickViewReportDataTable = (params) => {
         { name: "OrderId", className: "all", visible: false },
         { title: "Name", className: "all" },
         { title: "Delivery Date", name: "DeliveryDate" },
-        { title: "Spreaders", name: "Spreaders", visible: false},
+        { title: "Spreaders", name: "Spreaders", visible: false },
         {
             title: "Spreading",
+            type: "string",
             render: (data, _, row, meta) => {
-                if (0!==row[meta.col-1].length) {
+                if (0 !== row[meta.col - 1].length) {
                     return `${data}: Spread`
                 } else {
                     return data;
@@ -51,9 +59,9 @@ const getMoneyCollectionReportDataTable = (params) => {
     const tableColumns = [
         { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner },
         { title: "Delivery Date", name: "DeliveryDate" },
-        { title: "Total From Checks", name: "TotalFromChecks"},
-        { title: "Total From Checks", name: "TotalFromCash"},
-        { title: "Total"}
+        { title: "Total From Checks", name: "TotalFromChecks" },
+        { title: "Total From Checks", name: "TotalFromCash" },
+        { title: "Total" }
     ];
 
     return new DataTable(params.id, getCommonDtOptions(tableColumns));
@@ -69,14 +77,14 @@ const getDeliveriesViewReportDataTable = (params) => {
         { title: "Name", className: "all" },
         { title: "Neighborhood" },
         { title: "Address" },
-        { title: "Bags" },
-        { title: "Phone" },
+        { title: "Bags", type: "string" },
+        { title: "Phone", type: "string" },
         { title: "Location" },
         { title: "Notes" },
         { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner },
     ];
     const dtOpts = getCommonDtOptions(tableColumns);
-    dtOpts["order"] = [[ 1, "asc" ]];
+    dtOpts["order"] = [[1, "asc"]];
     return new DataTable(params.id, dtOpts);
 };
 
@@ -86,11 +94,11 @@ const getDistPointsViewReportDataTable = (params) => {
     console.log("Setting Distrtibution Points Report View");
     let tableColumns = [
         { title: "Delivery Date", name: "DeliveryDate", className: "all" },
-        { title: "Total Bags", name: "TotalBags", className: "all"},
+        { title: "Total Bags", name: "TotalBags", className: "all", type: "string" },
     ];
 
     for (const header of params.distPoints) {
-        tableColumns.push({title: header, className: "all"});
+        tableColumns.push({ title: header, className: "all" });
     }
 
     return new DataTable(params.id, getCommonDtOptions(tableColumns));
@@ -105,7 +113,7 @@ const getFullViewReportDataTable = (params) => {
     let tableColumns = [
         { name: "OrderId", className: "all", visible: false },
         { title: "Name", className: "all" },
-        { title: "Phone" },
+        { title: "Phone", type: "string" },
         { title: "Email" },
         { title: "Address 1" },
         { title: "Address 2" },
@@ -114,15 +122,16 @@ const getFullViewReportDataTable = (params) => {
         { title: "Spreaders", name: "Spreaders", visible: false },
         {
             title: "Spreading",
+            type: "string",
             render: (data, _, row, meta) => {
-                if (0!==row[meta.col-1].length) {
+                if (0 !== row[meta.col - 1].length) {
                     return `${data}: Spread`
                 } else {
                     return data;
                 }
             }
         },
-        { title: "Bags" },
+        { title: "Bags", type: "string" },
         { title: "Special Instructions" },
         { title: "Donations" },
         { title: "Cash" },
@@ -166,7 +175,7 @@ const getSpreadingJobsUnfinishedViewReportDataTable = (params) => {
         { title: "Order Owner", name: "OrderOwner" },
         { title: "Name" },
         { title: "Delivery Date" },
-        { title: "Bags Left To Spread", className: "all" }
+        { title: "Bags Left To Spread", className: "all", type: "string" }
     ];
 
     return new DataTable(params.id, getCommonDtOptions(tableColumns));
@@ -179,16 +188,17 @@ const getSpreadingJobsViewReportDataTable = (params) => {
     let tableColumns = [
         { name: "OrderId", className: "all", visible: false },
         { title: "Name", className: "all" },
-        { title: "Phone", className: "all" },
+        { title: "Phone", className: "all", type: "string" },
         { title: "Delivery Date" },
         { title: "Instructions" },
         { title: "Address" },
-        { title: "Neighborhood", className: "all"},
-        { title: "Spreaders", name: "Spreaders", visible: false},
+        { title: "Neighborhood", className: "all" },
+        { title: "Spreaders", name: "Spreaders", visible: false },
         {
             title: "Spreading",
+            type: "string",
             render: (data, _, row, meta) => {
-                if (0!==row[meta.col-1].length) {
+                if (0 !== row[meta.col - 1].length) {
                     return `${data}: Spread`
                 } else {
                     return data;
@@ -247,4 +257,4 @@ const setSpreadersWithTr = (dt, tr, spreaders) => {
     //row.data(rowData).draw();
 };
 
-export {getDataTable, removeRowWithTr, setSpreadersWithTr}
+export { getDataTable, removeRowWithTr, setSpreadersWithTr }

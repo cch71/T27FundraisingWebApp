@@ -16,7 +16,6 @@ pub(crate) struct AppNavProps {
 #[function_component(AppNav)]
 pub(crate) fn app_nav(props: &AppNavProps) -> Html {
     let _ = use_navigator().unwrap(); // This forces re-render on path changes
-                                      //log::info!("~~~~~~~ Re Rendered ~~~~~~~~~~~~~~");
     let userlabel = if props.username != props.userid {
         format!("{} ({})", props.username, props.userid)
     } else {

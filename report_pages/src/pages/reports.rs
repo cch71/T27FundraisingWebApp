@@ -223,6 +223,10 @@ pub fn reports_page() -> Html {
 
     html! {
         <div>
+            <DeleteOrderDlg />
+            <ReportsSettingsDlg id="reportViewSettingsDlg"
+                onsave={on_save_settings} currentview={current_settings.current_view.clone()}/>
+            <ChooseSpreadersDlg />
             <div class="col-xs-1 d-flex justify-content-center">
                 <div class="card" style="width: 100%;">
 
@@ -245,31 +249,12 @@ pub fn reports_page() -> Html {
                                 }
                             </ul>
                             <div id="reportViewSettings" class="float-end">
-                                // <button type="button" class="btn reports-view-setting-btn" onclick={on_download_report}
-                                //         data-bs-toggle="tooltip" title="Download Current Report">
-                                //     <i class="bi bi-cloud-download" fill="currentColor"></i>
-                                // </button>
                                 <button type="button" class="btn reports-view-setting-btn" onclick={on_view_settings}
                                         data-bs-toggle="tooltip" data-bs-placement="left" title="Change Report View">
                                     <i class="bi bi-gear" fill="currentColor"></i>
                                 </button>
                             </div>
                         </h6>
-
-                        {
-                            match current_settings.current_view {
-                                ReportViews::Quick=>html!{<QuickReportView seller={current_settings.seller_id_filter.clone()}/>},
-                                ReportViews::Full=>html!{<FullReportView seller={current_settings.seller_id_filter.clone()}/>},
-                                ReportViews::MoneyCollection=>html!{<MoneyCollectionReportView seller={current_settings.seller_id_filter.clone()}/>},
-                                ReportViews::SpreadingJobs=>html!{<SpreadingJobsReportView seller={current_settings.seller_id_filter.clone()}/>},
-                                ReportViews::UnfinishedSpreadingJobs=>html!{<SpreadingJobsUnfinishedReportView />},
-                                ReportViews::OrderVerification=>html!{<OrderVerificationView seller={current_settings.seller_id_filter.clone()}/>},
-                                ReportViews::Deliveries=>html!{<DeliveriesReportView />},
-                                ReportViews::DistributionPoints=>html!{<DistributionPointsReportView />},
-                                ReportViews::SellMap=>html!{<SellMapReportView />},
-                                _=>html!{<h6>{"Not Yet Implemented"}</h6>},
-                            }
-                        }
 
                         <div class="visually-hidden" id="orderLoadingSpinner">
                             <h2>{"Loading Report Data..."}</h2>
@@ -280,12 +265,21 @@ pub fn reports_page() -> Html {
                 </div>
             </div>
 
+            {
+                match current_settings.current_view {
+                    ReportViews::Quick=>html!{<QuickReportView seller={current_settings.seller_id_filter.clone()}/>},
+                    ReportViews::Full=>html!{<FullReportView seller={current_settings.seller_id_filter.clone()}/>},
+                    ReportViews::MoneyCollection=>html!{<MoneyCollectionReportView seller={current_settings.seller_id_filter.clone()}/>},
+                    ReportViews::SpreadingJobs=>html!{<SpreadingJobsReportView seller={current_settings.seller_id_filter.clone()}/>},
+                    ReportViews::UnfinishedSpreadingJobs=>html!{<SpreadingJobsUnfinishedReportView />},
+                    ReportViews::OrderVerification=>html!{<OrderVerificationView seller={current_settings.seller_id_filter.clone()}/>},
+                    ReportViews::Deliveries=>html!{<DeliveriesReportView />},
+                    ReportViews::DistributionPoints=>html!{<DistributionPointsReportView />},
+                    ReportViews::SellMap=>html!{<SellMapReportView />},
+                    _=>html!{<h6>{"Not Yet Implemented"}</h6>},
+                }
+            }
 
-            <DeleteOrderDlg />
-            <ReportsSettingsDlg id="reportViewSettingsDlg"
-                onsave={on_save_settings} currentview={current_settings.current_view.clone()}/>
-            <ChooseSpreadersDlg />
-            // {confirmDlg}
         </div>
     }
 }
