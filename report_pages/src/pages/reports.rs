@@ -59,53 +59,41 @@ fn reports_selections(props: &ReportViewSettingsSelectionProp) -> Html {
     };
 
     html! {
-
-        <ul class="list-group list-group-horizontal-sm">
-            <li class="list-group-item me-3">
-                <label class="text-muted pe-2">{"Report View:"}</label>
-                <div class="d-inline">
-                   <select class="form-select" onchange={on_view_selection_change}>
-                   {
-                       get_allowed_report_views().iter().map(|v|{
-                           let is_selected = &props.current.current_view == v;
+        <>
+            <div class="d-inline-flex p-2">
+                <label>{"Report View:"}</label>
+                <select class="form-select" onchange={on_view_selection_change}>
+                {
+                   get_allowed_report_views().iter().map(|v|{
+                       let is_selected = &props.current.current_view == v;
+                       html! {
+                           <option value={v.to_string()} selected={is_selected}>
+                              {v.to_string()}
+                           </option>
+                       }
+                   }).collect::<Html>()
+                }
+                </select>
+            </div>
+            if props.showseller {
+                <div class="d-inline-flex p-2">
+                    <label>{"Showing Orders for:"}</label>
+                    <select class="form-select" data-size="20" onchange={on_userid_selection_change}>
+                    {
+                       get_users().iter().map(|(uid,user_info)|{
+                           let is_selected = &props.current.seller_id_filter == uid;
                            html! {
-                               <option value={v.to_string()} selected={is_selected}>
-                                  {v.to_string()}
+                               <option value={uid.clone()} selected={is_selected}>
+                                  {user_info.name.clone()}
                                </option>
                            }
                        }).collect::<Html>()
-                   }
-                   </select>
+                    }
+                       <option value={ALL_USERS_TAG}>{"Show All Users"}</option>
+                    </select>
                 </div>
-            </li>
-            if props.showseller {
-                <li class="list-group-item">
-                    <label class="text-muted pe-2">{"Showing Orders for:"}</label>
-                    <div class="d-inline">
-                       <select class="form-select" onchange={on_userid_selection_change}>
-                       {
-                           get_users().iter().map(|(uid,user_info)|{
-                               let is_selected = &props.current.seller_id_filter == uid;
-                               html! {
-                                   <option value={uid.clone()} selected={is_selected}>
-                                      {user_info.name.clone()}
-                                   </option>
-                               }
-                           }).collect::<Html>()
-                       }
-                           <option value={ALL_USERS_TAG}>{"Show All Users"}</option>
-                       </select>
-                        // {
-                        //     if ALL_USERS_TAG == current_settings.seller_id_filter {
-                        //         Some("All Users".to_string())
-                        //     } else {
-                        //         get_username_from_id(&current_settings.seller_id_filter)
-                        //     }
-                        // }
-                    </div>
-                </li>
             }
-        </ul>
+    </>
     }
 }
 

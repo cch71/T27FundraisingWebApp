@@ -32,7 +32,7 @@ const getQuickViewReportDataTable = (params) => {
     const tableColumns = [
         { name: "OrderId", className: "all", visible: false },
         { title: "Name", className: "all" },
-        { title: "Delivery Date", name: "DeliveryDate" },
+        { title: "Delivery Date", name: "DeliveryDate", type: "string" },
         { title: "Spreaders", name: "Spreaders", visible: false },
         {
             title: "Spreading",
@@ -58,7 +58,7 @@ const getMoneyCollectionReportDataTable = (params) => {
     console.log("Setting Money Collection Report View");
     const tableColumns = [
         { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner },
-        { title: "Delivery Date", name: "DeliveryDate" },
+        { title: "Delivery Date", name: "DeliveryDate", type: "string" },
         { title: "Total From Checks", name: "TotalFromChecks" },
         { title: "Total From Checks", name: "TotalFromCash" },
         { title: "Total" }
@@ -73,7 +73,7 @@ const getDeliveriesViewReportDataTable = (params) => {
     console.log("Setting Deliveries Report View");
     let tableColumns = [
         { name: "OrderId", className: "all", visible: false },
-        { title: "Delivery Date", name: "DeliveryDate", className: "all" },
+        { title: "Delivery Date", name: "DeliveryDate", className: "all", type: "string" },
         { title: "Name", className: "all" },
         { title: "Neighborhood" },
         { title: "Address" },
@@ -93,7 +93,7 @@ const getDeliveriesViewReportDataTable = (params) => {
 const getDistPointsViewReportDataTable = (params) => {
     console.log("Setting Distrtibution Points Report View");
     let tableColumns = [
-        { title: "Delivery Date", name: "DeliveryDate", className: "all" },
+        { title: "Delivery Date", name: "DeliveryDate", className: "all", type: "string" },
         { title: "Total Bags", name: "TotalBags", className: "all", type: "string" },
     ];
 
@@ -118,7 +118,7 @@ const getFullViewReportDataTable = (params) => {
         { title: "Address 1" },
         { title: "Address 2" },
         { title: "Neighborhood" },
-        { title: "Delivery Date" },
+        { title: "Delivery Date", type: "string" },
         { title: "Spreaders", name: "Spreaders", visible: false },
         {
             title: "Spreading",
@@ -153,7 +153,7 @@ const getOrderVerificationViewReportDataTable = (params) => {
     let tableColumns = [
         { name: "OrderId", className: "all", visible: false },
         { title: "Name", className: "all" },
-        { title: "Delivery Date" },
+        { title: "Delivery Date", type: "string" },
         { title: "Donations" },
         { title: "Cash" },
         { title: "Check" },
@@ -174,7 +174,7 @@ const getSpreadingJobsUnfinishedViewReportDataTable = (params) => {
     let tableColumns = [
         { title: "Order Owner", name: "OrderOwner" },
         { title: "Name" },
-        { title: "Delivery Date" },
+        { title: "Delivery Date", type: "string" },
         { title: "Bags Left To Spread", className: "all", type: "string" }
     ];
 
@@ -189,7 +189,7 @@ const getSpreadingJobsViewReportDataTable = (params) => {
         { name: "OrderId", className: "all", visible: false },
         { title: "Name", className: "all" },
         { title: "Phone", className: "all", type: "string" },
-        { title: "Delivery Date" },
+        { title: "Delivery Date", type: "string" },
         { title: "Instructions" },
         { title: "Address" },
         { title: "Neighborhood", className: "all" },
