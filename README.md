@@ -1,14 +1,14 @@
-# Mulch Fundraiser Web App
+# Mulch Fundraiser SaaS System
 
-## About the Cloud based Server-less Fundraising Order System for Troop 27
+## Original Goals
 
-The original goals for this system where to
-
-- Allow the scouts to enter in mulch orders
-- Be able to enter the orders from their devices in the field and replace the paper system.
-- Track the scout time tracking for delivery
-- Calculate financial information based on profits/other variables
-- Utilize the modern server-less technologies so as to not require a constant on compute resource
+- Allow the Scouts of Troop 27 to enter in mulch sales
+- The ability to enter orders from devices in the field and replace the paper
+  system.
+- Track the Scout time tracking for delivery
+- Calculate financial information based on profits or other variables
+- Utilize a modern serverless architecture with minimal cost and high
+  reliability
 
 ## High Level Diagram
 
@@ -16,41 +16,44 @@ The original goals for this system where to
 C4Context
 title T27 Fundraising Web System
 
+
 Person(seller, "Seller", "Fundraiser Seller")
 Person(admin, "Admin", "Fundraising Admin")
 
 System_Boundary(web, "Web") {
-  System(webClient, "Web Client (PWA)")
+  System(webClient, "Web App (PWA)")
 }
 
 System_Boundary(b2, "Serverless Cloud") {
-  System(awsAmplify, "AWS Amplify", "Web Client Server")
+  System(netlify, "Netlify", "Web App Host Server")
   System(awsApiGw, "AWS API Gateway")
   System(awsLambda, "AWS Lambda")
   System_Ext(keycloak, "phaseTwo (KeyCloak)", "Authentication and IAM")
   SystemDb_Ext(db, "CockroachDB (Postgresql)")
+  System_Ext(geocoders, "OpenStreetMap / Mapbox")
 }
 
 
-Rel(awsAmplify, webClient, "Publishes")
-BiRel(awsLambda, awsApiGw, "Calls")
-BiRel(awsApiGw, webClient, "Uses")
+Rel(netlify, webClient, "Publishes")
 
 BiRel(admin, webClient, "Uses")
 BiRel(seller, webClient, "Uses")
 BiRel(webClient, keycloak, "Authenticates")
-BiRel(awsLambda, db, "SQL")
+BiRel(awsApiGw, webClient, "Uses")
 BiRel(awsApiGw, keycloak, "Verifies")
-
+BiRel(awsLambda, awsApiGw, "Calls")
+BiRel(awsLambda, db, "SQL")
+BiRel(awsLambda, geocoders, "Geocoding")
 ```
 
 ## Fundraising App (PWA)
 
-From the beginning the concept for this new system was to be something the Scouts could use from
-their devices to make sales. The decision was made to create this app as a Progressive Web App (PWA)
-rather than create individual mobile device apps. The other design goal was that this be a static web
-app so that all the dynamic functionality happens in the browser.This eliminates the need to have a
-server backend to dynamically generate the pages.
+From the beginning the concept for this new system was to be something the
+Scouts could use from their devices to make sales. The decision was made to
+create this app as a Progressive Web App (PWA) rather than create individual
+mobile device apps. The other design goal was that this be a static web app so
+that all the dynamic functionality happens in the browser. This eliminates the
+need to have a server backend to dynamically generate the pages.
 
 Main categories of functionality:
 
@@ -59,7 +62,7 @@ Main categories of functionality:
   - User Summary/Standings
   - Mulch Spreading Status
   - Report generation capabilities
-  - Order Area Saturation Heatmaps (TODO)
+  - Order Area Saturation Heatmaps
 - Admin Functionality
   - Adjust order for any user
   - Enter new orders for a user
@@ -70,64 +73,100 @@ Main categories of functionality:
 
 ### Why Rust
 
-Having done web development for many years I have come to swear by Typescript for large complex projects
-Originally the first iteration of this app was built using Gatsby however while Gatsby supported Typescript it did not easily
-support the type safety compilation and so maintenance was problematic and in general the system was fragile
-as any medium complexity javascript project often can become.
-There was also an expectation that it was easier for contributors to pickup Javascript/Typescript.
-This turned out to not be true either. To that end the 2nd version of this project was switched to the [Yew Rust Framework](https://yew.rs/).
-This increased performance for app compilation, performance in the client, true type validation, easier bug fixes and feature additions.
-The tradeoff is as the app gained functionality load time did increase. However not enough to be an issue. At some point when this
-does get to be problematic then splitting up the app into different WASM modules will solve this issue.
+Having done web development for many years I have come to swear by Typescript
+for large complex projects Originally the first iteration of this app was built
+using Gatsby however while Gatsby supported Typescript it did not easily support
+the type safety compilation and so maintenance was problematic and in general
+the system was fragile as any medium complexity javascript project often can
+become. There was also an expectation that it was easier for contributors to
+pickup Javascript/Typescript. This turned out to not be true either.
 
-### Being served from AWS Amplify
+To that end the 2nd version of this project was switched to the
+[Yew Rust Framework](https://yew.rs/). This increased performance for app
+compilation, performance in the client, true type validation, easier bug fixes
+and feature additions. The tradeoff is as the app gained functionality load time
+did increase. However not enough to be an issue. At some point when this does
+get to be problematic then splitting up the app into different WASM modules will
+solve this issue.
 
-We are using [AWS Amplify](https://aws.amazon.com/amplify) to serve the web app from. This service automatically
-generates the TLS certificate and handles the CDN functionality. Since this is a static page web app we are only
-using the AWS Amplify service to build and publish. There is no need for the more expensive server backend to serve dynamic data.
-The other functionality AWS Amplify gives us is that it has a webhook setup for the repo so that when code is checked into
-the main branch it triggers the build/publish process in AWS Amplify. A TODO would be to figure out how to have it trigger
-on the published tag releases instead of main branch to make release more obvious.
+### Being served from Netlify
 
-### Authentication
+The current service hosting the static web app is [Netlify](https://www.netlify.com/).
+Netlify was a great alternative to AWS Amplify.
 
-Authentication is handled by [Phase//](https://phasetwo.io/). Phase//(aka PhaseTwo) is a provider that is based on
-[KeyCloak](https://www.keycloak.org/). Authentication has evolved since the original implementation that started out
-with a pure AWS Cognito solution. We then moved to using Okta's Auth0 service as an attempt to move away from cloud vendor lock-in.
-We are now using the KeyCloak based system offered by PhaseTwo. This gives up greater flexibility as there are multiple KeyCloak cloud vendors or we could setup
-our own. While Auth0 hand some less than ideal limits (for the free account) so far Phase// has been perfect for our needs.
-Using a KeyCloak based system also means that the admin scripts that we write can be used with other KeyCloak providers.
+Since this is a single page application (SPA) static hosting requirements is low.
+
+Requirements are:
+
+- TLS generation support
+- Subdomain support
+- API to allow publishing from build system
+
+Using GitHub Actions a published release will trigger a new publishing operation
+to the static host site.
 
 ## The Backend
 
-### AWS API Gateway/AWS Lambda
+### Authentication
 
-There is nothing special about the API Gateway other than exposing an AWS Lambda required it at the time this app was developed.
-The first iteration used more individual REST api's to request/submit data. This ultimately lead to a lot of complexity and
-seperate calls to the API. The second iteration is now using GraphQL queries with a minimal number of AWS API Gateway requests.
+Authentication is currently handled by [Phase//](https://phasetwo.io/)(aka
+PhaseTwo). Phase// is a provider that bases their solution on
+[KeyCloak](https://www.keycloak.org/).
 
-The AWS Lambda is also now written in the Go language. The first iteration was written in Python3 however not being a type safe language
-this also lead to some maintenance issues. The Go language being a compilable language also meant that this was ultimately cheaper than the
-Python implementation. While Python has faster cold start times, because it is in an interpreted language and in general slower,
-meant that the Go compiled version was actually faster for doing more which equated to less lambda compute time which was cheaper.
+There is also a Rust based AWS custom authenticator use by the API Gateway to
+ensure JWT tokens in the API requests are valid.
 
-The functionality of the Lambda is to convert the GraphQL request into actionable queries to the backend database. The GraphQL
-also gives a schema that is easy to validate that the incoming request is in fact valid GraphQL. It also provides a standard that
-can be used to abstract the request from the data source backend. The first iteration involved REST APIs with a one to one query
-against the AWS DynamoDB. When it was determined that CockroachDB was a cheaper/better alternative it would have required changing
-all the different REST/Backing Lambada functions. Switching to GraphQL allowed us to reduce this to a single Lambda, which more
-efficiently used the Lambda services, but also will allow us to switch datasources in the future without having to change the API interface.
+Authentication has evolved since the original implementation. The original
+version used AWS Cognito. The next year it moved to Okta's Auth0 service. This
+was done to move towards an OAuth2 standard and move away from any vendor
+specific lock-in. Upon discovering Keycloak and Phase// allowed this system to
+become even more vendor neutral. This is due to Keycloak being offered by other
+vendors with an option to spin it up on a compute instance as a last resort.
+
+### AWS API Gateway
+
+This services uses the AWS API Gateway with a custom authenticator. After
+validation that the request is authentic, it is forwarded to a lambda for
+further processing or direct pulls files from S3.
+
+Rate limiting and other security measures has been enabled to reduce abuse and
+costs.
+
+### AWS Lambdas
+
+#### API Lambda Handler
+
+Written in Go, the API lambda processes the GraphQL query payload and gathers
+the needed data from the SQL db and/or S3 files.
+
+The first version was written in Python3. The switch to Go sped up times for
+query return due to the use of a compiled language and a small executable size.
+
+#### Geocoder Lambda Handler
+
+Written in Go, the Geocoding lambda is triggered to run on a scheduled
+increment. Its purpose is to take the addresses in any new orders that were made
+since the last run, and do a geocode operation if that address is not in already
+in our known addresses table. A GeoJSON file is then created in S3 that will be
+returned whenever the operator asks for the sales heat map report.
 
 ### Database Backend
 
-[CockroachDB](https://www.cockroachlabs.com/) is a cloud based database solution. They have provided a PostgreSQL compatible interface
-so that it works well with any PostgreSQL driver available. While DynamoDB provided some great functionality ultimately our application
-would benefit better from the SQL based database. This also allows us to avoid vendor lock-in with AWS Dynamo. There are other cloud
-based providers that have SQL (and specifically Postgresql) based cloud DB access. If there is a need in the future to switch databases
-again it should be trivial to switch to an alternative database provider because we are using GraphQL as our interface.
+[CockroachDB](https://www.cockroachlabs.com/) is a cloud based database
+solution. They have provided a PostgreSQL compatible interface that works well
+with a PostgreSQL compatible driver.
+
+The first version used AWS DynamoDB. As new features were requested it became
+clear that this service would benefit from a SQL solution. Also DynamoDB was
+another vendor lock-in to be avoided.
+
+To further insulate the web interface from the backend data store, a GraphQL
+based API interface was created.
 
 ## CLI Utility
 
-A CLI tool written in Go was created as a tool to both debug the GraphQL APIs and create local functionality not wanting to be exposed
-vis the web browser. For security reasons we don't allow the web interface to create the authentication accounts and so the CLI utility
-is the mechansim used to create accounts based on a request made via the web browser.
+A CLI tool written in Go was created as a tool to both debug the GraphQL APIs
+and create local functionality not wanting to be exposed vis the web browser.
+For security reasons we don't allow the web interface to create the
+authentication accounts and so the CLI utility is the mechansim used to create
+accounts based on a request made via the web browser.
