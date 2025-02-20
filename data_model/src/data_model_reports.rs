@@ -437,7 +437,7 @@ pub async fn get_deliveries_report_data(
 //////////////////////////////////////////////////////////////////////////////////////
 static SPREADING_JOBS_RPT_GRAPHQL: &str = r"
 {
-  mulchOrders(***ORDER_OWNER_PARAM***) {
+  mulchOrders(doGetSpreadOrdersOnly: true***ORDER_OWNER_PARAM***) {
     orderId
     ownerId
     isVerified
@@ -467,10 +467,10 @@ pub async fn get_spreading_jobs_report_data(
     let query = if let Some(order_owner_id) = order_owner_id {
         SPREADING_JOBS_RPT_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",
-            &format!("ownerId: \"{}\"", order_owner_id),
+            &format!(", ownerId: \"{}\"", order_owner_id),
         )
     } else {
-        SPREADING_JOBS_RPT_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
+        SPREADING_JOBS_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", "")
     };
 
     make_report_query(query).await
@@ -480,7 +480,7 @@ pub async fn get_spreading_jobs_report_data(
 //////////////////////////////////////////////////////////////////////////////////////
 static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &str = r"
 {
-  mulchOrders {
+  mulchOrders(doGetSpreadOrdersOnly: true) {
     ownerId
     deliveryId
     purchases {
