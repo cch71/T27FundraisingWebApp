@@ -25,3 +25,13 @@ pub fn get_modal_by_id(id: &str) -> Option<Modal> {
         .get_element_by_id(id)
         .map(Modal::new)
 }
+
+#[wasm_bindgen(module = "/src/js/bootstrap_helpers.js")]
+extern "C" {
+    #[wasm_bindgen]
+    fn modalOp(id: &str, op: &str);
+}
+
+pub fn modal_op(id: &str, op: &str) {
+    modalOp(id, op);
+}

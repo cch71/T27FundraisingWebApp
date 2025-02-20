@@ -28,47 +28,95 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
         distribution_point: "".to_string(),
     });
     {
-        // This addes the use_state handler so it can be access externally
+        // This adds the use_state handler so it can be accessed externally
         let neighborhood = neighborhood.clone();
         SELECTED_NEIGHBORHOOD.with(|rc| {
             *rc.borrow_mut() = Some(neighborhood);
         });
     }
 
-    let on_add_update = {
+    let on_form_submission = {
+
         let onaddorupdate = props.onaddorupdate.clone();
-        move |_evt: MouseEvent| {
+
+        Callback::from(move |evt: SubmitEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+
+            log::info!("on_form_submission");
+
+            let mut is_valid = true;
             let document = gloo::utils::document();
 
             let name = match get_html_input_value("frmDlgNeighborhood", &document) {
-                Some(name) => name,
+                Some(name) => {
+                    let _ = get_element::<Element>("frmDlgNeighborhood", &document).class_list().remove_1("is-invalid");
+                    name
+                },
                 None => {
-                    gloo::dialogs::alert("Name can not be blank");
-                    return;
+                    is_valid = false;
+                    let _ = get_element::<Element>("frmDlgNeighborhood", &document).class_list().add_1("is-invalid");
+                    "".to_string()
                 }
             };
+
             let distribution_point = match get_html_input_value("frmDlgHoodDistPt", &document) {
-                Some(distribution_point) => distribution_point,
+                Some(distribution_point) => {
+                    let _ = get_element::<Element>("frmDlgHoodDistPt", &document).class_list().remove_1("is-invalid");
+                    distribution_point
+                },
                 None => {
-                    gloo::dialogs::alert("Distribution Point can not be blank");
-                    return;
+                    is_valid = false;
+                    let _ = get_element::<Element>("frmDlgHoodDistPt", &document).class_list().add_1("is-invalid");
+                    "".to_string()
                 }
             };
 
-            let hood = Neighborhood {
-                name,
-                distribution_point,
-                is_visible: get_html_checked_input_value("frmDlgHoodIsVisible", &document),
-                city: get_html_input_value("frmDlgHoodCity", &document),
-                zipcode: get_html_input_value("frmDlgHoodZip", &document)
-                    .and_then(|v| v.parse::<u32>().ok()),
+            let city = match get_html_input_value("frmDlgHoodCity", &document) {
+                Some(city) => {
+                    let _ = get_element::<Element>("frmDlgHoodCity", &document).class_list().remove_1("is-invalid");
+                    Some(city)
+                },
+                None => {
+                    if !name.to_lowercase().starts_with("out of area") {
+                        is_valid = false;
+                        let _ = get_element::<Element>("frmDlgHoodCity", &document).class_list().add_1("is-invalid");
+                    }
+                    None
+                }
             };
 
-            onaddorupdate.emit(hood);
-        }
+            let zipcode = match get_html_input_value("frmDlgHoodZip", &document)
+                .and_then(|v| v.parse::<u32>().ok())
+            {
+                Some(zipcode) => {
+                    let _ = get_element::<Element>("frmDlgHoodZip", &document).class_list().remove_1("is-invalid");
+                    Some(zipcode)
+                },
+                None => {
+                    if !name.to_lowercase().starts_with("out of area") {
+                        is_valid = false;
+                        let _ = get_element::<Element>("frmDlgHoodZip", &document).class_list().add_1("is-invalid");
+                    }
+                    None
+                }
+            };
+
+            if is_valid {
+                let hood = Neighborhood {
+                    name,
+                    distribution_point,
+                    city,
+                    zipcode,
+                    is_visible: get_html_checked_input_value("frmDlgHoodIsVisible", &document),
+                };
+
+                onaddorupdate.emit(hood);
+            }
+
+        })
     };
 
-    // log::info!("Cutoff Date String: {}", &*cutoff_date_str);
     html! {
         <div class="modal fade" id="neighborhoodAddOrEditDlg"
              tabIndex="-1" role="dialog" aria-labelledby="neighborhoodAddOrEditDlgTitle" aria-hidden="true">
@@ -81,7 +129,7 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                     </div>
                     <div class="modal-body">
                         <div class="container-sm">
-                            <form>
+                            <form class="needs-validation" novalidate=true onsubmit={on_form_submission}>
                                 <div class="row mb-1">
                                     <div class="col-md">
                                         <div class="form-check form-switch col-md">
@@ -100,6 +148,9 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                                                 readonly={!neighborhood.name.is_empty()}
                                                 value={neighborhood.name.clone()} />
                                                 <label for="frmDlgNeighborhood">{"Neighborhood"}</label>
+                                            <div class="invalid-feedback">
+                                                {"* Neighborhood name is required"}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -110,6 +161,9 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                                                 required=true
                                                 value={neighborhood.distribution_point.clone()} />
                                             <label for="frmDlgHoodDistPt">{"Distribution Point"}</label>
+                                            <div class="invalid-feedback">
+                                                {"* Distribution point is required"}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -117,29 +171,39 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                                     <div class="col-md">
                                         <div class="form-floating col-md">
                                             <input class="form-control" type="edit" autocomplete="fr-new-city" id="frmDlgHoodCity"
+                                                required=true
                                                 value={neighborhood.city.clone().unwrap_or("".to_string())} />
                                             <label for="frmDlgHoodCity">{"City"}</label>
+                                            <div class="invalid-feedback">
+                                                {"* City is required for non 'Out of Area' entries."}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-1">
+                                    <div class="col-md">
+                                        <div class="form-floating col-md">
+                                            <input class="form-control" type="number" autocomplete="fr-new-zipcode" id="frmDlgHoodZip"
+                                                pattern="[0-9]{5}"
+                                                required=true
+                                                value={neighborhood.zipcode.map(|v|v.to_string()).unwrap_or("".to_string())} />
+                                            <label for="frmDlgHoodZip">{"Zipcode"}</label>
+                                            <div class="invalid-feedback">
+                                                {"* Zipcode is required for non 'Out of Area' entries."}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md">
-                                        <div class="form-floating col-md">
-                                            <input class="form-control" type="number" autocomplete="fr-new-zipcode" id="frmDlgHoodZip"
-                                                pattern="[0-9]{5}"
-                                                value={neighborhood.zipcode.map(|v|v.to_string()).unwrap_or("".to_string())} />
-                                            <label for="frmDlgHoodZip">{"Zipcode"}</label>
-                                        </div>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{"Cancel"}</button>
+                                        <button type="submit" class="btn btn-primary float-end">
+                                            {"Submit"}
+                                        </button>
                                     </div>
                                 </div>
                             </form>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{"Cancel"}</button>
-                        <button type="button" class="btn btn-primary float-end" data-bs-dismiss="modal" onclick={on_add_update}>
-                            {"Submit"}
-                        </button>
                     </div>
                 </div>
             </div>
@@ -235,8 +299,14 @@ pub(crate) fn neighborhood_list() -> Html {
     let on_add_or_update_dlg_submit = {
         let is_dirty = is_dirty.clone();
         let neighborhoods = neighborhoods.clone();
+
+
         move |hood: Neighborhood| {
             log::info!("Add/Updating Neighborhood: {:#?}", &hood);
+            log::info!("Closing Dlg");
+
+            bootstrap::modal_op("neighborhoodAddOrEditDlg", "hide");
+
             let mut neighborhood_map = (*neighborhoods).clone();
             neighborhood_map.insert(hood.name.clone(), (true, hood));
             neighborhoods.set(neighborhood_map);
@@ -258,8 +328,7 @@ pub(crate) fn neighborhood_list() -> Html {
                 });
             });
 
-            let dlg = bootstrap::get_modal_by_id("neighborhoodAddOrEditDlg").unwrap();
-            dlg.toggle();
+            bootstrap::modal_op("neighborhoodAddOrEditDlg", "show");
         }
     };
 
@@ -274,8 +343,8 @@ pub(crate) fn neighborhood_list() -> Html {
                 let selected_neighborhood = rc.borrow().as_ref().unwrap().clone();
                 selected_neighborhood.set(hood.clone());
             });
-            let dlg = bootstrap::get_modal_by_id("neighborhoodAddOrEditDlg").unwrap();
-            dlg.toggle();
+
+            bootstrap::modal_op("neighborhoodAddOrEditDlg", "show");
         }
     };
 

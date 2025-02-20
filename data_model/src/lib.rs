@@ -102,13 +102,21 @@ pub fn save_to_active_order() {
     update_active_order(order).unwrap();
 }
 
+
+/////////////////////////////////////////////////
+pub fn get_element<T>(id: &str, document: &web_sys::Document) -> T
+where
+    T: JsCast,
+{
+    document
+        .get_element_by_id(id)
+        .and_then(|t| t.dyn_into::<T>().ok())
+        .unwrap()
+}
+
 /////////////////////////////////////////////////
 pub fn get_html_input_value(id: &str, document: &web_sys::Document) -> Option<String> {
-    let value = document
-        .get_element_by_id(id)
-        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-        .unwrap()
-        .value();
+    let value= get_element::<HtmlInputElement>(id, document).value();
     if value.is_empty() {
         None
     } else {

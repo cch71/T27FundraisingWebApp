@@ -228,8 +228,7 @@ pub(crate) fn set_mulch_cost() -> Html {
                 rc.borrow().as_ref().unwrap().set(None);
             });
 
-            let dlg = bootstrap::get_modal_by_id("pricebreakAddOrEditDlg").unwrap();
-            dlg.toggle();
+            bootstrap::modal_op("pricebreakAddOrEditDlg", "toggle");
         }
     };
 
@@ -245,8 +244,7 @@ pub(crate) fn set_mulch_cost() -> Html {
                     .unwrap()
                     .set(Some((gt, unit_price.clone())));
             });
-            let dlg = bootstrap::get_modal_by_id("pricebreakAddOrEditDlg").unwrap();
-            dlg.toggle();
+            bootstrap::modal_op("pricebreakAddOrEditDlg", "toggle");
         }
     };
 

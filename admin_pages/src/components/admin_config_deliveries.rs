@@ -244,8 +244,7 @@ pub(crate) fn delivery_list() -> Html {
                 });
             });
 
-            let dlg = bootstrap::get_modal_by_id("deliveryAddOrEditDlg").unwrap();
-            dlg.toggle();
+            bootstrap::modal_op("deliveryAddOrEditDlg", "toggle");
         }
     };
 
@@ -266,8 +265,7 @@ pub(crate) fn delivery_list() -> Html {
                     cutoff_date_str,
                 });
             });
-            let dlg = bootstrap::get_modal_by_id("deliveryAddOrEditDlg").unwrap();
-            dlg.toggle();
+            bootstrap::modal_op("deliveryAddOrEditDlg", "toggle");
         }
     };
 

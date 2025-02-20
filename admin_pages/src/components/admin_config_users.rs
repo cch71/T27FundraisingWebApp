@@ -625,8 +625,7 @@ pub(crate) fn user_list() -> Html {
 
     let on_upload_users = {
         move |_evt: MouseEvent| {
-            let dlg = bootstrap::get_modal_by_id("uploadUsersDlg").unwrap();
-            dlg.toggle();
+            bootstrap::modal_op("uploadUsersDlg", "toggle");
         }
     };
 
@@ -645,8 +644,7 @@ pub(crate) fn user_list() -> Html {
                     group: user_info.group.clone(),
                 });
             });
-            let dlg = bootstrap::get_modal_by_id("editUserDlg").unwrap();
-            dlg.toggle();
+            bootstrap::modal_op("editUserDlg", "toggle");
         }
     };
 

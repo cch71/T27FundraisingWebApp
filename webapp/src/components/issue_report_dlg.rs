@@ -1,17 +1,11 @@
 use data_model::*;
 use js::bootstrap;
-use std::cell::RefCell;
-use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlButtonElement, HtmlInputElement, HtmlTextAreaElement, MouseEvent};
 use yew::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-thread_local! {
-    static REPORT_ISSUE_DLG: Rc<RefCell<Option<bootstrap::Modal>>> = Rc::new(RefCell::new(None));
-}
-
 pub(crate) fn show_report_issue_dlg(do_show: bool) {
     let document = gloo::utils::document();
 
@@ -27,18 +21,11 @@ pub(crate) fn show_report_issue_dlg(do_show: bool) {
         .unwrap()
         .set_value("");
 
-    REPORT_ISSUE_DLG.with(|v| {
-        if (*v).borrow().is_none() {
-            *v.borrow_mut() = Some(bootstrap::get_modal_by_id("xmitIssueDlg").unwrap());
-        };
-
-        if do_show {
-            v.borrow().as_ref().unwrap().show();
-        } else {
-            v.borrow().as_ref().unwrap().hide();
-            *v.borrow_mut() = None;
-        }
-    });
+    if do_show {
+        bootstrap::modal_op("xmitIssueDlg", "show");
+    } else {
+        bootstrap::modal_op("xmitIssueDlg", "hide");
+    }
 }
 
 #[function_component(ReportIssueDlg)]
