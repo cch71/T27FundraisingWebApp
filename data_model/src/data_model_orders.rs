@@ -286,11 +286,21 @@ fn gen_submit_active_order_req_str() -> std::result::Result<String, Box<dyn std:
     ));
 
     if let Some(value) = order.comments.as_ref() {
-        query.push_str(&format!("\t\t comments: \"{}\"\n", value.trim()));
+        // Need to replace/escape quotes.
+        query.push_str(&format!("\t\t comments: \"{}\"\n",
+                                value
+                                    .trim()
+                                    .replace("\"","\\\"")
+                                    .replace("\n", r"\n")));
     }
 
     if let Some(value) = order.special_instructions.as_ref() {
-        query.push_str(&format!("\t\t specialInstructions: \"{}\"\n", value.trim()));
+        // Need to replace/escape quotes.
+        query.push_str(&format!("\t\t specialInstructions: \"{}\"\n",
+                                value
+                                    .trim()
+                                    .replace("\"","\\\"")
+                                    .replace("\n", r"\n")));
     }
 
     if let Some(value) = order.is_verified.as_ref() {
@@ -568,17 +578,6 @@ pub async fn load_active_order_from_db(
     *ACTIVE_ORDER.write().unwrap() = Some(new_active_order_state);
     Ok(())
 }
-
-// use wasm_bindgen::prelude::*;
-// #[wasm_bindgen]
-// pub fn sleep(ms: i32) -> js_sys::Promise {
-//     js_sys::Promise::new(&mut |resolve, _| {
-//         web_sys::window()
-//             .unwrap()
-//             .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms)
-//             .unwrap();
-//     })
-// }
 
 static SET_SPREADERS_GQL: &str = r"
 mutation {
