@@ -14,7 +14,7 @@ resolver = "2"
 repository = "https://github.com/cch71/T27FundraisingWebApp"
 authors = ["Craig Hamilton <cch71a@gmail.com"]
 license = "BSD-0"
-edition = "2021"
+edition = "2024"
 
 [workspace.dependencies]
 log = "0"

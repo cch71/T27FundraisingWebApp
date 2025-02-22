@@ -1,4 +1,4 @@
-use calamine::{open_workbook_from_rs, Ods, RangeDeserializerBuilder, Reader, Xlsx};
+use calamine::{Ods, RangeDeserializerBuilder, Reader, Xlsx, open_workbook_from_rs};
 use data_model::*;
 use gloo::file::File;
 use js::bootstrap;
@@ -228,17 +228,20 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
             let files: Option<FileList> = input.files();
             let mut results = Vec::new();
 
-            if let Some(files) = files {
-                let files = js_sys::try_iter(&files)
-                    .unwrap()
-                    .unwrap()
-                    .map(|v| web_sys::File::from(v.unwrap()))
-                    .map(File::from);
-                results.extend(files);
-                log::info!("Found some files: {:#?}", &results);
-            } else {
-                log::info!("No files so returning");
-                return;
+            match files {
+                Some(files) => {
+                    let files = js_sys::try_iter(&files)
+                        .unwrap()
+                        .unwrap()
+                        .map(|v| web_sys::File::from(v.unwrap()))
+                        .map(File::from);
+                    results.extend(files);
+                    log::info!("Found some files: {:#?}", &results);
+                }
+                _ => {
+                    log::info!("No files so returning");
+                    return;
+                }
             }
 
             let is_working = is_working.clone();
@@ -666,11 +669,14 @@ pub(crate) fn user_list() -> Html {
             let dirty_entries = dirty_entries.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 //log::info!("Saving users to cloud: {:#?}", updated_users);
-                if let Err(err) = add_or_update_users_for_admin_config(updated_users).await {
-                    gloo::dialogs::alert(&format!("Failed adding/updating users:\n{:#?}", err));
-                } else {
-                    dirty_entries.borrow_mut().clear();
-                    is_dirty.set(false);
+                match add_or_update_users_for_admin_config(updated_users).await {
+                    Err(err) => {
+                        gloo::dialogs::alert(&format!("Failed adding/updating users:\n{:#?}", err));
+                    }
+                    _ => {
+                        dirty_entries.borrow_mut().clear();
+                        is_dirty.set(false);
+                    }
                 }
                 disable_save_button(&document, false);
             });

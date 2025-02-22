@@ -1,6 +1,6 @@
 use super::{
     get_active_user,
-    gql_utils::{make_gql_request, GraphQlReq},
+    gql_utils::{GraphQlReq, make_gql_request},
 };
 use chrono::prelude::*;
 use gloo::storage::{LocalStorage, Storage};
@@ -406,20 +406,24 @@ pub async fn load_config() {
         let stored_config: ConfigApi = rslt.unwrap();
 
         let req = GraphQlReq::new(ALWAYS_CONFIG_GQL);
-        if let Ok(val) = make_gql_request::<serde_json::Value>(&req).await {
-            let is_last_mod_time_check_passed = val["config"]["lastModifiedTime"].as_str().unwrap()
-                == stored_config.config.last_modified_time;
-            let is_ver_schema_check_passed =
-                stored_config.local_store_schema_ver.unwrap_or(0) == LOCAL_STORE_SCHEMA_VER;
-            if is_last_mod_time_check_passed && is_ver_schema_check_passed {
-                log::info!("Using stored config data");
-                process_config_data(stored_config.config);
-                return;
-            } else {
-                log::info!("Config lastModifiedTime doesn't match forcing cache refresh");
+        match make_gql_request::<serde_json::Value>(&req).await {
+            Ok(val) => {
+                let is_last_mod_time_check_passed =
+                    val["config"]["lastModifiedTime"].as_str().unwrap()
+                        == stored_config.config.last_modified_time;
+                let is_ver_schema_check_passed =
+                    stored_config.local_store_schema_ver.unwrap_or(0) == LOCAL_STORE_SCHEMA_VER;
+                if is_last_mod_time_check_passed && is_ver_schema_check_passed {
+                    log::info!("Using stored config data");
+                    process_config_data(stored_config.config);
+                    return;
+                } else {
+                    log::info!("Config lastModifiedTime doesn't match forcing cache refresh");
+                }
             }
-        } else {
-            log::error!("Error reading lastModifiedTime config from network");
+            _ => {
+                log::error!("Error reading lastModifiedTime config from network");
+            }
         }
     } else {
         log::info!("No stored config loading from network...");
@@ -915,8 +919,8 @@ pub fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
 
 pub type FrClosureStaticData = Arc<BTreeMap<String, FrClosureMapData>>;
 ////////////////////////////////////////////////////////////////////////////
-pub async fn get_fundraiser_closure_static_data(
-) -> Result<FrClosureStaticData, Box<dyn std::error::Error>> {
+pub async fn get_fundraiser_closure_static_data()
+-> Result<FrClosureStaticData, Box<dyn std::error::Error>> {
     if let Ok(closure_data) = FR_CLOSURE_DATA.read() {
         if closure_data.len() > 0 {
             return Ok(closure_data.clone());
@@ -1448,8 +1452,8 @@ pub struct UserAdminConfig {
 }
 
 ////////////////////////////////////////////////////////////////////////////
-pub async fn get_users_for_admin_config(
-) -> Result<BTreeMap<String, UserAdminConfig>, Box<dyn std::error::Error>> {
+pub async fn get_users_for_admin_config()
+-> Result<BTreeMap<String, UserAdminConfig>, Box<dyn std::error::Error>> {
     #[derive(Deserialize)]
     struct RespUserInfo {
         users: Vec<UserAdminConfig>,

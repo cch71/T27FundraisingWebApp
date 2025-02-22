@@ -544,7 +544,7 @@ fn static_data_loading_spinny() -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 macro_rules! get_new_input_val_maybe {
-    // using a ty token type for macthing datatypes passed to maccro
+    // using a ty token type for matching datatypes passed to macro
     ($a:expr,$b:ident,$c:expr) => {
         if $a.$b != $c {
             let mut new_dvars = $a.clone();
@@ -680,21 +680,24 @@ pub fn closeout_fundraiser_page() -> Html {
                 {
                     // If we pull the values from storage then we short circuit a lot of the original logic.
                     //  TODO: Refactor this logic to make is simpler since we are storing values
-                    if let Some(new_dvars) = calculate_new_dvars(
+                    match calculate_new_dvars(
                         (*dvars).clone(),
                         (*fr_closure_static_data).as_ref().unwrap().clone(),
                     ) {
-                        log::info!("Setting new dynamic vars");
-                        scout_report_list.set(calculate_per_scout_report(
-                            &new_dvars,
-                            (*fr_closure_static_data).as_ref().unwrap().clone(),
-                        ));
-                        dvars.set(new_dvars);
-                    } else {
-                        scout_report_list.set(calculate_per_scout_report(
-                            &dvars,
-                            (*fr_closure_static_data).as_ref().unwrap().clone(),
-                        ));
+                        Some(new_dvars) => {
+                            log::info!("Setting new dynamic vars");
+                            scout_report_list.set(calculate_per_scout_report(
+                                &new_dvars,
+                                (*fr_closure_static_data).as_ref().unwrap().clone(),
+                            ));
+                            dvars.set(new_dvars);
+                        }
+                        _ => {
+                            scout_report_list.set(calculate_per_scout_report(
+                                &dvars,
+                                (*fr_closure_static_data).as_ref().unwrap().clone(),
+                            ));
+                        }
                     }
                 }
             });

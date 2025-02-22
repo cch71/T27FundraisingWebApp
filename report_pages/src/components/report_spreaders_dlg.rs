@@ -141,12 +141,12 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
                     if let Some(meta) = maybe_meta {
                         let spreaders: Vec<String> =
                             meta.selected_users.keys().cloned().collect::<_>();
-                        if let Err(err) = set_spreaders(&meta.order_id, &spreaders).await {
+                        match set_spreaders(&meta.order_id, &spreaders).await { Err(err) => {
                             gloo::dialogs::alert(&format!(
                                 "Failed to submit spreaders: {:#?}",
                                 err
                             ));
-                        } else {
+                        } _ => {
                             let spreaders = spreaders.join(",");
                             let _ = meta.dataset_elm.dataset().set("spreaders", &spreaders);
                             if let Err(err) =
@@ -157,7 +157,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
                                     err
                                 ));
                             }
-                        }
+                        }}
 
                         meta.dlg.toggle();
                         dlg_state.set(SelectionState::Choosing);

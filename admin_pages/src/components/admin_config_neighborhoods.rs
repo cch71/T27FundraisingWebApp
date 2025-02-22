@@ -36,7 +36,6 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
     }
 
     let on_form_submission = {
-
         let onaddorupdate = props.onaddorupdate.clone();
 
         Callback::from(move |evt: SubmitEvent| {
@@ -50,37 +49,49 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
 
             let name = match get_html_input_value("frmDlgNeighborhood", &document) {
                 Some(name) => {
-                    let _ = get_element::<Element>("frmDlgNeighborhood", &document).class_list().remove_1("is-invalid");
+                    let _ = get_element::<Element>("frmDlgNeighborhood", &document)
+                        .class_list()
+                        .remove_1("is-invalid");
                     name
-                },
+                }
                 None => {
                     is_valid = false;
-                    let _ = get_element::<Element>("frmDlgNeighborhood", &document).class_list().add_1("is-invalid");
+                    let _ = get_element::<Element>("frmDlgNeighborhood", &document)
+                        .class_list()
+                        .add_1("is-invalid");
                     "".to_string()
                 }
             };
 
             let distribution_point = match get_html_input_value("frmDlgHoodDistPt", &document) {
                 Some(distribution_point) => {
-                    let _ = get_element::<Element>("frmDlgHoodDistPt", &document).class_list().remove_1("is-invalid");
+                    let _ = get_element::<Element>("frmDlgHoodDistPt", &document)
+                        .class_list()
+                        .remove_1("is-invalid");
                     distribution_point
-                },
+                }
                 None => {
                     is_valid = false;
-                    let _ = get_element::<Element>("frmDlgHoodDistPt", &document).class_list().add_1("is-invalid");
+                    let _ = get_element::<Element>("frmDlgHoodDistPt", &document)
+                        .class_list()
+                        .add_1("is-invalid");
                     "".to_string()
                 }
             };
 
             let city = match get_html_input_value("frmDlgHoodCity", &document) {
                 Some(city) => {
-                    let _ = get_element::<Element>("frmDlgHoodCity", &document).class_list().remove_1("is-invalid");
+                    let _ = get_element::<Element>("frmDlgHoodCity", &document)
+                        .class_list()
+                        .remove_1("is-invalid");
                     Some(city)
-                },
+                }
                 None => {
                     if !name.to_lowercase().starts_with("out of area") {
                         is_valid = false;
-                        let _ = get_element::<Element>("frmDlgHoodCity", &document).class_list().add_1("is-invalid");
+                        let _ = get_element::<Element>("frmDlgHoodCity", &document)
+                            .class_list()
+                            .add_1("is-invalid");
                     }
                     None
                 }
@@ -90,13 +101,17 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                 .and_then(|v| v.parse::<u32>().ok())
             {
                 Some(zipcode) => {
-                    let _ = get_element::<Element>("frmDlgHoodZip", &document).class_list().remove_1("is-invalid");
+                    let _ = get_element::<Element>("frmDlgHoodZip", &document)
+                        .class_list()
+                        .remove_1("is-invalid");
                     Some(zipcode)
-                },
+                }
                 None => {
                     if !name.to_lowercase().starts_with("out of area") {
                         is_valid = false;
-                        let _ = get_element::<Element>("frmDlgHoodZip", &document).class_list().add_1("is-invalid");
+                        let _ = get_element::<Element>("frmDlgHoodZip", &document)
+                            .class_list()
+                            .add_1("is-invalid");
                     }
                     None
                 }
@@ -113,7 +128,6 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
 
                 onaddorupdate.emit(hood);
             }
-
         })
     };
 
@@ -299,7 +313,6 @@ pub(crate) fn neighborhood_list() -> Html {
     let on_add_or_update_dlg_submit = {
         let is_dirty = is_dirty.clone();
         let neighborhoods = neighborhoods.clone();
-
 
         move |hood: Neighborhood| {
             log::info!("Add/Updating Neighborhood: {:#?}", &hood);

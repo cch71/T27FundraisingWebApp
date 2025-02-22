@@ -77,10 +77,13 @@ pub(crate) fn report_issue() -> Html {
                 let rslt = report_new_issue(&reporting_user, &summary, &desc).await;
                 spinner_state.set("d-none");
                 btn_elm.set_disabled(false);
-                if let Err(err) = rslt {
-                    gloo::dialogs::alert(&format!("Failed to submit report: {:#?}", err));
-                } else {
-                    show_report_issue_dlg(false);
+                match rslt {
+                    Err(err) => {
+                        gloo::dialogs::alert(&format!("Failed to submit report: {:#?}", err));
+                    }
+                    _ => {
+                        show_report_issue_dlg(false);
+                    }
                 }
             });
         })

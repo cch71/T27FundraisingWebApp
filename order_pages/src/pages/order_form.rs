@@ -1,6 +1,6 @@
 use data_model::*;
 use rust_decimal::prelude::*;
-use rusty_money::{iso, Money};
+use rusty_money::{Money, iso};
 use wasm_bindgen::JsCast;
 use web_sys::{
     Element, Event, HtmlButtonElement, HtmlElement, HtmlInputElement, HtmlSelectElement,
@@ -129,12 +129,14 @@ fn validate_order_form(document: &web_sys::Document) -> bool {
         {
             //log::info!("Validationg ID: {}", element.id());
             let is_form_element_valid = {
-                if let Ok(form_element) = element.clone().dyn_into::<HtmlInputElement>() {
-                    form_element.check_validity()
-                } else if let Ok(form_element) = element.clone().dyn_into::<HtmlSelectElement>() {
-                    form_element.check_validity() && form_element.value() != ""
-                } else {
-                    false
+                match element.clone().dyn_into::<HtmlInputElement>() {
+                    Ok(form_element) => form_element.check_validity(),
+                    _ => match element.clone().dyn_into::<HtmlSelectElement>() {
+                        Ok(form_element) => {
+                            form_element.check_validity() && form_element.value() != ""
+                        }
+                        _ => false,
+                    },
                 }
             };
             if is_form_element_valid {
@@ -295,11 +297,11 @@ pub fn hood_selector() -> Html {
                 {
                     get_neighborhoods().iter().filter(|hood_info| hood_info.is_visible).map(|hood_info| {
                         let is_selected = {
-                            if let Some(neighborhood) = order.customer.neighborhood.as_ref() {
+                            match order.customer.neighborhood.as_ref() { Some(neighborhood) => {
                                 &hood_info.name == neighborhood
-                            } else {
+                            } _ => {
                                 false
-                            }
+                            }}
                         };
                         if !did_find_selected_hood && is_selected { did_find_selected_hood=true; }
                         html!{<option value={hood_info.name.clone()} selected={is_selected}>{hood_info.name.clone()}</option>}
@@ -442,10 +444,13 @@ pub fn order_form_fields() -> Html {
                     let rslt = submit_active_order().await;
                     disable_submit_button(&document, false, false);
                     disable_cancel_button(&document, false);
-                    if let Err(err) = rslt {
-                        gloo::dialogs::alert(&format!("Failed to submit order: {:#?}", err));
-                    } else {
-                        on_form_submitted(true);
+                    match rslt {
+                        Err(err) => {
+                            gloo::dialogs::alert(&format!("Failed to submit order: {:#?}", err));
+                        }
+                        _ => {
+                            on_form_submitted(true);
+                        }
                     }
                 });
             }

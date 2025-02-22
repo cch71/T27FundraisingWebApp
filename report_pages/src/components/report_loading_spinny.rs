@@ -11,4 +11,3 @@ pub(crate) fn report_loading_spinny() -> Html {
         </div>
     }
 }
-

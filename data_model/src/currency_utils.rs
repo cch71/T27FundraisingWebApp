@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use rust_decimal::prelude::*;
-use rusty_money::{iso, Formatter, Money, Params, Position, Round};
+use rusty_money::{Formatter, Money, Params, Position, Round, iso};
 
 pub fn to_money_str<T>(input: Option<T>) -> String
 where

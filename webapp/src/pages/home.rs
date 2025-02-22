@@ -190,13 +190,12 @@ pub fn home_page() -> Html {
     }
 
     let (summary_html, top_sellers_html) = {
-        if let Some(summary) = (*summary_values).as_ref() {
-            (
+        match (*summary_values).as_ref() {
+            Some(summary) => (
                 gen_summary_html(summary),
                 gen_top_sellers_html(&summary.troop_summary.top_sellers),
-            )
-        } else {
-            (html! {}, html! {})
+            ),
+            _ => (html! {}, html! {}),
         }
     };
 

@@ -1,5 +1,5 @@
 use super::{
-    gql_utils::{make_gql_request, GraphQlReq},
+    gql_utils::{GraphQlReq, make_gql_request},
     {get_active_user, get_fr_config, get_neighborhood},
 };
 use chrono::prelude::*;
@@ -158,8 +158,8 @@ pub fn load_report_settings() -> ReportViewSettings {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-pub async fn get_sales_geojson(
-) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+pub async fn get_sales_geojson()
+-> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use gloo::net::http::Request;
     // log::info!("Running Query: {}", &query);
 
@@ -338,8 +338,8 @@ static DISTRIBUTION_POINTS_RPT_GRAPHQL: &str = r#"
 "#;
 
 /////////////////////////////////////////////////////////////////////////////////
-pub async fn get_distribution_points_report_data(
-) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+pub async fn get_distribution_points_report_data()
+-> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use std::collections::{BTreeMap, BTreeSet};
     let mut delivery_id_map: BTreeMap<u64, BTreeMap<String, u64>> = BTreeMap::new();
     make_report_query(DISTRIBUTION_POINTS_RPT_GRAPHQL.to_string())
@@ -421,8 +421,8 @@ static DELIVERIES_RPT_GRAPHQL: &str = r#"
 "#;
 
 /////////////////////////////////////////////////////////////////////////////////
-pub async fn get_deliveries_report_data(
-) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+pub async fn get_deliveries_report_data()
+-> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     make_report_query(DELIVERIES_RPT_GRAPHQL.to_string())
         .await
         .map(|orders| {
@@ -493,8 +493,8 @@ static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &str = r"
 ";
 
 /////////////////////////////////////////////////////////////////////////////////
-pub async fn get_unfinished_spreading_jobs_report_data(
-) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+pub async fn get_unfinished_spreading_jobs_report_data()
+-> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use std::collections::BTreeMap;
     let mut unfinished_job_map: BTreeMap<(String, u64), u64> = BTreeMap::new();
     make_report_query(UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL.to_string())

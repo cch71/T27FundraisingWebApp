@@ -1,6 +1,6 @@
 use crate::components::action_report_buttons::{
-    on_delete_order_from_rpt, on_edit_spreading_from_rpt, on_view_or_edit_from_rpt,
-    ReportActionButtons,
+    ReportActionButtons, on_delete_order_from_rpt, on_edit_spreading_from_rpt,
+    on_view_or_edit_from_rpt,
 };
 use crate::components::report_loading_spinny::*;
 use data_model::*;

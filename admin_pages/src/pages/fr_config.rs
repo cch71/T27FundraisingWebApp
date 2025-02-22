@@ -39,7 +39,8 @@ fn reset_orders_database() -> Html {
                 let verify_phrase = "delete order and user data";
                 let msg = format!(
                     "This will remove all order data from the system.\nIT IS DESTRUCTIVE!!!\nAre You Sure?\nType \"{}\" to delete",
-                    verify_phrase);
+                    verify_phrase
+                );
                 let do_reset =
                     gloo::dialogs::prompt(&msg, None).map_or(false, |v| v == verify_phrase);
 

@@ -1,14 +1,14 @@
 use crate::currency_utils::*;
 use regex::Regex;
 use rust_decimal::prelude::*;
-use rusty_money::{iso, Money};
+use rusty_money::{Money, iso};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{LazyLock, RwLock};
 
 use super::{
     get_active_user,
-    gql_utils::{make_gql_request, GraphQlReq},
+    gql_utils::{GraphQlReq, make_gql_request},
 };
 
 static ACTIVE_ORDER: LazyLock<RwLock<Option<ActiveOrderState>>> =
@@ -287,20 +287,18 @@ fn gen_submit_active_order_req_str() -> std::result::Result<String, Box<dyn std:
 
     if let Some(value) = order.comments.as_ref() {
         // Need to replace/escape quotes.
-        query.push_str(&format!("\t\t comments: \"{}\"\n",
-                                value
-                                    .trim()
-                                    .replace("\"","\\\"")
-                                    .replace("\n", r"\n")));
+        query.push_str(&format!(
+            "\t\t comments: \"{}\"\n",
+            value.trim().replace("\"", "\\\"").replace("\n", r"\n")
+        ));
     }
 
     if let Some(value) = order.special_instructions.as_ref() {
         // Need to replace/escape quotes.
-        query.push_str(&format!("\t\t specialInstructions: \"{}\"\n",
-                                value
-                                    .trim()
-                                    .replace("\"","\\\"")
-                                    .replace("\n", r"\n")));
+        query.push_str(&format!(
+            "\t\t specialInstructions: \"{}\"\n",
+            value.trim().replace("\"", "\\\"").replace("\n", r"\n")
+        ));
     }
 
     if let Some(value) = order.is_verified.as_ref() {

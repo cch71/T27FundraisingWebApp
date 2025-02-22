@@ -102,7 +102,6 @@ pub fn save_to_active_order() {
     update_active_order(order).unwrap();
 }
 
-
 /////////////////////////////////////////////////
 pub fn get_element<T>(id: &str, document: &web_sys::Document) -> T
 where
@@ -116,12 +115,8 @@ where
 
 /////////////////////////////////////////////////
 pub fn get_html_input_value(id: &str, document: &web_sys::Document) -> Option<String> {
-    let value= get_element::<HtmlInputElement>(id, document).value();
-    if value.is_empty() {
-        None
-    } else {
-        Some(value)
-    }
+    let value = get_element::<HtmlInputElement>(id, document).value();
+    if value.is_empty() { None } else { Some(value) }
 }
 
 /////////////////////////////////////////////////
@@ -140,9 +135,5 @@ pub fn get_html_textarea_value(id: &str, document: &web_sys::Document) -> Option
         .and_then(|t| t.dyn_into::<HtmlTextAreaElement>().ok())
         .unwrap()
         .value();
-    if value.is_empty() {
-        None
-    } else {
-        Some(value)
-    }
+    if value.is_empty() { None } else { Some(value) }
 }

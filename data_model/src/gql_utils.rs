@@ -64,15 +64,16 @@ where
     }
 
     let resp: DataWrapper<T> = serde_json::from_value(raw_resp)?;
-    if let Some(errs) = resp.errors {
-        let err_str =
-            serde_json::to_string(&errs).unwrap_or("Failed to parse error resp".to_string());
-        use std::io::{Error, ErrorKind};
-        Err(Box::new(Error::new(
-            ErrorKind::Other,
-            format!("GQL request returned error:\n {}", err_str).as_str(),
-        )))
-    } else {
-        Ok(resp.data.unwrap())
+    match resp.errors {
+        Some(errs) => {
+            let err_str =
+                serde_json::to_string(&errs).unwrap_or("Failed to parse error resp".to_string());
+            use std::io::{Error, ErrorKind};
+            Err(Box::new(Error::new(
+                ErrorKind::Other,
+                format!("GQL request returned error:\n {}", err_str).as_str(),
+            )))
+        }
+        _ => Ok(resp.data.unwrap()),
     }
 }

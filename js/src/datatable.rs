@@ -22,7 +22,7 @@ extern "C" {
 
     #[wasm_bindgen(catch)]
     fn setSpreadersWithTr(dt: &JsValue, tr: &web_sys::Node, spreaders: &str)
-        -> Result<(), JsValue>;
+    -> Result<(), JsValue>;
 }
 
 pub fn get_datatable(params: &serde_json::Value) -> Option<DataTable> {

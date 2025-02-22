@@ -87,17 +87,23 @@ pub async fn is_authenticated() -> bool {
 }
 
 pub async fn login() {
-    if let Err(err) = loginUser().await {
-        log::error!("Error logging in Err: {:#?}", err);
-    } else {
-        log::info!("Logged In");
+    match loginUser().await {
+        Err(err) => {
+            log::error!("Error logging in Err: {:#?}", err);
+        }
+        _ => {
+            log::info!("Logged In");
+        }
     }
 }
 
 pub async fn logout() {
-    if let Err(err) = logoutUser().await {
-        log::error!("Error logging out Err: {:#?}", err);
-    } else {
-        log::info!("Logged out");
+    match logoutUser().await {
+        Err(err) => {
+            log::error!("Error logging out Err: {:#?}", err);
+        }
+        _ => {
+            log::info!("Logged out");
+        }
     }
 }
