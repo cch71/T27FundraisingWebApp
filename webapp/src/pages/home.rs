@@ -163,7 +163,7 @@ pub fn home_page() -> Html {
     } else if !is_fundraiser_finalized() {
         html! {
             <div style="color: red;">
-                <b>{"(The order phase has concluded. Contact the fundrasier admin for new orders/changes)"}</b>
+                <b>{"(The order phase has concluded. Contact the fundraiser admin for new orders/changes)"}</b>
             </div>
         }
     } else {

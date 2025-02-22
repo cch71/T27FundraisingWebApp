@@ -61,7 +61,7 @@ fn App() -> Html {
     let route_switch = {
         let is_order_active = is_order_active.clone();
         move |route: AppRoutes| -> Html {
-            // This is kindof a hack to save order form before we switch away
+            // This is kind of a hack to save order form before we switch away
             let document = web_sys::window().unwrap().document().unwrap();
             if document.get_element_by_id("newOrEditOrderForm").is_some() {
                 if is_active_order() {
@@ -86,7 +86,7 @@ fn App() -> Html {
         }
     };
 
-    let on_reportissue = {
+    let on_report_issue = {
         move |_| {
             log::info!("Bringing up Report Issue Dlg");
             show_report_issue_dlg(true);
@@ -97,7 +97,7 @@ fn App() -> Html {
         move |_| {
             wasm_bindgen_futures::spawn_local(async move {
                 log::info!("User has asked to logout");
-                delete_report_settings(); // We needs to delete report settings in case admin is on view user can't support
+                delete_report_settings(); // We need to delete report settings in case admin is on view user can't support
                 logout().await;
             });
         }
@@ -153,7 +153,7 @@ fn App() -> Html {
                     isadmin={is_admin}
                     onlogoff={on_logoff}
                     isactiveorder={*is_order_active}
-                    onreportissue={on_reportissue}/>
+                    onreportissue={on_report_issue}/>
                 <main class="flex-shrink-0">
                     <Switch<AppRoutes> render={route_switch} />
                     <ReportIssueDlg/>
@@ -170,6 +170,6 @@ fn App() -> Html {
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-    log::info!("RelVer: {}", std::option_env!("GITHUB_REF").unwrap_or("?"));
+    log::info!("RelVer: {}", option_env!("GITHUB_REF").unwrap_or("?"));
     yew::Renderer::<App>::new().render();
 }
