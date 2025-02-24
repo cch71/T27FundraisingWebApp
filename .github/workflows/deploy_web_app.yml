@@ -14,12 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Update Rust to latest
+      run: rustup update
     - run: rustc --version
     
     - uses: actions/checkout@v4
     
     - name: Install Trunk
-      run: curl -L https://github.com/trunk-rs/trunk/releases/download/v0.21.4/trunk-x86_64-unknown-linux-musl.tar.gz | tar -xzvf -
+      run: curl -L https://github.com/trunk-rs/trunk/releases/download/v0.21.7/trunk-x86_64-unknown-linux-musl.tar.gz | tar -xzvf -
     - run: ./trunk --version
     
     - name: Install Rust WASM Target
