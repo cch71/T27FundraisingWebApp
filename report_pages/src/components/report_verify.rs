@@ -60,7 +60,7 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
                         } else {
                             Some(seller)
                         };
-                        let resp = get_order_verfification_report_data(seller.as_ref())
+                        let resp = get_order_verification_report_data(seller.as_ref())
                             .await
                             .unwrap();
                         log::info!("Report Data has been downloaded");

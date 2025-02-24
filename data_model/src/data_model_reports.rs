@@ -37,7 +37,7 @@ impl std::fmt::Display for ReportViews {
             ReportViews::Full => write!(f, "Full"),
             ReportViews::SpreadingJobs => write!(f, "Spreading Jobs"),
             ReportViews::UnfinishedSpreadingJobs => write!(f, "Unfinished Spreading Jobs"),
-            ReportViews::OrderVerification => write!(f, "Order Verfication"),
+            ReportViews::OrderVerification => write!(f, "Order Verification"),
             ReportViews::DistributionPoints => write!(f, "Distribution Point"),
             ReportViews::Deliveries => write!(f, "Deliveries"),
             ReportViews::SellMap => write!(f, "Sales Map"),
@@ -56,7 +56,7 @@ impl std::str::FromStr for ReportViews {
             "Full" => Ok(ReportViews::Full),
             "Spreading Jobs" => Ok(ReportViews::SpreadingJobs),
             "Unfinished Spreading Jobs" => Ok(ReportViews::UnfinishedSpreadingJobs),
-            "Order Verfication" => Ok(ReportViews::OrderVerification),
+            "Order Verification" => Ok(ReportViews::OrderVerification),
             "Distribution Point" => Ok(ReportViews::DistributionPoints),
             "Deliveries" => Ok(ReportViews::Deliveries),
             "Sales Map" => Ok(ReportViews::SellMap),
@@ -110,7 +110,7 @@ pub fn do_show_current_seller(current_view: &ReportViews) -> bool {
 /////////////////////////////////////////////////////////////////////////////////
 async fn make_report_query(
     query: String,
-) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+) -> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     #[derive(Serialize, Deserialize, Debug)]
     struct GqlResp {
         #[serde(alias = "mulchOrders")]
@@ -138,7 +138,7 @@ pub struct ReportViewSettings {
 /////////////////////////////////////////////////////////////////////////////////
 pub fn save_report_settings(
     settings: &ReportViewSettings,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error>> {
     SessionStorage::set("ReportViewSettings", settings)?;
     Ok(())
 }
@@ -159,7 +159,7 @@ pub fn load_report_settings() -> ReportViewSettings {
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 pub async fn get_sales_geojson()
--> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+-> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use gloo::net::http::Request;
     // log::info!("Running Query: {}", &query);
 
@@ -229,7 +229,7 @@ static QUICK_RPT_GRAPHQL: &str = r"
 /////////////////////////////////////////////////////////////////////////////////
 pub async fn get_quick_report_data(
     order_owner_id: Option<&String>,
-) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+) -> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     let query = if let Some(order_owner_id) = order_owner_id {
         QUICK_RPT_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",
@@ -261,6 +261,8 @@ static FULL_RPT_GRAPHQL: &str = r"
         addr2
         phone
         email
+        city
+        zipcode
         neighborhood
     }
     specialInstructions
@@ -277,7 +279,7 @@ static FULL_RPT_GRAPHQL: &str = r"
 
 pub async fn get_full_report_data(
     order_owner_id: Option<&String>,
-) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+) -> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     let query = if let Some(order_owner_id) = order_owner_id {
         FULL_RPT_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",
@@ -307,7 +309,7 @@ static MONEY_COLLECTION_RPT_GRAPHQL: &str = r"
 /////////////////////////////////////////////////////////////////////////////////
 pub async fn get_money_collection_report_data(
     order_owner_id: Option<&String>,
-) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+) -> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     let query = if let Some(order_owner_id) = order_owner_id {
         MONEY_COLLECTION_RPT_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",
@@ -339,7 +341,7 @@ static DISTRIBUTION_POINTS_RPT_GRAPHQL: &str = r#"
 
 /////////////////////////////////////////////////////////////////////////////////
 pub async fn get_distribution_points_report_data()
--> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+-> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use std::collections::{BTreeMap, BTreeSet};
     let mut delivery_id_map: BTreeMap<u64, BTreeMap<String, u64>> = BTreeMap::new();
     make_report_query(DISTRIBUTION_POINTS_RPT_GRAPHQL.to_string())
@@ -407,6 +409,8 @@ static DELIVERIES_RPT_GRAPHQL: &str = r#"
         name
         addr1
         addr2
+        city
+        zipcode
         phone
         neighborhood
     }
@@ -422,7 +426,7 @@ static DELIVERIES_RPT_GRAPHQL: &str = r#"
 
 /////////////////////////////////////////////////////////////////////////////////
 pub async fn get_deliveries_report_data()
--> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+-> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     make_report_query(DELIVERIES_RPT_GRAPHQL.to_string())
         .await
         .map(|orders| {
@@ -463,7 +467,7 @@ static SPREADING_JOBS_RPT_GRAPHQL: &str = r"
 /////////////////////////////////////////////////////////////////////////////////
 pub async fn get_spreading_jobs_report_data(
     order_owner_id: Option<&String>,
-) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+) -> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     let query = if let Some(order_owner_id) = order_owner_id {
         SPREADING_JOBS_RPT_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",
@@ -494,7 +498,7 @@ static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &str = r"
 
 /////////////////////////////////////////////////////////////////////////////////
 pub async fn get_unfinished_spreading_jobs_report_data()
--> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+-> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     use std::collections::BTreeMap;
     let mut unfinished_job_map: BTreeMap<(String, u64), u64> = BTreeMap::new();
     make_report_query(UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL.to_string())
@@ -658,7 +662,7 @@ static SUMMARY_RPT_GRAPHQL: &str = r"
 pub async fn get_summary_report_data(
     seller_id: &str,
     top_sellers: u8,
-) -> std::result::Result<SummaryReport, Box<dyn std::error::Error>> {
+) -> Result<SummaryReport, Box<dyn std::error::Error>> {
     let rslt = LocalStorage::get("SummaryData");
     if rslt.is_ok() {
         let data: SummaryReportStorage = rslt.unwrap();
@@ -725,9 +729,9 @@ static ORDER_VERIFICATION_GRAPHQL: &str = r"
 ";
 
 /////////////////////////////////////////////////////////////////////////////////
-pub async fn get_order_verfification_report_data(
+pub async fn get_order_verification_report_data(
     order_owner_id: Option<&String>,
-) -> std::result::Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+) -> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
     let query = if let Some(order_owner_id) = order_owner_id {
         ORDER_VERIFICATION_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",

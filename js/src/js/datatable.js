@@ -2,6 +2,23 @@
 /////////////////////////////////////////////////////////////////////
 //
 const getCommonDtOptions = (tableColumns) => {
+
+    const htmlColFormatter = (data, row, column) => {
+        const tableColumn = tableColumns[column];
+        if (tableColumn.title === "Map") {
+            const href = data.match(/href=['"]([^'"]*)['"]/);
+            const text = data.match(/<a[^>]*>([^<]*)<\/a>/); // if it's a <a> tag
+            if (href && text) {
+                data = `=HYPERLINK("${href[1]}", "${text[1]}")`;
+            }
+            return data
+        // } else if (tableColumn.title === "Map QrCode") {
+        //     const src = data.match(/src=['"]([^'"]*)['"]/);
+        //     data = `"${decodeURIComponent(src[1].split(`data:image/svg+xml;utf8,`)[1])}"`;
+        }
+        return data;
+    };
+
     return {
         scrollResize: true,
         scrollCollapse: true,
@@ -9,10 +26,27 @@ const getCommonDtOptions = (tableColumns) => {
         lengthChange: false,
         responsive: true,
         deferRender: true,
+        buttons: [
+        ],
         layout: {
             topStart: {
                 buttons: [
-                    "csv", "copy", "excel", "print", 'colvis'
+                    {
+                        extend: 'copy',
+                        exportOptions: {
+                            format: {
+                                body: htmlColFormatter
+                            }
+                        }
+                    }, {
+                        extend: 'excel',
+                        exportOptions: {
+                            format: {
+                                body: htmlColFormatter
+                            }
+                        }
+                    },
+                    "csv", "pdf", "print", 'colvis'
                 ]
             },
             topEnd: {
@@ -24,7 +58,6 @@ const getCommonDtOptions = (tableColumns) => {
         columns: tableColumns
     };
 }
-
 /////////////////////////////////////////////////////////////////////
 //
 const getQuickViewReportDataTable = (params) => {
@@ -60,7 +93,7 @@ const getMoneyCollectionReportDataTable = (params) => {
         { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner },
         { title: "Delivery Date", name: "DeliveryDate", type: "string" },
         { title: "Total From Checks", name: "TotalFromChecks" },
-        { title: "Total From Checks", name: "TotalFromCash" },
+        { title: "Total From Cash", name: "TotalFromCash" },
         { title: "Total" }
     ];
 
@@ -77,6 +110,8 @@ const getDeliveriesViewReportDataTable = (params) => {
         { title: "Name", className: "all" },
         { title: "Neighborhood" },
         { title: "Address" },
+        { title: "Map" },
+        { title: "Map QrCode" },
         { title: "Bags", type: "string" },
         { title: "Phone", type: "string" },
         { title: "Location" },
@@ -117,6 +152,8 @@ const getFullViewReportDataTable = (params) => {
         { title: "Email" },
         { title: "Address 1" },
         { title: "Address 2" },
+        { title: "City" },
+        { title: "Zipcode" },
         { title: "Neighborhood" },
         { title: "Delivery Date", type: "string" },
         { title: "Spreaders", name: "Spreaders", visible: false },

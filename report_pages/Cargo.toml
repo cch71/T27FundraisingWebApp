@@ -16,3 +16,4 @@ wasm-bindgen-futures = { workspace = true }
 
 js = { path = "../js" }
 data_model = { path = "../data_model" }
+qrcode-generator = "5.0.0"

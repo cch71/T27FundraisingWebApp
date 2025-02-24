@@ -99,6 +99,8 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                     <th>{"Email"}</th>
                     <th>{"Address 1"}</th>
                     <th>{"Address 2"}</th>
+                    <th>{"City"}</th>
+                    <th>{"Zipcode"}</th>
                     <th>{"Neighborhood"}</th>
                     <th>{"Delivery Date"}</th>
                     <th>{"Spreaders"}</th>
@@ -153,6 +155,8 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                         <td>{v["customer"]["email"].as_str().unwrap_or("")}</td>
                                         <td>{v["customer"]["addr1"].as_str().unwrap()}</td>
                                         <td>{v["customer"]["addr2"].as_str().unwrap_or("")}</td>
+                                        <td>{v["customer"]["city"].as_str().unwrap_or("")}</td>
+                                        <td>{v["customer"]["zipcode"].as_u64().map_or("".to_string(), |v|v.to_string())}</td>
                                         <td>{v["customer"]["neighborhood"].as_str().unwrap()}</td>
                                         <td data-deliveryid={delivery_id}>{delivery_date}</td>
                                         <td>{spreaders.clone()}</td>
