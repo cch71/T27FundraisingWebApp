@@ -3,18 +3,33 @@
 //
 const getCommonDtOptions = (tableColumns) => {
 
+    const extractASrcHrefAndAlias = (data) => {
+        const href = data.match(/href=['"]([^'"]*)['"]/);
+        const text = data.match(/<a[^>]*>([^<]*)<\/a>/); // if it's a <a> tag
+        if (href && text) {
+            return [href[1], text[1]];
+        }
+        return [data, null];
+    };
+
     const htmlColFormatter = (data, row, column) => {
         const tableColumn = tableColumns[column];
         if (tableColumn.title === "Map") {
-            const href = data.match(/href=['"]([^'"]*)['"]/);
-            const text = data.match(/<a[^>]*>([^<]*)<\/a>/); // if it's a <a> tag
+            const [href, text] = extractASrcHrefAndAlias(data)
             if (href && text) {
-                data = `=HYPERLINK("${href[1]}", "${text[1]}")`;
+                return `=HYPERLINK("${href}", "${text}")`;
             }
-            return data
-        // } else if (tableColumn.title === "Map QrCode") {
-        //     const src = data.match(/src=['"]([^'"]*)['"]/);
-        //     data = `"${decodeURIComponent(src[1].split(`data:image/svg+xml;utf8,`)[1])}"`;
+        }
+        return data;
+    };
+
+    const textColFormatter = (data, row, column) => {
+        const tableColumn = tableColumns[column];
+        if (tableColumn.title === "Map") {
+            const [href, text] = extractASrcHrefAndAlias(data)
+            if (href && text) {
+                return `"${href}"`;
+            }
         }
         return data;
     };
@@ -45,8 +60,14 @@ const getCommonDtOptions = (tableColumns) => {
                                 body: htmlColFormatter
                             }
                         }
-                    },
-                    "csv", "pdf", "print", 'colvis'
+                    }, {
+                      extend: 'csv',
+                          exportOptions: {
+                          format: {
+                              body: textColFormatter
+                          }
+                      }
+                  }, "pdf", "print", 'colvis'
                 ]
             },
             topEnd: {
@@ -111,7 +132,6 @@ const getDeliveriesViewReportDataTable = (params) => {
         { title: "Neighborhood" },
         { title: "Address" },
         { title: "Map" },
-        { title: "Map QrCode" },
         { title: "Bags", type: "string" },
         { title: "Phone", type: "string" },
         { title: "Location" },

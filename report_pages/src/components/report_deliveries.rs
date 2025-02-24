@@ -1,10 +1,8 @@
-use web_sys::js_sys::{encode_uri, encode_uri_component};
+use web_sys::js_sys::encode_uri;
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
 use yew::prelude::*;
-use ToString;
-use qrcode_generator::QrCodeEcc;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -56,7 +54,6 @@ pub(crate) fn report_deliveries_view() -> Html {
                     <th>{"Neighborhood"}</th>
                     <th>{"Address"}</th>
                     <th>{"Map"}</th>
-                    <th>{"Map QrCode"}</th>
                     <th>{"Bags"}</th>
                     <th>{"Phone"}</th>
                     <th>{"Location"}</th>
@@ -90,19 +87,6 @@ pub(crate) fn report_deliveries_view() -> Html {
                                     &format!("https://www.google.com/maps/search/?api=1&query={}",
                                     address)).into();
 
-                                let google_map_url_qrcode = qrcode_generator::to_svg_to_string(
-                                    &google_map_url,
-                                    QrCodeEcc::Low, 100, None::<&str>).map_or(
-                                        html!{},
-                                        |v| {
-                                            let src = format!("data:image/svg+xml;utf8,{}",
-                                                encode_uri_component(&v));
-                                            html!{
-                                                <img src={src} />
-                                            }
-                                        }
-                                   );
-
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),
                                     None => return html!{}, // Donation order
@@ -119,7 +103,6 @@ pub(crate) fn report_deliveries_view() -> Html {
                                         <td>{neighborhood}</td>
                                         <td>{address}</td>
                                         <td><a href={google_map_url} target="_blank">{"map"}</a></td>
-                                        <td>{google_map_url_qrcode}</td>
                                         <td>{num_bags_sold.to_string()}</td>
                                         <td>{v["customer"]["phone"].as_str().unwrap()}</td>
                                         <td>{dist_point}</td>
