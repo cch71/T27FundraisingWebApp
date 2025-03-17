@@ -20,7 +20,7 @@ const getUserInfo = async () => {
     const token = keycloak.idToken;
     // console.log(`UserInfo: ${JSON.stringify(parsedToken, null, '\t')}`);
     // console.log(`Token: ${JSON.stringify(token, null, '\t')}`);
-    let roles = parsedToken.groups.map((role) => {
+    let roles = parsedToken.groups?.map((role) => {
         return role.startsWith("/") ? role.substring(1) : role;
     });
     const resp = {

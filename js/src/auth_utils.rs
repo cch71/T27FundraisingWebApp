@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, LazyLock, RwLock};
 use wasm_bindgen::prelude::*;
+use anyhow::anyhow;
 
 static ACTIVE_USER: LazyLock<RwLock<Option<Arc<AuthenticatedUserInfo>>>> =
     LazyLock::new(|| RwLock::new(None));
@@ -52,20 +53,24 @@ impl AuthenticatedUserInfo {
     }
 }
 
-pub async fn get_active_user_async() -> Option<Arc<AuthenticatedUserInfo>> {
+fn parse_active_user(user_info: JsValue) -> anyhow::Result<Arc<AuthenticatedUserInfo>> {
+    match serde_wasm_bindgen::from_value::<AuthenticatedUserInfo>(user_info) {
+        Ok(user_info) => Ok(Arc::new(user_info)),
+        Err(err) => Err(anyhow!("{:?}", err)),
+    }
+}
+
+pub async fn get_active_user_async() -> anyhow::Result<Arc<AuthenticatedUserInfo>> {
+
     match getUserInfo().await {
         Ok(user_info) => {
-            // log::info!("User Info: {:#?}", user_info);
-            let user_info: AuthenticatedUserInfo =
-                serde_wasm_bindgen::from_value(user_info).unwrap();
-            let user_info = Arc::new(user_info);
+            log::info!("User Info: {:#?}", user_info);
+            let user_info = parse_active_user(user_info)?;
             *ACTIVE_USER.write().unwrap() = Some(user_info.clone());
-            Some(user_info)
+            Ok(user_info)
         }
         Err(err) => {
-            log::error!("User Info Err: {:#?}", err);
-            gloo::dialogs::alert(&format!("Failed to get User Info: {:#?}", err));
-            None
+            Err(anyhow!("Get User Info Err: {:#?}", err))
         }
     }
 }

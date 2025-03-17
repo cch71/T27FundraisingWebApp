@@ -109,18 +109,24 @@ fn App() -> Html {
             if *is_loading {
                 wasm_bindgen_futures::spawn_local(async move {
                     if is_authenticated().await {
-                        if let Some(user_info) = get_active_user_async().await {
-                            // We are authenticated so get initial config stuff before we bring up ui
-                            load_config().await;
-                            // Preload summary_report data TODO: this is goofy
-                            let _ = get_summary_report_data(
-                                &user_info.get_id(),
-                                NUM_TOP_SELLERS_TO_GET,
-                            )
-                            .await;
-                            log::info!("Showing UI");
-                            is_loading.set(false);
-                        }
+                        match get_active_user_async().await {
+                            Ok(user_info) => {
+                                // We are authenticated so get initial config stuff before we bring up ui
+                                load_config().await;
+                                // Preload summary_report data TODO: this is goofy
+                                let _ = get_summary_report_data(
+                                    &user_info.get_id(),
+                                    NUM_TOP_SELLERS_TO_GET,
+                                )
+                                    .await;
+                                log::info!("Showing UI");
+                                is_loading.set(false);
+                            },
+                            Err(err) => {
+                                log::error!("Get Active User Err: {:#?}", err);
+                                gloo::dialogs::alert(&format!("Failed to get User Info: {:#?}", err));
+                            }
+                        };
                     } else {
                         log::info!("Not authenticated need to get signed in");
                         login().await;
