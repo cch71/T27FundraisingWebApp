@@ -507,6 +507,7 @@ pub async fn get_unfinished_spreading_jobs_report_data()
             orders.into_iter().for_each(|v| {
                 let num_spreaders = v["spreaders"].as_array().unwrap_or(&Vec::new()).len();
                 if num_spreaders != 0 {
+                    // There is an assumption that if spreaders have been set then all bags have been spread
                     return;
                 }
                 let num_spreading_bags_sold: u64 = v["purchases"]
@@ -516,6 +517,7 @@ pub async fn get_unfinished_spreading_jobs_report_data()
                     .find(|&v| v["productId"].as_str().unwrap() == "spreading")
                     .map_or(0, |v| v["numSold"].as_u64().unwrap());
                 if num_spreading_bags_sold == 0 {
+                    log::warn!("Query qualifier should have meant this doesn't happen!");
                     return;
                 }
                 let uid = v["ownerId"].as_str().unwrap().to_string();
