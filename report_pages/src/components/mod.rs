@@ -11,3 +11,4 @@ pub(crate) mod report_spreaders_dlg;
 pub(crate) mod report_spreading_jobs;
 pub(crate) mod report_spreading_jobs_unfinished;
 pub(crate) mod report_verify;
+pub(crate) mod report_assisted_spreading_jobs;

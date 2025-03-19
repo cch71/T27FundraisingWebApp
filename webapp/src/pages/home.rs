@@ -58,6 +58,15 @@ fn gen_summary_html(full_summary: &SummaryReport) -> Html {
         });
     }
 
+    if summary.total_assisted_spreading_orders != 0 {
+        summary_html.push(html! {
+            <tr>
+                <td class="py-1">{"Your spreading assist orders:"}</td>
+                <td class="py-1">{summary.total_assisted_spreading_orders}</td>
+            </tr>
+        });
+    }
+
     // Allocation Information
     if is_fundraiser_finalized() {
         if summary.allocations_from_deliveries != "0" {
