@@ -15,6 +15,7 @@ use crate::components::report_sell_map::SellMapReportView;
 use crate::components::report_spreaders_dlg::ChooseSpreadersDlg;
 use crate::components::report_spreading_jobs::SpreadingJobsReportView;
 use crate::components::report_spreading_jobs_unfinished::SpreadingJobsUnfinishedReportView;
+use crate::components::report_assisted_spreading_jobs::SpreadingAssistJobsReportView;
 use crate::components::report_verify::OrderVerificationView;
 
 /////////////////////////////////////////////////
@@ -160,6 +161,7 @@ pub fn reports_page() -> Html {
                     ReportViews::Full=>html!{<FullReportView seller={current_settings.seller_id_filter.clone()}/>},
                     ReportViews::MoneyCollection=>html!{<MoneyCollectionReportView seller={current_settings.seller_id_filter.clone()}/>},
                     ReportViews::SpreadingJobs=>html!{<SpreadingJobsReportView seller={current_settings.seller_id_filter.clone()}/>},
+                    ReportViews::SpreadingAssistJobs=>html!{<SpreadingAssistJobsReportView spreader={current_settings.seller_id_filter.clone()}/>},
                     ReportViews::UnfinishedSpreadingJobs=>html!{<SpreadingJobsUnfinishedReportView />},
                     ReportViews::OrderVerification=>html!{<OrderVerificationView seller={current_settings.seller_id_filter.clone()}/>},
                     ReportViews::Deliveries=>html!{<DeliveriesReportView />},

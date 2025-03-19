@@ -271,6 +271,20 @@ const getSpreadingJobsViewReportDataTable = (params) => {
 
 /////////////////////////////////////////////////////////////////////
 //
+const getSpreadingAssistJobsViewReportDataTable = (params) => {
+    console.log("Setting Spreading Assist Jobs Report View");
+    let tableColumns = [
+        { name: "OrderId", className: "all", visible: false },
+        { title: "Address" },
+        { title: "Neighborhood", className: "all" },
+        { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner }
+    ];
+
+    return new DataTable(params.id, getCommonDtOptions(tableColumns));
+};
+
+/////////////////////////////////////////////////////////////////////
+//
 const getDataTable = (mapOfParams) => {
     // new rust code converts it to map so have to convert it back to
     // JSON Object (or TODO:re-write all this)
@@ -288,6 +302,8 @@ const getDataTable = (mapOfParams) => {
         return getOrderVerificationViewReportDataTable(params);
     } else if (params.reportType === "spreadingJobs") {
         return getSpreadingJobsViewReportDataTable(params);
+    } else if (params.reportType === "spreadingAssistJobs") {
+        return getSpreadingAssistJobsViewReportDataTable(params);
     } else if (params.reportType === "moneyCollection") {
         return getMoneyCollectionReportDataTable(params);
     } else if (params.reportType === "spreadingJobsUnfinished") {

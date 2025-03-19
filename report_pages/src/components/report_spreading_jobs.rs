@@ -124,7 +124,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                                     .iter()
                                     .find(|&v| v["productId"].as_str().unwrap() == "spreading")
                                     .map_or(0, |v| v["numSold"].as_u64().unwrap());
-                                log::info!("Spreading: {}", spreading);
+                                // log::info!("Spreading: {}", spreading);
                                 if spreading == 0 {
                                     return html!{};
                                 }

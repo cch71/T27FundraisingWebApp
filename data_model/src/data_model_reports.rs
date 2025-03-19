@@ -19,6 +19,7 @@ pub enum ReportViews {
     Quick,
     Full,
     SpreadingJobs,
+    SpreadingAssistJobs,
     AllocationSummary,
     SellMap,
     MoneyCollection,
@@ -37,6 +38,7 @@ impl std::fmt::Display for ReportViews {
             ReportViews::Full => write!(f, "Full"),
             ReportViews::SpreadingJobs => write!(f, "Spreading Jobs"),
             ReportViews::UnfinishedSpreadingJobs => write!(f, "Unfinished Spreading Jobs"),
+            ReportViews::SpreadingAssistJobs => write!(f, "Assisted Spreading Jobs"),
             ReportViews::OrderVerification => write!(f, "Order Verification"),
             ReportViews::DistributionPoints => write!(f, "Distribution Point"),
             ReportViews::Deliveries => write!(f, "Deliveries"),
@@ -56,6 +58,7 @@ impl std::str::FromStr for ReportViews {
             "Full" => Ok(ReportViews::Full),
             "Spreading Jobs" => Ok(ReportViews::SpreadingJobs),
             "Unfinished Spreading Jobs" => Ok(ReportViews::UnfinishedSpreadingJobs),
+            "Assisted Spreading Jobs" => Ok(ReportViews::SpreadingAssistJobs),
             "Order Verification" => Ok(ReportViews::OrderVerification),
             "Distribution Point" => Ok(ReportViews::DistributionPoints),
             "Deliveries" => Ok(ReportViews::Deliveries),
@@ -77,6 +80,7 @@ pub fn get_allowed_report_views() -> Vec<ReportViews> {
 
     if get_fr_config().kind == "mulch" {
         reports.push(ReportViews::SpreadingJobs);
+        reports.push(ReportViews::SpreadingAssistJobs);
 
         if get_active_user().is_admin() {
             reports.push(ReportViews::UnfinishedSpreadingJobs);
@@ -102,6 +106,7 @@ pub fn do_show_current_seller(current_view: &ReportViews) -> bool {
         ReportViews::Quick
             | ReportViews::Full
             | ReportViews::SpreadingJobs
+            | ReportViews::SpreadingAssistJobs
             | ReportViews::MoneyCollection
             | ReportViews::OrderVerification
     )
@@ -480,6 +485,41 @@ pub async fn get_spreading_jobs_report_data(
     make_report_query(query).await
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+static SPREADING_ASSIST_JOBS_RPT_GRAPHQL: &str = r"
+{
+  mulchOrders(doGetSpreadOrdersOnly: true***EXTRA_PARAMS***) {
+    orderId
+    ownerId
+    customer {
+        name
+        addr1
+        addr2
+        neighborhood
+    }
+  }
+}
+";
+
+/////////////////////////////////////////////////////////////////////////////////
+pub async fn get_spreading_assist_jobs_report_data(
+    order_owner_id: Option<&String>,
+) -> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+    let query = if let Some(order_owner_id) = order_owner_id {
+        SPREADING_ASSIST_JOBS_RPT_GRAPHQL.replace(
+            "***EXTRA_PARAMS***",
+            &format!(", excludeOwnerId: \"{0}\", spreaderId: \"{0}\"", order_owner_id),
+        )
+    } else {
+        return Ok(Vec::new());
+    };
+
+    make_report_query(query).await
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 static UNFINISHED_SPREADING_JOBS_RPT_GRAPHQL: &str = r"
@@ -507,6 +547,7 @@ pub async fn get_unfinished_spreading_jobs_report_data()
             orders.into_iter().for_each(|v| {
                 let num_spreaders = v["spreaders"].as_array().unwrap_or(&Vec::new()).len();
                 if num_spreaders != 0 {
+                    // There is an assumption that if spreaders have been set then all bags have been spread
                     return;
                 }
                 let num_spreading_bags_sold: u64 = v["purchases"]
@@ -516,6 +557,7 @@ pub async fn get_unfinished_spreading_jobs_report_data()
                     .find(|&v| v["productId"].as_str().unwrap() == "spreading")
                     .map_or(0, |v| v["numSold"].as_u64().unwrap());
                 if num_spreading_bags_sold == 0 {
+                    log::warn!("Query qualifier should have meant this doesn't happen!");
                     return;
                 }
                 let uid = v["ownerId"].as_str().unwrap().to_string();
@@ -595,6 +637,9 @@ pub struct SellerSummary {
     #[serde(alias = "totalDeliveryMinutes")]
     pub total_delivery_minutes: u32,
 
+    #[serde(alias = "totalAssistedSpreadingOrders")]
+    pub total_assisted_spreading_orders: u32,
+
     #[serde(alias = "totalNumBagsSold")]
     pub total_num_bags_sold: u32,
 
@@ -632,6 +677,7 @@ static SUMMARY_RPT_GRAPHQL: &str = r"
   summary {
     orderOwner(***ORDER_OWNER_PARAM***) {
       totalDeliveryMinutes
+      totalAssistedSpreadingOrders
       totalNumBagsSold
       totalNumBagsSoldToSpread
       totalAmountCollectedForDonations
