@@ -64,7 +64,7 @@ pub async fn get_active_user_async() -> anyhow::Result<Arc<AuthenticatedUserInfo
 
     match getUserInfo().await {
         Ok(user_info) => {
-            log::info!("User Info: {:#?}", user_info);
+            // log::info!("User Info: {:#?}", user_info);
             let user_info = parse_active_user(user_info)?;
             *ACTIVE_USER.write().unwrap() = Some(user_info.clone());
             Ok(user_info)
