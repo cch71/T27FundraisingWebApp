@@ -9,6 +9,7 @@ use data_model::*;
 
 use chrono::prelude::*;
 use gloo::file::File;
+use gloo::timers::callback::Timeout;
 
 ////////////////////////////////////////////////////////
 fn calculate_new_dvars(
@@ -53,8 +54,8 @@ fn calculate_new_dvars(
         .mulch_cost
         .checked_div(svars.num_bags_sold.into())
         .unwrap();
-    // Profits from bags should be equal to mulch_sales_gross.  When satified this is true should just use
-    // mulch_sales_gross
+    // Profits from bags should be equal to mulch_sales_gross.
+    // When satisfied, this is true should just use mulch_sales_gross
     dvars.profits_from_bags = svars
         .amount_from_bags_sales
         .checked_sub(dvars.mulch_cost)
@@ -96,12 +97,12 @@ fn calculate_per_scout_report(
                 .unwrap();
             // This calculates the percentage of sales and then allocates that percentage from the bag sale allocation
             //   so from a raw perspective.
-            //   Step 1: get cost to troop for this scouts bags sold by multiplying troop cost per bag by bags
+            //   Step 1: get cost to troop for the scout's bags sold by multiplying troop cost per bag by bags
             //   that were sold.
-            //   Step 2: Subtract that number from the amount of money in mulch bag sales the scout made for the trop.  This gives
+            //   Step 2: Subtract that number from the amount of money in mulch bag sales the scout made for the troop.  This gives
             //    you how much profit the scout had
-            //   Step 3: Divide that scouts's profit by the troop profit to get the profit percentage
-            //   Step 4: Mulitpy the Allocations for mulch by that percentage pulling out the the amount
+            //   Step 3: Divide that scout's profit by the troop profit to get the profit percentage
+            //   Step 4: Multiply the Allocations for mulch by that percentage pulling out the amount
             let allocations_from_bags_sold = dvars
                 .per_bag_cost
                 .checked_mul(data.num_bags_sold.into())
@@ -171,7 +172,7 @@ fn calculate_per_scout_report(
         .collect::<Vec<FrCloseoutAllocationVals>>();
 
     let svars = svar_map.get("TROOP_TOTALS").unwrap();
-    // First Record is special Troop Totals
+    // The First Record is special Troop Totals
     scout_vals.insert(
         0,
         FrCloseoutAllocationVals {
@@ -261,7 +262,6 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
     };
 
     html! {
-        <div class="col-md-9">
             <div class="card">
                 <h5 class="card-header justify-content-center text-center">
                     {"Allocation Report"}
@@ -271,6 +271,14 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
                             // data-reportheaders={JSON.stringify(perScoutReportDataHeaders)}
                             title="Download Report">
                         <i class="bi bi-cloud-download" fill="currentColor"></i>
+                    </button>
+                    <button type="submit" class="btn btn-primary my-2 float-end"
+                            id="releaseFundsBtn"
+                            data-bs-toggle="tooltip"
+                            title="Release Report to Scouts">
+                        <span class="spinner-border spinner-border-sm me-1" role="status"
+                              aria-hidden="true" id="formReleaseFundsSpinner" style="display: none" />
+                        {"Save and Release Funds"}
                     </button>
                 </h5>
                 <div class="card-body">
@@ -308,18 +316,9 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
                                 </tbody>
                             </table>
                         </div>
-                        <button type="submit" class="btn btn-primary my-2 float-end"
-                                id="releaseFundsBtn"
-                                data-bs-toggle="tooltip"
-                                title="Release Report to Scouts">
-                            <span class="spinner-border spinner-border-sm me-1" role="status"
-                                  aria-hidden="true" id="formReleaseFundsSpinner" style="display: none" />
-                            {"Save and Release Funds"}
-                        </button>
                     </form>
                 </div>
             </div>
-        </div>
     }
 }
 
@@ -333,40 +332,44 @@ struct SalesTableProps {
 fn sales_table(props: &SalesTableProps) -> Html {
     let svars = props.svarsmap.get("TROOP_TOTALS").unwrap();
     html! {
-        <table class="table table-striped caption-top" id="fundsSalesTable">
-            <caption>{"Sales"}</caption>
-            <thead>
-                <tr>
-                    <th scope="col"></th>
-                    <th scope="col">{"Num Sold"}</th>
-                    <th scope="col">{"Sales"}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{"Bags of Mulch"}</td>
-                    <td>{svars.num_bags_sold}</td>
-                    <td>{decimal_to_money_string(&svars.amount_from_bags_sales)}</td>
-                </tr>
-                <tr>
-                    <td>{"Spreading Jobs"}</td>
-                    <td>{svars.num_bags_to_spread_sold}</td>
-                    <td>{decimal_to_money_string(&svars.amount_from_bags_to_spread_sales)}</td>
-                </tr>
-                <tr>
-                    <td>{"Donations"}</td>
-                    <td></td>
-                    <td>{decimal_to_money_string(&svars.amount_from_donations)}</td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td>{"Total Collected"}</td>
-                    <td></td>
-                    <td>{decimal_to_money_string(&svars.amount_total_collected)}</td>
-                </tr>
-            </tfoot>
-        </table>
+        <div class="card m-1" style="min-width: 330px">
+            <div class="card-body p-0">
+                <table class="table table-striped caption-top m-0" id="fundsSalesTable">
+                    <caption class="mx-2">{"Sales"}</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col"></th>
+                            <th scope="col">{"Num Sold"}</th>
+                            <th scope="col">{"Sales"}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{"Bags of Mulch"}</td>
+                            <td>{svars.num_bags_sold}</td>
+                            <td>{decimal_to_money_string(&svars.amount_from_bags_sales)}</td>
+                        </tr>
+                        <tr>
+                            <td>{"Spreading Jobs"}</td>
+                            <td>{svars.num_bags_to_spread_sold}</td>
+                            <td>{decimal_to_money_string(&svars.amount_from_bags_to_spread_sales)}</td>
+                        </tr>
+                        <tr>
+                            <td>{"Donations"}</td>
+                            <td></td>
+                            <td>{decimal_to_money_string(&svars.amount_from_donations)}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td>{"Total Collected"}</td>
+                            <td></td>
+                            <td>{decimal_to_money_string(&svars.amount_total_collected)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
     }
 }
 
@@ -382,67 +385,80 @@ fn allocations_table(props: &AllocationsTableProps) -> Html {
     let svars = props.svarsmap.get("TROOP_TOTALS").unwrap();
     html! {
         <>
-        <table class="table table-striped table-responsive caption-top" id="fundsAllocationsTable">
-            <caption>{"Information"}</caption>
-            <tbody>
-                <tr>
-                    <td>{"Per Bag Cost"}</td>
-                    <td>{decimal_to_money_string(&props.dvars.per_bag_cost)}</td>
-                </tr>
-                <tr>
-                    <td>{"Gross Profits"}</td>
-                    <td>{decimal_to_money_string(&props.dvars.mulch_sales_gross)}</td>
-                </tr>
-            </tbody>
-            <tfoot>
-            </tfoot>
-        </table>
-        <table class="table table-striped table-responsive caption-top" id="fundsAllocationsTable">
-            <caption>{"Allocations"}</caption>
-            <tbody>
-                <tr>
-                    <td>{"Min Allocations to Troop (est)"}</td>
-                    <td>{decimal_to_money_string(&props.dvars.money_pool_for_troop)}</td>
-                </tr>
-                <tr>
-                    <td>{"Max Allocations to Scouts (est)"}</td>
-                    <td>{decimal_to_money_string(&props.dvars.money_pool_for_scouts_sub_pools)}</td>
-                </tr>
-            </tbody>
-            <tfoot>
-            </tfoot>
-        </table>
+        <div class="card m-1" style="min-width: 330px">
+            <div class="card-body p-0">
+                <table class="table table-striped table-responsive caption-top m-0" id="fundsAllocationsTable">
+                    <caption class="mx-2">{"Information"}</caption>
+                    <tbody>
+                        <tr>
+                            <td>{"Per Bag Cost"}</td>
+                            <td>{decimal_to_money_string(&props.dvars.per_bag_cost)}</td>
+                        </tr>
+                        <tr>
+                            <td>{"Gross Profits"}</td>
+                            <td>{decimal_to_money_string(&props.dvars.mulch_sales_gross)}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
 
-        <table class="table table-striped caption-top mb-0" id="fundsScoutAllocationsTable">
-            <caption>{"Scout Allocations"}</caption>
-            <tbody>
-                <tr>
-                    <td>{"For Mulch Bag Sales (est)"}</td>
-                    <td>{decimal_to_money_string(&props.dvars.money_pool_for_scout_sales)}</td>
-                </tr>
-                <tr>
-                    <td>{"Avg Allocation per Bag"}</td>
-                    <td>{decimal_to_money_string(&props.dvars.per_bag_avg_earnings)}</td>
-                </tr>
-                <tr>
-                    <td>{"For Delivery (est)"}</td>
-                    <td>{decimal_to_money_string(&props.dvars.money_pool_for_scout_delivery)}</td>
-                </tr>
-                <tr>
-                    <td>{"Total Delivery Minutes"}</td>
-                    <td>{
-                        Decimal::from_f64(svars.delivery_time_total.as_secs_f64()/60.0)
-                            .unwrap()
-                            .round_dp(2)
-                            .to_string()
-                    }</td>
-                </tr>
-                <tr>
-                    <td>{"Allocation Per Delivery Minute"}</td>
-                    <td>{decimal_to_money_string(&props.dvars.delivery_earnings_per_minute)}</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="card m-1" style="min-width: 330px">
+            <div class="card-body p-0">
+                <table class="table table-striped table-responsive caption-top m-0" id="fundsAllocationsTable">
+                    <caption class="mx-2">{"Allocations"}</caption>
+                    <tbody>
+                        <tr>
+                            <td>{"Min Allocations to Troop (est)"}</td>
+                            <td>{decimal_to_money_string(&props.dvars.money_pool_for_troop)}</td>
+                        </tr>
+                        <tr>
+                            <td>{"Max Allocations to Scouts (est)"}</td>
+                            <td>{decimal_to_money_string(&props.dvars.money_pool_for_scouts_sub_pools)}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="card m-1" style="min-width: 330px">
+            <div class="card-body p-0">
+                <table class="table table-striped caption-top m-0" id="fundsScoutAllocationsTable">
+                    <caption class="mx-2">{"Scout Allocations"}</caption>
+                    <tbody>
+                        <tr>
+                            <td>{"For Mulch Bag Sales (est)"}</td>
+                            <td>{decimal_to_money_string(&props.dvars.money_pool_for_scout_sales)}</td>
+                        </tr>
+                        <tr>
+                            <td>{"Avg Allocation per Bag"}</td>
+                            <td>{decimal_to_money_string(&props.dvars.per_bag_avg_earnings)}</td>
+                        </tr>
+                        <tr>
+                            <td>{"For Delivery (est)"}</td>
+                            <td>{decimal_to_money_string(&props.dvars.money_pool_for_scout_delivery)}</td>
+                        </tr>
+                        <tr>
+                            <td>{"Total Delivery Minutes"}</td>
+                            <td>{
+                                Decimal::from_f64(svars.delivery_time_total.as_secs_f64()/60.0)
+                                    .unwrap()
+                                    .round_dp(2)
+                                    .to_string()
+                            }</td>
+                        </tr>
+                        <tr>
+                            <td>{"Allocation Per Delivery Minute"}</td>
+                            <td>{decimal_to_money_string(&props.dvars.delivery_earnings_per_minute)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
         </>
     }
 }
@@ -487,7 +503,7 @@ fn currency_widget(props: &CurrencyWidgetProps) -> Html {
                    onblur={on_blur.clone()}
                    oninput={props.oninput.clone()}
             />
-            <label for={props.id.clone()}>{props.label.clone()}</label>
+            <label class="ms-2" for={props.id.clone()}>{props.label.clone()}</label>
         </div>
     }
 }
@@ -504,14 +520,14 @@ struct AllocationsFormProps {
 fn allocations_form(props: &AllocationsFormProps) -> Html {
     html! {
         <form>
-            <div class="row mb-2">
+            <div class="row m-1">
                 <CurrencyWidget id="formBankDeposited"
                                 value={props.dvars.bank_deposited}
                                 label="Amount Deposited in Bank"
                                 oninput={props.oninput.clone()}
                 />
             </div>
-            <div class="row mb-2">
+            <div class="row m-1">
                 <CurrencyWidget id="formMulchCost"
                                 value={props.dvars.mulch_cost}
                                 label="Amount Paid for Mulch"
@@ -519,7 +535,7 @@ fn allocations_form(props: &AllocationsFormProps) -> Html {
                 />
             </div>
 
-            <div class="table-responsive" id="fundsReleaseTables">
+            <div class="container-fluid d-flex flex-row flex-wrap" id="fundsReleaseTables">
                 <SalesTable svarsmap={props.svarsmap.clone()} />
                 if Decimal::ZERO != props.dvars.bank_deposited && Decimal::ZERO != props.dvars.mulch_cost {
                     <AllocationsTable dvars={props.dvars.clone()} svarsmap={props.svarsmap.clone()} />
@@ -570,9 +586,9 @@ pub fn closeout_fundraiser_page() -> Html {
         }
         dvars
     });
-    let scout_report_list: yew::UseStateHandle<Vec<FrCloseoutAllocationVals>> =
+    let scout_report_list: UseStateHandle<Vec<FrCloseoutAllocationVals>> =
         use_state_eq(Vec::new);
-    let fr_closure_static_data: yew::UseStateHandle<Option<FrClosureStaticData>> =
+    let fr_closure_static_data: UseStateHandle<Option<FrClosureStaticData>> =
         use_state_eq(|| None);
 
     let on_download_summary = {
@@ -618,49 +634,66 @@ pub fn closeout_fundraiser_page() -> Html {
         })
     };
 
+    // Store a reference to the current timeout
+    let timeout_handle = use_mut_ref::<Option<Timeout>, _>(|| None);
+    
     let on_allocation_form_inputs_change = {
         let dvars = dvars.clone();
         let fr_closure_static_data = fr_closure_static_data.clone();
+        let timeout_handle = timeout_handle.clone();
+
 
         Callback::from(move |evt: InputEvent| {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_allocation_form_inputs_change");
 
-            let input_elm = evt
-                .target()
-                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                .unwrap();
-
-            let mut input_value = input_elm.value();
-            input_value.retain(|c| c != '$' && c != ',');
-            let new_val = parse_money_str_as_decimal(input_value.as_str()).unwrap();
-
-            let new_dvars_opt = match input_elm.id().as_str() {
-                "formBankDeposited" => {
-                    get_new_input_val_maybe!(*dvars, bank_deposited, new_val)
-                }
-                "formMulchCost" => {
-                    get_new_input_val_maybe!(*dvars, mulch_cost, new_val)
-                }
-                _ => {
-                    log::error!("Invalid input elememnt");
-                    None
-                }
-            };
-            if let Some(new_dvars) = new_dvars_opt {
-                if let Some(new_dvars) = calculate_new_dvars(
-                    new_dvars,
-                    (*fr_closure_static_data).as_ref().unwrap().clone(),
-                ) {
-                    log::info!("Setting new dynamic vars from inputs");
-                    set_fundraiser_closure_dynamic_data(FrClosureDynamicData {
-                        bank_deposited: Some(new_dvars.bank_deposited.to_string()),
-                        mulch_cost: Some(new_dvars.mulch_cost.to_string()),
-                    });
-                    dvars.set(new_dvars);
-                }
+            if let Some(handle) = timeout_handle.borrow_mut().take() {
+                handle.cancel();
             }
+            {
+                let dvars = dvars.clone();
+                let fr_closure_static_data = fr_closure_static_data.clone();
+                let new_handle = Timeout::new(800, move || {
+                    let input_elm = evt
+                        .target()
+                        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                        .unwrap();
+
+                    let mut input_value = input_elm.value();
+                    input_value.retain(|c| c != '$' && c != ',');
+                    let new_val = parse_money_str_as_decimal(input_value.as_str()).unwrap();
+
+                    let new_dvars_opt = match input_elm.id().as_str() {
+                        "formBankDeposited" => {
+                            get_new_input_val_maybe!(*dvars, bank_deposited, new_val)
+                        }
+                        "formMulchCost" => {
+                            get_new_input_val_maybe!(*dvars, mulch_cost, new_val)
+                        }
+                        _ => {
+                            log::error!("Invalid input elememnt");
+                            None
+                        }
+                    };
+                    if let Some(new_dvars) = new_dvars_opt {
+                        if let Some(new_dvars) = calculate_new_dvars(
+                            new_dvars,
+                            (*fr_closure_static_data).as_ref().unwrap().clone(),
+                        ) {
+                            log::info!("Setting new dynamic vars from inputs");
+                            set_fundraiser_closure_dynamic_data(FrClosureDynamicData {
+                                bank_deposited: Some(new_dvars.bank_deposited.to_string()),
+                                mulch_cost: Some(new_dvars.mulch_cost.to_string()),
+                            });
+                            dvars.set(new_dvars);
+                        }
+                    }
+                });
+
+                timeout_handle.borrow_mut().replace(new_handle);
+            }
+
         })
     };
 
@@ -711,42 +744,36 @@ pub fn closeout_fundraiser_page() -> Html {
     } else {
         html! {
             <>
-                <div class="col-xs-1 d-flex justify-content-center">
+                <div class="container-fluid vh-100 d-flex flex-column align-items-center" style="max-width: 95%;">
                     <h4>{"Funds Release Page"}</h4>
-                </div>
-                <div class="releaseFundsCards">
-                    <div class="row">
 
-                        <div class="col">
-
-                            <div class="card" style="maxWidth: 30rem">
-                                <h5 class="card-header justify-content-center text-center">
-                                    {"Allocation Calculations"}
-                                    <button type="button" class="btn reports-view-setting-btn ms-3"
-                                            onclick={on_download_summary.clone()} data-bs-toggle="tooltip"
-                                            title="Download Summary">
-                                        <i class="bi bi-cloud-download" fill="currentColor"></i>
-                                    </button>
-                                </h5>
-                                <div class="card-body">
-                                    <AllocationsForm
-                                        oninput={on_allocation_form_inputs_change.clone()}
-                                        dvars={(*dvars).clone()}
-                                        svarsmap={(*fr_closure_static_data).as_ref().unwrap().clone()}
-                                    />
-                                </div>
-                            </div> // End of Card
+                    <div class="card my-1">
+                        <h5 class="card-header">
+                            {"Allocation Calculations"}
+                            <button type="button" class="btn reports-view-setting-btn ms-3"
+                                    onclick={on_download_summary.clone()} data-bs-toggle="tooltip"
+                                    title="Download Summary">
+                                <i class="bi bi-cloud-download" fill="currentColor"></i>
+                            </button>
+                        </h5>
+                        <div class="card-body p-0 m-0">
+                            <AllocationsForm
+                                oninput={on_allocation_form_inputs_change.clone()}
+                                dvars={(*dvars).clone()}
+                                svarsmap={(*fr_closure_static_data).as_ref().unwrap().clone()}
+                            />
                         </div>
-                        if Decimal::ZERO != dvars.bank_deposited &&
-                           Decimal::ZERO != dvars.mulch_cost &&
-                           !scout_report_list.is_empty()
-                        {
+                    </div> // End of Card
+
+                    if Decimal::ZERO != dvars.bank_deposited &&
+                       Decimal::ZERO != dvars.mulch_cost &&
+                       !scout_report_list.is_empty()
+                    {
                             <AllocationReport
                                 reportlist={(*scout_report_list).clone()}
                                 onreleasefunds={on_release_funds_form_submission.clone()}
                             />
-                        }
-                    </div>
+                    }
                 </div>
             </>
         }
