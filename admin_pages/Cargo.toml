@@ -20,5 +20,4 @@ js-sys = "0"
 rust_decimal = "1"
 chrono = { version = "0", features = ["wasmbind"] }
 csv = "1"
-# zip = "2.5"
-# calamine = "0.26.1"
+calamine = "0.27"

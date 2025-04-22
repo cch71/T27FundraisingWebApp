@@ -1,6 +1,4 @@
-#[cfg(target_os = "linux")]
 use calamine::{Ods, RangeDeserializerBuilder, Reader, Xlsx, open_workbook_from_rs};
-#[cfg(target_os = "linux")]
 use std::io::Cursor;
 
 use data_model::*;
@@ -112,7 +110,6 @@ fn process_csv_records(
     Ok(())
 }
 
-#[cfg(target_os = "linux")]
 /////////////////////////////////////////////////
 fn process_spreadsheet_records<T>(
     mut wb: T,
@@ -139,7 +136,6 @@ where
 }
 
 /////////////////////////////////////////////////
-#[cfg(target_os = "linux")]
 fn process_xlsx_records(
     data: Vec<u8>,
     potential_new_users: &mut BTreeMap<String, UserFileRec>,
@@ -151,7 +147,6 @@ fn process_xlsx_records(
 }
 
 /////////////////////////////////////////////////
-#[cfg(target_os = "linux")]
 fn process_ods_records(
     data: Vec<u8>,
     potential_new_users: &mut BTreeMap<String, UserFileRec>,
@@ -176,11 +171,9 @@ fn process_uploaded_file(
         _ if filename.ends_with(".csv") || mimetype.eq("text/csv") => {
             process_csv_records(data, potential_new_users)
         },
-        #[cfg(target_os = "linux")]
         _ if filename.to_ascii_lowercase().ends_with(".xlsx")  || mimetype.eq("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") => {
             process_xlsx_records(data, potential_new_users)
         }
-        #[cfg(target_os = "linux")]
         _ if filename.to_ascii_lowercase().ends_with(".ods") || mimetype.eq("application/vnd.oasis.opendocument.spreadsheet") => {
             process_ods_records(data, potential_new_users)
         }
