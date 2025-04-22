@@ -176,7 +176,7 @@ pub fn home_page() -> Html {
             </div>
         }
     } else {
-        // Fundraiser is finished and allocations have been distributed
+        // The Fundraiser is finished and allocations have been distributed
         html! {
             <div style="color: red;">
                 <b>{"(The fundraiser is now closed and funds have been released)"}</b>
