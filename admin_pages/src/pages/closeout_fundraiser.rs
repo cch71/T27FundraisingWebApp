@@ -9,6 +9,7 @@ use data_model::*;
 
 use chrono::prelude::*;
 use gloo::file::File;
+use gloo::timers::callback::Timeout;
 
 ////////////////////////////////////////////////////////
 fn calculate_new_dvars(
@@ -633,49 +634,66 @@ pub fn closeout_fundraiser_page() -> Html {
         })
     };
 
+    // Store a reference to the current timeout
+    let timeout_handle = use_mut_ref::<Option<Timeout>, _>(|| None);
+    
     let on_allocation_form_inputs_change = {
         let dvars = dvars.clone();
         let fr_closure_static_data = fr_closure_static_data.clone();
+        let timeout_handle = timeout_handle.clone();
+
 
         Callback::from(move |evt: InputEvent| {
             evt.prevent_default();
             evt.stop_propagation();
             log::info!("on_allocation_form_inputs_change");
 
-            let input_elm = evt
-                .target()
-                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                .unwrap();
-
-            let mut input_value = input_elm.value();
-            input_value.retain(|c| c != '$' && c != ',');
-            let new_val = parse_money_str_as_decimal(input_value.as_str()).unwrap();
-
-            let new_dvars_opt = match input_elm.id().as_str() {
-                "formBankDeposited" => {
-                    get_new_input_val_maybe!(*dvars, bank_deposited, new_val)
-                }
-                "formMulchCost" => {
-                    get_new_input_val_maybe!(*dvars, mulch_cost, new_val)
-                }
-                _ => {
-                    log::error!("Invalid input elememnt");
-                    None
-                }
-            };
-            if let Some(new_dvars) = new_dvars_opt {
-                if let Some(new_dvars) = calculate_new_dvars(
-                    new_dvars,
-                    (*fr_closure_static_data).as_ref().unwrap().clone(),
-                ) {
-                    log::info!("Setting new dynamic vars from inputs");
-                    set_fundraiser_closure_dynamic_data(FrClosureDynamicData {
-                        bank_deposited: Some(new_dvars.bank_deposited.to_string()),
-                        mulch_cost: Some(new_dvars.mulch_cost.to_string()),
-                    });
-                    dvars.set(new_dvars);
-                }
+            if let Some(handle) = timeout_handle.borrow_mut().take() {
+                handle.cancel();
             }
+            {
+                let dvars = dvars.clone();
+                let fr_closure_static_data = fr_closure_static_data.clone();
+                let new_handle = Timeout::new(800, move || {
+                    let input_elm = evt
+                        .target()
+                        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                        .unwrap();
+
+                    let mut input_value = input_elm.value();
+                    input_value.retain(|c| c != '$' && c != ',');
+                    let new_val = parse_money_str_as_decimal(input_value.as_str()).unwrap();
+
+                    let new_dvars_opt = match input_elm.id().as_str() {
+                        "formBankDeposited" => {
+                            get_new_input_val_maybe!(*dvars, bank_deposited, new_val)
+                        }
+                        "formMulchCost" => {
+                            get_new_input_val_maybe!(*dvars, mulch_cost, new_val)
+                        }
+                        _ => {
+                            log::error!("Invalid input elememnt");
+                            None
+                        }
+                    };
+                    if let Some(new_dvars) = new_dvars_opt {
+                        if let Some(new_dvars) = calculate_new_dvars(
+                            new_dvars,
+                            (*fr_closure_static_data).as_ref().unwrap().clone(),
+                        ) {
+                            log::info!("Setting new dynamic vars from inputs");
+                            set_fundraiser_closure_dynamic_data(FrClosureDynamicData {
+                                bank_deposited: Some(new_dvars.bank_deposited.to_string()),
+                                mulch_cost: Some(new_dvars.mulch_cost.to_string()),
+                            });
+                            dvars.set(new_dvars);
+                        }
+                    }
+                });
+
+                timeout_handle.borrow_mut().replace(new_handle);
+            }
+
         })
     };
 
