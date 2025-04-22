@@ -654,8 +654,8 @@ pub struct SellerSummary {
     #[serde(alias = "totalDeliveryMinutes")]
     pub total_delivery_minutes: u32,
 
-    #[serde(alias = "totalAssistedSpreadingOrders")]
-    pub total_assisted_spreading_orders: u32,
+    #[serde(alias = "totalAssistedSpreadingBags")]
+    pub total_assisted_spreading_bags: String,
 
     #[serde(alias = "totalNumBagsSold")]
     pub total_num_bags_sold: u32,
@@ -694,7 +694,7 @@ static SUMMARY_RPT_GRAPHQL: &str = r"
   summary {
     orderOwner(***ORDER_OWNER_PARAM***) {
       totalDeliveryMinutes
-      totalAssistedSpreadingOrders
+      totalAssistedSpreadingBags
       totalNumBagsSold
       totalNumBagsSoldToSpread
       totalAmountCollectedForDonations

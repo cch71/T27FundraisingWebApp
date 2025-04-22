@@ -58,11 +58,11 @@ fn gen_summary_html(full_summary: &SummaryReport) -> Html {
         });
     }
 
-    if summary.total_assisted_spreading_orders != 0 {
+    if summary.total_assisted_spreading_bags.parse::<f32>().unwrap_or_default() > 0.0 {
         summary_html.push(html! {
             <tr>
-                <td class="py-1">{"Your spreading assist orders:"}</td>
-                <td class="py-1">{summary.total_assisted_spreading_orders}</td>
+                <td class="py-1">{"Your spreading assist bags:"}</td>
+                <td class="py-1">{&summary.total_assisted_spreading_bags}</td>
             </tr>
         });
     }
