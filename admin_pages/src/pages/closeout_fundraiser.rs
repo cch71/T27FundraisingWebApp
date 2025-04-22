@@ -651,10 +651,12 @@ pub fn closeout_fundraiser_page() -> Html {
             if let Some(handle) = timeout_handle.borrow_mut().take() {
                 handle.cancel();
             }
+            
+            // Need to block it to capture variables
             {
                 let dvars = dvars.clone();
                 let fr_closure_static_data = fr_closure_static_data.clone();
-                let new_handle = Timeout::new(800, move || {
+                let new_handle = Timeout::new(1000, move || {
                     let input_elm = evt
                         .target()
                         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
