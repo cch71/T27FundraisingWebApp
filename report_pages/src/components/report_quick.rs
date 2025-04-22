@@ -111,13 +111,9 @@ pub(crate) fn report_quick_view(props: &QuickReportViewProps) -> Html {
                         <tbody>
                         {
                             orders.iter().map(|v|{
-                                let mut spreading:u64 = 0;
-                                for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
-                                    if purchase["productId"].as_str().unwrap() == "spreading" {
-                                        spreading = purchase["numSold"].as_u64().unwrap();
-                                        break;
-                                    }
-                                }
+                                let purchases = get_purchase_to_map(v);
+                                let spreading = *purchases.get("spreading").unwrap_or(&0);
+                            
                                 let enable_spreading_button = 0!=spreading && is_fr_editable;
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),

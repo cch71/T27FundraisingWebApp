@@ -73,6 +73,7 @@ pub(crate) fn report_spreading_assist_jobs(props: &SpreadingAssistJobsReportView
                     <th>{"OrderId"}</th>
                     <th>{"Address"}</th>
                     <th>{"Neighborhood"}</th>
+                    <th>{"Bags Spread"}</th>
                     <th>{"Order Owner"}</th>
                 </tr>
             };
@@ -85,6 +86,13 @@ pub(crate) fn report_spreading_assist_jobs(props: &SpreadingAssistJobsReportView
                         <tbody>
                         {
                             orders.iter().map(|v|{
+                                let purchases = get_purchase_to_map(v);
+                                let spreaders = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
+                                    .unwrap_or_default();
+                                let assisted_bags_spread = get_calculated_bags_spread_per_user(
+                                    &spreaders, 
+                                    *purchases.get("spreading").unwrap_or(&0) as usize);
+                            
                                 let address = format!("{} {}",
                                     v["customer"]["addr1"].as_str().unwrap(),
                                     v["customer"]["addr2"].as_str().unwrap_or("")).trim().to_string();
@@ -94,6 +102,7 @@ pub(crate) fn report_spreading_assist_jobs(props: &SpreadingAssistJobsReportView
                                         <td>{v["orderId"].as_str().unwrap()}</td>
                                         <td>{&address}</td>
                                         <td>{v["customer"]["neighborhood"].as_str().unwrap_or("")}</td>
+                                        <td>{ assisted_bags_spread.round_dp(2).to_string() }</td>
                                         <td>{get_username_from_id(uid).map_or(uid.to_string(), |v|format!("{v}[{uid}]"))}</td>
                                     </tr>
                                 }

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use super::{
     gql_utils::{GraphQlReq, make_gql_request},
     {get_active_user, get_fr_config, get_neighborhood},
@@ -95,6 +96,25 @@ pub fn get_allowed_report_views() -> Vec<ReportViews> {
     // }
 
     reports
+}
+
+/// Parses the purchases and creates a map
+pub fn get_purchase_to_map(v: &serde_json::Value)->HashMap<String, u64> {
+    let mut purchases = HashMap::new();
+
+    for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
+        let product_id = purchase["productId"].as_str();
+        match  product_id {
+          Some("spreading") => {
+              purchases.insert("spreading".to_string(), purchase["numSold"].as_u64().unwrap_or_default());
+          }, 
+            Some("bags") => {
+                purchases.insert("bags".to_string(), purchase["numSold"].as_u64().unwrap_or_default());
+            },
+            _ => log::error!("Unknown product id: {:?}", product_id),
+        };
+    }
+    purchases
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -362,12 +382,8 @@ pub async fn get_distribution_points_report_data()
                     let neighborhood = v["customer"]["neighborhood"].as_str().unwrap();
                     let dist_point = get_neighborhood(neighborhood)
                         .map_or("".to_string(), |v| v.distribution_point.clone());
-                    let num_bags_sold: u64 = v["purchases"]
-                        .as_array()
-                        .unwrap_or(&Vec::new())
-                        .iter()
-                        .find(|&v| v["productId"].as_str().unwrap() == "bags")
-                        .map_or(0, |v| v["numSold"].as_u64().unwrap());
+                    let purchases = get_purchase_to_map(&v);
+                    let num_bags_sold = *purchases.get("bags").unwrap_or(&0);
                     match dist_point_map.get_mut(&dist_point) {
                         Some(num_bags_for_point) => {
                             *num_bags_for_point += num_bags_sold;
@@ -499,6 +515,11 @@ static SPREADING_ASSIST_JOBS_RPT_GRAPHQL: &str = r"
         addr2
         neighborhood
     }
+    purchases {
+        productId
+        numSold
+    }
+    spreaders
   }
 }
 ";
@@ -550,12 +571,8 @@ pub async fn get_unfinished_spreading_jobs_report_data()
                     // There is an assumption that if spreaders have been set then all bags have been spread
                     return;
                 }
-                let num_spreading_bags_sold: u64 = v["purchases"]
-                    .as_array()
-                    .unwrap_or(&Vec::new())
-                    .iter()
-                    .find(|&v| v["productId"].as_str().unwrap() == "spreading")
-                    .map_or(0, |v| v["numSold"].as_u64().unwrap());
+                let purchases = get_purchase_to_map(&v);
+                let num_spreading_bags_sold = *purchases.get("spreading").unwrap_or(&0);
                 if num_spreading_bags_sold == 0 {
                     log::warn!("Query qualifier should have meant this doesn't happen!");
                     return;

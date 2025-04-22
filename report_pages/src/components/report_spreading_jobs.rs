@@ -120,10 +120,8 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                         <tbody>
                         {
                             orders.iter().map(|v|{
-                                let spreading = v["purchases"].as_array().unwrap_or(&Vec::new())
-                                    .iter()
-                                    .find(|&v| v["productId"].as_str().unwrap() == "spreading")
-                                    .map_or(0, |v| v["numSold"].as_u64().unwrap());
+                                let purchases = get_purchase_to_map(&v);
+                                let spreading = *purchases.get("spreading").unwrap_or(&0);
                                 // log::info!("Spreading: {}", spreading);
                                 if spreading == 0 {
                                     return html!{};

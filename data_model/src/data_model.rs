@@ -917,6 +917,20 @@ pub fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
     None
 }
 
+/// Calculates the number of spread bags divided up among the people that spread.
+pub fn get_calculated_bags_spread_per_user(spreaders: &Vec<String>, num_bags: usize)->Decimal {
+    if num_bags == 0 {
+        log::error!("num_bags must be greater than 0");
+        Decimal::ZERO
+    } else if spreaders.len() == 1 {
+        Decimal::from(num_bags)
+    } else {
+        Decimal::from(num_bags)
+            .checked_div(spreaders.len().into())
+            .unwrap()
+    }
+}
+
 pub type FrClosureStaticData = Arc<BTreeMap<String, FrClosureMapData>>;
 ////////////////////////////////////////////////////////////////////////////
 pub async fn get_fundraiser_closure_static_data()
@@ -1010,16 +1024,9 @@ pub async fn get_fundraiser_closure_static_data()
             log::error!("We have spreaders but no bags to spread");
             return;
         }
-
-        let num_bags_to_record_as_spread_per_user: Decimal = {
-            if spreaders.len() == 1 {
-                Decimal::from(num_bags)
-            } else {
-                Decimal::from(num_bags)
-                    .checked_div(spreaders.len().into())
-                    .unwrap()
-            }
-        };
+        
+        let num_bags_to_record_as_spread_per_user: Decimal = get_calculated_bags_spread_per_user(
+            &spreaders,num_bags as usize );
 
         for uid in spreaders {
             if !closure_data.contains_key(&uid) {

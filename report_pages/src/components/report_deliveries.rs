@@ -70,10 +70,8 @@ pub(crate) fn report_deliveries_view() -> Html {
                         <tbody>
                         {
                             orders.iter().map(|v|{
-                                let num_bags_sold: u64 = v["purchases"].as_array().unwrap_or(&Vec::new())
-                                    .iter()
-                                    .find(|&v| v["productId"].as_str().unwrap() == "bags")
-                                    .map_or(0, |v| v["numSold"].as_u64().unwrap());
+                                let purchases = get_purchase_to_map(v);
+                                let num_bags_sold = *purchases.get("bags").unwrap_or(&0);
 
                                 if num_bags_sold == 0 { return html!{}; }
 

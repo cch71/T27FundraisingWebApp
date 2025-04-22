@@ -276,7 +276,8 @@ const getSpreadingAssistJobsViewReportDataTable = (params) => {
     let tableColumns = [
         { name: "OrderId", className: "all", visible: false },
         { title: "Address" },
-        { title: "Neighborhood", className: "all" },
+        { title: "Neighborhood" },
+        { title: "Bags Spread", className: "all" },
         { title: "Order Owner", name: "OrderOwner", visible: params.showOrderOwner }
     ];
 
