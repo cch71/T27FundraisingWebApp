@@ -918,7 +918,7 @@ pub fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
 }
 
 /// Calculates the number of spread bags divided up among the people that spread.
-pub fn get_calculated_bags_spread_per_user(spreaders: &Vec<String>, num_bags: usize)->Decimal {
+pub fn get_calculated_bags_spread_per_user(spreaders: &[String], num_bags: usize)->Decimal {
     if num_bags == 0 {
         log::error!("num_bags must be greater than 0");
         Decimal::ZERO
@@ -936,7 +936,7 @@ pub type FrClosureStaticData = Arc<BTreeMap<String, FrClosureMapData>>;
 pub async fn get_fundraiser_closure_static_data()
 -> Result<FrClosureStaticData, Box<dyn std::error::Error>> {
     if let Ok(closure_data) = FR_CLOSURE_DATA.read() {
-        if closure_data.len() > 0 {
+        if !closure_data.is_empty() {
             return Ok(closure_data.clone());
         }
     }

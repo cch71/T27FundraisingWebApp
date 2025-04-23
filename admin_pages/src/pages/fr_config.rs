@@ -42,7 +42,7 @@ fn reset_orders_database() -> Html {
                     verify_phrase
                 );
                 let do_reset =
-                    gloo::dialogs::prompt(&msg, None).map_or(false, |v| v == verify_phrase);
+                    gloo::dialogs::prompt(&msg, None).is_some_and(|v| v == verify_phrase);
 
                 log::info!("Resetting Order Database: {}", do_reset);
                 if do_reset {

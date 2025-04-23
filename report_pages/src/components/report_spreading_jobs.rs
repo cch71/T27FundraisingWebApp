@@ -120,7 +120,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                         <tbody>
                         {
                             orders.iter().map(|v|{
-                                let purchases = get_purchase_to_map(&v);
+                                let purchases = get_purchase_to_map(v);
                                 let spreading = *purchases.get("spreading").unwrap_or(&0);
                                 // log::info!("Spreading: {}", spreading);
                                 if spreading == 0 {

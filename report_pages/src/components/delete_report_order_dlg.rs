@@ -104,19 +104,18 @@ pub(crate) fn delete_order_confirmation_dlg() -> Html {
                 wasm_bindgen_futures::spawn_local(async move {
                     let maybe_to_delete_order = f.borrow().as_ref().map(|v| v.clone());
                     if let Some(to_delete) = maybe_to_delete_order {
-                        match delete_order(&to_delete.order_id).await { Err(err) => {
+                        if let Err(err) = delete_order(&to_delete.order_id).await {
                             gloo::dialogs::alert(&format!(
                                 "Failed to delete order in the cloud: {:#?}",
                                 err
                             ));
-                        } _ => { match remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node)
-                        { Err(err) => {
-                            gloo::dialogs::alert(&format!(
-                                "Order was deleted from the cloud but not the local table: {:#?}",
-                                err
-                            ));
-                        } _ => {}}}}
-
+                        } else if let Err(err) = remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node) {
+                                gloo::dialogs::alert(&format!(
+                                    "Order was deleted from the cloud but not the local table: {:#?}",
+                                    err
+                                ));
+                        }
+                        
                         to_delete.delete_dlg.hide();
                         gloo::utils::document()
                             .get_element_by_id("confirmDeleteOrderInput")

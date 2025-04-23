@@ -188,7 +188,7 @@ impl MulchOrder {
             && self.amount_from_purchases.is_some()
             && self.purchases.is_some();
         let is_donations_valid = self.amount_from_donations.is_some();
-        let is_total_valid = self.amount_total_collected.as_ref().map_or(true, |v| {
+        let is_total_valid = self.amount_total_collected.as_ref().is_none_or(|v| {
             Decimal::from_str(v)
                 .ok()
                 .is_none_or(|v| v != Decimal::ZERO && v.is_sign_positive())
