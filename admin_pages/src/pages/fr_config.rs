@@ -101,23 +101,109 @@ pub fn fr_config() -> Html {
                 </div>
             </div>
             <div class="row">
-                <div class="col-xs-1 d-flex justify-content-center">
-                    if !(*are_orders_created) {
-                        <MulchCost/>
-                    }
-                    <DeliveryUl/>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-xs-1 d-flex justify-content-center">
-                    <NeighborhoodUl/>
-                    <UsersUl/>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-xs-1 d-flex justify-content-center">
-                    <ResetOrders/>
-                </div>
+                <ul class="nav nav-tabs" role="tablist">
+                    // col-xs-1 d-flex justify-content-center
+                    <li class="nav-item" role="presentation">
+                        <button 
+                            class="nav-link active" 
+                            id="home-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#deliveries-tab-pane"
+                            type="button" role="tab"
+                            aria-controls="deliveries-tab-pane"
+                            aria-selected="true">
+                                {"Deliveries"}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button 
+                            class="nav-link" 
+                            id="products-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#products-tab-pane"
+                            type="button" role="tab"
+                            aria-controls="products-tab-pane"
+                            aria-selected="false"
+                            disabled={*are_orders_created}>
+                                {"Products"}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button 
+                            class="nav-link" 
+                            id="neighborhoods-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#neighborhoods-tab-pane"
+                            type="button" role="tab"
+                            aria-controls="neighborhoods-tab-pane"
+                            aria-selected="false">
+                                {"Neighborhoods"}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button 
+                            class="nav-link" 
+                            id="users-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#users-tab-pane"
+                            type="button" role="tab"
+                            aria-controls="users-tab-pane"
+                            aria-selected="false">
+                                {"Users"}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button 
+                            class="nav-link" 
+                            id="reset-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#reset-tab-pane"
+                            type="button" role="tab"
+                            aria-controls="reset-tab-pane"
+                            aria-selected="false">
+                                {"Reset"}
+                        </button>
+                    </li>
+                </ul>
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="deliveries-tab-pane" role="tabpanel" aria-labelledby="deliveries-tab" tabindex="0">
+                            <div class="row mt-2">
+                                <div class="col-xs-1 d-flex justify-content-center">
+                                    <DeliveryUl/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="products-tab-pane" role="tabpanel" aria-labelledby="products-tab" tabindex="0">
+                            <div class="row mt-2">
+                                <div class="col-xs-1 d-flex justify-content-center">
+                                    if !(*are_orders_created) {
+                                        <MulchCost/>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="neighborhoods-tab-pane" role="tabpanel" aria-labelledby="neighborhoods-tab" tabindex="0">
+                            <div class="row mt-2">
+                                <div class="col-xs-1 d-flex justify-content-center">
+                                    <NeighborhoodUl/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="users-tab-pane" role="tabpanel" aria-labelledby="users-tab" tabindex="0">
+                            <div class="row mt-2">
+                                <div class="col-xs-1 d-flex justify-content-center">
+                                    <UsersUl/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="reset-tab-pane" role="tabpanel" aria-labelledby="reset-tab" tabindex="0">
+                            <div class="row mt-2">
+                                <div class="col-xs-1 d-flex justify-content-center">
+                                    <ResetOrders/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
             </div>
         </div>
     }
