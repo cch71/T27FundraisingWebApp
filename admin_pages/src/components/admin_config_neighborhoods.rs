@@ -160,6 +160,7 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
                                             <input class="form-control" type="text" autocomplete="fr-new-neighborhood" id="frmDlgNeighborhood"
                                                 required=true
                                                 readonly={!neighborhood.name.is_empty()}
+                                                disabled={!neighborhood.name.is_empty()}
                                                 value={neighborhood.name.clone()} />
                                                 <label for="frmDlgNeighborhood">{"Neighborhood"}</label>
                                             <div class="invalid-feedback">

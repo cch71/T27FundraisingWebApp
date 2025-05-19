@@ -481,6 +481,7 @@ fn edit_user_dlg(props: &EditUserDlgProps) -> Html {
                                     <div class="form-floating">
                                         <input class="form-control" type="text" id="formEditUserUid"
                                             readonly=true
+                                            disabled=true
                                             value={uid.clone()} />
                                             <label for="formEditUserUid">{"UserID"}</label>
                                     </div>
@@ -491,6 +492,7 @@ fn edit_user_dlg(props: &EditUserDlgProps) -> Html {
                                     <div class="form-floating">
                                         <input class="form-control" type="text" id="formEditUserName"
                                             readonly=true
+                                            disabled=true
                                             value={name.clone()} />
                                             <label for="formEditUserName">{"Name"}</label>
                                     </div>
