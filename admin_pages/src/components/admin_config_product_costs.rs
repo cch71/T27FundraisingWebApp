@@ -2,7 +2,6 @@ use data_model::*;
 use js::bootstrap;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::WaitTimeoutResult;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlButtonElement, HtmlElement, HtmlInputElement, InputEvent, MouseEvent};
 use yew::prelude::*;
@@ -392,7 +391,7 @@ pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
                                         gt={gt}
                                         unitprice={unit_price.clone()}
                                         ondelete={on_delete.clone()}
-                                        onedit={on_edit.clone()} 
+                                        onedit={on_edit.clone()}
                                         disabled={props.disabled} />}
                             }).collect::<Html>()
                         }

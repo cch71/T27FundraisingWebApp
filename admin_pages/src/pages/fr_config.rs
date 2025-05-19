@@ -174,7 +174,7 @@ pub fn fr_config() -> Html {
                         <div class="tab-pane fade" id="products-tab-pane" role="tabpanel" aria-labelledby="products-tab" tabindex="0">
                             <div class="row mt-2">
                                 <div class="col-xs-1 d-flex justify-content-center">
-                                    <MulchCost disabled={(*are_orders_created)} />
+                                    <MulchCost disabled={*are_orders_created} />
                                 </div>
                             </div>
                         </div>
