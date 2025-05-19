@@ -2,6 +2,7 @@ use data_model::*;
 use js::bootstrap;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::WaitTimeoutResult;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlButtonElement, HtmlElement, HtmlInputElement, InputEvent, MouseEvent};
 use yew::prelude::*;
@@ -113,6 +114,7 @@ struct MulchPriceBreakLiProps {
     unitprice: String,
     onedit: Callback<MouseEvent>,
     ondelete: Callback<MouseEvent>,
+    disabled: bool,
 }
 
 #[function_component(MulchPriceBreakLi)]
@@ -123,16 +125,18 @@ fn mulch_pricebreak_item(props: &MulchPriceBreakLiProps) -> Html {
                 <div class="mb-1">{format!("Unit Price: {}", &props.unitprice)}</div>
                 <small class="text-muted">{format!("Greater Than: {}", props.gt)}</small>
             </div>
-            <div class="float-end">
-                <button class="btn btn-outline-danger mx-1 float-end order-del-btn"
-                    data-gt={props.gt.to_string()} onclick={props.ondelete.clone()}>
-                    <i class="bi bi-trash" fill="currentColor"></i>
-                </button>
-                <button class="btn btn-outline-info float-end order-edt-btn"
-                    data-gt={props.gt.to_string()} onclick={props.onedit.clone()}>
-                    <i class="bi bi-pencil" fill="currentColor"></i>
-                </button>
-            </div>
+            if !props.disabled {
+                <div class="float-end">
+                    <button class="btn btn-outline-danger mx-1 float-end order-del-btn"
+                        data-gt={props.gt.to_string()} onclick={props.ondelete.clone()}>
+                        <i class="bi bi-trash" fill="currentColor"></i>
+                    </button>
+                    <button class="btn btn-outline-info float-end order-edt-btn"
+                        data-gt={props.gt.to_string()} onclick={props.onedit.clone()}>
+                        <i class="bi bi-pencil" fill="currentColor"></i>
+                    </button>
+                </div>
+            }
         </li>
     }
 }
@@ -171,9 +175,12 @@ fn disable_save_button(document: &web_sys::Document, value: bool) {
             .set_property("display", spinner_display);
     }
 }
-
+#[derive(Properties, PartialEq, Clone, Debug)]
+pub(crate) struct MulchCostProps {
+    pub(crate) disabled: bool,
+}
 #[function_component(MulchCost)]
-pub(crate) fn set_mulch_cost() -> Html {
+pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
     use std::collections::BTreeMap;
 
     let product = get_products();
@@ -339,7 +346,7 @@ pub(crate) fn set_mulch_cost() -> Html {
                 <div class="card-body">
                     <h5 class="card-title">
                         {"Set Mulch Cost"}
-                        if *is_dirty {
+                        if *is_dirty && !props.disabled {
                             <button class="btn btn-primary" onclick={on_save_mulch_products} id="btnProductsSave">
                                 <span class="spinner-border spinner-border-sm me-1" role="status"
                                 aria-hidden="true" id="saveProductsConfigSpinner" style="display: none;" />
@@ -353,7 +360,8 @@ pub(crate) fn set_mulch_cost() -> Html {
                                 <input class="form-control" type="number" autocomplete="fr-new-mulch-cost" id="formMulchCost"
                                     required=true
                                     oninput={on_mulch_base_bags_cost_change.clone()}
-                                    value={mulch_base_bags_cost.borrow().clone()} />
+                                    value={mulch_base_bags_cost.borrow().clone()}
+                                    disabled={props.disabled}/>
                                     <label for="formMulchCost">{"Base Mulch Cost Per Bag"}</label>
                             </div>
                         </div>
@@ -364,16 +372,19 @@ pub(crate) fn set_mulch_cost() -> Html {
                                 <input class="form-control" type="number" autocomplete="fr-new-mulch-units" id="formMulchMinUnits"
                                     required=true
                                     oninput={on_mulch_min_units_change.clone()}
-                                    value={mulch_min_units_cost.borrow().to_string()} />
+                                    value={mulch_min_units_cost.borrow().to_string()}
+                                    disabled={props.disabled}/>
                                     <label for="formMulchMinUnits">{"Min Bags"}</label>
                             </div>
                         </div>
                    </div>
                    <div class="row">
                         {"Price Breaks"}
-                        <button class="btn btn-outline-info float-end order-edt-btn" onclick={on_add_pricebreak}>
-                            <i class="bi bi-plus-square" fill="currentColor"></i>
-                        </button>
+                        if !props.disabled {
+                            <button class="btn btn-outline-info float-end order-edt-btn" onclick={on_add_pricebreak}>
+                                <i class="bi bi-plus-square" fill="currentColor"></i>
+                            </button>
+                        }
                         <ul class="list-group">
                         {
                             (*price_breaks).iter().map(|(gt, unit_price)|{
@@ -381,7 +392,8 @@ pub(crate) fn set_mulch_cost() -> Html {
                                         gt={gt}
                                         unitprice={unit_price.clone()}
                                         ondelete={on_delete.clone()}
-                                        onedit={on_edit.clone()} />}
+                                        onedit={on_edit.clone()} 
+                                        disabled={props.disabled} />}
                             }).collect::<Html>()
                         }
                         </ul>
@@ -397,7 +409,8 @@ pub(crate) fn set_mulch_cost() -> Html {
                                 <input class="form-control" type="number" autocomplete="fr-new-spreading" id="formSpreading"
                                     required=true
                                     oninput={on_spreading_change}
-                                    value={spreading_cost.borrow().clone()} />
+                                    value={spreading_cost.borrow().clone()}
+                                    disabled={props.disabled}/>
 
                                     <label for="formSpreading">{"Spreading Cost Per Bag"}</label>
                             </div>

@@ -102,7 +102,6 @@ pub fn fr_config() -> Html {
             </div>
             <div class="row">
                 <ul class="nav nav-tabs" role="tablist">
-                    // col-xs-1 d-flex justify-content-center
                     <li class="nav-item" role="presentation">
                         <button 
                             class="nav-link active" 
@@ -123,8 +122,7 @@ pub fn fr_config() -> Html {
                             data-bs-target="#products-tab-pane"
                             type="button" role="tab"
                             aria-controls="products-tab-pane"
-                            aria-selected="false"
-                            disabled={*are_orders_created}>
+                            aria-selected="false">
                                 {"Products"}
                         </button>
                     </li>
@@ -176,9 +174,7 @@ pub fn fr_config() -> Html {
                         <div class="tab-pane fade" id="products-tab-pane" role="tabpanel" aria-labelledby="products-tab" tabindex="0">
                             <div class="row mt-2">
                                 <div class="col-xs-1 d-flex justify-content-center">
-                                    if !(*are_orders_created) {
-                                        <MulchCost/>
-                                    }
+                                    <MulchCost disabled={(*are_orders_created)} />
                                 </div>
                             </div>
                         </div>
