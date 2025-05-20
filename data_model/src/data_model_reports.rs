@@ -213,9 +213,7 @@ pub async fn get_sales_geojson()
     if !raw_resp["message"].is_null() {
         let err_str =
             serde_json::to_string(&raw_resp).unwrap_or("Failed to stringify json resp".to_string());
-        use std::io::{Error, ErrorKind};
-        return Err(Box::new(Error::new(
-            ErrorKind::Other,
+        return Err(Box::new(std::io::Error::other(
             format!("GeoJSON request returned raw error:\n {}", err_str).as_str(),
         )));
     }
