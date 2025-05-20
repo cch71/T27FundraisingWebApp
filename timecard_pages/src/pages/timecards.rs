@@ -411,8 +411,9 @@ pub fn timecards_page() -> Html {
                         }
                         </ul>
                     } else {
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">{"Loading Timecard data..."}</span>
+                        <div class="justify-content-center text-center">
+                            <h2>{"Loading Timecard data..."}</h2>
+                            <span class="loader"></span>
                         </div>
                     }
                 </div>

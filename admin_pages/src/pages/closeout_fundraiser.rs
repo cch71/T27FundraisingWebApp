@@ -552,7 +552,7 @@ fn static_data_loading_spinny() -> Html {
     html! {
         <div class="justify-content-center text-center">
             <h2>{"Loading Static Closeout Report Data..."}</h2>
-            <span role="status" class="spinner-border ms-1"/>
+            <span class="loader"></span>
         </div>
     }
 }

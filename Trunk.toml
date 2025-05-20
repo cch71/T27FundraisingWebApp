@@ -6,6 +6,7 @@ dist = "dist"
 [watch]
 # Paths to watch. The `build.target`'s parent folder is watched by default.
 watch = [
+	"webapp",
 	"js",
 	"data_model",
 	"admin_pages",

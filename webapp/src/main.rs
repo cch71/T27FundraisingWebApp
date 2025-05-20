@@ -87,14 +87,14 @@ fn App() -> Html {
     };
 
     let on_report_issue = {
-        move |_| {
+        move |_: MouseEvent| {
             log::info!("Bringing up Report Issue Dlg");
             show_report_issue_dlg(true);
         }
     };
 
     let on_logoff = {
-        move |_| {
+        move |_: MouseEvent| {
             wasm_bindgen_futures::spawn_local(async move {
                 log::info!("User has asked to logout");
                 delete_report_settings(); // We need to delete report settings in case admin is on view user can't support
@@ -139,10 +139,9 @@ fn App() -> Html {
 
     if *is_loading {
         html! {
-            <div id="notReadyView" class="col-xs-1 d-flex justify-content-center" >
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">{ "Loading..."}</span>
-                </div>
+            <div id="notReadyView" class="justify-content-center text-center" >
+                <h2>{"Loading..."}</h2>
+                <span class="loader"></span>
             </div>
         }
     } else {
