@@ -1,7 +1,7 @@
 use rust_decimal::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{
-    FocusEvent, HtmlAnchorElement, HtmlInputElement, InputEvent, MouseEvent, SubmitEvent, Url,
+    FocusEvent, HtmlAnchorElement, HtmlInputElement, InputEvent, MouseEvent,  Url,
 };
 use yew::prelude::*;
 
@@ -221,7 +221,7 @@ fn allocation_report_row(props: &AllocationReportRowProps) -> Html {
 #[derive(Properties, PartialEq)]
 struct AllocationReportProps {
     reportlist: Vec<FrCloseoutAllocationVals>,
-    onreleasefunds: Callback<SubmitEvent>,
+    onreleasefunds: Callback<MouseEvent>,
 }
 #[function_component(AllocationReport)]
 fn allocation_report(props: &AllocationReportProps) -> Html {
@@ -272,9 +272,10 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
                             title="Download Report">
                         <i class="bi bi-cloud-download" fill="currentColor"></i>
                     </button>
-                    <button type="submit" class="btn btn-primary my-2 float-end"
+                    <button type="button" class="btn btn-primary my-2 float-end"
                             id="releaseFundsBtn"
                             data-bs-toggle="tooltip"
+                            onclick={props.onreleasefunds.clone()}
                             title="Release Report to Scouts">
                         <span class="spinner-border spinner-border-sm me-1" role="status"
                               aria-hidden="true" id="formReleaseFundsSpinner" style="display: none" />
@@ -282,7 +283,7 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
                     </button>
                 </h5>
                 <div class="card-body">
-                    <form onsubmit={props.onreleasefunds.clone()}>
+                    <form>
                         <div class="table-responsive-xxl" id="fundsReleaseTables">
                             <table class="table table-striped">
                                 <thead>
@@ -621,7 +622,7 @@ pub fn closeout_fundraiser_page() -> Html {
     let on_release_funds_form_submission = {
         let dvars = dvars.clone();
         let scout_report_list = scout_report_list.clone();
-        Callback::from(move |evt: SubmitEvent| {
+        Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
             let dvars = dvars.clone();

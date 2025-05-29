@@ -1,11 +1,7 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use data_model::{
-    AppRoutes, NUM_TOP_SELLERS_TO_GET, are_sales_still_allowed, delete_report_settings,
-    get_active_user, get_active_user_async, get_summary_report_data, is_active_order, load_config,
-    save_to_active_order,
-};
+use data_model::{AppRoutes, NUM_TOP_SELLERS_TO_GET, are_sales_still_allowed, get_active_user, get_active_user_async, get_summary_report_data, is_active_order, load_config, save_to_active_order, clear_local_storage, clear_session_storage};
 use js::auth_utils::{is_authenticated, login, logout};
 
 mod components;
@@ -97,7 +93,10 @@ fn App() -> Html {
         move |_: MouseEvent| {
             wasm_bindgen_futures::spawn_local(async move {
                 log::info!("User has asked to logout");
-                delete_report_settings(); // We need to delete report settings in case admin is on view user can't support
+                // We need to clear local storage so a logon/logoff can force a reload
+                clear_local_storage();
+                // We need to delete report settings in case admin is on view user can't support
+                clear_session_storage(); 
                 logout().await;
             });
         }
@@ -117,8 +116,7 @@ fn App() -> Html {
                                 let _ = get_summary_report_data(
                                     &user_info.get_id(),
                                     NUM_TOP_SELLERS_TO_GET,
-                                )
-                                    .await;
+                                ).await;
                                 log::info!("Showing UI");
                                 is_loading.set(false);
                             },

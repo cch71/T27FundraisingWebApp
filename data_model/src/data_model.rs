@@ -210,6 +210,12 @@ pub fn are_sales_still_allowed() -> bool {
 }
 
 ////////////////////////////////////////////////////////////////////////////
+pub fn clear_local_storage() {
+    // Clears local storage
+    LocalStorage::clear()
+}
+
+////////////////////////////////////////////////////////////////////////////
 #[derive(Serialize, Deserialize, Properties, Debug, Clone, PartialEq)]
 pub struct Neighborhood {
     pub name: String,
@@ -328,11 +334,15 @@ struct MulchDeliveryConfigApi {
 }
 
 ////////////////////////////////////////////////////////////////////////////
+fn does_config_have_finalized_data(config: &FrConfigApi) -> bool {
+    config.finalization_data
+        .as_ref()
+        .is_some_and(|v| !v.money_pool_for_scout_delivery.is_empty())
+}
+
+////////////////////////////////////////////////////////////////////////////
 fn process_config_data(config: FrConfigApi) {
-    let is_config_finalized = match config.finalization_data.as_ref() {
-        Some(finalized_data) => !finalized_data.money_pool_for_scout_delivery.is_empty(),
-        None => false,
-    };
+    let is_config_finalized = does_config_have_finalized_data(&config);
 
     *FRCONFIG.write().unwrap() = Some(Arc::new(FrConfig {
         kind: config.kind,
@@ -399,12 +409,16 @@ fn process_config_data(config: FrConfigApi) {
 }
 
 ////////////////////////////////////////////////////////////////////////////
-pub async fn load_config() {
+fn load_config_from_storage() -> Option<ConfigApi> {
     log::info!("Getting Fundraising Config: Loading From LocalStorage");
-    let rslt = LocalStorage::get("FrConfig");
-    if rslt.is_ok() {
-        let stored_config: ConfigApi = rslt.unwrap();
+    LocalStorage::get("FrConfig").ok()
+}
 
+////////////////////////////////////////////////////////////////////////////
+pub async fn load_config() {
+    if let Some(stored_config) = load_config_from_storage() {
+
+        // We loaded the config from local storage, check if it's still valid
         let req = GraphQlReq::new(ALWAYS_CONFIG_GQL);
         match make_gql_request::<serde_json::Value>(&req).await {
             Ok(val) => {
@@ -1122,13 +1136,32 @@ pub struct FrClosureDynamicData {
 ////////////////////////////////////////////////////////////////////////////
 pub fn get_fundraiser_closure_dynamic_data() -> Option<FrClosureDynamicData> {
     log::info!("Getting Fundraiser Closure Data From LocalStorage");
-    LocalStorage::get("FrClosureDynamicData").ok()
+    fn get_from_frconfig() -> Option<FrClosureDynamicData> {
+        if let Some(frconfig) = load_config_from_storage() {
+            if does_config_have_finalized_data(&frconfig.config) {
+                return frconfig.config.finalization_data.map(|v| FrClosureDynamicData {
+                    bank_deposited: Some(v.bank_deposited),
+                    mulch_cost: Some(v.mulch_cost),
+                });
+            }
+        }
+        None
+    }
+    
+    get_from_frconfig().or_else(|| {
+        LocalStorage::get("FrClosureDynamicData").ok()
+    })
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////
 pub fn set_fundraiser_closure_dynamic_data(data: FrClosureDynamicData) {
-    log::info!("Getting Fundraiser Closure Data From LocalStorage");
-    let _ = LocalStorage::set("FrClosureDynamicData", data);
+    log::info!("Saving temporary fundraiser closure data to LocalStorage");
+    if is_fundraiser_finalized() {
+       log::warn!("Can't save finalized data to LocalStorage due to finalized fundraiser"); 
+    } else {
+        let _ = LocalStorage::set("FrClosureDynamicData", data);
+    }
 }
 
 ////////////////////////////////////////////////////////

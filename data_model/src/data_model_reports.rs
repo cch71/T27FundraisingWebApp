@@ -169,7 +169,7 @@ pub fn save_report_settings(
 }
 
 /////////////////////////////////////////////////////////////////////////////////
-pub fn delete_report_settings() {
+pub fn clear_session_storage() {
     SessionStorage::delete("ReportViewSettings");
 }
 
@@ -746,7 +746,7 @@ pub async fn get_summary_report_data(
             "***TOP_SELLERS_PARAM***",
             &format!("numTopSellers: {}", top_sellers),
         );
-
+    log::info!("Running Query: {}", &query);
     #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
     struct SummaryReportRslt {
         #[serde(alias = "summary")]
