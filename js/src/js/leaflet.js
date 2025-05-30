@@ -1,5 +1,5 @@
 import L, {
-  Map,
+  Map as LeafletMap,
   TileLayer,
   GeoJSON,
   CircleMarker,
@@ -11,7 +11,7 @@ const createSellMap = (params) => {
   console.log("Creating Sell Map Report View");
   // console.log(JSON.stringify(params.geoJson, ' ', '\t'));
 
-  const map = new Map(params.id).setView(params.centerPt, 12);
+  const map = new LeafletMap(params.id).setView(params.centerPt, 12);
 
   new TileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution:
@@ -28,14 +28,11 @@ const createSellMap = (params) => {
       fillOpacity: 0.8,
     };
 
-    new GeoJSON(params.geoJson,
-        {
-            pointToLayer: function (geoJsonPt, latlng) {
-                return new CircleMarker(latlng, geojsonMarkerOptions);
-            }
-        }
-    ).addTo(map);
-
+    new GeoJSON(params.geoJson, {
+      pointToLayer: function (geoJsonPt, latlng) {
+        return new CircleMarker(latlng, geojsonMarkerOptions);
+      },
+    }).addTo(map);
   }
 
   return map;
