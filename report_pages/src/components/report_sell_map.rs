@@ -8,7 +8,7 @@ use yew::prelude::*;
 pub struct Point(pub f64, pub f64);
 
 const SJV: Point = Point(30.5461096, -97.6723646);
-const SELLMAPID: &str = "sellMap";
+const SELL_MAP_ID: &str = "sellMap";
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -27,15 +27,15 @@ pub(crate) fn report_sell_view() -> Html {
                         log::info!("Downloading Geo Location data");
                         let resp = get_sales_geojson().await.unwrap();
                         log::info!("Report Data has been downloaded");
-                        report_state.set(ReportViewState::ReportHtmlGenerated(resp));
+                        report_state.set(ReportViewState::ReportHtmlGenerated(vec![resp]));
                     });
                 }
-                ReportViewState::ReportHtmlGenerated(geojson) => {
+                ReportViewState::ReportHtmlGenerated(json_list) => {
                     log::info!("Handling ReportHtmlGenerated");
                     if sell_map.borrow().is_none() {
                         *sell_map.borrow_mut() = create_sell_map(&serde_json::json!({
-                            "id": SELLMAPID,
-                            "geoJson": geojson,
+                            "id": SELL_MAP_ID,
+                            "geoJson": json_list[0],
                             "centerPt": SJV,
                         }));
                     }
@@ -51,7 +51,7 @@ pub(crate) fn report_sell_view() -> Html {
         ReportViewState::ReportHtmlGenerated(_) => {
             html! {
                 <div class="sale-map-container">
-                    <div id={SELLMAPID} />
+                    <div id={SELL_MAP_ID} />
                 </div>
             }
         }
