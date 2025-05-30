@@ -1,40 +1,44 @@
+import L, {
+  Map,
+  TileLayer,
+  GeoJSON,
+  CircleMarker,
+} from "leaflet";
 
 /////////////////////////////////////////////////////////////////////
 //
 const createSellMap = (params) => {
-    // new rust code converts it to map so have to convert it back to
-    // JSON Object (or TODO:re-write all this)
-    //const params = Object.fromEntries(mapOfParams);
+  console.log("Creating Sell Map Report View");
+  // console.log(JSON.stringify(params.geoJson, ' ', '\t'));
 
-    console.log("Creating Sell Map Report View");
-    // JSON.stringify(params, ' ', '\t'));
+  const map = new Map(params.id).setView(params.centerPt, 12);
 
-    const map = L.map(params.id).setView(params.centerPt, 12);
+  new TileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution:
+      '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(map);
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        // maxZoom: 19,
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
+  if (params.geoJson) {
+    const geojsonMarkerOptions = {
+      radius: 8,
+      fillColor: "#ff7800",
+      color: "#000",
+      weight: 1,
+      opacity: 1,
+      fillOpacity: 0.8,
+    };
 
-    if (params.geoJson) {
-        const geojsonMarkerOptions = {
-            radius: 8,
-            fillColor: "#ff7800",
-            color: "#000",
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 0.8
-        };
-
-        L.geoJSON(params.geoJson, {
-            pointToLayer: function (feature, latlng) {
-                return L.circleMarker(latlng, geojsonMarkerOptions);
+    new GeoJSON(params.geoJson,
+        {
+            pointToLayer: function (geoJsonPt, latlng) {
+                return new CircleMarker(latlng, geojsonMarkerOptions);
             }
-        }).addTo(map);
-    }
+        }
+    ).addTo(map);
 
-    return map;
+  }
 
+  return map;
 };
 
-export {createSellMap}
+export { createSellMap };

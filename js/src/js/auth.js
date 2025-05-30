@@ -1,5 +1,5 @@
 
-import Keycloak from "https://cdn.jsdelivr.net/npm/keycloak-js@26.0.7/lib/keycloak.min.js"
+import Keycloak from "keycloak";
 
 const initOptions = {
     url: 'https://usw2.auth.ac/auth', realm: 't27fr', clientId: 't27frapp', onLoad: 'login-required'

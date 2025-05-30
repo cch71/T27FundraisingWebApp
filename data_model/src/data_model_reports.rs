@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use super::{
     gql_utils::{GraphQlReq, make_gql_request},
     {get_active_user, get_fr_config, get_neighborhood},
@@ -6,6 +5,7 @@ use super::{
 use chrono::prelude::*;
 use gloo::storage::{LocalStorage, SessionStorage, Storage};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::LazyLock;
 
 // Exposing this const out to keep consistent tag name
@@ -99,18 +99,24 @@ pub fn get_allowed_report_views() -> Vec<ReportViews> {
 }
 
 /// Parses the purchases and creates a map
-pub fn get_purchase_to_map(v: &serde_json::Value)->HashMap<String, u64> {
+pub fn get_purchase_to_map(v: &serde_json::Value) -> HashMap<String, u64> {
     let mut purchases = HashMap::new();
 
     for purchase in v["purchases"].as_array().unwrap_or(&Vec::new()) {
         let product_id = purchase["productId"].as_str();
-        match  product_id {
-          Some("spreading") => {
-              purchases.insert("spreading".to_string(), purchase["numSold"].as_u64().unwrap_or_default());
-          }, 
+        match product_id {
+            Some("spreading") => {
+                purchases.insert(
+                    "spreading".to_string(),
+                    purchase["numSold"].as_u64().unwrap_or_default(),
+                );
+            }
             Some("bags") => {
-                purchases.insert("bags".to_string(), purchase["numSold"].as_u64().unwrap_or_default());
-            },
+                purchases.insert(
+                    "bags".to_string(),
+                    purchase["numSold"].as_u64().unwrap_or_default(),
+                );
+            }
             _ => log::error!("Unknown product id: {:?}", product_id),
         };
     }
@@ -183,12 +189,11 @@ pub fn load_report_settings() -> ReportViewSettings {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-pub async fn get_sales_geojson()
--> Result<Vec<serde_json::Value>, Box<dyn std::error::Error>> {
+pub async fn get_sales_geojson() -> Result<serde_json::Value, Box<dyn std::error::Error>> {
     use gloo::net::http::Request;
     // log::info!("Running Query: {}", &query);
 
-    let mut raw_resp: serde_json::Value = Request::get(&GEOJSONURL)
+    let raw_resp: serde_json::Value = Request::get(&GEOJSONURL)
         .header("Content-Type", "application/json")
         .header(
             "Authorization",
@@ -198,17 +203,16 @@ pub async fn get_sales_geojson()
         .await?
         .json()
         .await?;
-    let host_str = gloo::utils::window()
-        .location()
-        .host()
-        .unwrap_or("".to_string());
-    // log::info!("Hostname: {host_str}");
-    if host_str.starts_with("localhost") {
-        log::info!(
-            "GeoJSON Resp: {}",
-            serde_json::to_string_pretty(&raw_resp).unwrap()
-        );
-    }
+
+    // match gloo::utils::window().location().host() {
+    //     Ok(host) if host.contains("localhost") => {
+    //         log::info!(
+    //             "GeoJSON Resp: {}",
+    //             serde_json::to_string_pretty(&raw_resp).unwrap()
+    //         );
+    //     }
+    //     _ => {}
+    // };
 
     if !raw_resp["message"].is_null() {
         let err_str =
@@ -219,12 +223,7 @@ pub async fn get_sales_geojson()
     }
 
     // make_report_query(query).await
-    Ok(raw_resp["features"]
-        .take()
-        .as_array_mut()
-        .unwrap()
-        .drain(..)
-        .collect())
+    Ok(raw_resp)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -499,7 +498,6 @@ pub async fn get_spreading_jobs_report_data(
     make_report_query(query).await
 }
 
-
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 static SPREADING_ASSIST_JOBS_RPT_GRAPHQL: &str = r"
@@ -529,7 +527,10 @@ pub async fn get_spreading_assist_jobs_report_data(
     let query = if let Some(order_owner_id) = order_owner_id {
         SPREADING_ASSIST_JOBS_RPT_GRAPHQL.replace(
             "***EXTRA_PARAMS***",
-            &format!(", excludeOwnerId: \"{0}\", spreaderId: \"{0}\"", order_owner_id),
+            &format!(
+                ", excludeOwnerId: \"{0}\", spreaderId: \"{0}\"",
+                order_owner_id
+            ),
         )
     } else {
         return Ok(Vec::new());
@@ -537,7 +538,6 @@ pub async fn get_spreading_assist_jobs_report_data(
 
     make_report_query(query).await
 }
-
 
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
