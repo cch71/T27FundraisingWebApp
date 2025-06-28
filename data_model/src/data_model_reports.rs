@@ -1,5 +1,5 @@
 use super::{
-    gql_utils::{make_gql_request, GraphQlReq},
+    gql_utils::{GraphQlReq, make_gql_request},
     {get_active_user, get_fr_config, get_neighborhood},
 };
 use chrono::prelude::*;
@@ -218,9 +218,9 @@ pub async fn get_sales_geojson() -> Result<serde_json::Value, Box<dyn std::error
     if !raw_resp["message"].is_null() {
         let err_str =
             serde_json::to_string(&raw_resp).unwrap_or("Failed to stringify json resp".to_string());
-        return Err(Box::new(std::io::Error::other(
-            format!("GeoJSON request returned raw error:\n {err_str}").as_str(),
-        )));
+        return Err(Box::new(std::io::Error::other(format!(
+            "GeoJSON request returned raw error:\n {err_str}"
+        ))));
     }
 
     // make_report_query(query).await
