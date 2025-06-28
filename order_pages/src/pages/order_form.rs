@@ -446,7 +446,7 @@ pub fn order_form_fields() -> Html {
                     disable_cancel_button(&document, false);
                     match rslt {
                         Err(err) => {
-                            gloo::dialogs::alert(&format!("Failed to submit order: {:#?}", err));
+                            gloo::dialogs::alert(&format!("Failed to submit order: {err:#?}"));
                         }
                         _ => {
                             on_form_submitted(true);

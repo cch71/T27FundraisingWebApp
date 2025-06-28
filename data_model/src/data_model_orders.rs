@@ -100,7 +100,7 @@ impl MulchOrder {
     }
 
     pub fn set_donations(&mut self, donation_amt: String) {
-        log::info!("!!!! Setting Donations to: {}", donation_amt);
+        log::info!("!!!! Setting Donations to: {donation_amt}");
         self.amount_from_donations = Some(donation_amt);
     }
 
@@ -173,7 +173,7 @@ impl MulchOrder {
             let check_nums: Vec<&str> = CHECKNUM_RE_DELIMETERS.split(check_nums_str).collect();
             for check_num in check_nums {
                 if check_num.trim().parse::<u32>().is_err() {
-                    log::info!("Check Num: {} in: {} is invalid", check_num, check_nums_str);
+                    log::info!("Check Num: {check_num} in: {check_nums_str} is invalid");
                     return false;
                 }
             }
@@ -198,18 +198,18 @@ impl MulchOrder {
     }
 }
 
-pub fn is_order_from_report_data_readonly(jorder: &serde_json::Value) -> bool {
+pub fn is_order_from_report_data_readonly(j_order: &serde_json::Value) -> bool {
     /* if is_system_locked() { return true } */
 
     if get_active_user().is_admin() {
         return false;
     }
 
-    if jorder["isVerified"].as_bool().unwrap_or(false) {
+    if j_order["isVerified"].as_bool().unwrap_or(false) {
         return true;
     }
 
-    if let Some(_delivery_id) = jorder["deliveryId"].as_u64() {
+    if let Some(_delivery_id) = j_order["deliveryId"].as_u64() {
         // now > order.delivery_id.cutoff_date return true
     }
     false
@@ -251,7 +251,7 @@ pub fn get_active_order() -> Option<MulchOrder> {
 
 pub fn update_active_order(
     order: MulchOrder,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut order_state_opt = ACTIVE_ORDER.write()?;
     let order_state = order_state_opt.as_mut().unwrap();
     if !order_state.is_dirty && order_state.order != order {
@@ -261,7 +261,7 @@ pub fn update_active_order(
     Ok(())
 }
 
-fn gen_submit_active_order_req_str() -> std::result::Result<String, Box<dyn std::error::Error>> {
+fn gen_submit_active_order_req_str() -> Result<String, Box<dyn std::error::Error>> {
     let order_state_opt = ACTIVE_ORDER.write()?;
     let order_state = order_state_opt.as_ref().unwrap();
     if !order_state.is_dirty {
@@ -302,7 +302,7 @@ fn gen_submit_active_order_req_str() -> std::result::Result<String, Box<dyn std:
     }
 
     if let Some(value) = order.is_verified.as_ref() {
-        query.push_str(&format!("\t\t isVerified: {}\n", value));
+        query.push_str(&format!("\t\t isVerified: {value}\n"));
     }
 
     if let Some(value) = order.amount_total_collected.as_ref() {
@@ -382,7 +382,7 @@ fn gen_submit_active_order_req_str() -> std::result::Result<String, Box<dyn std:
         query.push_str(&format!("\t\t\t city: \"{}\"\n", value.trim()));
     }
     if let Some(value) = order.customer.zipcode.as_ref() {
-        query.push_str(&format!("\t\t\t zipcode: {}\n", value));
+        query.push_str(&format!("\t\t\t zipcode: {value}\n"));
     }
     query.push_str(&format!(
         "\t\t\t phone: \"{}\"\n",
@@ -407,11 +407,11 @@ fn gen_submit_active_order_req_str() -> std::result::Result<String, Box<dyn std:
     Ok(query)
 }
 
-pub async fn submit_active_order() -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub async fn submit_active_order() -> Result<(), Box<dyn std::error::Error>> {
     let query = gen_submit_active_order_req_str()?;
 
     if query.is_empty() {
-        // If a query wasn't generated then we don't need to submit it
+        // If a query wasn't generated, then we don't need to submit it
         return Ok(());
     }
 
@@ -430,10 +430,10 @@ mutation {
 }
 ";
 
-pub async fn delete_order(order_id: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub async fn delete_order(order_id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let query = DELETE_ORDER_GQL.replace(
         "***ORDER_ID_PARAM***",
-        &format!("orderId: \"{}\"", order_id),
+        &format!("orderId: \"{order_id}\""),
     );
 
     let req = GraphQlReq::new(query);
@@ -480,7 +480,7 @@ static LOAD_ORDER_GQL: &str = r"
 
 pub async fn load_active_order_from_db(
     order_id: &str,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error>> {
     #[derive(Deserialize, Debug)]
     struct RespWrapper {
         #[serde(alias = "mulchOrder")]
@@ -530,7 +530,7 @@ pub async fn load_active_order_from_db(
 
     let query = LOAD_ORDER_GQL.replace(
         "***ORDER_ID_PARAM***",
-        &format!("orderId: \"{}\"", order_id),
+        &format!("orderId: \"{order_id}\""),
     );
 
     let req = GraphQlReq::new(query);
@@ -589,21 +589,21 @@ mutation {
 pub async fn set_spreaders(
     order_id: &str,
     spreaders: &Vec<String>,
-) -> std::result::Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error>> {
     log::info!(
-        "Setting Spreaders for orderid: {}:{:#?}",
+        "Setting Spreaders for order id: {}:{:#?}",
         order_id,
         &spreaders
     );
     let spreaders = spreaders
         .iter()
-        .map(|v| format!("\"{}\"", v))
+        .map(|v| format!("\"{v}\""))
         .collect::<Vec<String>>()
         .join(",");
     let query = SET_SPREADERS_GQL
         .replace(
             "***ORDER_ID_PARAM***",
-            &format!("orderId: \"{}\"", order_id),
+            &format!("orderId: \"{order_id}\""),
         )
         .replace("***SPREADERS_PARAM***", &spreaders);
 
@@ -624,7 +624,7 @@ static TROOP_ORDER_AMOUNT_COLLECTED_GQL: &str = r"
 }
 ";
 
-pub async fn have_orders_been_created() -> std::result::Result<bool, Box<dyn std::error::Error>> {
+pub async fn have_orders_been_created() -> Result<bool, Box<dyn std::error::Error>> {
     // Fails safe
     let req = GraphQlReq::new(TROOP_ORDER_AMOUNT_COLLECTED_GQL);
     make_gql_request::<serde_json::Value>(&req).await.map(|v| {

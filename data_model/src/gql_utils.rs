@@ -19,7 +19,7 @@ impl GraphQlReq {
 
 pub(super) async fn make_gql_request<T>(
     req: &GraphQlReq,
-) -> std::result::Result<T, Box<dyn std::error::Error>>
+) -> Result<T, Box<dyn std::error::Error>>
 where
     T: serde::de::DeserializeOwned,
 {
@@ -57,7 +57,7 @@ where
         let err_str =
             serde_json::to_string(&raw_resp).unwrap_or("Failed to stringify json resp".to_string());
         return Err(Box::new(std::io::Error::other(
-            format!("GQL request returned raw error:\n {}", err_str).as_str(),
+            format!("GQL request returned raw error:\n {err_str}").as_str(),
         )));
     }
 
@@ -67,7 +67,7 @@ where
             let err_str =
                 serde_json::to_string(&errs).unwrap_or("Failed to parse error resp".to_string());
             Err(Box::new(std::io::Error::other(
-                format!("GQL request returned error:\n {}", err_str).as_str(),
+                format!("GQL request returned error:\n {err_str}").as_str(),
             )))
         }
         _ => Ok(resp.data.unwrap()),

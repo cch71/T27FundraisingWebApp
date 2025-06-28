@@ -33,8 +33,8 @@ pub async fn get_current_position() -> Option<GeolocationPosition> {
             Some(pos)
         }
         Err(err) => {
-            log::error!("Geolocation Err: {:#?}", err);
-            gloo::dialogs::alert(&format!("Failed to get Geolocation Info: {:#?}", err));
+            log::error!("Geolocation Err: {err:#?}");
+            gloo::dialogs::alert(&format!("Failed to get Geolocation Info: {err:#?}"));
             None
         }
     }

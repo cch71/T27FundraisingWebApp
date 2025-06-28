@@ -57,7 +57,7 @@ fn App() -> Html {
     let route_switch = {
         let is_order_active = is_order_active.clone();
         move |route: AppRoutes| -> Html {
-            // This is kind of a hack to save order form before we switch away
+            // This is kind of a hack to save the order form before we switch away
             let document = web_sys::window().unwrap().document().unwrap();
             if document.get_element_by_id("newOrEditOrderForm").is_some() {
                 if is_active_order() {
@@ -95,7 +95,7 @@ fn App() -> Html {
                 log::info!("User has asked to logout");
                 // We need to clear local storage so a logon/logoff can force a reload
                 clear_local_storage();
-                // We need to delete report settings in case admin is on view user can't support
+                // We need to delete report settings in case admin is on a view the user can't support
                 clear_session_storage(); 
                 logout().await;
             });
@@ -121,8 +121,8 @@ fn App() -> Html {
                                 is_loading.set(false);
                             },
                             Err(err) => {
-                                log::error!("Get Active User Err: {:#?}", err);
-                                gloo::dialogs::alert(&format!("Failed to get User Info: {:#?}", err));
+                                log::error!("Get Active User Err: {err:#?}");
+                                gloo::dialogs::alert(&format!("Failed to get User Info: {err:#?}"));
                             }
                         };
                     } else {

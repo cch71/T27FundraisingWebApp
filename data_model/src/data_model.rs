@@ -446,7 +446,7 @@ pub async fn load_config() {
     let req = GraphQlReq::new(CONFIG_GQL);
     let rslt = make_gql_request::<ConfigApi>(&req).await;
     if let Err(err) = rslt {
-        gloo::dialogs::alert(&format!("Failed to retrieve config: {:#?}", err));
+        gloo::dialogs::alert(&format!("Failed to retrieve config: {err:#?}"));
         return;
     }
 
@@ -454,7 +454,7 @@ pub async fn load_config() {
         let mut frconfig = rslt.unwrap();
         frconfig.local_store_schema_ver = Some(LOCAL_STORE_SCHEMA_VER);
         if let Err(err) = LocalStorage::set("FrConfig", frconfig.clone()) {
-            log::error!("Failed to cache config to storage: {:#?}", err);
+            log::error!("Failed to cache config to storage: {err:#?}");
         } else {
             log::info!("Config cached to storage");
         }
@@ -610,14 +610,14 @@ pub async fn update_neighborhoods(
                 "***CITY***",
                 &v.city
                     .as_ref()
-                    .map(|v| format!("\t\t\tcity: \"{}\",", v))
+                    .map(|v| format!("\t\t\tcity: \"{v}\","))
                     .unwrap_or("".to_string()),
             )
             .replace(
                 "***ZIP***",
                 &v.zipcode
                     .as_ref()
-                    .map(|v| format!("\t\t\tzipcode: {},", v))
+                    .map(|v| format!("\t\t\tzipcode: {v},"))
                     .unwrap_or("".to_string()),
             )
         })
@@ -634,9 +634,9 @@ pub async fn update_neighborhoods(
 
     // I don't know if there is any better way. Making DB Query costs money
     // Trying to merge in place would also take multiple passes through the neighborhood list
-    // so converting it into a map and then replacing list with values
+    // so converting it into a map and then replacing the list with values
 
-    // Map neighborhood names to neighborhood and add ability to mark dirty
+    // Map neighborhood names to a neighborhood entry and add the ability to mark dirty
     let mut merged_hoods = (*get_neighborhoods())
         .iter()
         .map(|ni| (ni.name.clone(), ni.clone()))
@@ -794,7 +794,7 @@ pub async fn get_timecards_data(
     let query = if let Some(delivery_id) = delivery_id {
         GET_TIMECARDS_GRAPHQL.replace(
             "***GET_TIMECARDS_PARAMS***",
-            &format!("deliveryId: {}", delivery_id),
+            &format!("deliveryId: {delivery_id}"),
         )
     } else {
         GET_TIMECARDS_GRAPHQL.replace("(***GET_TIMECARDS_PARAMS***)", "")
@@ -1027,7 +1027,7 @@ pub async fn get_fundraiser_closure_static_data()
         mut spreaders: Vec<String>,
         num_bags: u64,
     ) {
-        //Due to bug there can be empty spreaders
+        //Due to bug, there can be empty spreaders.
         spreaders.retain(|v| !v.is_empty());
 
         if spreaders.is_empty() {
@@ -1438,7 +1438,7 @@ pub async fn get_address_from_lat_lng(
 ) -> Result<AddressInfo, Box<dyn std::error::Error>> {
     let query = GET_ADDR_API_GQL.replace(
         "***LAT_LNG_PARAMS***",
-        &format!("lat: {}, lng: {}", lat, lng),
+        &format!("lat: {lat}, lng: {lng}"),
     );
 
     #[derive(Deserialize)]

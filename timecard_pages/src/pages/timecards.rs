@@ -49,9 +49,9 @@ fn get_uid_from_row(row_elm: &HtmlElement) -> String {
 /////////////////////////////////////////////////
 #[function_component(Timecards)]
 pub fn timecards_page() -> Html {
-    // tuple of uid, user name, Timecard
+    // tuple of uid, username, Timecard
     type TimecardsDataType = (String, String, Option<TimeCard>);
-    let timecards_data_ready: yew::UseStateHandle<Option<Vec<TimecardsDataType>>> =
+    let timecards_data_ready: UseStateHandle<Option<Vec<TimecardsDataType>>> =
         use_state_eq(|| None);
     let is_delivery_date_selected = use_state_eq(|| false);
 
@@ -106,7 +106,7 @@ pub fn timecards_page() -> Html {
                         }
                         Err(err) => {
                             let err_str =
-                                format!("Failed to get retrieve timecard data: {:#?}", err);
+                                format!("Failed to get retrieve timecard data: {err:#?}");
                             log::error!("{}", &err_str);
                             gloo::dialogs::alert(err_str.as_str());
                         }
@@ -208,7 +208,7 @@ pub fn timecards_page() -> Html {
                             (new_time_total_secs as f64 / (60.0 * 60.0)).floor() as u64;
                         let new_mins: u64 =
                             ((new_time_total_secs as f64 % (60.0 * 60.0)) / 60.0).floor() as u64;
-                        let new_time_total_str = format!("{:02}:{:02}", new_hours, new_mins);
+                        let new_time_total_str = format!("{new_hours:02}:{new_mins:02}");
                         if 0 == new_hours && 0 == new_mins {
                             let _ = btn_elm.class_list().add_1("invisible");
                             return;
@@ -266,7 +266,7 @@ pub fn timecards_page() -> Html {
                     })
                 {
                     if !time_val_str.is_empty() {
-                        return format!("{}:00", time_val_str);
+                        return format!("{time_val_str}:00");
                     }
                 }
 
@@ -287,7 +287,7 @@ pub fn timecards_page() -> Html {
                     .unwrap()
                     .inner_text();
                 if !time_val_str.is_empty() {
-                    format!("{}:00", time_val_str)
+                    format!("{time_val_str}:00")
                 } else {
                     "".to_string()
                 }

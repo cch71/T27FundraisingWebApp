@@ -204,7 +204,7 @@ pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
 
         move |vals: PriceBreakAddUpdateDlgCb| {
             let (gt, unit_price) = vals.to_owned();
-            log::info!("Add/Updating Price Break {} - {}", gt, unit_price);
+            log::info!("Add/Updating Price Break {gt} - {unit_price}");
             let mut price_breaks_map = (*price_breaks).clone();
             price_breaks_map.insert(gt, unit_price);
             price_breaks.set(price_breaks_map);
@@ -217,7 +217,7 @@ pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
         let price_breaks = price_breaks.clone();
         move |evt: MouseEvent| {
             let gt = get_selected_pricebreak(evt);
-            log::info!("Deleting Price Break {}", gt);
+            log::info!("Deleting Price Break {gt}");
             let mut price_breaks_map = (*price_breaks).clone();
             price_breaks_map.remove(&gt);
             price_breaks.set(price_breaks_map);
@@ -301,7 +301,7 @@ pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
             let is_dirty = is_dirty.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 if let Err(err) = set_products(products).await {
-                    gloo::dialogs::alert(&format!("Failed saving products config:\n{:#?}", err));
+                    gloo::dialogs::alert(&format!("Failed saving products config:\n{err:#?}"));
                 }
                 disable_save_button(&document, false);
                 is_dirty.set(false);

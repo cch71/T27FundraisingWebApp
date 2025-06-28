@@ -38,20 +38,16 @@ fn reset_orders_database() -> Html {
             wasm_bindgen_futures::spawn_local(async move {
                 let verify_phrase = "delete order and user data";
                 let msg = format!(
-                    "This will remove all order data from the system.\nIT IS DESTRUCTIVE!!!\nAre You Sure?\nType \"{}\" to delete",
-                    verify_phrase
+                    "This will remove all order data from the system.\nIT IS DESTRUCTIVE!!!\nAre You Sure?\nType \"{verify_phrase}\" to delete"
                 );
                 let do_reset =
                     gloo::dialogs::prompt(&msg, None).is_some_and(|v| v == verify_phrase);
 
-                log::info!("Resetting Order Database: {}", do_reset);
+                log::info!("Resetting Order Database: {do_reset}");
                 if do_reset {
                     log::info!("Resetting User and Order Data!!!!!!!!...");
                     if let Err(err) = reset_fundraiser().await {
-                        gloo::dialogs::alert(&format!(
-                            "Failed to reset fundraiser data: {:#?}",
-                            err
-                        ));
+                        gloo::dialogs::alert(&format!("Failed to reset fundraiser data: {err:#?}"));
                     }
                 }
 
@@ -103,8 +99,8 @@ pub fn fr_config() -> Html {
             <div class="row">
                 <ul class="nav nav-tabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button 
-                            class="nav-link active" 
+                        <button
+                            class="nav-link active"
                             id="home-tab"
                             data-bs-toggle="tab"
                             data-bs-target="#deliveries-tab-pane"
@@ -115,8 +111,8 @@ pub fn fr_config() -> Html {
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button 
-                            class="nav-link" 
+                        <button
+                            class="nav-link"
                             id="products-tab"
                             data-bs-toggle="tab"
                             data-bs-target="#products-tab-pane"
@@ -127,8 +123,8 @@ pub fn fr_config() -> Html {
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button 
-                            class="nav-link" 
+                        <button
+                            class="nav-link"
                             id="neighborhoods-tab"
                             data-bs-toggle="tab"
                             data-bs-target="#neighborhoods-tab-pane"
@@ -139,8 +135,8 @@ pub fn fr_config() -> Html {
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button 
-                            class="nav-link" 
+                        <button
+                            class="nav-link"
                             id="users-tab"
                             data-bs-toggle="tab"
                             data-bs-target="#users-tab-pane"
@@ -151,8 +147,8 @@ pub fn fr_config() -> Html {
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button 
-                            class="nav-link" 
+                        <button
+                            class="nav-link"
                             id="reset-tab"
                             data-bs-toggle="tab"
                             data-bs-target="#reset-tab-pane"

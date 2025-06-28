@@ -21,7 +21,7 @@ struct OrderToDelete {
 /////////////////////////////////////////////////
 pub(crate) fn on_delete_order_from_rpt(
     evt: MouseEvent,
-    datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>>,
+    datatable: Rc<RefCell<Option<DataTable>>>,
 ) {
     evt.prevent_default();
     evt.stop_propagation();
@@ -49,7 +49,7 @@ pub(crate) fn on_delete_order_from_rpt(
         .ok()
         .and_then(|t| t.dataset().get("orderid"))
         .unwrap();
-    log::info!("on_delete_order: {}", order_id_str);
+    log::info!("on_delete_order: {order_id_str}");
 
     let dlg = bootstrap::get_modal_by_id("deleteOrderDlg").unwrap();
 
@@ -106,13 +106,11 @@ pub(crate) fn delete_order_confirmation_dlg() -> Html {
                     if let Some(to_delete) = maybe_to_delete_order {
                         if let Err(err) = delete_order(&to_delete.order_id).await {
                             gloo::dialogs::alert(&format!(
-                                "Failed to delete order in the cloud: {:#?}",
-                                err
+                                "Failed to delete order in the cloud: {err:#?}"
                             ));
                         } else if let Err(err) = remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node) {
                                 gloo::dialogs::alert(&format!(
-                                    "Order was deleted from the cloud but not the local table: {:#?}",
-                                    err
+                                    "Order was deleted from the cloud but not the local table: {err:#?}"
                                 ));
                         }
                         
