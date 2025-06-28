@@ -65,9 +65,12 @@ pub async fn get_active_user_async() -> anyhow::Result<Arc<AuthenticatedUserInfo
     match getUserInfo().await {
         Ok(user_info) => {
             // log::info!("User Info: {:#?}", user_info);
-            let user_info = parse_active_user(user_info)?;
-            *ACTIVE_USER.write().unwrap() = Some(user_info.clone());
-            Ok(user_info)
+            parse_active_user(user_info).and_then(|user_info| {
+                ACTIVE_USER.write().map(|mut active_user| {
+                    active_user.replace(user_info.clone());
+                    user_info
+                }).map_err(|err| anyhow!("Failed to replace user info: {err}"))
+            })
         }
         Err(err) => {
             Err(anyhow!("Get User Info Err: {:#?}", err))
@@ -86,7 +89,7 @@ pub async fn is_authenticated() -> bool {
             let is_auth: bool = serde_wasm_bindgen::from_value(is_auth).unwrap();
             return is_auth;
         }
-        Err(err) => log::error!("User Info Err: {:#?}", err),
+        Err(err) => log::error!("User Info Err: {err:#?}"),
     };
     false
 }
@@ -94,7 +97,7 @@ pub async fn is_authenticated() -> bool {
 pub async fn login() {
     match loginUser().await {
         Err(err) => {
-            log::error!("Error logging in Err: {:#?}", err);
+            log::error!("Error logging in Err: {err:#?}");
         }
         _ => {
             log::info!("Logged In");
@@ -105,7 +108,7 @@ pub async fn login() {
 pub async fn logout() {
     match logoutUser().await {
         Err(err) => {
-            log::error!("Error logging out Err: {:#?}", err);
+            log::error!("Error logging out Err: {err:#?}");
         }
         _ => {
             log::info!("Logged out");

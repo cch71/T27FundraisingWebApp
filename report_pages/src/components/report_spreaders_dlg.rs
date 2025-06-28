@@ -27,7 +27,7 @@ struct DlgMeta {
 /////////////////////////////////////////////////
 pub(crate) fn on_edit_spreading_from_rpt(
     evt: MouseEvent,
-    datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>>,
+    datatable: Rc<RefCell<Option<DataTable>>>,
 ) {
     evt.prevent_default();
     evt.stop_propagation();
@@ -61,7 +61,7 @@ pub(crate) fn on_edit_spreading_from_rpt(
             )
         })
         .collect();
-    log::info!("on_edit_spreading: {}", order_id_str);
+    log::info!("on_edit_spreading: {order_id_str}");
 
     let dlg = bootstrap::get_modal_by_id("spreadingDlg").unwrap();
 
@@ -143,8 +143,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
                             meta.selected_users.keys().cloned().collect::<_>();
                         match set_spreaders(&meta.order_id, &spreaders).await { Err(err) => {
                             gloo::dialogs::alert(&format!(
-                                "Failed to submit spreaders: {:#?}",
-                                err
+                                "Failed to submit spreaders: {err:#?}"
                             ));
                         } _ => {
                             let spreaders = spreaders.join(",");
@@ -153,8 +152,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
                                 set_spreaders_with_tr(&meta.datatable, &meta.tr_node, &spreaders)
                             {
                                 gloo::dialogs::alert(&format!(
-                                    "Order was set in the cloud db but not the local table: {:#?}",
-                                    err
+                                    "Order was set in the cloud db but not the local table: {err:#?}"
                                 ));
                             }
                         }}
@@ -195,7 +193,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
                 if let Some(meta) = metarc.borrow_mut().as_mut() {
                     if target_elm.checked() {
                         let uname = target_elm.dataset().get("uname").unwrap();
-                        log::info!("Selecting: {}:{}", uid, uname);
+                        log::info!("Selecting: {uid}:{uname}");
                         let _ = meta.selected_users.insert(uid, uname);
                         let _ = target_elm
                             .parent_element()
@@ -203,7 +201,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
                             .class_list()
                             .add_1("active");
                     } else {
-                        log::info!("Unselecting: {}", uid);
+                        log::info!("Unselecting: {uid}");
                         let _ = meta.selected_users.remove(&uid);
                         let _ = target_elm
                             .parent_element()

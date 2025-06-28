@@ -82,8 +82,7 @@ pub(crate) fn report_deliveries_view() -> Html {
                                     v["customer"]["zipcode"].as_u64().map_or("".to_string(), |v| v.to_string()));
 
                                 let google_map_url: String = encode_uri(
-                                    &format!("https://www.google.com/maps/search/?api=1&query={}",
-                                    address)).into();
+                                    &format!("https://www.google.com/maps/search/?api=1&query={address}")).into();
 
                                 let (delivery_date, delivery_id) = match v["deliveryId"].as_u64() {
                                     Some(delivery_id) => (get_delivery_date(&(delivery_id as u32)), delivery_id.to_string()),

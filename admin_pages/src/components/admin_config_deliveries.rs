@@ -204,12 +204,7 @@ pub(crate) fn delivery_list() -> Html {
         let deliveries = deliveries.clone();
         move |vals: DeliveryDlgAddOrUpdateCb| {
             let (delivery_id, delivery_date, cutoff_date) = vals.to_owned();
-            log::info!(
-                "Add/Updating Delivery {} - {} - {}",
-                delivery_id,
-                delivery_date,
-                cutoff_date
-            );
+            log::info!("Add/Updating Delivery {delivery_id} - {delivery_date} - {cutoff_date}");
             let delivery_info = DeliveryInfo::new_from_admin(delivery_date, cutoff_date);
             let mut delivery_map = (*deliveries).clone();
             delivery_map.insert(delivery_id, delivery_info);
@@ -224,7 +219,7 @@ pub(crate) fn delivery_list() -> Html {
         move |evt: MouseEvent| {
             let delivery_id = get_delivery_id(evt);
             let mut delivery_map = (*deliveries).clone();
-            log::info!("Deleting ID: {}", delivery_id);
+            log::info!("Deleting ID: {delivery_id}");
             delivery_map.remove(&delivery_id);
             deliveries.set(delivery_map);
             is_dirty.set(true);
@@ -234,7 +229,7 @@ pub(crate) fn delivery_list() -> Html {
     let on_add_delivery = {
         let deliveries = deliveries.clone();
         move |_evt: MouseEvent| {
-            // Since we are adding we don't have a selected delivery id
+            // Since we are adding, we don't have a selected delivery id
             SELECTED_DELIVERY.with(|selected_delivery_rc| {
                 let selected_delivery = selected_delivery_rc.borrow().as_ref().unwrap().clone();
                 let delivery_id_str = (deliveries.len() + 1).to_string();
@@ -252,7 +247,7 @@ pub(crate) fn delivery_list() -> Html {
         let deliveries = deliveries.clone();
         move |evt: MouseEvent| {
             let delivery_id = get_delivery_id(evt);
-            log::info!("Editing ID: {}", delivery_id);
+            log::info!("Editing ID: {delivery_id}");
             SELECTED_DELIVERY.with(|selected_delivery_rc| {
                 let di = deliveries.get(&delivery_id).unwrap();
                 let delivery_date_str = di.get_delivery_date_str();
@@ -280,7 +275,7 @@ pub(crate) fn delivery_list() -> Html {
             wasm_bindgen_futures::spawn_local(async move {
                 // log::info!("Saving Deliveries {:#?}", &deliveries);
                 if let Err(err) = set_deliveries((*deliveries).clone()).await {
-                    gloo::dialogs::alert(&format!("Failed saving delivery config:\n{:#?}", err));
+                    gloo::dialogs::alert(&format!("Failed saving delivery config:\n{err:#?}"));
                 }
                 disable_save_button(&document, false, false);
                 is_dirty.set(false);

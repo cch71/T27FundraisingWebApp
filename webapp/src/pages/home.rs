@@ -58,7 +58,12 @@ fn gen_summary_html(full_summary: &SummaryReport) -> Html {
         });
     }
 
-    if summary.total_assisted_spreading_bags.parse::<f32>().unwrap_or_default() > 0.0 {
+    if summary
+        .total_assisted_spreading_bags
+        .parse::<f32>()
+        .unwrap_or_default()
+        > 0.0
+    {
         summary_html.push(html! {
             <tr>
                 <td class="py-1">{"Your spreading assist bags:"}</td>
@@ -190,8 +195,7 @@ pub fn home_page() -> Html {
             let id = get_active_user().get_id();
             match get_summary_report_data(&id, NUM_TOP_SELLERS_TO_GET).await {
                 Err(err) => gloo::dialogs::alert(&format!(
-                    "Failed to retrieve summary data to local storage: {:#?}",
-                    err
+                    "Failed to retrieve summary data to local storage: {err:#?}"
                 )),
                 Ok(summary) => summary_values.set(Some(summary)),
             };

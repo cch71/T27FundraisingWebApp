@@ -27,11 +27,10 @@ pub(crate) fn on_view_or_edit_from_rpt(evt: MouseEvent, history: Navigator) {
         .and_then(|t| t.dataset().get("orderid"))
         .unwrap();
     wasm_bindgen_futures::spawn_local(async move {
-        log::info!("on_view_or_edit_order: {}", order_id);
+        log::info!("on_view_or_edit_order: {order_id}");
         if let Err(err) = load_active_order_from_db(&order_id).await {
             gloo::dialogs::alert(&format!(
-                "Failed to load order: {}: Err: {:#?}",
-                order_id, err
+                "Failed to load order: {order_id}: Err: {err:#?}"
             ));
         }
         history.push(&AppRoutes::OrderForm);

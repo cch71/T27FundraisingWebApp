@@ -238,7 +238,7 @@ struct NeighborhoodLiProps {
 fn neighborhood_item(props: &NeighborhoodLiProps) -> Html {
     let mut liclass = "list-group-item d-flex justify-content-between".to_string();
     if !props.hood.is_visible {
-        liclass = format!("{} list-group-item-dark", liclass);
+        liclass = format!("{liclass} list-group-item-dark");
     }
     html! {
         <li class={liclass}>
@@ -375,9 +375,9 @@ pub(crate) fn neighborhood_list() -> Html {
 
             let is_dirty = is_dirty.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                log::info!("Saving Neighborhoods: {:#?}", updated_hoods);
+                log::info!("Saving Neighborhoods: {updated_hoods:#?}");
                 if let Err(err) = update_neighborhoods(updated_hoods).await {
-                    gloo::dialogs::alert(&format!("Failed updating neighborhoods:\n{:#?}", err));
+                    gloo::dialogs::alert(&format!("Failed updating neighborhoods:\n{err:#?}"));
                 }
                 disable_save_button(&document, false);
                 is_dirty.set(false);

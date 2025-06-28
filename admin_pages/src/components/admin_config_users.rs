@@ -1,4 +1,4 @@
-use calamine::{Ods, RangeDeserializerBuilder, Reader, Xlsx, open_workbook_from_rs};
+use calamine::{open_workbook_from_rs, Ods, RangeDeserializerBuilder, Reader, Xlsx};
 use std::io::Cursor;
 
 use data_model::*;
@@ -72,7 +72,7 @@ fn process_user_file_rec(
     potential_new_users: &mut BTreeMap<String, UserFileRec>,
 ) {
     let mut new_id: String = get_or_gen_imported_user_id(&record);
-    log::info!("Rec: {:?} -> Id: {}", record, new_id);
+    log::info!("Rec: {record:?} -> Id: {new_id}");
 
     // Make sure there aren't dups in the uploaded list and create a unique id if it isn't
     if let Some(found_user) = potential_new_users.get(&new_id) {
@@ -84,7 +84,7 @@ fn process_user_file_rec(
         } else {
             let mut idx = 1;
             loop {
-                let new_id_candidate = format!("{}{}", new_id, idx);
+                let new_id_candidate = format!("{new_id}{idx}");
                 if potential_new_users.contains_key(&new_id_candidate) {
                     idx += 1;
                     continue;
@@ -166,19 +166,22 @@ fn process_uploaded_file(
 ) -> Result<(), Box<dyn std::error::Error>> {
     // 2ndBatch.xlsx type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
     // 2ndBatch.ods type: application/vnd.oasis.opendocument.spreadsheet
-    
+
     match true {
         _ if filename.ends_with(".csv") || mimetype.eq("text/csv") => {
             process_csv_records(data, potential_new_users)
-        },
-        _ if filename.to_ascii_lowercase().ends_with(".xlsx")  || mimetype.eq("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") => {
+        }
+        _ if filename.to_ascii_lowercase().ends_with(".xlsx")
+            || mimetype.eq("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") =>
+        {
             process_xlsx_records(data, potential_new_users)
         }
-        _ if filename.to_ascii_lowercase().ends_with(".ods") || mimetype.eq("application/vnd.oasis.opendocument.spreadsheet") => {
+        _ if filename.to_ascii_lowercase().ends_with(".ods")
+            || mimetype.eq("application/vnd.oasis.opendocument.spreadsheet") =>
+        {
             process_ods_records(data, potential_new_users)
         }
-        _ => panic!()
-        
+        _ => panic!(),
     }
 }
 
@@ -256,13 +259,12 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                 for file in results.into_iter() {
                     let file_name = file.name();
                     let file_type = file.raw_mime_type();
-                    log::info!("Loading: {} type: {}", file_name, file_type);
+                    log::info!("Loading: {file_name} type: {file_type}");
                     let data = match gloo::file::futures::read_as_bytes(&file).await {
                         Ok(raw_data) => raw_data,
                         Err(err) => {
                             gloo::dialogs::alert(&format!(
-                                "Failed to read selected file: {:#?}",
-                                err
+                                "Failed to read selected file: {err:#?}"
                             ));
                             input.set_value("");
                             return;
@@ -273,8 +275,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                         process_uploaded_file(file_name, file_type, data, &mut potential_new_users)
                     {
                         gloo::dialogs::alert(&format!(
-                            "Error in users file make sure proper headers are in place:\n{:#?}",
-                            err
+                            "Error in users file make sure proper headers are in place:\n{err:#?}"
                         ));
                         input.set_value("");
                         potential_new_users.clear();
@@ -286,7 +287,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                 // let found_users = match get_users_for_admin_config().await {
                 //     Ok(found_users) => found_users,
                 //     Err(err) => {
-                //         gloo::dialogs::alert(&format!("Failed to get users from server: {:#?}", err));
+                //         gloo::dialogs::alert(&format!("Failed to get users from server: {err:#?}"));
                 //         return;
                 //     }
                 // };
@@ -314,7 +315,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                     } else {
                         let mut idx = 1;
                         loop {
-                            let new_id = format!("{}{}", k, idx);
+                            let new_id = format!("{k}{idx}");
                             if found_users.contains_key(&new_id) {
                                 idx += 1;
                                 continue;
@@ -675,7 +676,7 @@ pub(crate) fn user_list() -> Html {
                 //log::info!("Saving users to cloud: {:#?}", updated_users);
                 match add_or_update_users_for_admin_config(updated_users).await {
                     Err(err) => {
-                        gloo::dialogs::alert(&format!("Failed adding/updating users:\n{:#?}", err));
+                        gloo::dialogs::alert(&format!("Failed adding/updating users:\n{err:#?}"));
                     }
                     _ => {
                         dirty_entries.borrow_mut().clear();
@@ -696,8 +697,7 @@ pub(crate) fn user_list() -> Html {
                     match get_users_for_admin_config().await {
                         Ok(user_map) => users.set(user_map),
                         Err(err) => gloo::dialogs::alert(&format!(
-                            "Failed to get user list from server: {:#?}",
-                            err
+                            "Failed to get user list from server: {err:#?}"
                         )),
                     };
                 });

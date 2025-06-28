@@ -108,7 +108,7 @@ pub fn reports_page() -> Html {
         let current_settings = current_settings.clone();
         Callback::from(move |updated_settings: ReportViewSettings| {
             if let Err(err) = save_report_settings(&updated_settings) {
-                log::error!("Failed saving report settings: {:#?}", err);
+                log::error!("Failed saving report settings: {err:#?}");
             }
 
             log::info!(

@@ -66,7 +66,7 @@ impl std::str::FromStr for ReportViews {
             "Sales Map" => Ok(ReportViews::SellMap),
             "Allocation Summary" => Ok(ReportViews::AllocationSummary),
             "Money Collection" => Ok(ReportViews::MoneyCollection),
-            _ => Err(format!("'{}' is not a valid value for ReportViews", s)),
+            _ => Err(format!("'{s}' is not a valid value for ReportViews")),
         }
     }
 }
@@ -91,7 +91,7 @@ pub fn get_allowed_report_views() -> Vec<ReportViews> {
         }
     }
 
-    // if allocation_summary availalble add allocation summary {
+    // if allocation_summary available add allocation summary {
     //      reports.push(ReportViews::AllocationSummary);
     // }
 
@@ -117,7 +117,7 @@ pub fn get_purchase_to_map(v: &serde_json::Value) -> HashMap<String, u64> {
                     purchase["numSold"].as_u64().unwrap_or_default(),
                 );
             }
-            _ => log::error!("Unknown product id: {:?}", product_id),
+            _ => log::error!("Unknown product id: {product_id:?}"),
         };
     }
     purchases
@@ -149,8 +149,9 @@ async fn make_report_query(
     }
 
     let req = GraphQlReq::new(query);
-    let rslts = make_gql_request::<GqlResp>(&req).await?;
-    Ok(rslts.mulch_orders)
+    make_gql_request::<GqlResp>(&req)
+        .await
+        .map(|v| v.mulch_orders)
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -217,9 +218,9 @@ pub async fn get_sales_geojson() -> Result<serde_json::Value, Box<dyn std::error
     if !raw_resp["message"].is_null() {
         let err_str =
             serde_json::to_string(&raw_resp).unwrap_or("Failed to stringify json resp".to_string());
-        return Err(Box::new(std::io::Error::other(
-            format!("GeoJSON request returned raw error:\n {}", err_str).as_str(),
-        )));
+        return Err(Box::new(std::io::Error::other(format!(
+            "GeoJSON request returned raw error:\n {err_str}"
+        ))));
     }
 
     // make_report_query(query).await
@@ -255,7 +256,7 @@ pub async fn get_quick_report_data(
     let query = if let Some(order_owner_id) = order_owner_id {
         QUICK_RPT_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",
-            &format!("ownerId: \"{}\"", order_owner_id),
+            &format!("ownerId: \"{order_owner_id}\""),
         )
     } else {
         QUICK_RPT_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
@@ -305,7 +306,7 @@ pub async fn get_full_report_data(
     let query = if let Some(order_owner_id) = order_owner_id {
         FULL_RPT_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",
-            &format!("ownerId: \"{}\"", order_owner_id),
+            &format!("ownerId: \"{order_owner_id}\""),
         )
     } else {
         FULL_RPT_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
@@ -335,7 +336,7 @@ pub async fn get_money_collection_report_data(
     let query = if let Some(order_owner_id) = order_owner_id {
         MONEY_COLLECTION_RPT_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",
-            &format!("ownerId: \"{}\"", order_owner_id),
+            &format!("ownerId: \"{order_owner_id}\""),
         )
     } else {
         MONEY_COLLECTION_RPT_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
@@ -408,7 +409,7 @@ pub async fn get_distribution_points_report_data()
     });
 
     // This is really not very efficient to convert to vec serde vals just to avoid
-    //  adding another enum but this is least impact for a report that is rarely ran
+    //  adding another enum, but this is the lesser impact for a report that is rarely ran
     //  so right now this should be acceptable
     Ok(vec![serde_json::json!({
         "deliveryIdMap": delivery_id_map,
@@ -489,7 +490,7 @@ pub async fn get_spreading_jobs_report_data(
     let query = if let Some(order_owner_id) = order_owner_id {
         SPREADING_JOBS_RPT_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",
-            &format!(", ownerId: \"{}\"", order_owner_id),
+            &format!(", ownerId: \"{order_owner_id}\""),
         )
     } else {
         SPREADING_JOBS_RPT_GRAPHQL.replace("***ORDER_OWNER_PARAM***", "")
@@ -527,10 +528,7 @@ pub async fn get_spreading_assist_jobs_report_data(
     let query = if let Some(order_owner_id) = order_owner_id {
         SPREADING_ASSIST_JOBS_RPT_GRAPHQL.replace(
             "***EXTRA_PARAMS***",
-            &format!(
-                ", excludeOwnerId: \"{0}\", spreaderId: \"{0}\"",
-                order_owner_id
-            ),
+            &format!(", excludeOwnerId: \"{order_owner_id}\", spreaderId: \"{order_owner_id}\""),
         )
     } else {
         return Ok(Vec::new());
@@ -740,11 +738,11 @@ pub async fn get_summary_report_data(
     let query = SUMMARY_RPT_GRAPHQL
         .replace(
             "***ORDER_OWNER_PARAM***",
-            &format!("ownerId: \"{}\"", seller_id),
+            &format!("ownerId: \"{seller_id}\""),
         )
         .replace(
             "***TOP_SELLERS_PARAM***",
-            &format!("numTopSellers: {}", top_sellers),
+            &format!("numTopSellers: {top_sellers}"),
         );
     log::info!("Running Query: {}", &query);
     #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -796,7 +794,7 @@ pub async fn get_order_verification_report_data(
     let query = if let Some(order_owner_id) = order_owner_id {
         ORDER_VERIFICATION_GRAPHQL.replace(
             "***ORDER_OWNER_PARAM***",
-            &format!("ownerId: \"{}\"", order_owner_id),
+            &format!("ownerId: \"{order_owner_id}\""),
         )
     } else {
         ORDER_VERIFICATION_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")

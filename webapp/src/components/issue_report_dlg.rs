@@ -79,7 +79,7 @@ pub(crate) fn report_issue() -> Html {
                 btn_elm.set_disabled(false);
                 match rslt {
                     Err(err) => {
-                        gloo::dialogs::alert(&format!("Failed to submit report: {:#?}", err));
+                        gloo::dialogs::alert(&format!("Failed to submit report: {err:#?}"));
                     }
                     _ => {
                         show_report_issue_dlg(false);

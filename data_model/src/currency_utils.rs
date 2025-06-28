@@ -61,7 +61,7 @@ pub fn on_money_input_filter(input: Option<&String>) -> String {
         //Special case money doesn't handle
         let mut value = input.to_string();
         value.truncate(3);
-        return format!("0{}", value);
+        return format!("0{value}");
     }
 
     let parts: Vec<&str> = input.split(".").collect();
@@ -70,13 +70,13 @@ pub fn on_money_input_filter(input: Option<&String>) -> String {
 
     match parts.len().cmp(&1) {
         Ordering::Equal => {
-            //don't have to wory about fractions
+            //don't have to worry about fractions
             major.to_string()
         }
         Ordering::Greater => {
             let mut fract_str = parts[1].to_string();
             fract_str.truncate(2);
-            format!("{}.{}", major, fract_str)
+            format!("{major}.{fract_str}")
         }
         Ordering::Less => "".to_string(),
     }
