@@ -197,12 +197,11 @@ pub fn timecards_page() -> Html {
 
                         let _ = time_calc_elm.class_list().remove_1("is-invalid");
 
-                        if let Some(saved_time_total) = f.borrow().get(&uid) {
-                            if &new_time_total == saved_time_total {
+                        if let Some(saved_time_total) = f.borrow().get(&uid)
+                            && &new_time_total == saved_time_total {
                                 let _ = btn_elm.class_list().add_1("invisible");
                                 return;
                             }
-                        }
 
                         let new_hours: u64 =
                             (new_time_total_secs as f64 / (60.0 * 60.0)).floor() as u64;
@@ -264,11 +263,9 @@ pub fn timecards_page() -> Html {
                         // log::info!("IEVal: {}", t.value());
                         t.value()
                     })
-                {
-                    if !time_val_str.is_empty() {
+                    && !time_val_str.is_empty() {
                         return format!("{time_val_str}:00");
                     }
-                }
 
                 "".to_string()
             }

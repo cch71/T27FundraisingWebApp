@@ -722,9 +722,7 @@ pub async fn get_summary_report_data(
     seller_id: &str,
     top_sellers: u8,
 ) -> Result<SummaryReport, Box<dyn std::error::Error>> {
-    let rslt = LocalStorage::get("SummaryData");
-    if rslt.is_ok() {
-        let data: SummaryReportStorage = rslt.unwrap();
+    if let Ok(data) = LocalStorage::get::<SummaryReportStorage>("SummaryData") {
         let now_ts = Utc::now().timestamp() - 86400;
         if now_ts <= data.timestamp
             && seller_id == data.seller_id

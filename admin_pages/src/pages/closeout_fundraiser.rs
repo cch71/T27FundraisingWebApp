@@ -679,8 +679,8 @@ pub fn closeout_fundraiser_page() -> Html {
                             None
                         }
                     };
-                    if let Some(new_dvars) = new_dvars_opt {
-                        if let Some(new_dvars) = calculate_new_dvars(
+                    if let Some(new_dvars) = new_dvars_opt
+                        && let Some(new_dvars) = calculate_new_dvars(
                             new_dvars,
                             (*fr_closure_static_data).as_ref().unwrap().clone(),
                         ) {
@@ -691,7 +691,6 @@ pub fn closeout_fundraiser_page() -> Html {
                             });
                             dvars.set(new_dvars);
                         }
-                    }
                 });
 
                 timeout_handle.borrow_mut().replace(new_handle);

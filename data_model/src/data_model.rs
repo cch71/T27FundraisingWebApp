@@ -949,11 +949,10 @@ pub type FrClosureStaticData = Arc<BTreeMap<String, FrClosureMapData>>;
 ////////////////////////////////////////////////////////////////////////////
 pub async fn get_fundraiser_closure_static_data()
 -> Result<FrClosureStaticData, Box<dyn std::error::Error>> {
-    if let Ok(closure_data) = FR_CLOSURE_DATA.read() {
-        if !closure_data.is_empty() {
+    if let Ok(closure_data) = FR_CLOSURE_DATA.read()
+        && !closure_data.is_empty() {
             return Ok(closure_data.clone());
         }
-    }
 
     #[derive(Deserialize, Debug)]
     struct TimecardClosureData {
@@ -1137,14 +1136,13 @@ pub struct FrClosureDynamicData {
 pub fn get_fundraiser_closure_dynamic_data() -> Option<FrClosureDynamicData> {
     log::info!("Getting Fundraiser Closure Data From LocalStorage");
     fn get_from_frconfig() -> Option<FrClosureDynamicData> {
-        if let Some(frconfig) = load_config_from_storage() {
-            if does_config_have_finalized_data(&frconfig.config) {
+        if let Some(frconfig) = load_config_from_storage()
+            && does_config_have_finalized_data(&frconfig.config) {
                 return frconfig.config.finalization_data.map(|v| FrClosureDynamicData {
                     bank_deposited: Some(v.bank_deposited),
                     mulch_cost: Some(v.mulch_cost),
                 });
             }
-        }
         None
     }
     
