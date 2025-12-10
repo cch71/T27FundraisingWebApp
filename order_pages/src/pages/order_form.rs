@@ -1,6 +1,6 @@
 use data_model::*;
 use rust_decimal::prelude::*;
-use rusty_money::{iso, Money};
+use rusty_money::{Money, iso};
 use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{

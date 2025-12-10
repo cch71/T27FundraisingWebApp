@@ -75,7 +75,7 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html {
                         <a class="dropdown-item" onclick={props.onreportissue.clone()} href="#" data-bs-toggle="modal">
                             {"Report Issue"}
                         </a>
-                        <a 
+                        <a
                             class="dropdown-item"
                             href="https://cch71.github.io/T27FundraisingWebAppManual/docs/overview/"
                             target="_blank">

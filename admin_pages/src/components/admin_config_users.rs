@@ -1,4 +1,4 @@
-use calamine::{open_workbook_from_rs, Ods, RangeDeserializerBuilder, Reader, Xlsx};
+use calamine::{Ods, RangeDeserializerBuilder, Reader, Xlsx, open_workbook_from_rs};
 use std::io::Cursor;
 
 use data_model::*;

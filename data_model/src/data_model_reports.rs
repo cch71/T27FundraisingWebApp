@@ -1,5 +1,5 @@
 use super::{
-    gql_utils::{make_gql_request, GraphQlReq},
+    gql_utils::{GraphQlReq, make_gql_request},
     {get_active_user, get_fr_config, get_neighborhood},
 };
 use chrono::prelude::*;

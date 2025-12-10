@@ -1,5 +1,6 @@
 pub(crate) mod action_report_buttons;
 pub(crate) mod delete_report_order_dlg;
+pub(crate) mod report_assisted_spreading_jobs;
 pub(crate) mod report_deliveries;
 pub(crate) mod report_distribution_points;
 pub(crate) mod report_full;
@@ -11,4 +12,3 @@ pub(crate) mod report_spreaders_dlg;
 pub(crate) mod report_spreading_jobs;
 pub(crate) mod report_spreading_jobs_unfinished;
 pub(crate) mod report_verify;
-pub(crate) mod report_assisted_spreading_jobs;

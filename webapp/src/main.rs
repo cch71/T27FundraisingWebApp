@@ -3,15 +3,15 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 use data_model::{
-    are_sales_still_allowed, clear_local_storage, clear_session_storage, get_active_user,
-    get_active_user_async, get_summary_report_data, is_active_order, load_config,
-    save_to_active_order, AppRoutes, NUM_TOP_SELLERS_TO_GET,
+    AppRoutes, NUM_TOP_SELLERS_TO_GET, are_sales_still_allowed, clear_local_storage,
+    clear_session_storage, get_active_user, get_active_user_async, get_summary_report_data,
+    is_active_order, load_config, save_to_active_order,
 };
 use js::auth_utils::{is_authenticated, login, logout};
 
 mod components;
 use components::{
-    issue_report_dlg::{show_report_issue_dlg, ReportIssueDlg},
+    issue_report_dlg::{ReportIssueDlg, show_report_issue_dlg},
     navbar::AppNav,
 };
 
