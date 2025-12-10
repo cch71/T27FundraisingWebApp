@@ -1,8 +1,6 @@
 use rust_decimal::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{
-    FocusEvent, HtmlAnchorElement, HtmlInputElement, InputEvent, MouseEvent,  Url,
-};
+use web_sys::{FocusEvent, HtmlAnchorElement, HtmlInputElement, InputEvent, MouseEvent, Url};
 use yew::prelude::*;
 
 use data_model::*;
@@ -10,6 +8,7 @@ use data_model::*;
 use chrono::prelude::*;
 use gloo::file::File;
 use gloo::timers::callback::Timeout;
+use tracing::{error, info};
 
 ////////////////////////////////////////////////////////
 fn calculate_new_dvars(
@@ -19,7 +18,7 @@ fn calculate_new_dvars(
     //use Decimal::dec;
     let svars = svar_map.get("TROOP_TOTALS").unwrap();
 
-    log::info!(
+    info!(
         "BD: {}, MS: {}, SP: {} DN: {}",
         &dvars.bank_deposited,
         &dvars.mulch_cost,
@@ -114,7 +113,7 @@ fn calculate_per_scout_report(
                     profit_from_these_bags.checked_div(dvars.profits_from_bags)
                 })
                 .and_then(|these_bags_percentage_of_the_overall_sales| {
-                    //log::info!("%{} of: {}", these_bags_percentage_of_the_overall_sales.round_dp(2), dvars.money_pool_for_scout_sales);
+                    //info!("%{} of: {}", these_bags_percentage_of_the_overall_sales.round_dp(2), dvars.money_pool_for_scout_sales);
                     these_bags_percentage_of_the_overall_sales
                         .checked_mul(dvars.money_pool_for_scout_sales)
                 })
@@ -204,7 +203,7 @@ fn allocation_report_row(props: &AllocationReportRowProps) -> Html {
         <tr class={ classes!(props.class.clone())}>
             <td>{&props.scoutvals.name}</td>
             <td>{&props.scoutvals.uid}</td>
-            <td>{&props.scoutvals.bags_sold}</td>
+            <td>{props.scoutvals.bags_sold}</td>
             <td>{&props.scoutvals.bags_spread.round_dp(2).to_string()}</td>
             <td>{props.scoutvals.delivery_minutes.round_dp(2).to_string()}</td>
             <td>{decimal_to_money_string(&props.scoutvals.total_donations)}</td>
@@ -232,7 +231,7 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
             use csv::Writer;
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("on_download_report");
+            info!("on_download_report");
 
             let mut wtr = Writer::from_writer(vec![]);
             for item in &report_list {
@@ -482,7 +481,7 @@ fn currency_widget(props: &CurrencyWidgetProps) -> Html {
         Callback::from(move |evt: FocusEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("on_allocation_form_inputs_change");
+            info!("on_allocation_form_inputs_change");
 
             let input_elm = evt
                 .target()
@@ -587,17 +586,15 @@ pub fn closeout_fundraiser_page() -> Html {
         }
         dvars
     });
-    let scout_report_list: UseStateHandle<Vec<FrCloseoutAllocationVals>> =
-        use_state_eq(Vec::new);
-    let fr_closure_static_data: UseStateHandle<Option<FrClosureStaticData>> =
-        use_state_eq(|| None);
+    let scout_report_list: UseStateHandle<Vec<FrCloseoutAllocationVals>> = use_state_eq(Vec::new);
+    let fr_closure_static_data: UseStateHandle<Option<FrClosureStaticData>> = use_state_eq(|| None);
 
     let on_download_summary = {
         let dvars = dvars.clone();
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("on_download_summary");
+            info!("on_download_summary");
 
             let alloc_file = File::new_with_options(
                 "AllocationSummary.json",
@@ -628,7 +625,7 @@ pub fn closeout_fundraiser_page() -> Html {
             let dvars = dvars.clone();
             let scout_report_list = scout_report_list.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                log::info!("on_release_funds_form_submission");
+                info!("on_release_funds_form_submission");
                 set_fr_closeout_data(&dvars.clone(), &scout_report_list).await;
                 gloo::dialogs::alert("Submitted");
             });
@@ -637,22 +634,21 @@ pub fn closeout_fundraiser_page() -> Html {
 
     // Store a reference to the current timeout
     let timeout_handle = use_mut_ref::<Option<Timeout>, _>(|| None);
-    
+
     let on_allocation_form_inputs_change = {
         let dvars = dvars.clone();
         let fr_closure_static_data = fr_closure_static_data.clone();
         let timeout_handle = timeout_handle.clone();
 
-
         Callback::from(move |evt: InputEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("on_allocation_form_inputs_change");
+            info!("on_allocation_form_inputs_change");
 
             if let Some(handle) = timeout_handle.borrow_mut().take() {
                 handle.cancel();
             }
-            
+
             // Need to block it to capture variables
             {
                 let dvars = dvars.clone();
@@ -675,7 +671,7 @@ pub fn closeout_fundraiser_page() -> Html {
                             get_new_input_val_maybe!(*dvars, mulch_cost, new_val)
                         }
                         _ => {
-                            log::error!("Invalid input elememnt");
+                            error!("Invalid input elememnt");
                             None
                         }
                     };
@@ -683,19 +679,19 @@ pub fn closeout_fundraiser_page() -> Html {
                         && let Some(new_dvars) = calculate_new_dvars(
                             new_dvars,
                             (*fr_closure_static_data).as_ref().unwrap().clone(),
-                        ) {
-                            log::info!("Setting new dynamic vars from inputs");
-                            set_fundraiser_closure_dynamic_data(FrClosureDynamicData {
-                                bank_deposited: Some(new_dvars.bank_deposited.to_string()),
-                                mulch_cost: Some(new_dvars.mulch_cost.to_string()),
-                            });
-                            dvars.set(new_dvars);
-                        }
+                        )
+                    {
+                        info!("Setting new dynamic vars from inputs");
+                        set_fundraiser_closure_dynamic_data(FrClosureDynamicData {
+                            bank_deposited: Some(new_dvars.bank_deposited.to_string()),
+                            mulch_cost: Some(new_dvars.mulch_cost.to_string()),
+                        });
+                        dvars.set(new_dvars);
+                    }
                 });
 
                 timeout_handle.borrow_mut().replace(new_handle);
             }
-
         })
     };
 
@@ -705,9 +701,9 @@ pub fn closeout_fundraiser_page() -> Html {
         let scout_report_list = scout_report_list.clone();
         use_effect(move || {
             wasm_bindgen_futures::spawn_local(async move {
-                log::info!("Downloading Static Fr Closure Data");
+                info!("Downloading Static Fr Closure Data");
                 let resp = get_fundraiser_closure_static_data().await.unwrap();
-                log::info!("Data has been downloaded");
+                info!("Data has been downloaded");
                 fr_closure_static_data.set(Some(resp));
                 if dvars.bank_deposited > Decimal::ZERO
                     && dvars.mulch_cost > Decimal::ZERO
@@ -720,7 +716,7 @@ pub fn closeout_fundraiser_page() -> Html {
                         (*fr_closure_static_data).as_ref().unwrap().clone(),
                     ) {
                         Some(new_dvars) => {
-                            log::info!("Setting new dynamic vars");
+                            info!("Setting new dynamic vars");
                             scout_report_list.set(calculate_per_scout_report(
                                 &new_dvars,
                                 (*fr_closure_static_data).as_ref().unwrap().clone(),

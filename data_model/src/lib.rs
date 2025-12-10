@@ -12,6 +12,7 @@ pub use js::auth_utils::{get_active_user, get_active_user_async};
 
 // Needed for HTML functions
 use rust_decimal::prelude::*;
+use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement};
 
@@ -98,7 +99,7 @@ pub fn save_to_active_order() {
         order.amount_total_collected = Some(total_collected.to_string());
     }
 
-    log::info!("Saving Order: {:#?}", &order);
+    info!("Saving Order: {:#?}", &order);
     update_active_order(order).unwrap();
 }
 

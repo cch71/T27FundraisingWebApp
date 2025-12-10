@@ -2,6 +2,7 @@ use data_model::*;
 use js::bootstrap;
 use std::cell::RefCell;
 use std::rc::Rc;
+use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlButtonElement, HtmlElement, HtmlInputElement, MouseEvent};
 use yew::prelude::*;
@@ -65,7 +66,7 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html {
         }
     };
 
-    // log::info!("Cutoff Date String: {}", &*cutoff_date_str);
+    // info!("Cutoff Date String: {}", &*cutoff_date_str);
     html! {
         <div class="modal fade" id="deliveryAddOrEditDlg"
              tabIndex="-1" role="dialog" aria-labelledby="deliveryAddOrEditDlgTitle" aria-hidden="true">
@@ -159,7 +160,7 @@ fn get_delivery_id(evt: MouseEvent) -> u32 {
         .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
-            // log::info!("Node Name: {}", t.node_name());
+            // info!("Node Name: {}", t.node_name());
             if t.node_name() == "I" {
                 t.parent_element()
             } else {
@@ -204,7 +205,7 @@ pub(crate) fn delivery_list() -> Html {
         let deliveries = deliveries.clone();
         move |vals: DeliveryDlgAddOrUpdateCb| {
             let (delivery_id, delivery_date, cutoff_date) = vals.to_owned();
-            log::info!("Add/Updating Delivery {delivery_id} - {delivery_date} - {cutoff_date}");
+            info!("Add/Updating Delivery {delivery_id} - {delivery_date} - {cutoff_date}");
             let delivery_info = DeliveryInfo::new_from_admin(delivery_date, cutoff_date);
             let mut delivery_map = (*deliveries).clone();
             delivery_map.insert(delivery_id, delivery_info);
@@ -219,7 +220,7 @@ pub(crate) fn delivery_list() -> Html {
         move |evt: MouseEvent| {
             let delivery_id = get_delivery_id(evt);
             let mut delivery_map = (*deliveries).clone();
-            log::info!("Deleting ID: {delivery_id}");
+            info!("Deleting ID: {delivery_id}");
             delivery_map.remove(&delivery_id);
             deliveries.set(delivery_map);
             is_dirty.set(true);
@@ -247,7 +248,7 @@ pub(crate) fn delivery_list() -> Html {
         let deliveries = deliveries.clone();
         move |evt: MouseEvent| {
             let delivery_id = get_delivery_id(evt);
-            log::info!("Editing ID: {delivery_id}");
+            info!("Editing ID: {delivery_id}");
             SELECTED_DELIVERY.with(|selected_delivery_rc| {
                 let di = deliveries.get(&delivery_id).unwrap();
                 let delivery_date_str = di.get_delivery_date_str();
@@ -273,7 +274,7 @@ pub(crate) fn delivery_list() -> Html {
             let deliveries = deliveries.clone();
             let is_dirty = is_dirty.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                // log::info!("Saving Deliveries {:#?}", &deliveries);
+                // info!("Saving Deliveries {:#?}", &deliveries);
                 if let Err(err) = set_deliveries((*deliveries).clone()).await {
                     gloo::dialogs::alert(&format!("Failed saving delivery config:\n{err:#?}"));
                 }

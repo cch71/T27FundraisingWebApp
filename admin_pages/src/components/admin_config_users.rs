@@ -8,6 +8,7 @@ use serde::Deserialize;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
+use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, FileList, HtmlButtonElement, HtmlElement, HtmlInputElement, MouseEvent};
 use yew::prelude::*;
@@ -72,7 +73,7 @@ fn process_user_file_rec(
     potential_new_users: &mut BTreeMap<String, UserFileRec>,
 ) {
     let mut new_id: String = get_or_gen_imported_user_id(&record);
-    log::info!("Rec: {record:?} -> Id: {new_id}");
+    info!("Rec: {record:?} -> Id: {new_id}");
 
     // Make sure there aren't dups in the uploaded list and create a unique id if it isn't
     if let Some(found_user) = potential_new_users.get(&new_id) {
@@ -225,7 +226,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
         let dup_users = dup_users.clone();
         let found_users = props.knownusers.clone();
         move |evt: Event| {
-            log::info!("On Change Triggered");
+            info!("On Change Triggered");
             is_working.set(true);
             users.set(Vec::<UserAdminConfig>::new());
             dup_users.set(Vec::<UserFileRec>::new());
@@ -241,10 +242,10 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                         .map(|v| web_sys::File::from(v.unwrap()))
                         .map(File::from);
                     results.extend(files);
-                    log::info!("Found some files: {:#?}", &results);
+                    info!("Found some files: {:#?}", &results);
                 }
                 _ => {
-                    log::info!("No files so returning");
+                    info!("No files so returning");
                     return;
                 }
             }
@@ -259,7 +260,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                 for file in results.into_iter() {
                     let file_name = file.name();
                     let file_type = file.raw_mime_type();
-                    log::info!("Loading: {file_name} type: {file_type}");
+                    info!("Loading: {file_name} type: {file_type}");
                     let data = match gloo::file::futures::read_as_bytes(&file).await {
                         Ok(raw_data) => raw_data,
                         Err(err) => {
@@ -560,7 +561,7 @@ fn get_selected_user(evt: MouseEvent) -> String {
         .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
-            // log::info!("Node Name: {}", t.node_name());
+            // info!("Node Name: {}", t.node_name());
             if t.node_name() == "I" {
                 t.parent_element()
             } else {
@@ -601,7 +602,7 @@ pub(crate) fn user_list() -> Html {
         let users = users.clone();
         let dirty_entries = dirty_entries.clone();
         move |new_users: Vec<UserAdminConfig>| {
-            log::info!("Adding Users...");
+            info!("Adding Users...");
             let mut users_map = (*users).clone();
             for user_info in new_users {
                 dirty_entries.borrow_mut().insert(user_info.id.clone());
@@ -618,7 +619,7 @@ pub(crate) fn user_list() -> Html {
         let dirty_entries = dirty_entries.clone();
         move |vals: EditUserDlgCb| {
             let (uid, name, group) = vals.to_owned();
-            log::info!("Done Editing User: {}, \"{}\", \"{}\"", &uid, &name, &group);
+            info!("Done Editing User: {}, \"{}\", \"{}\"", &uid, &name, &group);
             let mut users_map = (*users).clone();
             let mut user_info = users_map.get(&uid).unwrap().clone();
             if user_info.group.ne(&group) {
@@ -643,7 +644,7 @@ pub(crate) fn user_list() -> Html {
             let uid = get_selected_user(evt);
             let user_info = (*users).get(&uid).unwrap();
             let name = format!("{} {}", user_info.first_name, user_info.last_name);
-            log::info!("Editing User: {} {} {}", &uid, &name, &user_info.group);
+            info!("Editing User: {} {} {}", &uid, &name, &user_info.group);
 
             SELECTED_USER.with(|rc| {
                 rc.borrow().as_ref().unwrap().set(SelectedUserType {
@@ -661,7 +662,7 @@ pub(crate) fn user_list() -> Html {
         let dirty_entries = dirty_entries.clone();
         let is_dirty = is_dirty.clone();
         move |_evt: MouseEvent| {
-            log::info!("Saving Users to cloud");
+            info!("Saving Users to cloud");
             let document = gloo::utils::document();
             disable_save_button(&document, true);
 
@@ -673,7 +674,7 @@ pub(crate) fn user_list() -> Html {
             let is_dirty = is_dirty.clone();
             let dirty_entries = dirty_entries.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                //log::info!("Saving users to cloud: {:#?}", updated_users);
+                //info!("Saving users to cloud: {:#?}", updated_users);
                 match add_or_update_users_for_admin_config(updated_users).await {
                     Err(err) => {
                         gloo::dialogs::alert(&format!("Failed adding/updating users:\n{err:#?}"));
@@ -693,7 +694,7 @@ pub(crate) fn user_list() -> Html {
         use_effect(move || {
             if users.is_empty() {
                 wasm_bindgen_futures::spawn_local(async move {
-                    log::info!("Getting user list from cloud");
+                    info!("Getting user list from cloud");
                     match get_users_for_admin_config().await {
                         Ok(user_map) => users.set(user_map),
                         Err(err) => gloo::dialogs::alert(&format!(

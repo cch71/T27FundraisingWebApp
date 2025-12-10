@@ -2,6 +2,7 @@ use crate::components::admin_config_deliveries::*;
 use crate::components::admin_config_neighborhoods::*;
 use crate::components::admin_config_product_costs::*;
 use crate::components::admin_config_users::*;
+use tracing::info;
 use yew::prelude::*;
 
 use data_model::*;
@@ -43,9 +44,9 @@ fn reset_orders_database() -> Html {
                 let do_reset =
                     gloo::dialogs::prompt(&msg, None).is_some_and(|v| v == verify_phrase);
 
-                log::info!("Resetting Order Database: {do_reset}");
+                info!("Resetting Order Database: {do_reset}");
                 if do_reset {
-                    log::info!("Resetting User and Order Data!!!!!!!!...");
+                    info!("Resetting User and Order Data!!!!!!!!...");
                     if let Err(err) = reset_fundraiser().await {
                         gloo::dialogs::alert(&format!("Failed to reset fundraiser data: {err:#?}"));
                     }

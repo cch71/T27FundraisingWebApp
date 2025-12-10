@@ -1,6 +1,6 @@
 use super::{
     get_active_user,
-    gql_utils::{GraphQlReq, make_gql_request},
+    gql_utils::{make_gql_request, GraphQlReq},
 };
 use chrono::prelude::*;
 use gloo::storage::{LocalStorage, Storage};
@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::sync::{Arc, LazyLock, RwLock};
 use std::time::Duration;
+use tracing::{error, info, warn};
 use yew::prelude::*;
 
 static ALWAYS_CONFIG_GQL: &str = r#"
@@ -335,7 +336,8 @@ struct MulchDeliveryConfigApi {
 
 ////////////////////////////////////////////////////////////////////////////
 fn does_config_have_finalized_data(config: &FrConfigApi) -> bool {
-    config.finalization_data
+    config
+        .finalization_data
         .as_ref()
         .is_some_and(|v| !v.money_pool_for_scout_delivery.is_empty())
 }
@@ -405,19 +407,18 @@ fn process_config_data(config: FrConfigApi) {
             );
         }
     }
-    log::info!("Fundraising Config retrieved");
+    info!("Fundraising Config retrieved");
 }
 
 ////////////////////////////////////////////////////////////////////////////
 fn load_config_from_storage() -> Option<ConfigApi> {
-    log::info!("Getting Fundraising Config: Loading From LocalStorage");
+    info!("Getting Fundraising Config: Loading From LocalStorage");
     LocalStorage::get("FrConfig").ok()
 }
 
 ////////////////////////////////////////////////////////////////////////////
 pub async fn load_config() {
     if let Some(stored_config) = load_config_from_storage() {
-
         // We loaded the config from local storage, check if it's still valid
         let req = GraphQlReq::new(ALWAYS_CONFIG_GQL);
         match make_gql_request::<serde_json::Value>(&req).await {
@@ -428,19 +429,19 @@ pub async fn load_config() {
                 let is_ver_schema_check_passed =
                     stored_config.local_store_schema_ver.unwrap_or(0) == LOCAL_STORE_SCHEMA_VER;
                 if is_last_mod_time_check_passed && is_ver_schema_check_passed {
-                    log::info!("Using stored config data");
+                    info!("Using stored config data");
                     process_config_data(stored_config.config);
                     return;
                 } else {
-                    log::info!("Config lastModifiedTime doesn't match forcing cache refresh");
+                    info!("Config lastModifiedTime doesn't match forcing cache refresh");
                 }
             }
             _ => {
-                log::error!("Error reading lastModifiedTime config from network");
+                error!("Error reading lastModifiedTime config from network");
             }
         }
     } else {
-        log::info!("No stored config loading from network...");
+        info!("No stored config loading from network...");
     }
 
     let req = GraphQlReq::new(CONFIG_GQL);
@@ -454,15 +455,15 @@ pub async fn load_config() {
         let mut frconfig = rslt.unwrap();
         frconfig.local_store_schema_ver = Some(LOCAL_STORE_SCHEMA_VER);
         if let Err(err) = LocalStorage::set("FrConfig", frconfig.clone()) {
-            log::error!("Failed to cache config to storage: {err:#?}");
+            error!("Failed to cache config to storage: {err:#?}");
         } else {
-            log::info!("Config cached to storage");
+            info!("Config cached to storage");
         }
         frconfig.config
     };
 
     process_config_data(config);
-    //log::info!("```` Config: \n {:#?}", config);
+    //info!("```` Config: \n {:#?}", config);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -523,7 +524,7 @@ pub async fn set_products(
         .replace("***MULCH_MIN_UNITS***", &mulch_info.min_units.to_string())
         .replace("***MULCH_PRICE_BREAKS***", &mulch_price_breaks_str);
 
-    log::info!("Set Product Mutation:\n{}", &query);
+    info!("Set Product Mutation:\n{}", &query);
     let req = GraphQlReq::new(query);
     make_gql_request::<serde_json::Value>(&req).await.map(|_| {
         *PRODUCTS.write().unwrap() = Some(Arc::new(products));
@@ -563,7 +564,7 @@ pub async fn set_deliveries(
 
     let query = SET_DELIVERIES_GQL.replace("***DELIVERIES_PARAMS***", &deliveries_str);
 
-    // log::info!("Set Delivery Mutation:\n{}", &query);
+    // info!("Set Delivery Mutation:\n{}", &query);
     let req = GraphQlReq::new(query);
     make_gql_request::<serde_json::Value>(&req).await.map(|_| {
         *DELIVERIES.write().unwrap() = Some(Arc::new(deliveries));
@@ -626,7 +627,7 @@ pub async fn update_neighborhoods(
 
     let query = UPDATE_NEIGHBORHOODS_GQL.replace("***HOOD_PARAMS***", &neighborhoods_str);
 
-    // log::info!("Set Delivery Mutation:\n{}", &query);
+    // info!("Set Delivery Mutation:\n{}", &query);
     let req = GraphQlReq::new(query);
     make_gql_request::<serde_json::Value>(&req)
         .await
@@ -799,7 +800,7 @@ pub async fn get_timecards_data(
     } else {
         GET_TIMECARDS_GRAPHQL.replace("(***GET_TIMECARDS_PARAMS***)", "")
     };
-    log::info!("Running Query: {}", &query);
+    info!("Running Query: {}", &query);
 
     let mut timecard_map = {
         #[derive(Serialize, Deserialize, Debug)]
@@ -863,7 +864,7 @@ pub async fn save_timecards_data(
         .join(",\n");
 
     let query = SET_TIMECARDS_GRAPHQL.replace("***SET_TIMECARDS_PARAMS***", &timecards_param);
-    log::info!("Running Query: {}", &query);
+    info!("Running Query: {}", &query);
 
     let req = GraphQlReq::new(query);
     let _ = make_gql_request::<serde_json::Value>(&req).await?;
@@ -932,9 +933,9 @@ pub fn time_val_str_to_duration(time_val_str: &str) -> Option<Duration> {
 }
 
 /// Calculates the number of spread bags divided up among the people that spread.
-pub fn get_calculated_bags_spread_per_user(spreaders: &[String], num_bags: usize)->Decimal {
+pub fn get_calculated_bags_spread_per_user(spreaders: &[String], num_bags: usize) -> Decimal {
     if num_bags == 0 {
-        log::error!("num_bags must be greater than 0");
+        error!("num_bags must be greater than 0");
         Decimal::ZERO
     } else if spreaders.len() == 1 {
         Decimal::from(num_bags)
@@ -950,9 +951,10 @@ pub type FrClosureStaticData = Arc<BTreeMap<String, FrClosureMapData>>;
 pub async fn get_fundraiser_closure_static_data()
 -> Result<FrClosureStaticData, Box<dyn std::error::Error>> {
     if let Ok(closure_data) = FR_CLOSURE_DATA.read()
-        && !closure_data.is_empty() {
-            return Ok(closure_data.clone());
-        }
+        && !closure_data.is_empty()
+    {
+        return Ok(closure_data.clone());
+    }
 
     #[derive(Deserialize, Debug)]
     struct TimecardClosureData {
@@ -991,7 +993,7 @@ pub async fn get_fundraiser_closure_static_data()
 
     let resp = {
         let query = GET_FR_CLOSURE_DATA_GRAPHQL.to_string();
-        log::info!("Running Query: {}", &query);
+        info!("Running Query: {}", &query);
         let req = GraphQlReq::new(query);
         make_gql_request::<RespClosureData>(&req).await?
     };
@@ -1034,12 +1036,12 @@ pub async fn get_fundraiser_closure_static_data()
         }
 
         if num_bags == 0 {
-            log::error!("We have spreaders but no bags to spread");
+            error!("We have spreaders but no bags to spread");
             return;
         }
-        
-        let num_bags_to_record_as_spread_per_user: Decimal = get_calculated_bags_spread_per_user(
-            &spreaders,num_bags as usize );
+
+        let num_bags_to_record_as_spread_per_user: Decimal =
+            get_calculated_bags_spread_per_user(&spreaders, num_bags as usize);
 
         for uid in spreaders {
             if !closure_data.contains_key(&uid) {
@@ -1073,7 +1075,7 @@ pub async fn get_fundraiser_closure_static_data()
     }
 
     for order in resp.orders {
-        //log::info!("{} Spread order: {:#?}",&order.uid, &order);
+        //info!("{} Spread order: {:#?}",&order.uid, &order);
         // convert values and total and assign to user
         if !closure_data.contains_key(&order.uid) {
             closure_data.insert(order.uid.clone(), FrClosureMapData::default());
@@ -1134,29 +1136,30 @@ pub struct FrClosureDynamicData {
 
 ////////////////////////////////////////////////////////////////////////////
 pub fn get_fundraiser_closure_dynamic_data() -> Option<FrClosureDynamicData> {
-    log::info!("Getting Fundraiser Closure Data From LocalStorage");
+    info!("Getting Fundraiser Closure Data From LocalStorage");
     fn get_from_frconfig() -> Option<FrClosureDynamicData> {
         if let Some(frconfig) = load_config_from_storage()
-            && does_config_have_finalized_data(&frconfig.config) {
-                return frconfig.config.finalization_data.map(|v| FrClosureDynamicData {
+            && does_config_have_finalized_data(&frconfig.config)
+        {
+            return frconfig
+                .config
+                .finalization_data
+                .map(|v| FrClosureDynamicData {
                     bank_deposited: Some(v.bank_deposited),
                     mulch_cost: Some(v.mulch_cost),
                 });
-            }
+        }
         None
     }
-    
-    get_from_frconfig().or_else(|| {
-        LocalStorage::get("FrClosureDynamicData").ok()
-    })
-    
+
+    get_from_frconfig().or_else(|| LocalStorage::get("FrClosureDynamicData").ok())
 }
 
 ////////////////////////////////////////////////////////////////////////////
 pub fn set_fundraiser_closure_dynamic_data(data: FrClosureDynamicData) {
-    log::info!("Saving temporary fundraiser closure data to LocalStorage");
+    info!("Saving temporary fundraiser closure data to LocalStorage");
     if is_fundraiser_finalized() {
-       log::warn!("Can't save finalized data to LocalStorage due to finalized fundraiser"); 
+        warn!("Can't save finalized data to LocalStorage due to finalized fundraiser");
     } else {
         let _ = LocalStorage::set("FrClosureDynamicData", data);
     }
@@ -1403,7 +1406,7 @@ pub async fn set_fr_closeout_data(
             .as_str(),
     );
 
-    log::info!("Allocation Mutation:\n{}", &query);
+    info!("Allocation Mutation:\n{}", &query);
     let req = GraphQlReq::new(query);
     let _ = make_gql_request::<serde_json::Value>(&req).await.unwrap();
 }
@@ -1434,10 +1437,8 @@ pub async fn get_address_from_lat_lng(
     lat: f64,
     lng: f64,
 ) -> Result<AddressInfo, Box<dyn std::error::Error>> {
-    let query = GET_ADDR_API_GQL.replace(
-        "***LAT_LNG_PARAMS***",
-        &format!("lat: {lat}, lng: {lng}"),
-    );
+    let query =
+        GET_ADDR_API_GQL.replace("***LAT_LNG_PARAMS***", &format!("lat: {lat}, lng: {lng}"));
 
     #[derive(Deserialize)]
     struct RespAddressInfo {
@@ -1445,7 +1446,7 @@ pub async fn get_address_from_lat_lng(
         address_info: AddressInfo,
     }
 
-    // log::info!("Get Addr Query:\n{}", &query);
+    // info!("Get Addr Query:\n{}", &query);
     let req = GraphQlReq::new(query);
     make_gql_request::<RespAddressInfo>(&req)
         .await
@@ -1497,7 +1498,7 @@ pub async fn get_users_for_admin_config()
         users: Vec<UserAdminConfig>,
     }
 
-    // log::info!("Get Addr Query:\n{}", &query);
+    // info!("Get Addr Query:\n{}", &query);
     let req = GraphQlReq::new(GET_USERS_FOR_CONFIG_API_GQL);
     make_gql_request::<RespUserInfo>(&req).await.map(|v| {
         v.users
@@ -1518,7 +1519,7 @@ mutation {
 pub async fn add_or_update_users_for_admin_config(
     users: Vec<UserAdminConfig>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    log::info!("Adding or Updating Users: {:#?}", &users);
+    info!("Adding or Updating Users: {:#?}", &users);
 
     let users_str = users
         .iter()

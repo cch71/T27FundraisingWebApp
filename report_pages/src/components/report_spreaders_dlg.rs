@@ -35,7 +35,7 @@ pub(crate) fn on_edit_spreading_from_rpt(
         .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
-            // log::info!("Node Name: {}", t.node_name());
+            // info!("Node Name: {}", t.node_name());
             if t.node_name() == "I" {
                 t.parent_element()
             } else {
@@ -61,7 +61,7 @@ pub(crate) fn on_edit_spreading_from_rpt(
             )
         })
         .collect();
-    log::info!("on_edit_spreading: {order_id_str}");
+    info!("on_edit_spreading: {order_id_str}");
 
     let dlg = bootstrap::get_modal_by_id("spreadingDlg").unwrap();
 
@@ -94,6 +94,8 @@ enum SelectionState {
     Submitting,
 }
 use std::fmt;
+use tracing::info;
+
 impl fmt::Display for SelectionState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -113,7 +115,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
             *v.borrow_mut() = Some(dlg_state);
         });
     }
-    log::info!("Rendering: {}", *dlg_state);
+    info!("Rendering: {}", *dlg_state);
 
     let on_cancel = {
         let dlg_state = dlg_state.clone();
@@ -193,7 +195,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
                 if let Some(meta) = metarc.borrow_mut().as_mut() {
                     if target_elm.checked() {
                         let uname = target_elm.dataset().get("uname").unwrap();
-                        log::info!("Selecting: {uid}:{uname}");
+                        info!("Selecting: {uid}:{uname}");
                         let _ = meta.selected_users.insert(uid, uname);
                         let _ = target_elm
                             .parent_element()
@@ -201,7 +203,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
                             .class_list()
                             .add_1("active");
                     } else {
-                        log::info!("Unselecting: {uid}");
+                        info!("Unselecting: {uid}");
                         let _ = meta.selected_users.remove(&uid);
                         let _ = target_elm
                             .parent_element()
@@ -262,7 +264,7 @@ pub(crate) fn choose_spreaders_dlg() -> Html {
                                                          } else {
                                                              ("btn-check", false, "btn btn-outline-primary")
                                                          };
-                                                         //log::info!("Reviewing: {}:{} is_checked: {}", userid, name, is_checked);
+                                                         //info!("Reviewing: {}:{} is_checked: {}", userid, name, is_checked);
                                                          html! {
                                                              <label class={lbl_classes}>
                                                                 {name.clone()}

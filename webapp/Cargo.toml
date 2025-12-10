@@ -11,12 +11,12 @@ order_pages = { path = "../order_pages" }
 report_pages = { path = "../report_pages" }
 admin_pages = { path = "../admin_pages" }
 
-log= { workspace = true }
-yew= { workspace = true }
-yew-router= { workspace = true }
-gloo= { workspace = true }
-wasm-bindgen= { workspace = true }
-wasm-bindgen-futures= { workspace = true }
+tracing = { workspace = true }
+yew = { workspace = true }
+yew-router = { workspace = true }
+gloo = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
 web-sys = { workspace = true }
 
 wasm-logger = "0"

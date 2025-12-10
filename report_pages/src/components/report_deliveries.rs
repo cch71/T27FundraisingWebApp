@@ -1,7 +1,8 @@
-use web_sys::js_sys::encode_uri;
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
+use tracing::info;
+use web_sys::js_sys::encode_uri;
 use yew::prelude::*;
 
 /////////////////////////////////////////////////
@@ -17,9 +18,9 @@ pub(crate) fn report_deliveries_view() -> Html {
             match &*report_state {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!("Downloading Deliveries Report View Data");
+                        info!("Downloading Deliveries Report View Data");
                         let mut resp = get_deliveries_report_data().await.unwrap();
-                        log::info!("Report Data has been downloaded");
+                        info!("Report Data has been downloaded");
                         resp.sort_by(|a, b| {
                             let a_delivery_id = a["deliveryId"].as_u64().unwrap_or(0);
                             let b_delivery_id = b["deliveryId"].as_u64().unwrap_or(0);
@@ -29,7 +30,7 @@ pub(crate) fn report_deliveries_view() -> Html {
                     });
                 }
                 ReportViewState::ReportHtmlGenerated(_) => {
-                    log::info!("Setting DataTable");
+                    info!("Setting DataTable");
                     *datatable.borrow_mut() = get_datatable(&serde_json::json!({
                         "reportType": "deliveries",
                         "id": ".data-table-report table",

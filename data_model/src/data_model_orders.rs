@@ -1,15 +1,15 @@
+use super::{
+    get_active_user,
+    gql_utils::{make_gql_request, GraphQlReq},
+};
 use crate::currency_utils::*;
 use regex::Regex;
 use rust_decimal::prelude::*;
-use rusty_money::{Money, iso};
+use rusty_money::{iso, Money};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{LazyLock, RwLock};
-
-use super::{
-    get_active_user,
-    gql_utils::{GraphQlReq, make_gql_request},
-};
+use tracing::{error, info};
 
 static ACTIVE_ORDER: LazyLock<RwLock<Option<ActiveOrderState>>> =
     LazyLock::new(|| RwLock::new(None));
@@ -100,7 +100,7 @@ impl MulchOrder {
     }
 
     pub fn set_donations(&mut self, donation_amt: String) {
-        log::info!("!!!! Setting Donations to: {donation_amt}");
+        info!("!!!! Setting Donations to: {donation_amt}");
         self.amount_from_donations = Some(donation_amt);
     }
 
@@ -173,7 +173,7 @@ impl MulchOrder {
             let check_nums: Vec<&str> = CHECKNUM_RE_DELIMETERS.split(check_nums_str).collect();
             for check_num in check_nums {
                 if check_num.trim().parse::<u32>().is_err() {
-                    log::info!("Check Num: {check_num} in: {check_nums_str} is invalid");
+                    info!("Check Num: {check_num} in: {check_nums_str} is invalid");
                     return false;
                 }
             }
@@ -249,9 +249,7 @@ pub fn get_active_order() -> Option<MulchOrder> {
         .map(|v| v.order.clone())
 }
 
-pub fn update_active_order(
-    order: MulchOrder,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn update_active_order(order: MulchOrder) -> Result<(), Box<dyn std::error::Error>> {
     let mut order_state_opt = ACTIVE_ORDER.write()?;
     let order_state = order_state_opt.as_mut().unwrap();
     if !order_state.is_dirty && order_state.order != order {
@@ -265,7 +263,7 @@ fn gen_submit_active_order_req_str() -> Result<String, Box<dyn std::error::Error
     let order_state_opt = ACTIVE_ORDER.write()?;
     let order_state = order_state_opt.as_ref().unwrap();
     if !order_state.is_dirty {
-        log::info!("Order doesn't need updating so not submitting");
+        info!("Order doesn't need updating so not submitting");
         return Ok("".to_string());
     }
 
@@ -312,7 +310,7 @@ fn gen_submit_active_order_req_str() -> Result<String, Box<dyn std::error::Error
         ));
     } else {
         if !order.will_collect_money_later.unwrap_or(false) {
-            log::error!("Total collected is zero. will collect later should be true");
+            error!("Total collected is zero. will collect later should be true");
         }
         query.push_str("\t\t willCollectMoneyLater: true\n");
     }
@@ -415,7 +413,7 @@ pub async fn submit_active_order() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    log::info!("Submitting Request:\n{}", &query);
+    info!("Submitting Request:\n{}", &query);
 
     //Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "TODO Issue")))
     let req = GraphQlReq::new(query);
@@ -431,13 +429,11 @@ mutation {
 ";
 
 pub async fn delete_order(order_id: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let query = DELETE_ORDER_GQL.replace(
-        "***ORDER_ID_PARAM***",
-        &format!("orderId: \"{order_id}\""),
-    );
+    let query =
+        DELETE_ORDER_GQL.replace("***ORDER_ID_PARAM***", &format!("orderId: \"{order_id}\""));
 
     let req = GraphQlReq::new(query);
-    log::info!("Delete GraphQL: {}", &req.query);
+    info!("Delete GraphQL: {}", &req.query);
     make_gql_request::<serde_json::Value>(&req)
         .await
         .map(|_| ())
@@ -478,9 +474,7 @@ static LOAD_ORDER_GQL: &str = r"
 }
 ";
 
-pub async fn load_active_order_from_db(
-    order_id: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn load_active_order_from_db(order_id: &str) -> Result<(), Box<dyn std::error::Error>> {
     #[derive(Deserialize, Debug)]
     struct RespWrapper {
         #[serde(alias = "mulchOrder")]
@@ -528,13 +522,10 @@ pub async fn load_active_order_from_db(
         pub amount_charged: String,
     }
 
-    let query = LOAD_ORDER_GQL.replace(
-        "***ORDER_ID_PARAM***",
-        &format!("orderId: \"{order_id}\""),
-    );
+    let query = LOAD_ORDER_GQL.replace("***ORDER_ID_PARAM***", &format!("orderId: \"{order_id}\""));
 
     let req = GraphQlReq::new(query);
-    log::info!("Load GraphQL: {}", &req.query);
+    info!("Load GraphQL: {}", &req.query);
     let resp = make_gql_request::<RespWrapper>(&req).await?;
     let order = resp.mulch_order;
 
@@ -590,10 +581,9 @@ pub async fn set_spreaders(
     order_id: &str,
     spreaders: &Vec<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    log::info!(
+    info!(
         "Setting Spreaders for order id: {}:{:#?}",
-        order_id,
-        &spreaders
+        order_id, &spreaders
     );
     let spreaders = spreaders
         .iter()
@@ -601,14 +591,11 @@ pub async fn set_spreaders(
         .collect::<Vec<String>>()
         .join(",");
     let query = SET_SPREADERS_GQL
-        .replace(
-            "***ORDER_ID_PARAM***",
-            &format!("orderId: \"{order_id}\""),
-        )
+        .replace("***ORDER_ID_PARAM***", &format!("orderId: \"{order_id}\""))
         .replace("***SPREADERS_PARAM***", &spreaders);
 
     let req = GraphQlReq::new(query);
-    log::info!("Setting Spreaders GraphQL: {}", &req.query);
+    info!("Setting Spreaders GraphQL: {}", &req.query);
     make_gql_request::<serde_json::Value>(&req)
         .await
         .map(|_| ())

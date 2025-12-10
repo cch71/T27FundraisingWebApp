@@ -1,12 +1,17 @@
+use tracing::{error, info};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use data_model::{AppRoutes, NUM_TOP_SELLERS_TO_GET, are_sales_still_allowed, get_active_user, get_active_user_async, get_summary_report_data, is_active_order, load_config, save_to_active_order, clear_local_storage, clear_session_storage};
+use data_model::{
+    are_sales_still_allowed, clear_local_storage, clear_session_storage, get_active_user,
+    get_active_user_async, get_summary_report_data, is_active_order, load_config,
+    save_to_active_order, AppRoutes, NUM_TOP_SELLERS_TO_GET,
+};
 use js::auth_utils::{is_authenticated, login, logout};
 
 mod components;
 use components::{
-    issue_report_dlg::{ReportIssueDlg, show_report_issue_dlg},
+    issue_report_dlg::{show_report_issue_dlg, ReportIssueDlg},
     navbar::AppNav,
 };
 
@@ -84,7 +89,7 @@ fn App() -> Html {
 
     let on_report_issue = {
         move |_: MouseEvent| {
-            log::info!("Bringing up Report Issue Dlg");
+            info!("Bringing up Report Issue Dlg");
             show_report_issue_dlg(true);
         }
     };
@@ -92,11 +97,11 @@ fn App() -> Html {
     let on_logoff = {
         move |_: MouseEvent| {
             wasm_bindgen_futures::spawn_local(async move {
-                log::info!("User has asked to logout");
+                info!("User has asked to logout");
                 // We need to clear local storage so a logon/logoff can force a reload
                 clear_local_storage();
                 // We need to delete report settings in case admin is on a view the user can't support
-                clear_session_storage(); 
+                clear_session_storage();
                 logout().await;
             });
         }
@@ -116,17 +121,18 @@ fn App() -> Html {
                                 let _ = get_summary_report_data(
                                     &user_info.get_id(),
                                     NUM_TOP_SELLERS_TO_GET,
-                                ).await;
-                                log::info!("Showing UI");
+                                )
+                                .await;
+                                info!("Showing UI");
                                 is_loading.set(false);
-                            },
+                            }
                             Err(err) => {
-                                log::error!("Get Active User Err: {err:#?}");
+                                error!("Get Active User Err: {err:#?}");
                                 gloo::dialogs::alert(&format!("Failed to get User Info: {err:#?}"));
                             }
                         };
                     } else {
-                        log::info!("Not authenticated need to get signed in");
+                        info!("Not authenticated need to get signed in");
                         login().await;
                     }
                 });
@@ -173,6 +179,6 @@ fn App() -> Html {
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-    log::info!("RelVer: {}", option_env!("GITHUB_REF").unwrap_or("?"));
+    info!("RelVer: {}", option_env!("GITHUB_REF").unwrap_or("?"));
     yew::Renderer::<App>::new().render();
 }

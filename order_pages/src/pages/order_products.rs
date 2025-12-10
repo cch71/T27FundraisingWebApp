@@ -3,6 +3,7 @@ use data_model::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlButtonElement, HtmlInputElement, InputEvent, MouseEvent, SubmitEvent};
 use yew::prelude::*;
@@ -37,9 +38,9 @@ fn get_product_items(document: &web_sys::Document) -> HashMap<String, PurchasedI
                 if let Ok(num_sold) = value.parse::<u32>() {
                     let product_id = element.dataset().get("productid").unwrap();
                     if 0 == num_sold {
-                        log::info!("Purchase Item (Removing): {}: {}", &product_id, num_sold);
+                        info!("Purchase Item (Removing): {}: {}", &product_id, num_sold);
                     } else {
-                        log::info!("Purchase Item: {}: {}", &product_id, num_sold);
+                        info!("Purchase Item: {}: {}", &product_id, num_sold);
                         let amount_charged = get_purchase_cost_for(&product_id, num_sold);
                         product_map
                             .insert(product_id, PurchasedItem::new(num_sold, amount_charged));
@@ -146,7 +147,7 @@ pub fn order_products() -> Html {
         move |evt: SubmitEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("on_form_submission");
+            info!("on_form_submission");
             let mut updated_order = get_active_order().unwrap();
 
             let document = gloo::utils::document();
@@ -164,7 +165,7 @@ pub fn order_products() -> Html {
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            //log::info!("on_cancel_item");
+            //info!("on_cancel_item");
             history.push(&AppRoutes::OrderForm);
         })
     };
@@ -189,7 +190,7 @@ pub fn order_products() -> Html {
     };
 
     fn do_form_validation(delivery_selction: Option<u32>) {
-        log::info!("do_form_validation");
+        info!("do_form_validation");
         let document = gloo::utils::document();
 
         if !are_product_items_valid(&document) || delivery_selction.is_none() {

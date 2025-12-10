@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 js = { path = "../js" }
 
-log = { workspace = true }
+tracing = { workspace = true }
 yew = { workspace = true }
 yew-router = { workspace = true }
 gloo = { workspace = true }

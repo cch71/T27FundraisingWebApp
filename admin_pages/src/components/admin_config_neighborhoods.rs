@@ -2,6 +2,7 @@ use data_model::*;
 use js::bootstrap;
 use std::cell::RefCell;
 use std::rc::Rc;
+use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlButtonElement, HtmlElement, MouseEvent};
 use yew::prelude::*;
@@ -42,7 +43,7 @@ fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
             evt.prevent_default();
             evt.stop_propagation();
 
-            log::info!("on_form_submission");
+            info!("on_form_submission");
 
             let mut is_valid = true;
             let document = gloo::utils::document();
@@ -269,7 +270,7 @@ fn get_selected_neighborhood(evt: MouseEvent) -> String {
         .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
-            // log::info!("Node Name: {}", t.node_name());
+            // info!("Node Name: {}", t.node_name());
             if t.node_name() == "I" {
                 t.parent_element()
             } else {
@@ -316,8 +317,8 @@ pub(crate) fn neighborhood_list() -> Html {
         let neighborhoods = neighborhoods.clone();
 
         move |hood: Neighborhood| {
-            log::info!("Add/Updating Neighborhood: {:#?}", &hood);
-            log::info!("Closing Dlg");
+            info!("Add/Updating Neighborhood: {:#?}", &hood);
+            info!("Closing Dlg");
 
             bootstrap::modal_op("neighborhoodAddOrEditDlg", "hide");
 
@@ -351,7 +352,7 @@ pub(crate) fn neighborhood_list() -> Html {
         move |evt: MouseEvent| {
             let hood_name_str = get_selected_neighborhood(evt);
             let (_, hood) = (*neighborhoods).get(&hood_name_str).unwrap();
-            log::info!("Editing Neighborhood: {:#?}", &hood);
+            info!("Editing Neighborhood: {:#?}", &hood);
 
             SELECTED_NEIGHBORHOOD.with(|rc| {
                 let selected_neighborhood = rc.borrow().as_ref().unwrap().clone();
@@ -375,7 +376,7 @@ pub(crate) fn neighborhood_list() -> Html {
 
             let is_dirty = is_dirty.clone();
             wasm_bindgen_futures::spawn_local(async move {
-                log::info!("Saving Neighborhoods: {updated_hoods:#?}");
+                info!("Saving Neighborhoods: {updated_hoods:#?}");
                 if let Err(err) = update_neighborhoods(updated_hoods).await {
                     gloo::dialogs::alert(&format!("Failed updating neighborhoods:\n{err:#?}"));
                 }

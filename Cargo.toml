@@ -1,12 +1,12 @@
 [workspace]
 members = [
-	"js",
+    "js",
     "data_model",
     "timecard_pages",
     "order_pages",
     "report_pages",
     "admin_pages",
-	"webapp",
+    "webapp",
 ]
 resolver = "2"
 
@@ -17,7 +17,7 @@ license = "BSD-0"
 edition = "2024"
 
 [workspace.dependencies]
-log = "0"
+tracing = "0.1.43"
 yew = { version = "0", features = ["csr"] }
 yew-router = "0"
 gloo = { version = "0", features = ["futures"] }

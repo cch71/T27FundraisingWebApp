@@ -2,6 +2,7 @@ use data_model::*;
 use js::{bootstrap, datatable::*};
 use std::cell::RefCell;
 use std::rc::Rc;
+use tracing::info;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Element, HtmlButtonElement, HtmlElement, HtmlInputElement, InputEvent, MouseEvent};
 use yew::prelude::*;
@@ -19,17 +20,14 @@ struct OrderToDelete {
 }
 
 /////////////////////////////////////////////////
-pub(crate) fn on_delete_order_from_rpt(
-    evt: MouseEvent,
-    datatable: Rc<RefCell<Option<DataTable>>>,
-) {
+pub(crate) fn on_delete_order_from_rpt(evt: MouseEvent, datatable: Rc<RefCell<Option<DataTable>>>) {
     evt.prevent_default();
     evt.stop_propagation();
     let btn_elm = evt
         .target()
         .and_then(|t| t.dyn_into::<Element>().ok())
         .and_then(|t| {
-            // log::info!("Node Name: {}", t.node_name());
+            // info!("Node Name: {}", t.node_name());
             if t.node_name() == "I" {
                 t.parent_element()
             } else {
@@ -40,7 +38,7 @@ pub(crate) fn on_delete_order_from_rpt(
 
     // for idx in 0..btn_elm.attributes().length() {
     //     if let Some(attr) = btn_elm.attributes().get_with_index(idx) {
-    //         log::info!("{}: {}: {}", idx, attr.name(), attr.value());
+    //         info!("{}: {}: {}", idx, attr.name(), attr.value());
     //     }
     // }
     let table_row_node = btn_elm.parent_node().and_then(|t| t.parent_node()).unwrap();
@@ -49,7 +47,7 @@ pub(crate) fn on_delete_order_from_rpt(
         .ok()
         .and_then(|t| t.dataset().get("orderid"))
         .unwrap();
-    log::info!("on_delete_order: {order_id_str}");
+    info!("on_delete_order: {order_id_str}");
 
     let dlg = bootstrap::get_modal_by_id("deleteOrderDlg").unwrap();
 
@@ -108,12 +106,14 @@ pub(crate) fn delete_order_confirmation_dlg() -> Html {
                             gloo::dialogs::alert(&format!(
                                 "Failed to delete order in the cloud: {err:#?}"
                             ));
-                        } else if let Err(err) = remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node) {
-                                gloo::dialogs::alert(&format!(
-                                    "Order was deleted from the cloud but not the local table: {err:#?}"
-                                ));
+                        } else if let Err(err) =
+                            remove_row_with_tr(&to_delete.datatable, &to_delete.tr_node)
+                        {
+                            gloo::dialogs::alert(&format!(
+                                "Order was deleted from the cloud but not the local table: {err:#?}"
+                            ));
                         }
-                        
+
                         to_delete.delete_dlg.hide();
                         gloo::utils::document()
                             .get_element_by_id("confirmDeleteOrderInput")

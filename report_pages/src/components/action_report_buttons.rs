@@ -1,6 +1,7 @@
 pub(crate) use crate::components::delete_report_order_dlg::*;
 pub(crate) use crate::components::report_spreaders_dlg::*;
 use data_model::*;
+use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlElement, MouseEvent};
 use yew::prelude::*;
@@ -27,11 +28,9 @@ pub(crate) fn on_view_or_edit_from_rpt(evt: MouseEvent, history: Navigator) {
         .and_then(|t| t.dataset().get("orderid"))
         .unwrap();
     wasm_bindgen_futures::spawn_local(async move {
-        log::info!("on_view_or_edit_order: {order_id}");
+        info!("on_view_or_edit_order: {order_id}");
         if let Err(err) = load_active_order_from_db(&order_id).await {
-            gloo::dialogs::alert(&format!(
-                "Failed to load order: {order_id}: Err: {err:#?}"
-            ));
+            gloo::dialogs::alert(&format!("Failed to load order: {order_id}: Err: {err:#?}"));
         }
         history.push(&AppRoutes::OrderForm);
     });

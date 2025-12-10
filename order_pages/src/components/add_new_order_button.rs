@@ -1,4 +1,5 @@
 use data_model::*;
+use tracing::info;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -14,7 +15,7 @@ pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html {
         let history = history.clone();
         let userid = props.userid.clone();
         move |_| {
-            log::info!("Starting process to add new order");
+            info!("Starting process to add new order");
             create_new_active_order(&userid);
             history.push(&AppRoutes::OrderForm);
         }
