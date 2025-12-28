@@ -1,7 +1,7 @@
 name: Build and Deploy Fundraiser App
 
 on:
-  release: 
+  release:
     types: [published]
   workflow_dispatch:
 
@@ -10,33 +10,35 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Update Rust to latest
-      run: rustup update
-    - run: rustc --version
-    
-    - uses: actions/checkout@v4
-    
-    - name: Install Trunk
-      run: curl -L https://github.com/trunk-rs/trunk/releases/download/v0.21.7/trunk-x86_64-unknown-linux-musl.tar.gz | tar -xzvf -
-    - run: ./trunk --version
-    
-    - name: Install Rust WASM Target
-      run: rustup target add wasm32-unknown-unknown
+      - name: Update Rust to latest
+        run: rustup update
+      - run: rustc --version
 
-    - name: Build
-      run: ./trunk build --release
+      - uses: actions/checkout@v6
 
-    - name: Deploy
-      uses: jsmrcaga/action-netlify-deploy@master
-      with:
-        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        NETLIFY_DEPLOY_MESSAGE: "Prod deploy v${{ github.ref }}"
-        NETLIFY_DEPLOY_TO_PROD: true
-        install_command: "echo Skipping installing the dependencies"
-        build_command: "echo Skipping building the web files"
-        build_directory: ./dist
+      - name: Install Trunk
+        run:
+          curl -L
+          https://github.com/trunk-rs/trunk/releases/download/v0.21.14/trunk-x86_64-unknown-linux-musl.tar.gz
+          | tar -xzvf -
+      - run: ./trunk --version
+
+      - name: Install Rust WASM Target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Build
+        run: ./trunk build --release
+
+      - name: Deploy
+        uses: jsmrcaga/action-netlify-deploy@master
+        with:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_DEPLOY_MESSAGE: "Prod deploy v${{ github.ref }}"
+          NETLIFY_DEPLOY_TO_PROD: true
+          install_command: "echo Skipping installing the dependencies"
+          build_command: "echo Skipping building the web files"
+          build_directory: ./dist
