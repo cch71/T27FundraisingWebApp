@@ -16,7 +16,7 @@ use yew_router::prelude::*;
 pub(crate) struct FullReportViewProps {
     pub(crate) seller: String,
 }
-#[function_component(FullReportView)]
+#[component(FullReportView)]
 pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let history = use_navigator().unwrap();

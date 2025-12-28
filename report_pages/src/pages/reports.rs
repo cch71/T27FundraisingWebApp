@@ -26,7 +26,7 @@ struct ReportViewSettingsSelectionProp {
     current: ReportViewSettings,
     showseller: bool,
 }
-#[function_component(ReportViewSettingsSelection)]
+#[component(ReportViewSettingsSelection)]
 fn reports_selections(props: &ReportViewSettingsSelectionProp) -> Html {
     let on_view_selection_change = {
         let props = props.clone();
@@ -101,7 +101,7 @@ fn reports_selections(props: &ReportViewSettingsSelectionProp) -> Html {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(Reports)]
+#[component(Reports)]
 pub fn reports_page() -> Html {
     let current_settings = use_state_eq(load_report_settings);
 

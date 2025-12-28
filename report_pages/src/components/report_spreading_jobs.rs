@@ -16,7 +16,7 @@ use yew_router::prelude::*;
 pub(crate) struct SpreadingJobsReportViewProps {
     pub(crate) seller: String,
 }
-#[function_component(SpreadingJobsReportView)]
+#[component(SpreadingJobsReportView)]
 pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let history = use_navigator().unwrap();

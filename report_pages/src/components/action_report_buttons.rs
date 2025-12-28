@@ -52,7 +52,7 @@ pub(crate) struct ReportActionButtonsProps {
     pub(crate) spreaders: AttrValue,
 }
 
-#[function_component(ReportActionButtons)]
+#[component(ReportActionButtons)]
 pub(crate) fn report_action_buttons(props: &ReportActionButtonsProps) -> Html {
     html! {
         <>

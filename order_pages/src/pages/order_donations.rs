@@ -45,7 +45,7 @@ fn disable_submit_button(value: bool) {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(OrderDonations)]
+#[component(OrderDonations)]
 pub fn order_donations() -> Html {
     let history = use_navigator().unwrap();
     if !is_active_order() {

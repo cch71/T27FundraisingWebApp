@@ -29,7 +29,7 @@ fn disable_reset_button(document: &web_sys::Document, value: bool) {
     }
 }
 
-#[function_component(ResetOrders)]
+#[component(ResetOrders)]
 fn reset_orders_database() -> Html {
     let on_reset_db = {
         move |_evt: MouseEvent| {
@@ -79,7 +79,7 @@ fn reset_orders_database() -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(FrConfigEditor)]
+#[component(FrConfigEditor)]
 pub fn fr_config() -> Html {
     let are_orders_created = use_state_eq(|| true);
 

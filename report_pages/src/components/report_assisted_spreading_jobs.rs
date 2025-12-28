@@ -10,7 +10,7 @@ use yew::prelude::*;
 pub(crate) struct SpreadingAssistJobsReportViewProps {
     pub(crate) spreader: String,
 }
-#[function_component(SpreadingAssistJobsReportView)]
+#[component(SpreadingAssistJobsReportView)]
 pub(crate) fn report_spreading_assist_jobs(props: &SpreadingAssistJobsReportViewProps) -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);

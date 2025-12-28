@@ -15,7 +15,7 @@ use yew_router::prelude::*;
 pub(crate) struct OrderVerificationViewProps {
     pub(crate) seller: String,
 }
-#[function_component(OrderVerificationView)]
+#[component(OrderVerificationView)]
 pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let history = use_navigator().unwrap();

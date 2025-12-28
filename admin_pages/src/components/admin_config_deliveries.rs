@@ -28,7 +28,7 @@ struct DeliveryAddEditDlgProps {
     onaddorupdate: Callback<DeliveryDlgAddOrUpdateCb>,
 }
 
-#[function_component(DeliveryAddEditDlg)]
+#[component(DeliveryAddEditDlg)]
 fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html {
     //Tuple of Devlivery ID, Delivery Data, Cutoff Date
     let delivery_info = use_state_eq(SelectedDeliveryInfo::default);
@@ -129,7 +129,7 @@ struct DeliveryLiProps {
 }
 
 /////////////////////////////////////////////////
-#[function_component(DeliveryLi)]
+#[component(DeliveryLi)]
 fn delivery_item(props: &DeliveryLiProps) -> Html {
     html! {
         <li class="list-group-item d-flex justify-content-between">
@@ -195,7 +195,7 @@ fn disable_save_button(document: &web_sys::Document, value: bool, with_spinner: 
 }
 
 /////////////////////////////////////////////////
-#[function_component(DeliveryUl)]
+#[component(DeliveryUl)]
 pub(crate) fn delivery_list() -> Html {
     let deliveries = use_state(|| (*get_deliveries()).clone());
     let is_dirty = use_state_eq(|| false);

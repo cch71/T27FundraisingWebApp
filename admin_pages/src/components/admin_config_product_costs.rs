@@ -24,7 +24,7 @@ struct PriceBreakAddEditDlgProps {
     onaddorupdate: Callback<PriceBreakAddUpdateDlgCb>,
 }
 
-#[function_component(PriceBreakAddEditDlg)]
+#[component(PriceBreakAddEditDlg)]
 fn pricebreak_add_or_edit_dlg(props: &PriceBreakAddEditDlgProps) -> Html {
     let price_break = use_state_eq(|| None);
     {
@@ -117,7 +117,7 @@ struct MulchPriceBreakLiProps {
     disabled: bool,
 }
 
-#[function_component(MulchPriceBreakLi)]
+#[component(MulchPriceBreakLi)]
 fn mulch_pricebreak_item(props: &MulchPriceBreakLiProps) -> Html {
     html! {
         <li class="list-group-item d-flex justify-content-between">
@@ -179,7 +179,7 @@ fn disable_save_button(document: &web_sys::Document, value: bool) {
 pub(crate) struct MulchCostProps {
     pub(crate) disabled: bool,
 }
-#[function_component(MulchCost)]
+#[component(MulchCost)]
 pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
     use std::collections::BTreeMap;
 

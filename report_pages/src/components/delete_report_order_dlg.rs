@@ -65,7 +65,7 @@ pub(crate) fn on_delete_order_from_rpt(evt: MouseEvent, datatable: Rc<RefCell<Op
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(DeleteOrderDlg)]
+#[component(DeleteOrderDlg)]
 pub(crate) fn delete_order_confirmation_dlg() -> Html {
     let on_confirm_input = {
         Callback::from(move |evt: InputEvent| {

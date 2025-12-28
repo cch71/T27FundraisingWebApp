@@ -8,7 +8,7 @@ pub struct AddNewOrderButtonProps {
     pub userid: String,
 }
 
-#[function_component(AddNewOrderButton)]
+#[component(AddNewOrderButton)]
 pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html {
     let history = use_navigator().unwrap();
     let on_add_new_order = {

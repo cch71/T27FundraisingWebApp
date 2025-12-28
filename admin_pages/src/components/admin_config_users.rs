@@ -186,7 +186,7 @@ fn process_uploaded_file(
     }
 }
 
-#[function_component(UploadUsersDlg)]
+#[component(UploadUsersDlg)]
 fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
     let users = use_state_eq(Vec::<UserAdminConfig>::new);
     let dup_users = use_state_eq(Vec::<UserFileRec>::new);
@@ -439,7 +439,7 @@ struct EditUserDlgProps {
     onupdate: Callback<EditUserDlgCb>,
 }
 
-#[function_component(EditUserDlg)]
+#[component(EditUserDlg)]
 fn edit_user_dlg(props: &EditUserDlgProps) -> Html {
     let selected_user = use_state_eq(SelectedUserType::default);
     {
@@ -534,7 +534,7 @@ struct UserLiProps {
     onedit: Callback<MouseEvent>,
 }
 
-#[function_component(UserLi)]
+#[component(UserLi)]
 fn user_item(props: &UserLiProps) -> Html {
     html! {
         <li class="list-group-item d-flex justify-content-between">
@@ -591,7 +591,7 @@ fn disable_save_button(document: &web_sys::Document, value: bool) {
     }
 }
 
-#[function_component(UsersUl)]
+#[component(UsersUl)]
 pub(crate) fn user_list() -> Html {
     let users = use_state_eq(BTreeMap::<String, UserAdminConfig>::new);
     let is_dirty = use_state_eq(|| false);

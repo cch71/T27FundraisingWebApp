@@ -197,7 +197,7 @@ struct AllocationReportRowProps {
     scoutvals: FrCloseoutAllocationVals,
     class: Classes,
 }
-#[function_component(AllocationReportRow)]
+#[component(AllocationReportRow)]
 fn allocation_report_row(props: &AllocationReportRowProps) -> Html {
     html! {
         <tr class={ classes!(props.class.clone())}>
@@ -222,7 +222,7 @@ struct AllocationReportProps {
     reportlist: Vec<FrCloseoutAllocationVals>,
     onreleasefunds: Callback<MouseEvent>,
 }
-#[function_component(AllocationReport)]
+#[component(AllocationReport)]
 fn allocation_report(props: &AllocationReportProps) -> Html {
     let on_download_report = {
         let report_list = props.reportlist.clone();
@@ -328,7 +328,7 @@ fn allocation_report(props: &AllocationReportProps) -> Html {
 struct SalesTableProps {
     svarsmap: FrClosureStaticData,
 }
-#[function_component(SalesTable)]
+#[component(SalesTable)]
 fn sales_table(props: &SalesTableProps) -> Html {
     let svars = props.svarsmap.get("TROOP_TOTALS").unwrap();
     html! {
@@ -380,7 +380,7 @@ struct AllocationsTableProps {
     dvars: FrCloseoutDynamicVars,
     svarsmap: FrClosureStaticData,
 }
-#[function_component(AllocationsTable)]
+#[component(AllocationsTable)]
 fn allocations_table(props: &AllocationsTableProps) -> Html {
     let svars = props.svarsmap.get("TROOP_TOTALS").unwrap();
     html! {
@@ -472,7 +472,7 @@ struct CurrencyWidgetProps {
     label: String,
     oninput: Callback<InputEvent>,
 }
-#[function_component(CurrencyWidget)]
+#[component(CurrencyWidget)]
 fn currency_widget(props: &CurrencyWidgetProps) -> Html {
     // function formatCurrency(evt) {
     //     evt.currentTarget.value = USD(evt.currentTarget.value).format();
@@ -516,7 +516,7 @@ struct AllocationsFormProps {
     svarsmap: FrClosureStaticData,
     oninput: Callback<InputEvent>,
 }
-#[function_component(AllocationsForm)]
+#[component(AllocationsForm)]
 fn allocations_form(props: &AllocationsFormProps) -> Html {
     html! {
         <form>
@@ -547,7 +547,7 @@ fn allocations_form(props: &AllocationsFormProps) -> Html {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(StaticDataLoadingSpinny)]
+#[component(StaticDataLoadingSpinny)]
 fn static_data_loading_spinny() -> Html {
     html! {
         <div class="justify-content-center text-center">
@@ -572,7 +572,7 @@ macro_rules! get_new_input_val_maybe {
     };
 }
 
-#[function_component(CloseoutFundraiser)]
+#[component(CloseoutFundraiser)]
 pub fn closeout_fundraiser_page() -> Html {
     let dvars = use_state_eq(|| {
         let mut dvars = FrCloseoutDynamicVars::new();

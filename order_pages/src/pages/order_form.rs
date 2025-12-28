@@ -165,7 +165,7 @@ fn validate_order_form(document: &web_sys::Document) -> bool {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(RequiredSmall)]
+#[component(RequiredSmall)]
 fn required_small() -> Html {
     html! {
         <small class="form-text text-muted ps-1">{"*required"}</small>
@@ -184,7 +184,7 @@ pub struct OrderCostItemProps {
     pub ondelete: Callback<MouseEvent>,
 }
 
-#[function_component(OrderCostItem)]
+#[component(OrderCostItem)]
 pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
     let history = use_navigator().unwrap();
 
@@ -256,7 +256,7 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(HoodSelector)]
+#[component(HoodSelector)]
 pub fn hood_selector() -> Html {
     let history = use_navigator().unwrap();
     if !is_active_order() {
@@ -336,7 +336,7 @@ pub fn hood_selector() -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(OrderFormFields)]
+#[component(OrderFormFields)]
 pub fn order_form_fields() -> Html {
     let history = use_navigator().unwrap();
     if !is_active_order() {
@@ -801,7 +801,7 @@ pub fn order_form_fields() -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(OrderForm)]
+#[component(OrderForm)]
 pub fn order_form() -> Html {
     html! {
         <div class="col-xs-1 justify-content-center">

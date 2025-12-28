@@ -13,7 +13,7 @@ const SELL_MAP_ID: &str = "sellMap";
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(SellMapReportView)]
+#[component(SellMapReportView)]
 pub(crate) fn report_sell_view() -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let sell_map: std::rc::Rc<std::cell::RefCell<Option<Map>>> = use_mut_ref(|| None);

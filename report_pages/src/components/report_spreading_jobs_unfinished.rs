@@ -6,7 +6,7 @@ use yew::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(SpreadingJobsUnfinishedReportView)]
+#[component(SpreadingJobsUnfinishedReportView)]
 pub(crate) fn report_quick_view() -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);

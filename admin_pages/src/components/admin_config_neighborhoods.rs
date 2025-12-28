@@ -19,7 +19,7 @@ struct NeighborhoodAddEditDlgProps {
     onaddorupdate: Callback<Neighborhood>,
 }
 
-#[function_component(NeighborhoodAddEditDlg)]
+#[component(NeighborhoodAddEditDlg)]
 fn neighborhood_add_or_edit_dlg(props: &NeighborhoodAddEditDlgProps) -> Html {
     let neighborhood = use_state_eq(|| Neighborhood {
         name: "".to_string(),
@@ -235,7 +235,7 @@ struct NeighborhoodLiProps {
     onedit: Callback<MouseEvent>,
 }
 
-#[function_component(NeighborhoodLi)]
+#[component(NeighborhoodLi)]
 fn neighborhood_item(props: &NeighborhoodLiProps) -> Html {
     let mut liclass = "list-group-item d-flex justify-content-between".to_string();
     if !props.hood.is_visible {
@@ -300,7 +300,7 @@ fn disable_save_button(document: &web_sys::Document, value: bool) {
     }
 }
 
-#[function_component(NeighborhoodUl)]
+#[component(NeighborhoodUl)]
 pub(crate) fn neighborhood_list() -> Html {
     use std::collections::BTreeMap;
     // Map neighborhood names to neighborhood and add ability to mark dirty

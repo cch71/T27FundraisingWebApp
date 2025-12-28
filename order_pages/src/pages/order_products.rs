@@ -107,7 +107,7 @@ pub struct ProductItemProps {
     pub minunits: u32,
 }
 
-#[function_component(ProductItem)]
+#[component(ProductItem)]
 pub fn product_item(props: &ProductItemProps) -> Html {
     html! {
         <div class="row mb-2 col-sm-12">
@@ -130,7 +130,7 @@ pub fn product_item(props: &ProductItemProps) -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(OrderProducts)]
+#[component(OrderProducts)]
 pub fn order_products() -> Html {
     let history = use_navigator().unwrap();
     let delivery_selection: Rc<RefCell<Option<u32>>> = use_mut_ref(|| None);

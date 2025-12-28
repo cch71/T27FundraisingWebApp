@@ -106,7 +106,7 @@ impl fmt::Display for SelectionState {
     }
 }
 
-#[function_component(ChooseSpreadersDlg)]
+#[component(ChooseSpreadersDlg)]
 pub(crate) fn choose_spreaders_dlg() -> Html {
     let dlg_state = use_state(|| SelectionState::Choosing);
     {

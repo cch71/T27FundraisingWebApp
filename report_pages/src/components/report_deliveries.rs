@@ -7,7 +7,7 @@ use yew::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(DeliveriesReportView)]
+#[component(DeliveriesReportView)]
 pub(crate) fn report_deliveries_view() -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);

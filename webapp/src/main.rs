@@ -35,7 +35,7 @@ pub struct AppFooterProps {
     pub children: Children,
 }
 
-#[function_component(AppFooter)]
+#[component(AppFooter)]
 pub fn app_footer(props: &AppFooterProps) -> Html {
     let cur_win_loc = gloo::utils::window().location().pathname().unwrap();
 
@@ -54,7 +54,7 @@ pub fn app_footer(props: &AppFooterProps) -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component]
+#[component]
 fn App() -> Html {
     let is_loading = use_state_eq(|| true);
     let is_order_active = use_state_eq(is_active_order);

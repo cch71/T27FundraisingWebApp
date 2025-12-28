@@ -13,7 +13,7 @@ pub(crate) struct AppNavProps {
     pub(crate) isactiveorder: bool,
 }
 
-#[function_component(AppNav)]
+#[component(AppNav)]
 pub(crate) fn app_nav(props: &AppNavProps) -> Html {
     let _ = use_navigator().unwrap(); // This forces re-render on path changes
     let userlabel = if props.username != props.userid {

@@ -48,7 +48,7 @@ fn get_uid_from_row(row_elm: &HtmlElement) -> String {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(Timecards)]
+#[component(Timecards)]
 pub fn timecards_page() -> Html {
     // tuple of uid, username, Timecard
     type TimecardsDataType = (String, String, Option<TimeCard>);

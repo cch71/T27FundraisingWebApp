@@ -141,7 +141,7 @@ fn gen_top_sellers_html(top_sellers: &[TopSeller]) -> Html {
         .collect::<Html>()
 }
 
-#[function_component(Home)]
+#[component(Home)]
 pub fn home_page() -> Html {
     let fr_config = get_fr_config();
     let active_user = get_active_user();

@@ -9,7 +9,7 @@ pub struct DeliveryDateSelectorProps {
     pub on_delivery_change: Callback<Option<u32>>,
 }
 
-#[function_component(DeliveryDateSelector)]
+#[component(DeliveryDateSelector)]
 pub fn delivery_date_selector(props: &DeliveryDateSelectorProps) -> Html {
     let order = get_active_order().unwrap();
 

@@ -10,7 +10,7 @@ use yew::prelude::*;
 pub(crate) struct MoneyCollectionReportViewProps {
     pub(crate) seller: String,
 }
-#[function_component(MoneyCollectionReportView)]
+#[component(MoneyCollectionReportView)]
 pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProps) -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
