@@ -1,4 +1,5 @@
 use data_model::*;
+use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlButtonElement, HtmlInputElement, InputEvent, MouseEvent, SubmitEvent};
 use yew::prelude::*;
@@ -44,7 +45,7 @@ fn disable_submit_button(value: bool) {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(OrderDonations)]
+#[component(OrderDonations)]
 pub fn order_donations() -> Html {
     let history = use_navigator().unwrap();
     if !is_active_order() {
@@ -59,7 +60,7 @@ pub fn order_donations() -> Html {
             evt.prevent_default();
             evt.stop_propagation();
             let mut updated_order = get_active_order().unwrap();
-            // log::info!("on_form_submission");
+            // info!("on_form_submission");
             let mut donation_amt = get_donation_amount();
             if donation_amt.is_some() {
                 donation_amt = Some(to_money_str_no_symbol(donation_amt.as_ref()));
@@ -79,7 +80,7 @@ pub fn order_donations() -> Html {
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            //log::info!("on_cancel_item");
+            //info!("on_cancel_item");
             history.push(&AppRoutes::OrderForm);
         })
     };
@@ -89,13 +90,13 @@ pub fn order_donations() -> Html {
         Callback::from(move |evt: InputEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("do_form_validation");
+            info!("do_form_validation");
 
             let mut donation_amt = get_donation_amount();
 
             if donation_amt.is_some() {
                 let new_donation_amt = on_money_input_filter(donation_amt.as_ref());
-                log::info!(
+                info!(
                     "New Donation: {} Old Donation: {}",
                     new_donation_amt,
                     donation_amt.as_ref().unwrap()

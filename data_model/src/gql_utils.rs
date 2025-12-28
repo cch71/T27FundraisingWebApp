@@ -2,6 +2,7 @@ use super::get_active_user;
 use gloo::net::http::Request;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
+use tracing::info;
 
 static GQLURL: LazyLock<String> = LazyLock::new(|| crate::CLOUD_API_URL.to_string() + "/graphql");
 
@@ -17,9 +18,7 @@ impl GraphQlReq {
     }
 }
 
-pub(super) async fn make_gql_request<T>(
-    req: &GraphQlReq,
-) -> Result<T, Box<dyn std::error::Error>>
+pub(super) async fn make_gql_request<T>(req: &GraphQlReq) -> Result<T, Box<dyn std::error::Error>>
 where
     T: serde::de::DeserializeOwned,
 {
@@ -29,7 +28,7 @@ where
         errors: Option<Vec<serde_json::Value>>,
     }
 
-    // log::info!("Bearer Token: {}", get_active_user().token);
+    // info!("Bearer Token: {}", get_active_user().token);
     let raw_resp: serde_json::Value = Request::post(&GQLURL)
         .header("Content-Type", "application/json")
         .header(
@@ -45,9 +44,9 @@ where
         .location()
         .host()
         .unwrap_or("".to_string());
-    // log::info!("Hostname: {host_str}");
+    // info!("Hostname: {host_str}");
     if host_str.starts_with("localhost") {
-        log::info!(
+        info!(
             "GQL Resp: {}",
             serde_json::to_string_pretty(&raw_resp).unwrap()
         );

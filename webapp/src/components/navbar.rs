@@ -13,7 +13,7 @@ pub(crate) struct AppNavProps {
     pub(crate) isactiveorder: bool,
 }
 
-#[function_component(AppNav)]
+#[component(AppNav)]
 pub(crate) fn app_nav(props: &AppNavProps) -> Html {
     let _ = use_navigator().unwrap(); // This forces re-render on path changes
     let userlabel = if props.username != props.userid {
@@ -75,7 +75,7 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html {
                         <a class="dropdown-item" onclick={props.onreportissue.clone()} href="#" data-bs-toggle="modal">
                             {"Report Issue"}
                         </a>
-                        <a 
+                        <a
                             class="dropdown-item"
                             href="https://cch71.github.io/T27FundraisingWebAppManual/docs/overview/"
                             target="_blank">

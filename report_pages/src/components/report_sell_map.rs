@@ -2,6 +2,7 @@ use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::leaflet::*;
 use serde::{Deserialize, Serialize};
+use tracing::info;
 use yew::prelude::*;
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
@@ -12,7 +13,7 @@ const SELL_MAP_ID: &str = "sellMap";
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(SellMapReportView)]
+#[component(SellMapReportView)]
 pub(crate) fn report_sell_view() -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let sell_map: std::rc::Rc<std::cell::RefCell<Option<Map>>> = use_mut_ref(|| None);
@@ -24,14 +25,14 @@ pub(crate) fn report_sell_view() -> Html {
             match &*report_state {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!("Downloading Geo Location data");
+                        info!("Downloading Geo Location data");
                         let resp = get_sales_geojson().await.unwrap();
-                        log::info!("Report Data has been downloaded");
+                        info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(vec![resp]));
                     });
                 }
                 ReportViewState::ReportHtmlGenerated(json_list) => {
-                    log::info!("Handling ReportHtmlGenerated");
+                    info!("Handling ReportHtmlGenerated");
                     if sell_map.borrow().is_none() {
                         *sell_map.borrow_mut() = create_sell_map(&serde_json::json!({
                             "id": SELL_MAP_ID,

@@ -2,7 +2,7 @@ use yew::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(ReportLoadingSpinny)]
+#[component(ReportLoadingSpinny)]
 pub(crate) fn report_loading_spinny() -> Html {
     html! {
         <div class="justify-content-center text-center">

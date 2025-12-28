@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use tracing::{error, info};
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlSelectElement};
 use yew::prelude::*;
@@ -6,6 +7,7 @@ use yew::prelude::*;
 use data_model::*;
 
 use crate::components::delete_report_order_dlg::DeleteOrderDlg;
+use crate::components::report_assisted_spreading_jobs::SpreadingAssistJobsReportView;
 use crate::components::report_deliveries::DeliveriesReportView;
 use crate::components::report_distribution_points::DistributionPointsReportView;
 use crate::components::report_full::FullReportView;
@@ -15,7 +17,6 @@ use crate::components::report_sell_map::SellMapReportView;
 use crate::components::report_spreaders_dlg::ChooseSpreadersDlg;
 use crate::components::report_spreading_jobs::SpreadingJobsReportView;
 use crate::components::report_spreading_jobs_unfinished::SpreadingJobsUnfinishedReportView;
-use crate::components::report_assisted_spreading_jobs::SpreadingAssistJobsReportView;
 use crate::components::report_verify::OrderVerificationView;
 
 /////////////////////////////////////////////////
@@ -25,7 +26,7 @@ struct ReportViewSettingsSelectionProp {
     current: ReportViewSettings,
     showseller: bool,
 }
-#[function_component(ReportViewSettingsSelection)]
+#[component(ReportViewSettingsSelection)]
 fn reports_selections(props: &ReportViewSettingsSelectionProp) -> Html {
     let on_view_selection_change = {
         let props = props.clone();
@@ -100,7 +101,7 @@ fn reports_selections(props: &ReportViewSettingsSelectionProp) -> Html {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(Reports)]
+#[component(Reports)]
 pub fn reports_page() -> Html {
     let current_settings = use_state_eq(load_report_settings);
 
@@ -108,23 +109,21 @@ pub fn reports_page() -> Html {
         let current_settings = current_settings.clone();
         Callback::from(move |updated_settings: ReportViewSettings| {
             if let Err(err) = save_report_settings(&updated_settings) {
-                log::error!("Failed saving report settings: {err:#?}");
+                error!("Failed saving report settings: {err:#?}");
             }
 
-            log::info!(
+            info!(
                 "on_save_settings.  report view: {} seller: {}",
-                &updated_settings.current_view,
-                &updated_settings.seller_id_filter
+                &updated_settings.current_view, &updated_settings.seller_id_filter
             );
 
             current_settings.set(updated_settings);
         })
     };
 
-    log::info!(
+    info!(
         "Report View Rendering.  report view: {} seller: {}",
-        &current_settings.current_view,
-        &current_settings.seller_id_filter
+        &current_settings.current_view, &current_settings.seller_id_filter
     );
 
     let do_show_current_seller = get_active_user().is_admin()

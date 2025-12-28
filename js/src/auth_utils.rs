@@ -1,7 +1,8 @@
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, LazyLock, RwLock};
+use tracing::{error, info};
 use wasm_bindgen::prelude::*;
-use anyhow::anyhow;
 
 static ACTIVE_USER: LazyLock<RwLock<Option<Arc<AuthenticatedUserInfo>>>> =
     LazyLock::new(|| RwLock::new(None));
@@ -61,20 +62,20 @@ fn parse_active_user(user_info: JsValue) -> anyhow::Result<Arc<AuthenticatedUser
 }
 
 pub async fn get_active_user_async() -> anyhow::Result<Arc<AuthenticatedUserInfo>> {
-
     match getUserInfo().await {
         Ok(user_info) => {
             // log::info!("User Info: {:#?}", user_info);
             parse_active_user(user_info).and_then(|user_info| {
-                ACTIVE_USER.write().map(|mut active_user| {
-                    active_user.replace(user_info.clone());
-                    user_info
-                }).map_err(|err| anyhow!("Failed to replace user info: {err}"))
+                ACTIVE_USER
+                    .write()
+                    .map(|mut active_user| {
+                        active_user.replace(user_info.clone());
+                        user_info
+                    })
+                    .map_err(|err| anyhow!("Failed to replace user info: {err}"))
             })
         }
-        Err(err) => {
-            Err(anyhow!("Get User Info Err: {:#?}", err))
-        }
+        Err(err) => Err(anyhow!("Get User Info Err: {:#?}", err)),
     }
 }
 
@@ -85,11 +86,11 @@ pub fn get_active_user() -> Arc<AuthenticatedUserInfo> {
 pub async fn is_authenticated() -> bool {
     match isAuthenticated().await {
         Ok(is_auth) => {
-            log::info!("Is Authenticated: {:#?}", &is_auth);
+            info!("Is Authenticated: {:#?}", &is_auth);
             let is_auth: bool = serde_wasm_bindgen::from_value(is_auth).unwrap();
             return is_auth;
         }
-        Err(err) => log::error!("User Info Err: {err:#?}"),
+        Err(err) => error!("User Info Err: {err:#?}"),
     };
     false
 }
@@ -97,10 +98,10 @@ pub async fn is_authenticated() -> bool {
 pub async fn login() {
     match loginUser().await {
         Err(err) => {
-            log::error!("Error logging in Err: {err:#?}");
+            error!("Error logging in Err: {err:#?}");
         }
         _ => {
-            log::info!("Logged In");
+            info!("Logged In");
         }
     }
 }
@@ -108,10 +109,10 @@ pub async fn login() {
 pub async fn logout() {
     match logoutUser().await {
         Err(err) => {
-            log::error!("Error logging out Err: {err:#?}");
+            error!("Error logging out Err: {err:#?}");
         }
         _ => {
-            log::info!("Logged out");
+            info!("Logged out");
         }
     }
 }

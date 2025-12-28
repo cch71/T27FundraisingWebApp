@@ -28,7 +28,7 @@ pub(crate) fn show_report_issue_dlg(do_show: bool) {
     }
 }
 
-#[function_component(ReportIssueDlg)]
+#[component(ReportIssueDlg)]
 pub(crate) fn report_issue() -> Html {
     let spinner_state = use_state_eq(|| "d-none");
     let on_submit_issue = {

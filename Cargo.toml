@@ -1,12 +1,12 @@
 [workspace]
 members = [
-	"js",
+    "js",
     "data_model",
     "timecard_pages",
     "order_pages",
     "report_pages",
     "admin_pages",
-	"webapp",
+    "webapp",
 ]
 resolver = "2"
 
@@ -17,15 +17,26 @@ license = "BSD-0"
 edition = "2024"
 
 [workspace.dependencies]
-log = "0"
+tracing = "0.1.43"
 yew = { version = "0", features = ["csr"] }
 yew-router = "0"
 gloo = { version = "0", features = ["futures"] }
 wasm-bindgen = "0"
 wasm-bindgen-futures = "0"
+serde-wasm-bindgen = "0"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
 anyhow = "1"
+csv = "1"
+calamine = "0.32"
+
+chrono = { version = "0" }
+rusty-money = { version = "0" }
+rust_decimal = "1"
+regex = "1"
+uuid = { version = "1" }
+js-sys = "0"
+wasm-logger = "0"
 
 [workspace.dependencies.web-sys]
 version = "0"

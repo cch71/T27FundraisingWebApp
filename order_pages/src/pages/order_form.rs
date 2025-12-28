@@ -1,6 +1,7 @@
 use data_model::*;
 use rust_decimal::prelude::*;
 use rusty_money::{Money, iso};
+use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{
     Element, Event, HtmlButtonElement, HtmlElement, HtmlInputElement, HtmlSelectElement,
@@ -122,12 +123,12 @@ fn validate_order_form(document: &web_sys::Document) -> bool {
         .query_selector_all("[required]")
         .unwrap();
     for idx in 0..form_node_list.length() {
-        log::info!("Going through Form List");
+        info!("Going through Form List");
         if let Some(element) = form_node_list
             .item(idx)
             .and_then(|t| t.dyn_into::<Element>().ok())
         {
-            //log::info!("Validationg ID: {}", element.id());
+            //info!("Validationg ID: {}", element.id());
             let is_form_element_valid = {
                 match element.clone().dyn_into::<HtmlInputElement>() {
                     Ok(form_element) => form_element.check_validity(),
@@ -164,7 +165,7 @@ fn validate_order_form(document: &web_sys::Document) -> bool {
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(RequiredSmall)]
+#[component(RequiredSmall)]
 fn required_small() -> Html {
     html! {
         <small class="form-text text-muted ps-1">{"*required"}</small>
@@ -183,7 +184,7 @@ pub struct OrderCostItemProps {
     pub ondelete: Callback<MouseEvent>,
 }
 
-#[function_component(OrderCostItem)]
+#[component(OrderCostItem)]
 pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
     let history = use_navigator().unwrap();
 
@@ -193,7 +194,7 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("On Add/Edit/View Called");
+            info!("On Add/Edit/View Called");
             if props_label == "Donation" {
                 history.push(&AppRoutes::OrderDonations);
             } else {
@@ -255,7 +256,7 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(HoodSelector)]
+#[component(HoodSelector)]
 pub fn hood_selector() -> Html {
     let history = use_navigator().unwrap();
     if !is_active_order() {
@@ -263,7 +264,7 @@ pub fn hood_selector() -> Html {
     }
 
     let order = use_state_eq(|| get_active_order().unwrap());
-    // log::info!("Loading Order: {:#?}", &*order);
+    // info!("Loading Order: {:#?}", &*order);
 
     let on_hood_warning = use_state_eq(|| "display: none;".to_owned());
     let on_hood_change = {
@@ -275,14 +276,14 @@ pub fn hood_selector() -> Html {
             if let Some(v) = hood_value {
                 let val = v.value();
                 if val.starts_with("Out of Area") {
-                    log::info!("Is Out Of Area");
+                    info!("Is Out Of Area");
                     on_hood_warning.set("display: block;".to_owned());
                     update_city_and_zip("", "", &gloo::utils::document());
                 } else {
-                    log::info!("Is Not Out Of Area");
+                    info!("Is Not Out Of Area");
                     on_hood_warning.set("display: none;".to_owned());
                     let (city, zipcode) = get_city_and_zip_from_neighborhood(&val).unwrap();
-                    log::info!("Using Neighborhood City: {}, Zipcode: {}", &city, zipcode);
+                    info!("Using Neighborhood City: {}, Zipcode: {}", &city, zipcode);
                     update_city_and_zip(&city, &zipcode.to_string(), &gloo::utils::document());
                 }
             };
@@ -335,7 +336,7 @@ pub fn hood_selector() -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(OrderFormFields)]
+#[component(OrderFormFields)]
 pub fn order_form_fields() -> Html {
     let history = use_navigator().unwrap();
     if !is_active_order() {
@@ -346,7 +347,7 @@ pub fn order_form_fields() -> Html {
     let is_admin = get_active_user().is_admin();
     let order = use_state_eq(|| get_active_order().unwrap());
     let is_order_readonly = order.is_readonly();
-    // log::info!("Loading Order: {:#?}", &*order);
+    // info!("Loading Order: {:#?}", &*order);
 
     let amount_due_str = use_state_eq(|| "$0.00".to_owned());
     let amount_collected_str = match order.amount_total_collected.as_ref() {
@@ -356,7 +357,7 @@ pub fn order_form_fields() -> Html {
 
     let on_payment_input = {
         Callback::from(move |evt: InputEvent| {
-            log::info!("On Payment Due");
+            info!("On Payment Due");
             evt.prevent_default();
             evt.stop_propagation();
 
@@ -426,7 +427,7 @@ pub fn order_form_fields() -> Html {
             let on_form_submitted = on_form_submitted.clone();
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("on_form_submission");
+            info!("on_form_submission");
 
             let document = gloo::utils::document();
 
@@ -434,13 +435,13 @@ pub fn order_form_fields() -> Html {
             disable_cancel_button(&document, true);
 
             if !validate_order_form(&document) {
-                log::info!("Form isn't valid refusing submission");
+                info!("Form isn't valid refusing submission");
                 disable_submit_button(&document, false, false);
                 disable_cancel_button(&document, false);
             } else {
                 // Send request
                 wasm_bindgen_futures::spawn_local(async move {
-                    log::info!("Submitting Order");
+                    info!("Submitting Order");
                     let rslt = submit_active_order().await;
                     disable_submit_button(&document, false, false);
                     disable_cancel_button(&document, false);
@@ -462,7 +463,7 @@ pub fn order_form_fields() -> Html {
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
-            log::info!("on_cancel_order");
+            info!("on_cancel_order");
             let was_from_db = is_active_order_from_db();
             reset_active_order();
             if was_from_db {
@@ -499,16 +500,16 @@ pub fn order_form_fields() -> Html {
             let _ = elm.class_list().add_1("btn-outline-danger");
             let _ = elm.class_list().remove_1("btn-outline-info");
             wasm_bindgen_futures::spawn_local(async move {
-                log::info!("Making Geolocate call");
+                info!("Making Geolocate call");
                 if let Some(pos) = js::geolocate::get_current_position().await {
-                    log::info!(
+                    info!(
                         "Geo callback: {}",
                         serde_json::to_string_pretty(&pos).unwrap()
                     );
                     if let Ok(addr) =
                         get_address_from_lat_lng(pos.coords.latitude, pos.coords.longitude).await
                     {
-                        log::info!(
+                        info!(
                             "Geo address: {}",
                             serde_json::to_string_pretty(&addr).unwrap()
                         );
@@ -680,18 +681,23 @@ pub fn order_form_fields() -> Html {
 
             <div class="row mb-2 g-2">
                 <div class="form-floating col-md-12">
-                    <textarea class="form-control" id="formSpecialInstructions" rows="2"
-                              value={order.special_instructions.clone()}>
-                    </textarea>
+                    <textarea
+                        class="form-control"
+                        id="formSpecialInstructions"
+                        rows="2" value={order.special_instructions.clone()}
+                    />
                     <label for="formSpecialInstructions">{"Special Delivery Instructions"}</label>
                 </div>
             </div>
 
             <div class="row mb-2 g-2">
                 <div class="form-floating col-md-12">
-                    <textarea class="form-control" id="formOrderComments" rows="2"
-                              value={order.comments.clone()}>
-                    </textarea>
+                    <textarea
+                        class="form-control"
+                        id="formOrderComments"
+                        rows="2"
+                        value={order.comments.clone()}
+                    />
                     <label for="formOrderComments">{"Order Comments"}</label>
                 </div>
             </div>
@@ -795,7 +801,7 @@ pub fn order_form_fields() -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(OrderForm)]
+#[component(OrderForm)]
 pub fn order_form() -> Html {
     html! {
         <div class="col-xs-1 justify-content-center">

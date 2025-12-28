@@ -2,6 +2,7 @@ use crate::components::admin_config_deliveries::*;
 use crate::components::admin_config_neighborhoods::*;
 use crate::components::admin_config_product_costs::*;
 use crate::components::admin_config_users::*;
+use tracing::info;
 use yew::prelude::*;
 
 use data_model::*;
@@ -28,7 +29,7 @@ fn disable_reset_button(document: &web_sys::Document, value: bool) {
     }
 }
 
-#[function_component(ResetOrders)]
+#[component(ResetOrders)]
 fn reset_orders_database() -> Html {
     let on_reset_db = {
         move |_evt: MouseEvent| {
@@ -43,9 +44,9 @@ fn reset_orders_database() -> Html {
                 let do_reset =
                     gloo::dialogs::prompt(&msg, None).is_some_and(|v| v == verify_phrase);
 
-                log::info!("Resetting Order Database: {do_reset}");
+                info!("Resetting Order Database: {do_reset}");
                 if do_reset {
-                    log::info!("Resetting User and Order Data!!!!!!!!...");
+                    info!("Resetting User and Order Data!!!!!!!!...");
                     if let Err(err) = reset_fundraiser().await {
                         gloo::dialogs::alert(&format!("Failed to reset fundraiser data: {err:#?}"));
                     }
@@ -78,7 +79,7 @@ fn reset_orders_database() -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-#[function_component(FrConfigEditor)]
+#[component(FrConfigEditor)]
 pub fn fr_config() -> Html {
     let are_orders_created = use_state_eq(|| true);
 

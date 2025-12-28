@@ -1,11 +1,12 @@
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
+use tracing::info;
 use yew::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-#[function_component(DistributionPointsReportView)]
+#[component(DistributionPointsReportView)]
 pub(crate) fn report_distribution_points_view() -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
@@ -16,14 +17,14 @@ pub(crate) fn report_distribution_points_view() -> Html {
             match &*report_state {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!("Downloading Distribution Points Report View Data");
+                        info!("Downloading Distribution Points Report View Data");
                         let resp = get_distribution_points_report_data().await.unwrap();
-                        log::info!("Report Data has been downloaded");
+                        info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
                 }
                 ReportViewState::ReportHtmlGenerated(resp) => {
-                    log::info!("Setting DataTable");
+                    info!("Setting DataTable");
                     *datatable.borrow_mut() = get_datatable(&serde_json::json!({
                         "reportType": "distributionPoints",
                         "id": ".data-table-report table",

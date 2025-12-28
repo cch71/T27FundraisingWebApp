@@ -2,6 +2,7 @@ use data_model::*;
 use js::bootstrap;
 use std::cell::RefCell;
 use std::rc::Rc;
+use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlButtonElement, HtmlElement, HtmlInputElement, InputEvent, MouseEvent};
 use yew::prelude::*;
@@ -23,7 +24,7 @@ struct PriceBreakAddEditDlgProps {
     onaddorupdate: Callback<PriceBreakAddUpdateDlgCb>,
 }
 
-#[function_component(PriceBreakAddEditDlg)]
+#[component(PriceBreakAddEditDlg)]
 fn pricebreak_add_or_edit_dlg(props: &PriceBreakAddEditDlgProps) -> Html {
     let price_break = use_state_eq(|| None);
     {
@@ -116,7 +117,7 @@ struct MulchPriceBreakLiProps {
     disabled: bool,
 }
 
-#[function_component(MulchPriceBreakLi)]
+#[component(MulchPriceBreakLi)]
 fn mulch_pricebreak_item(props: &MulchPriceBreakLiProps) -> Html {
     html! {
         <li class="list-group-item d-flex justify-content-between">
@@ -178,7 +179,7 @@ fn disable_save_button(document: &web_sys::Document, value: bool) {
 pub(crate) struct MulchCostProps {
     pub(crate) disabled: bool,
 }
-#[function_component(MulchCost)]
+#[component(MulchCost)]
 pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
     use std::collections::BTreeMap;
 
@@ -204,7 +205,7 @@ pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
 
         move |vals: PriceBreakAddUpdateDlgCb| {
             let (gt, unit_price) = vals.to_owned();
-            log::info!("Add/Updating Price Break {gt} - {unit_price}");
+            info!("Add/Updating Price Break {gt} - {unit_price}");
             let mut price_breaks_map = (*price_breaks).clone();
             price_breaks_map.insert(gt, unit_price);
             price_breaks.set(price_breaks_map);
@@ -217,7 +218,7 @@ pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
         let price_breaks = price_breaks.clone();
         move |evt: MouseEvent| {
             let gt = get_selected_pricebreak(evt);
-            log::info!("Deleting Price Break {gt}");
+            info!("Deleting Price Break {gt}");
             let mut price_breaks_map = (*price_breaks).clone();
             price_breaks_map.remove(&gt);
             price_breaks.set(price_breaks_map);
@@ -227,7 +228,7 @@ pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
 
     let on_add_pricebreak = {
         move |_evt: MouseEvent| {
-            log::info!("Adding Pricebreak...");
+            info!("Adding Pricebreak...");
             // Since we are adding we don't have a selected index
             SELECTED_PRICE_BREAK.with(|rc| {
                 //set selected price break to none
@@ -243,7 +244,7 @@ pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
         move |evt: MouseEvent| {
             let gt = get_selected_pricebreak(evt);
             let unit_price = (*price_breaks).get(&gt).unwrap();
-            log::info!("Editing Pricebreak: {}", &gt);
+            info!("Editing Pricebreak: {}", &gt);
             SELECTED_PRICE_BREAK.with(|rc| {
                 rc.borrow()
                     .as_ref()
@@ -296,7 +297,7 @@ pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
                 },
             );
 
-            // log::info!("Saving Products: {:#?}", &products);
+            // info!("Saving Products: {:#?}", &products);
 
             let is_dirty = is_dirty.clone();
             wasm_bindgen_futures::spawn_local(async move {

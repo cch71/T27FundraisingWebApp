@@ -7,9 +7,9 @@ edition = "2024"
 js = { path = "../js" }
 data_model = { path = "../data_model" }
 
-log= { workspace = true }
-yew= { workspace = true }
-gloo= { workspace = true }
-wasm-bindgen= { workspace = true }
-wasm-bindgen-futures= { workspace = true }
+tracing = { workspace = true }
+yew = { workspace = true }
+gloo = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
 web-sys = { workspace = true }

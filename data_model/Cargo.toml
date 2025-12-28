@@ -6,20 +6,20 @@ edition = "2024"
 [dependencies]
 js = { path = "../js" }
 
-log = { workspace = true }
+tracing = { workspace = true }
 yew = { workspace = true }
 yew-router = { workspace = true }
 gloo = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
-chrono = { version = "0", features = ["wasmbind"] }
-rusty-money = { version = "0", features = ["iso"] }
-rust_decimal = "1"
-regex = "1"
-uuid = { version = "1", features = ["serde", "v4", "js"] }
+chrono = { workspace=true, features = ["wasmbind"] }
+rusty-money = { workspace = true, features = ["iso"] }
+rust_decimal = { workspace = true }
+regex = { workspace = true }
+uuid = { workspace = true, features = ["serde", "v4", "js"] }
 
 # Needed by the HTML data readers
-js-sys = "0"
+js-sys = { workspace = true }
 wasm-bindgen = { workspace = true }
 web-sys = { workspace = true }

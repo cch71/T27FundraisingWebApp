@@ -7,6 +7,7 @@ use gloo::storage::{LocalStorage, SessionStorage, Storage};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::LazyLock;
+use tracing::{error, info, warn};
 
 // Exposing this const out to keep consistent tag name
 pub static ALL_USERS_TAG: &str = "doShowAllUsers";
@@ -117,7 +118,7 @@ pub fn get_purchase_to_map(v: &serde_json::Value) -> HashMap<String, u64> {
                     purchase["numSold"].as_u64().unwrap_or_default(),
                 );
             }
-            _ => log::error!("Unknown product id: {product_id:?}"),
+            _ => error!("Unknown product id: {product_id:?}"),
         };
     }
     purchases
@@ -192,7 +193,7 @@ pub fn load_report_settings() -> ReportViewSettings {
 //////////////////////////////////////////////////////////////////////////////////////
 pub async fn get_sales_geojson() -> Result<serde_json::Value, Box<dyn std::error::Error>> {
     use gloo::net::http::Request;
-    // log::info!("Running Query: {}", &query);
+    // info!("Running Query: {}", &query);
 
     let raw_resp: serde_json::Value = Request::get(&GEOJSONURL)
         .header("Content-Type", "application/json")
@@ -207,7 +208,7 @@ pub async fn get_sales_geojson() -> Result<serde_json::Value, Box<dyn std::error
 
     // match gloo::utils::window().location().host() {
     //     Ok(host) if host.contains("localhost") => {
-    //         log::info!(
+    //         info!(
     //             "GeoJSON Resp: {}",
     //             serde_json::to_string_pretty(&raw_resp).unwrap()
     //         );
@@ -261,7 +262,7 @@ pub async fn get_quick_report_data(
     } else {
         QUICK_RPT_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
     };
-    log::info!("Running Query: {}", &query);
+    info!("Running Query: {}", &query);
     make_report_query(query).await
 }
 
@@ -341,7 +342,7 @@ pub async fn get_money_collection_report_data(
     } else {
         MONEY_COLLECTION_RPT_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
     };
-    log::info!("Running Query: {}", &query);
+    info!("Running Query: {}", &query);
     make_report_query(query).await
 }
 
@@ -570,7 +571,7 @@ pub async fn get_unfinished_spreading_jobs_report_data()
                 let purchases = get_purchase_to_map(&v);
                 let num_spreading_bags_sold = *purchases.get("spreading").unwrap_or(&0);
                 if num_spreading_bags_sold == 0 {
-                    log::warn!("Query qualifier should have meant this doesn't happen!");
+                    warn!("Query qualifier should have meant this doesn't happen!");
                     return;
                 }
                 let uid = v["ownerId"].as_str().unwrap().to_string();
@@ -728,7 +729,7 @@ pub async fn get_summary_report_data(
             && seller_id == data.seller_id
             && top_sellers == data.num_top_sellers
         {
-            log::info!("Summary data retrieved from cache");
+            info!("Summary data retrieved from cache");
             return Ok(data.summary_report);
         }
     }
@@ -742,7 +743,7 @@ pub async fn get_summary_report_data(
             "***TOP_SELLERS_PARAM***",
             &format!("numTopSellers: {top_sellers}"),
         );
-    log::info!("Running Query: {}", &query);
+    info!("Running Query: {}", &query);
     #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
     struct SummaryReportRslt {
         #[serde(alias = "summary")]
@@ -797,6 +798,6 @@ pub async fn get_order_verification_report_data(
     } else {
         ORDER_VERIFICATION_GRAPHQL.replace("(***ORDER_OWNER_PARAM***)", "")
     };
-    log::info!("Running Query: {}", &query);
+    info!("Running Query: {}", &query);
     make_report_query(query).await
 }

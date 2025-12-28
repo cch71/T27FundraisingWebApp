@@ -5,6 +5,7 @@ use crate::components::action_report_buttons::{
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
+use tracing::info;
 use web_sys::MouseEvent;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -15,7 +16,7 @@ use yew_router::prelude::*;
 pub(crate) struct SpreadingJobsReportViewProps {
     pub(crate) seller: String,
 }
-#[function_component(SpreadingJobsReportView)]
+#[component(SpreadingJobsReportView)]
 pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let history = use_navigator().unwrap();
@@ -24,7 +25,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
     if (*current_view_seller.borrow()).ne(&props.seller) {
-        log::info!(
+        info!(
             "Current Seller doesn't match original seller: {}:{}",
             *current_view_seller.borrow(),
             &props.seller
@@ -32,7 +33,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
         *current_view_seller.borrow_mut() = props.seller.clone();
         report_state.set(ReportViewState::IsLoading);
     } else {
-        log::info!("Current Seller: {}", &props.seller);
+        info!("Current Seller: {}", &props.seller);
     }
 
     let on_delete_order = {
@@ -62,7 +63,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
             match &*report_state {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!(
+                        info!(
                             "Downloading Spreading Jobs Report View Data for {}",
                             &seller
                         );
@@ -74,12 +75,12 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                         let resp = get_spreading_jobs_report_data(seller.as_ref())
                             .await
                             .unwrap();
-                        log::info!("Report Data has been downloaded");
+                        info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
                 }
                 ReportViewState::ReportHtmlGenerated(_) => {
-                    // log::info!("Setting DataTable");
+                    // info!("Setting DataTable");
                     *datatable.borrow_mut() = get_datatable(&serde_json::json!({
                         "reportType": "spreadingJobs",
                         "id": ".data-table-report table",
@@ -122,7 +123,7 @@ pub(crate) fn report_quick_view(props: &SpreadingJobsReportViewProps) -> Html {
                             orders.iter().map(|v|{
                                 let purchases = get_purchase_to_map(v);
                                 let spreading = *purchases.get("spreading").unwrap_or(&0);
-                                // log::info!("Spreading: {}", spreading);
+                                // info!("Spreading: {}", spreading);
                                 if spreading == 0 {
                                     return html!{};
                                 }

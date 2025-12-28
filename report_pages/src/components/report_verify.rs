@@ -4,6 +4,7 @@ use crate::components::action_report_buttons::{
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
+use tracing::info;
 use web_sys::MouseEvent;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -14,7 +15,7 @@ use yew_router::prelude::*;
 pub(crate) struct OrderVerificationViewProps {
     pub(crate) seller: String,
 }
-#[function_component(OrderVerificationView)]
+#[component(OrderVerificationView)]
 pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let history = use_navigator().unwrap();
@@ -23,7 +24,7 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
     if (*current_view_seller.borrow()).ne(&props.seller) {
-        log::info!(
+        info!(
             "Current Seller doesn't match original seller: {}:{}",
             *current_view_seller.borrow(),
             &props.seller
@@ -31,7 +32,7 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
         *current_view_seller.borrow_mut() = props.seller.clone();
         report_state.set(ReportViewState::IsLoading);
     } else {
-        log::info!("Current Seller: {}", &props.seller);
+        info!("Current Seller: {}", &props.seller);
     }
 
     let on_delete_order = {
@@ -54,7 +55,7 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
             match &*report_state {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!("Downloading Verification Report View Data for {}", &seller);
+                        info!("Downloading Verification Report View Data for {}", &seller);
                         let seller = if seller.eq(ALL_USERS_TAG) {
                             None
                         } else {
@@ -63,12 +64,12 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
                         let resp = get_order_verification_report_data(seller.as_ref())
                             .await
                             .unwrap();
-                        log::info!("Report Data has been downloaded");
+                        info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
                 }
                 ReportViewState::ReportHtmlGenerated(_) => {
-                    // log::info!("Setting DataTable");
+                    // info!("Setting DataTable");
                     *datatable.borrow_mut() = get_datatable(&serde_json::json!({
                         "reportType": "verification",
                         "id": ".data-table-report table",

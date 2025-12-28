@@ -1,6 +1,7 @@
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
+use tracing::info;
 use yew::prelude::*;
 
 /////////////////////////////////////////////////
@@ -9,14 +10,14 @@ use yew::prelude::*;
 pub(crate) struct SpreadingAssistJobsReportViewProps {
     pub(crate) spreader: String,
 }
-#[function_component(SpreadingAssistJobsReportView)]
+#[component(SpreadingAssistJobsReportView)]
 pub(crate) fn report_spreading_assist_jobs(props: &SpreadingAssistJobsReportViewProps) -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_spreader = use_mut_ref(|| props.spreader.clone());
 
     if (*current_view_spreader.borrow()).ne(&props.spreader) {
-        log::info!(
+        info!(
             "Current Seller doesn't match original seller: {}:{}",
             *current_view_spreader.borrow(),
             &props.spreader
@@ -24,7 +25,7 @@ pub(crate) fn report_spreading_assist_jobs(props: &SpreadingAssistJobsReportView
         *current_view_spreader.borrow_mut() = props.spreader.clone();
         report_state.set(ReportViewState::IsLoading);
     } else {
-        log::info!("Current Spreader: {}", &props.spreader);
+        info!("Current Spreader: {}", &props.spreader);
     }
 
     {
@@ -34,7 +35,7 @@ pub(crate) fn report_spreading_assist_jobs(props: &SpreadingAssistJobsReportView
             match &*report_state {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!(
+                        info!(
                             "Downloading Spreading Jobs Report View Data for {}",
                             &spreader
                         );
@@ -46,12 +47,12 @@ pub(crate) fn report_spreading_assist_jobs(props: &SpreadingAssistJobsReportView
                         let resp = get_spreading_assist_jobs_report_data(seller.as_ref())
                             .await
                             .unwrap();
-                        log::info!("Report Data has been downloaded");
+                        info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
                 }
                 ReportViewState::ReportHtmlGenerated(_) => {
-                    // log::info!("Setting DataTable");
+                    // info!("Setting DataTable");
                     *datatable.borrow_mut() = get_datatable(&serde_json::json!({
                         "reportType": "spreadingAssistJobs",
                         "id": ".data-table-report table",
@@ -90,9 +91,9 @@ pub(crate) fn report_spreading_assist_jobs(props: &SpreadingAssistJobsReportView
                                 let spreaders = serde_json::from_value::<Vec<String>>(v["spreaders"].clone())
                                     .unwrap_or_default();
                                 let assisted_bags_spread = get_calculated_bags_spread_per_user(
-                                    &spreaders, 
+                                    &spreaders,
                                     *purchases.get("spreading").unwrap_or(&0) as usize);
-                            
+
                                 let address = format!("{} {}",
                                     v["customer"]["addr1"].as_str().unwrap(),
                                     v["customer"]["addr2"].as_str().unwrap_or("")).trim().to_string();

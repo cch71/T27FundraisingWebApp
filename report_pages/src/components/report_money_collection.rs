@@ -1,6 +1,7 @@
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
+use tracing::info;
 use yew::prelude::*;
 
 /////////////////////////////////////////////////
@@ -9,14 +10,14 @@ use yew::prelude::*;
 pub(crate) struct MoneyCollectionReportViewProps {
     pub(crate) seller: String,
 }
-#[function_component(MoneyCollectionReportView)]
+#[component(MoneyCollectionReportView)]
 pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProps) -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
 
     if (*current_view_seller.borrow()).ne(&props.seller) {
-        log::info!(
+        info!(
             "Current Seller doesn't match original seller: {}:{}",
             *current_view_seller.borrow(),
             &props.seller
@@ -24,7 +25,7 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
         *current_view_seller.borrow_mut() = props.seller.clone();
         report_state.set(ReportViewState::IsLoading);
     } else {
-        log::info!("Current Seller: {}", &props.seller);
+        info!("Current Seller: {}", &props.seller);
     }
 
     {
@@ -34,7 +35,7 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
             match &*report_state {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
-                        log::info!(
+                        info!(
                             "Downloading Money Collection Report View Data for {}",
                             &seller
                         );
@@ -46,12 +47,12 @@ pub(crate) fn report_money_collection_view(props: &MoneyCollectionReportViewProp
                         let resp = get_money_collection_report_data(seller.as_ref())
                             .await
                             .unwrap();
-                        log::info!("Report Data has been downloaded");
+                        info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
                 }
                 ReportViewState::ReportHtmlGenerated(_) => {
-                    log::info!("Setting DataTable");
+                    info!("Setting DataTable");
                     *datatable.borrow_mut() = get_datatable(&serde_json::json!({
                         "reportType": "moneyCollection",
                         "id": ".data-table-report table",
