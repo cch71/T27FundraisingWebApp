@@ -17,6 +17,5 @@ web-sys = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
-rust_decimal = "1"
-rusty-money = { version = "0", features = ["iso"] }
-
+rust_decimal = { workspace = true }
+rusty-money = { workspace = true, features = ["iso"] }
