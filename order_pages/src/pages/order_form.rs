@@ -1,7 +1,8 @@
+use crate::components::delivery_selector::DeliveryDateSelector;
 use data_model::*;
 use rust_decimal::prelude::*;
 use rusty_money::{Money, iso};
-use tracing::info;
+use tracing::{error, info};
 use wasm_bindgen::JsCast;
 use web_sys::{
     Element, Event, HtmlButtonElement, HtmlElement, HtmlInputElement, HtmlSelectElement,
@@ -100,6 +101,25 @@ fn validate_order_form(document: &web_sys::Document) -> bool {
         .get_element_by_id("totalsFormRow")
         .and_then(|t| t.dyn_into::<Element>().ok())
         .unwrap();
+    let order_form_delivery_selector_element = document
+        .get_element_by_id("orderFormDeliverySelector")
+        .and_then(|t| t.dyn_into::<Element>().ok())
+        .unwrap();
+
+    match order.is_delivery_id_valid() {
+        true => {
+            let _ = order_form_delivery_selector_element
+                .class_list()
+                .remove_1("is-invalid");
+        }
+        false => {
+            let _ = order_form_delivery_selector_element
+                .class_list()
+                .add_1("is-invalid");
+            is_valid = false;
+        }
+    };
+
     match order.is_payment_valid() {
         true => {
             let _ = totals_form_row_element.class_list().remove_1("is-invalid");
@@ -180,7 +200,6 @@ pub struct OrderCostItemProps {
     pub isreadonly: bool,
     pub amount: AttrValue,
     #[prop_or_default]
-    pub deliveryid: u32,
     pub ondelete: Callback<MouseEvent>,
 }
 
@@ -220,32 +239,24 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
     }
 
     let amount_label = format!("Amount: {}", to_money_str(Some(props.amount.as_str())));
-    let (delivery_id, delivery_label) = if 0 == props.deliveryid {
-        ("".to_string(), html! {})
-    } else {
-        (
-            props.deliveryid.to_string(),
-            html! {<><br/>{format!("To be delivered on: {}", get_delivery_date(&props.deliveryid))}</>},
-        )
-    };
 
     // if the order already exists...
     html! {
          //With Edit/Delete Button
         <li class="list-group-item">
-            {amount_label}{delivery_label}
+            {amount_label}
             if props.isreadonly {
                 <button class="btn btn-outline-info float-end order-edt-btn"
-                     data-deliveryid={delivery_id} onclick={on_add_edit_view}>
+                     onclick={on_add_edit_view}>
                     <i class="bi bi-eye" fill="currentColor"></i>
                 </button>
             } else {
                 <button class="btn btn-outline-danger mx-1 float-end order-del-btn"
-                    data-deliveryid={delivery_id.clone()} onclick={props.ondelete.clone()}>
+                    onclick={props.ondelete.clone()}>
                     <i class="bi bi-trash" fill="currentColor"></i>
                 </button>
                 <button class="btn btn-outline-info float-end order-edt-btn"
-                    data-deliveryid={delivery_id} onclick={on_add_edit_view}>
+                    onclick={on_add_edit_view}>
                     <i class="bi bi-pencil" fill="currentColor"></i>
                 </button>
             }
@@ -339,6 +350,7 @@ pub fn hood_selector() -> Html {
 #[component(OrderFormFields)]
 pub fn order_form_fields() -> Html {
     let history = use_navigator().unwrap();
+
     if !is_active_order() {
         history.push(&AppRoutes::Home);
         return html! {<div/>};
@@ -527,6 +539,21 @@ pub fn order_form_fields() -> Html {
         })
     };
 
+    let on_delivery_selection_change = {
+        let order = order.clone();
+        Callback::from(move |delivery_id: Option<u32>| {
+            let mut updated_order = get_active_order().unwrap();
+            match delivery_id {
+                None => error!("Invalid delivery id (None) provided!"),
+                Some(delivery_id) => {
+                    updated_order.set_delivery_id(delivery_id);
+                    update_active_order(updated_order.clone()).unwrap();
+                    order.set(updated_order);
+                }
+            };
+        })
+    };
+
     let on_purchases_delete = {
         let order = order.clone();
         Callback::from(move |evt: MouseEvent| {
@@ -703,6 +730,14 @@ pub fn order_form_fields() -> Html {
             </div>
 
             <div class="row mb-2 my-2 g-2" style="display: contents; border: 0;" >
+                <div class="form-control" id="orderFormDeliverySelector">
+                    <DeliveryDateSelector
+                        on_delivery_change={on_delivery_selection_change.clone()}
+                    />
+                </div>
+            </div>
+
+            <div class="row mb-2 my-2 g-2" style="display: contents; border: 0;" >
                 <div class="form-control" id="productList">
                     <ul class="list-group">
                         <OrderCostItem label="Donation"
@@ -710,7 +745,6 @@ pub fn order_form_fields() -> Html {
                             ondelete={on_donations_delete}
                             amount={from_cloud_to_money_str(order.amount_from_donations.clone()).unwrap_or("".to_string())}/>
                         <OrderCostItem label="Product Order"
-                            deliveryid={order.delivery_id.unwrap_or(0)}
                             ondelete={on_purchases_delete}
                             isreadonly={is_order_readonly}
                             amount={from_cloud_to_money_str(order.amount_from_purchases.clone()).unwrap_or("".to_string())}/>

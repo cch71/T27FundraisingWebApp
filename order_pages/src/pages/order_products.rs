@@ -1,8 +1,5 @@
-use crate::components::delivery_selector::*;
 use data_model::*;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlButtonElement, HtmlInputElement, InputEvent, MouseEvent, SubmitEvent};
@@ -133,7 +130,6 @@ pub fn product_item(props: &ProductItemProps) -> Html {
 #[component(OrderProducts)]
 pub fn order_products() -> Html {
     let history = use_navigator().unwrap();
-    let delivery_selection: Rc<RefCell<Option<u32>>> = use_mut_ref(|| None);
 
     if !is_active_order() {
         history.push(&AppRoutes::Home);
@@ -143,7 +139,6 @@ pub fn order_products() -> Html {
 
     let on_form_submission = {
         let history = history.clone();
-        let delivery_selection = delivery_selection.clone();
         move |evt: SubmitEvent| {
             evt.prevent_default();
             evt.stop_propagation();
@@ -151,9 +146,8 @@ pub fn order_products() -> Html {
             let mut updated_order = get_active_order().unwrap();
 
             let document = gloo::utils::document();
-            let delivery_id = (*delivery_selection.borrow()).unwrap();
             let purchases = get_product_items(&document);
-            updated_order.set_purchases(delivery_id, purchases);
+            updated_order.set_purchases(purchases);
             update_active_order(updated_order).unwrap();
 
             history.push(&AppRoutes::OrderForm);
@@ -170,45 +164,29 @@ pub fn order_products() -> Html {
         })
     };
 
-    let on_delivery_selection_change = {
-        let delivery_selection = delivery_selection.clone();
-        Callback::from(move |delivery_id: Option<u32>| {
-            *delivery_selection.borrow_mut() = delivery_id;
-
-            do_form_validation(*delivery_selection.borrow());
-        })
-    };
-
     let on_product_order_change = {
-        let delivery_selection = delivery_selection.clone();
         Callback::from(move |evt: InputEvent| {
             evt.prevent_default();
             evt.stop_propagation();
 
-            do_form_validation(*delivery_selection.borrow());
+            do_form_validation();
         })
     };
 
-    fn do_form_validation(delivery_selction: Option<u32>) {
+    fn do_form_validation() {
         info!("do_form_validation");
         let document = gloo::utils::document();
 
-        if !are_product_items_valid(&document) || delivery_selction.is_none() {
-            disable_submit_button(true);
-            return;
-        }
+        let is_disabled = !are_product_items_valid(&document);
 
         // If it gets to here the we passed all the tests so enable
-        disable_submit_button(false);
+        disable_submit_button(is_disabled);
     }
 
     {
-        let delivery_selection = delivery_selection.clone();
         use_effect(move || {
             let document = gloo::utils::document();
-            disable_submit_button(
-                !are_product_items_valid(&document) || delivery_selection.borrow().is_none(),
-            );
+            disable_submit_button(!are_product_items_valid(&document));
             || {}
         });
     }
@@ -219,11 +197,6 @@ pub fn order_products() -> Html {
                 <div class="card-body">
                     <h5 class="card-title">{format!("{} Order", get_fr_config().description)}</h5>
                     <form onsubmit={on_form_submission} id="productForm">
-                        <div class="row mb-3 col-sm-12">
-                            <DeliveryDateSelector
-                                on_delivery_change={on_delivery_selection_change.clone()}
-                            />
-                        </div>
                         {
                             get_products().iter().map(|(product_id, product)| {
                                 html!{

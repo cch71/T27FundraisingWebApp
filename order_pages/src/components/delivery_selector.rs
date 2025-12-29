@@ -38,15 +38,15 @@ pub fn delivery_date_selector(props: &DeliveryDateSelectorProps) -> Html {
 
     html! {
         <div class="delivery-selector-widget">
-            <label for="formSelectDeliveryDate">{"Select Delivery Date"}</label>
+            <label for="formSelectDeliveryDate">{"Select Delivery ( Or Donations turn in for) Date"}</label>
             <select
-                class="custom-select"
+                class="custom-select mx-2"
                 id="formSelectDeliveryDate"
                 required=true
                 oninput={on_input}>
                 {
                     get_deliveries().iter().map(|(delivery_id, delivery)| {
-                        let is_selected = delivery_id == order.delivery_id.as_ref().unwrap_or(&0);
+                        let is_selected = *delivery_id == order.delivery_id;
                         if is_selected && !found_selected_delivery {
                             found_selected_delivery = true;
                             html!{

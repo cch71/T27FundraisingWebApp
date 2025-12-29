@@ -3,362 +3,403 @@
 
 html {
 
-    .navbar-toggler {
-        padding: 0.25rem 0.25rem;
-        margin-right: 0.5rem;
+  .navbar-toggler {
+    padding: 0.25rem 0.25rem;
+    margin-right: 0.5rem;
 
-        .navbar-toggler-icon {
-            width: 1.0em;
-            // height: 1.0em;
-        }
+    .navbar-toggler-icon {
+      width: 1.0em;
+      // height: 1.0em;
+    }
+  }
+
+  nav {
+    border-bottom: lightgray solid 0.1vmin;
+
+    .navbar-logo {
+      width: 30px;
+      // height: 30px;
+    }
+  }
+
+  .loader {
+    transform: rotateZ(45deg);
+    perspective: 1000px;
+    border-radius: 50%;
+    position: relative;
+    margin-top: 1em;
+    left: -150px;
+    width: 300px;
+    height: 300px;
+    color: olivedrab;
+
+    &:before,
+    &:after {
+      content: '';
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: inherit;
+      height: inherit;
+      border-radius: 50%;
+      transform: rotateX(70deg);
+      animation: 1s spin linear infinite;
     }
 
-    nav {
-        border-bottom: lightgray solid 0.1vmin;
-
-        .navbar-logo {
-            width: 30px;
-            // height: 30px;
-        }
+    &:after {
+      color: tan;
+      transform: rotateY(70deg);
+      animation-delay: .4s;
     }
 
-    .loader {
-        transform: rotateZ(45deg);
-        perspective: 1000px;
-        border-radius: 50%;
-        position: relative;
-        margin-top: 1em;
-        left: -150px;
-        width: 300px;
+    @keyframes rotate {
+      0% {
+        transform: translate(-50%, -50%) rotateZ(0deg);
+      }
+      100% {
+        transform: translate(-50%, -50%) rotateZ(360deg);
+      }
+    }
+
+    @keyframes rotateccw {
+      0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+      100% {
+        transform: translate(-50%, -50%) rotate(-360deg);
+      }
+    }
+
+    @keyframes spin {
+      0%,
+      100% {
+        box-shadow: .2em 0 0 0 currentcolor;
+      }
+      12% {
+        box-shadow: .2em .2em 0 0 currentcolor;
+      }
+      25% {
+        box-shadow: 0 .2em 0 0 currentcolor;
+      }
+      37% {
+        box-shadow: -.2em .2em 0 0 currentcolor;
+      }
+      50% {
+        box-shadow: -.2em 0 0 0 currentcolor;
+      }
+      62% {
+        box-shadow: -.2em -.2em 0 0 currentcolor;
+      }
+      75% {
+        box-shadow: 0 -.2em 0 0 currentcolor;
+      }
+      87% {
+        box-shadow: .2em -.2em 0 0 currentcolor;
+      }
+    }
+  }
+
+  .is-invalid {
+    ~ label {
+      small {
+        color: red !important;
+      }
+    }
+  }
+
+  .releaseFundsCards {
+    #generateReportsBtn:disabled {
+      background: #dddddd;
+    }
+  }
+
+  #orderOwnerSummaryCard {
+    #orderOwnerSummaryTable {
+      td:nth-child(2) {
+        text-align: end;
+      }
+    }
+  }
+
+  #topSellersCard {
+    #topSellersTable {
+      td:nth-child(3) {
+        text-align: end;
+      }
+    }
+  }
+
+  #patrolStandingsChartCard {
+    min-width: 370px;
+
+    .card-body {
+      padding: 0;
+      margin: 0 auto;
+
+      #patrolStandingsChart {
+        width: 360px;
         height: 300px;
-        color: olivedrab;
-
-        &:before,
-        &:after {
-            content: '';
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: inherit;
-            height: inherit;
-            border-radius: 50%;
-            transform: rotateX(70deg);
-            animation: 1s spin linear infinite;
-        }
-        &:after {
-            color: tan;
-            transform: rotateY(70deg);
-            animation-delay: .4s;
-        }
-
-        @keyframes rotate {
-            0% {
-                transform: translate(-50%, -50%) rotateZ(0deg);
-            }
-            100% {
-                transform: translate(-50%, -50%) rotateZ(360deg);
-            }
-        }
-
-        @keyframes rotateccw {
-            0% {
-                transform: translate(-50%, -50%) rotate(0deg);
-            }
-            100% {
-                transform: translate(-50%, -50%) rotate(-360deg);
-            }
-        }
-
-        @keyframes spin {
-            0%,
-            100% {
-                box-shadow: .2em 0 0 0 currentcolor;
-            }
-            12% {
-                box-shadow: .2em .2em 0 0 currentcolor;
-            }
-            25% {
-                box-shadow: 0 .2em 0 0 currentcolor;
-            }
-            37% {
-                box-shadow: -.2em .2em 0 0 currentcolor;
-            }
-            50% {
-                box-shadow: -.2em 0 0 0 currentcolor;
-            }
-            62% {
-                box-shadow: -.2em -.2em 0 0 currentcolor;
-            }
-            75% {
-                box-shadow: 0 -.2em 0 0 currentcolor;
-            }
-            87% {
-                box-shadow: .2em -.2em 0 0 currentcolor;
-            }
-        }
+      }
     }
+  }
 
-    .is-invalid {
-        ~label {
-            small {
-                color: red !important;
-            }
-        }
-    }
+  @media screen and (max-width: 1024px) {
 
-    .releaseFundsCards {
-        #generateReportsBtn:disabled {
-            background: #dddddd;
+    #topSellersCard {
+      width: auto;
+
+      #topSellersTable {
+        td {
+          font-size: small;
+          padding-bottom: 0 !important;
+          padding-top: 0 !important;
         }
+      }
     }
 
     #orderOwnerSummaryCard {
-        #orderOwnerSummaryTable {
-            td:nth-child(2) { text-align: end; }
-        }
-    }
+      width: auto;
 
-    #topSellersCard {
-        #topSellersTable {
-            td:nth-child(3) { text-align: end; }
+      #orderOwnerSummaryList {
+        li {
+          font-size: small;
+          padding-bottom: 0 !important;
+          padding-top: 0 !important;
         }
+      }
     }
 
     #patrolStandingsChartCard {
-        min-width: 370px;
+      width: auto;
+    }
+
+    @media (max-height: 1000px) {
+      #patrolStandingsChartCard {
+        //display: none;
         .card-body {
-            padding: 0;
-            margin: 0 auto;
-
-            #patrolStandingsChart {
-                width: 360px;
-                height: 300px;
-            }
+          margin: 0 0;
         }
+      }
+    }
+  }
+
+  .add-order-widget {
+    z-index: 1;
+    position: fixed;
+    bottom: 10px;
+    right: 15px;
+
+
+    label {
+      font-style: italic;
+      padding-right: 0.5rem;
+      padding-top: 0.2rem;
     }
 
-    @media screen and (max-width: 1024px) {
+    .add-order-btn {
+      width: 2.0rem;
+      height: 2.0rem;
+      padding: 0;
+      margin: 0;
+      color: black;
+      box-shadow: 0 0 0 0 rgba(olive, .5);
+      -webkit-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+      -moz-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+      animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
 
-        #topSellersCard {
-            width: auto;
-            #topSellersTable {
-                td {
-                    font-size: small;
-                    padding-bottom: 0 !important;
-                    padding-top: 0 !important;
-                }
-            }
-        }
-
-        #orderOwnerSummaryCard {
-            width: auto;
-
-            #orderOwnerSummaryList {
-                li {
-                    font-size: small;
-                    padding-bottom: 0 !important;
-                    padding-top: 0 !important;
-                }
-            }
-        }
-
-        #patrolStandingsChartCard {
-            width: auto;
-        }
-
-        @media (max-height: 1000px) {
-            #patrolStandingsChartCard {
-                //display: none;
-                .card-body {
-                    margin: 0 0;
-                }
-            }
-        }
-    }
-
-    .add-order-widget {
-        z-index: 1;
-        position: fixed;
-        bottom: 10px;
-        right: 15px;
-
-
-        label {
-            font-style: italic;
-            padding-right: 0.5rem;
-            padding-top: 0.2rem;
-        }
-
-        .add-order-btn {
-            width: 2.0rem;
-            height: 2.0rem;
-            padding: 0;
-            margin: 0;
-            color: black;
-            box-shadow: 0 0 0 0 rgba(olive, .5);
-            -webkit-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
-            -moz-animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
-            animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
-
-            svg {
-                width: 100%;
-                height: 100%;
-            }
-
-            &:hover {
-                -webkit-animation: none;
-                -moz-animation: none;
-                animation: none;
-            }
-
-            @-webkit-keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
-            @-moz-keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
-            @-ms-keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
-            @keyframes pulse {to {box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);}}
-        }
-    }
-
-    #fundsSalesTable {
-        th:nth-child(3) { text-align: end; }
-        td:nth-child(3) { text-align: end; }
-    }
-    #fundsAllocationsTable {
-        td:nth-child(2) { text-align: end; }
-    }
-    #fundsScoutAllocationsTable {
-        td:nth-child(2) { text-align: end; }
-    }
-    #fundsReleaseTables {
-        .alloc-first-row {
-            background: DarkSeaGreen;
-        }
-    }
-
-    #outOfHoodDisclaimer {
-        color: maroon;
-    }
-
-    .data-table-report {
-         height: 85vh;
-         width: 99%;
-         position: relative;
-         box-sizing: border-box;
-         margin: 1em 0;
-         padding: 0.5em 0.5em 1.5em 0.5em;
-         border-radius: 0.5em;
-    }
-
-    .sale-map-container {
+      svg {
         width: 100%;
+        height: 100%;
+      }
 
-        #sellMap {
-            height: 75vh;
-            width: 100%;
+      &:hover {
+        -webkit-animation: none;
+        -moz-animation: none;
+        animation: none;
+      }
+
+      @-webkit-keyframes pulse {
+        to {
+          box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);
         }
+      }
+      @-moz-keyframes pulse {
+        to {
+          box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);
+        }
+      }
+      @-ms-keyframes pulse {
+        to {
+          box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);
+        }
+      }
+      @keyframes pulse {
+        to {
+          box-shadow: 0 0 0 10px rgba(232, 76, 61, 0);
+        }
+      }
+    }
+  }
+
+  #fundsSalesTable {
+    th:nth-child(3) {
+      text-align: end;
     }
 
-    #spreadingDlg {
-        .make-disabled {
-            pointer-events: none;
-            opacity: 0.3;
+    td:nth-child(3) {
+      text-align: end;
+    }
+  }
 
-            ~label {
-                pointer-events: none;
-                opacity: 0.3;
-            }
-        }
+  #fundsAllocationsTable {
+    td:nth-child(2) {
+      text-align: end;
+    }
+  }
 
-        .btn-group-vertical {
-            display: block;
-            height: 20rem;
-            background: white;
-            color: #0d6efd;
-            border-color:#0d6efd;
+  #fundsScoutAllocationsTable {
+    td:nth-child(2) {
+      text-align: end;
+    }
+  }
 
-            .active {
-                background: #0d6efd !important;
-                color: white !important;
-                border-color:white !important;
-            }
+  #fundsReleaseTables {
+    .alloc-first-row {
+      background: DarkSeaGreen;
+    }
+  }
 
-            label:hover {
-                color: inherit;
-                background-color: inherit;
-                border-color: inherit;
-            }
-        }
+  #outOfHoodDisclaimer {
+    color: maroon;
+  }
 
+  .data-table-report {
+    height: 85vh;
+    width: 99%;
+    position: relative;
+    box-sizing: border-box;
+    margin: 1em 0;
+    padding: 0.5em 0.5em 1.5em 0.5em;
+    border-radius: 0.5em;
+  }
 
-        #spreadReviewTab {
-            li {
-                background:#0d6efd;
-                color: white;
-                border-color:white;
+  .sale-map-container {
+    width: 100%;
 
-            }
-        }
+    #sellMap {
+      height: 75vh;
+      width: 100%;
+    }
+  }
+
+  #spreadingDlg {
+    .make-disabled {
+      pointer-events: none;
+      opacity: 0.3;
+
+      ~ label {
+        pointer-events: none;
+        opacity: 0.3;
+      }
     }
 
-    #orderCardTitle {
-        ul {
-            padding-right: 0;
-            display: inline-flex;
-            li {
-                padding: 0;
-                border: none;
-            }
-        }
+    .btn-group-vertical {
+      display: block;
+      height: 20rem;
+      background: white;
+      color: #0d6efd;
+      border-color: #0d6efd;
+
+      .active {
+        background: #0d6efd !important;
+        color: white !important;
+        border-color: white !important;
+      }
+
+      label:hover {
+        color: inherit;
+        background-color: inherit;
+        border-color: inherit;
+      }
     }
 
-    #productList {
+
+    #spreadReviewTab {
+      li {
+        background: #0d6efd;
+        color: white;
+        border-color: white;
+
+      }
+    }
+  }
+
+  #orderCardTitle {
+    ul {
+      padding-right: 0;
+      display: inline-flex;
+
+      li {
         padding: 0;
-        border-style: hidden;
+        border: none;
+      }
     }
+  }
 
-    #productList.is-invalid {
-        padding-right: 2rem;
-        border-style: solid;
+  #productList {
+    padding: 0;
+    border-style: hidden;
+  }
+
+  #productList.is-invalid {
+    padding-right: 2rem;
+    border-style: solid;
+  }
+
+  .reports-view-setting-btn {
+    padding: 3px;
+    width: 2.0rem;
+    height: 2.0rem;
+    margin: 0 0 6px 0;
+
+    svg {
+      width: 100%;
+      height: 100%;
     }
+  }
 
-    .reports-view-setting-btn {
-        padding: 3px;
-        width: 2.0rem;
-        height: 2.0rem;
-        margin: 0 0 6px 0;
+  .order-list-name {
+    width: 200px;
+  }
 
-        svg {
-            width: 100%;
-            height: 100%;
-        }
+  .order-list-addr {
+    width: 400px;
+  }
+
+  .order-list-due {
+    width: 150px;
+  }
+
+  .order-del-btn,
+  .order-edt-btn,
+  .order-spread-btn,
+  .order-view-btn {
+    padding: 0;
+    margin: 0;
+    width: 2.0rem;
+    height: 2.0rem;
+    border-radius: 25%;
+
+    svg {
+      width: 70%;
+      height: 70%;
     }
+  }
 
-    .order-list-name {
-        width: 200px;
-    }
-
-    .order-list-addr {
-        width: 400px;
-    }
-
-    .order-list-due {
-        width: 150px;
-    }
-
-    .order-del-btn,
-    .order-edt-btn,
-    .order-spread-btn,
-    .order-view-btn {
-        padding: 0;
-        margin: 0;
-        width: 2.0rem;
-        height: 2.0rem;
-        border-radius: 25%;
-
-        svg {
-            width: 70%;
-            height: 70%;
-        }
-    }
+  .admin-tabbed-area {
+    width: 80%;
+    border: 1px lightgray solid;
+  }
 }
 

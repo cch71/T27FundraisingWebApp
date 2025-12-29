@@ -576,6 +576,10 @@ pub fn get_deliveries() -> Arc<BTreeMap<u32, DeliveryInfo>> {
     DELIVERIES.read().unwrap().as_ref().unwrap().clone()
 }
 
+pub fn is_valid_delivery_id(id: u32) -> bool {
+    get_deliveries().contains_key(&id)
+}
+
 ////////////////////////////////////////////////////////////////////////////
 pub fn get_delivery_date(delivery_id: &u32) -> String {
     get_deliveries()

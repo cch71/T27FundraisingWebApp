@@ -1,6 +1,7 @@
 use super::{
     get_active_user,
     gql_utils::{GraphQlReq, make_gql_request},
+    is_valid_delivery_id,
 };
 use crate::currency_utils::*;
 use regex::Regex;
@@ -39,7 +40,7 @@ pub struct MulchOrder {
     pub is_verified: Option<bool>,
     pub customer: CustomerInfo,
     pub purchases: Option<HashMap<String, PurchasedItem>>,
-    pub delivery_id: Option<u32>,
+    pub delivery_id: u32,
     pub year_ordered: Option<String>,
 }
 
@@ -89,10 +90,15 @@ impl MulchOrder {
             return true;
         }
 
-        if let Some(_delivery_id) = self.delivery_id {
-            // now > order.delivery_id.cutoff_date return true
-        }
         false
+    }
+
+    pub fn is_delivery_id_valid(&self) -> bool {
+        is_valid_delivery_id(self.delivery_id)
+    }
+
+    pub fn set_delivery_id(&mut self, delivery_id: u32) {
+        self.delivery_id = delivery_id;
     }
 
     pub fn clear_donations(&mut self) {
@@ -100,17 +106,15 @@ impl MulchOrder {
     }
 
     pub fn set_donations(&mut self, donation_amt: String) {
-        info!("!!!! Setting Donations to: {donation_amt}");
         self.amount_from_donations = Some(donation_amt);
     }
 
     pub fn clear_purchases(&mut self) {
-        self.delivery_id = None;
         self.amount_from_purchases = None;
         self.purchases = None;
     }
 
-    pub fn set_purchases(&mut self, delivery_id: u32, purchases: HashMap<String, PurchasedItem>) {
+    pub fn set_purchases(&mut self, purchases: HashMap<String, PurchasedItem>) {
         let mut total_purchase_amt = Decimal::ZERO;
         for purchase in purchases.values() {
             total_purchase_amt = total_purchase_amt
@@ -118,7 +122,6 @@ impl MulchOrder {
                 .unwrap();
         }
 
-        self.delivery_id = Some(delivery_id);
         self.purchases = Some(purchases);
         self.amount_from_purchases = Some(total_purchase_amt.to_string());
     }
@@ -184,9 +187,8 @@ impl MulchOrder {
     }
 
     pub fn are_purchases_valid(&self) -> bool {
-        let is_product_purchase_valid = self.delivery_id.is_some()
-            && self.amount_from_purchases.is_some()
-            && self.purchases.is_some();
+        let is_product_purchase_valid =
+            self.amount_from_purchases.is_some() && self.purchases.is_some();
         let is_donations_valid = self.amount_from_donations.is_some();
         let is_total_valid = self.amount_total_collected.as_ref().is_none_or(|v| {
             Decimal::from_str(v)
@@ -209,9 +211,6 @@ pub fn is_order_from_report_data_readonly(j_order: &serde_json::Value) -> bool {
         return true;
     }
 
-    if let Some(_delivery_id) = j_order["deliveryId"].as_u64() {
-        // now > order.delivery_id.cutoff_date return true
-    }
     false
 }
 
@@ -339,11 +338,6 @@ fn gen_submit_active_order_req_str() -> Result<String, Box<dyn std::error::Error
         query.push_str("\t\t purchases: [\n");
         query.push_str(&purchases.join(","));
         query.push_str("\t\t ]\n");
-
-        query.push_str(&format!(
-            "\t\t deliveryId: {}\n",
-            order.delivery_id.as_ref().unwrap()
-        ));
     }
 
     if let Some(value) = order.amount_cash_collected.as_ref() {
@@ -363,6 +357,8 @@ fn gen_submit_active_order_req_str() -> Result<String, Box<dyn std::error::Error
             order.check_numbers.as_ref().unwrap().trim()
         ));
     }
+
+    query.push_str(&format!("\t\t deliveryId: {}\n", order.delivery_id));
 
     query.push_str("\t\t customer: {\n");
     query.push_str(&format!(
@@ -509,7 +505,7 @@ pub async fn load_active_order_from_db(order_id: &str) -> Result<(), Box<dyn std
         pub customer: CustomerInfo,
         pub purchases: Option<Vec<PurchasedItemApi>>,
         #[serde(alias = "deliveryId")]
-        pub delivery_id: Option<u32>,
+        pub delivery_id: u32,
     }
 
     #[derive(Deserialize, Debug)]

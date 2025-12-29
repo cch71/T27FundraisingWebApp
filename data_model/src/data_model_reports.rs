@@ -373,16 +373,19 @@ pub async fn get_distribution_points_report_data()
         .map(|orders| {
             orders
                 .into_iter()
-                .filter(|v| v["deliveryId"].as_u64().is_some())
-                .for_each(|v| {
+                .map(|v| {
+                    let purchases = get_purchase_to_map(&v);
+                    let num_bags_sold = purchases.get("bags").copied().unwrap_or(0);
+                    (v, num_bags_sold)
+                })
+                .filter(|(_v, num_bags_sold)| *num_bags_sold != 0)
+                .for_each(|(v, num_bags_sold)| {
                     let delivery_id = v["deliveryId"].as_u64().unwrap();
                     delivery_id_map.entry(delivery_id).or_default();
                     let dist_point_map = delivery_id_map.get_mut(&delivery_id).unwrap();
                     let neighborhood = v["customer"]["neighborhood"].as_str().unwrap();
                     let dist_point = get_neighborhood(neighborhood)
                         .map_or("".to_string(), |v| v.distribution_point.clone());
-                    let purchases = get_purchase_to_map(&v);
-                    let num_bags_sold = *purchases.get("bags").unwrap_or(&0);
                     match dist_point_map.get_mut(&dist_point) {
                         Some(num_bags_for_point) => {
                             *num_bags_for_point += num_bags_sold;
