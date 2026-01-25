@@ -1,7 +1,7 @@
 use crate::components::delivery_selector::DeliveryDateSelector;
 use data_model::*;
 use rust_decimal::prelude::*;
-use rusty_money::{Money, iso};
+use rusty_money::{iso, Money};
 use tracing::{error, info};
 use wasm_bindgen::JsCast;
 use web_sys::{
@@ -525,11 +525,8 @@ pub fn order_form_fields() -> Html {
                             "Geo address: {}",
                             serde_json::to_string_pretty(&addr).unwrap()
                         );
-                        if addr.house_number.is_some() && addr.street.is_some() {
-                            update_addr1(
-                                format!("{} {}", addr.house_number.unwrap(), addr.street.unwrap()),
-                                &document,
-                            );
+                        if let Some((house_num, street)) = addr.house_number.zip(addr.street) {
+                            update_addr1(format!("{house_num} {street}"), &document);
                         }
                     }
                 }

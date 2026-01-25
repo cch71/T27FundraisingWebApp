@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use rust_decimal::prelude::*;
-use rusty_money::{Formatter, Money, Params, Position, Round, iso};
+use rusty_money::{iso, Formatter, Money, Params, Position, Round};
 
 pub fn to_money_str<T>(input: Option<T>) -> String
 where
@@ -23,7 +23,7 @@ pub fn to_money_str_no_symbol(input: Option<&String>) -> String {
             let mut money = Money::from_str(v, iso::USD).unwrap();
             money = money.round(2, Round::HalfEven);
             let params = Params {
-                positions: vec![Position::Amount],
+                positions: &[Position::Amount],
                 ..Default::default()
             };
             Formatter::money(&money, params)

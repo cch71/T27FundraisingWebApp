@@ -1,6 +1,6 @@
 use super::{
     get_active_user,
-    gql_utils::{GraphQlReq, make_gql_request},
+    gql_utils::{make_gql_request, GraphQlReq},
 };
 use chrono::prelude::*;
 use gloo::storage::{LocalStorage, Storage};
@@ -673,13 +673,7 @@ pub fn get_neighborhood<T: AsRef<str>>(hood: T) -> Option<Neighborhood> {
 
 ////////////////////////////////////////////////////////////////////////////
 pub fn get_city_and_zip_from_neighborhood<T: AsRef<str>>(hood: T) -> Option<(String, u32)> {
-    get_neighborhood(hood).and_then(|v| {
-        if v.city.is_some() && v.zipcode.is_some() {
-            Some((v.city.unwrap(), v.zipcode.unwrap()))
-        } else {
-            None
-        }
-    })
+    get_neighborhood(hood).and_then(|v| v.city.zip(v.zipcode))
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -1,12 +1,12 @@
 use super::{
     get_active_user,
-    gql_utils::{GraphQlReq, make_gql_request},
+    gql_utils::{make_gql_request, GraphQlReq},
     is_valid_delivery_id,
 };
 use crate::currency_utils::*;
 use regex::Regex;
 use rust_decimal::prelude::*;
-use rusty_money::{Money, iso};
+use rusty_money::{iso, Money};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{LazyLock, RwLock};
@@ -171,18 +171,22 @@ impl MulchOrder {
     }
 
     pub fn is_check_numbers_valid(&self) -> bool {
-        if self.amount_checks_collected.is_some() && self.check_numbers.is_some() {
-            let check_nums_str = self.check_numbers.as_ref().unwrap();
-            let check_nums: Vec<&str> = CHECKNUM_RE_DELIMETERS.split(check_nums_str).collect();
-            for check_num in check_nums {
-                if check_num.trim().parse::<u32>().is_err() {
-                    info!("Check Num: {check_num} in: {check_nums_str} is invalid");
-                    return false;
-                }
-            }
-            true
+        // Collected checks is something all the checks in check nums str needs to be valid
+        if self.amount_checks_collected.is_some() {
+            self.check_numbers.as_ref().is_some_and(|check_nums_str| {
+                let check_nums: Vec<&str> = CHECKNUM_RE_DELIMETERS.split(check_nums_str).collect();
+                check_nums.iter().all(|&check_num| {
+                    check_num
+                        .trim()
+                        .parse::<u32>()
+                        .inspect_err(|_| {
+                            info!("Check Num: {check_num} in: {check_nums_str} is invalid");
+                        })
+                        .is_ok()
+                })
+            })
         } else {
-            !(self.amount_checks_collected.is_none() && self.check_numbers.is_some())
+            self.check_numbers.is_none()
         }
     }
 
