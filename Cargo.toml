@@ -12,7 +12,7 @@ resolver = "2"
 
 [workspace.package]
 repository = "https://github.com/cch71/T27FundraisingWebApp"
-authors = ["Craig Hamilton <cch@craigscreations.com"]
+authors = ["Craig Hamilton <chamilton@craigscreations.com"]
 license = "BSD-0"
 edition = "2024"
 
