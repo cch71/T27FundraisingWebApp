@@ -1,7 +1,7 @@
 use crate::components::delivery_selector::DeliveryDateSelector;
 use data_model::*;
 use rust_decimal::prelude::*;
-use rusty_money::{iso, Money};
+use rusty_money::{Money, iso};
 use tracing::{error, info};
 use wasm_bindgen::JsCast;
 use web_sys::{
@@ -491,12 +491,35 @@ pub fn order_form_fields() -> Html {
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
+            save_to_active_order();
             let mut updated_order = get_active_order().unwrap();
             updated_order.clear_donations();
             update_active_order(updated_order.clone()).unwrap();
             order.set(updated_order);
         })
     };
+
+    let on_purchases_delete = {
+        let order = order.clone();
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+            evt.stop_propagation();
+            save_to_active_order();
+            let mut updated_order = get_active_order().unwrap();
+            updated_order.clear_purchases();
+            update_active_order(updated_order.clone()).unwrap();
+            order.set(updated_order);
+        })
+    };
+
+    {
+        let order = order.clone();
+        use_effect(move || {
+            let document = gloo::utils::document();
+            update_order_amount_due_element(&order, &document);
+            || {}
+        });
+    }
 
     let on_geolocate = {
         // let order = order.clone();
@@ -539,10 +562,11 @@ pub fn order_form_fields() -> Html {
     let on_delivery_selection_change = {
         let order = order.clone();
         Callback::from(move |delivery_id: Option<u32>| {
-            let mut updated_order = get_active_order().unwrap();
+            save_to_active_order();
             match delivery_id {
                 None => error!("Invalid delivery id (None) provided!"),
                 Some(delivery_id) => {
+                    let mut updated_order = get_active_order().unwrap();
                     updated_order.set_delivery_id(delivery_id);
                     update_active_order(updated_order.clone()).unwrap();
                     order.set(updated_order);
@@ -550,27 +574,6 @@ pub fn order_form_fields() -> Html {
             };
         })
     };
-
-    let on_purchases_delete = {
-        let order = order.clone();
-        Callback::from(move |evt: MouseEvent| {
-            evt.prevent_default();
-            evt.stop_propagation();
-            let mut updated_order = get_active_order().unwrap();
-            updated_order.clear_purchases();
-            update_active_order(updated_order.clone()).unwrap();
-            order.set(updated_order);
-        })
-    };
-
-    {
-        let order = order.clone();
-        use_effect(move || {
-            let document = gloo::utils::document();
-            update_order_amount_due_element(&order, &document);
-            || {}
-        });
-    }
 
     let mut did_find_selected_order_owner = false;
     let amt_cash_paid = from_cloud_to_money_str(order.amount_cash_collected.clone());

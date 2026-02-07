@@ -12,6 +12,8 @@ report_pages = { path = "../report_pages" }
 admin_pages = { path = "../admin_pages" }
 
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt"] }
+tracing-web = { workspace = true }
 yew = { workspace = true }
 yew-router = { workspace = true }
 gloo = { workspace = true }

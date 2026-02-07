@@ -23,7 +23,7 @@ pub fn delivery_date_selector(props: &DeliveryDateSelectorProps) -> Html {
                 .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
                 .unwrap()
                 .value();
-            info!("Delivery Date Selection Val: {}", &value);
+            info!("Delivery Date Selection Val: {value}");
             if value.is_empty() || "none" == value {
                 on_delivery_change.emit(None);
             } else {

@@ -1,4 +1,7 @@
-use tracing::{error, info};
+use tracing::{error, info, instrument};
+use tracing_subscriber::fmt::format::Pretty;
+use tracing_subscriber::prelude::*;
+use tracing_web::{MakeConsoleWriter, performance_layer};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -55,6 +58,7 @@ pub fn app_footer(props: &AppFooterProps) -> Html {
 /////////////////////////////////////////////////
 
 #[component]
+#[instrument]
 fn App() -> Html {
     let is_loading = use_state_eq(|| true);
     let is_order_active = use_state_eq(is_active_order);
@@ -178,7 +182,17 @@ fn App() -> Html {
 }
 
 fn main() {
-    wasm_logger::init(wasm_logger::Config::default());
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .with_ansi(false) // Must be false for browser console
+        .with_timer(())
+        .with_writer(MakeConsoleWriter); // Redirects to console.log
+
+    let perf_layer = performance_layer().with_details_from_fields(Pretty::default());
+
+    tracing_subscriber::registry()
+        .with(fmt_layer)
+        .with(perf_layer)
+        .init();
     info!("RelVer: {}", option_env!("GITHUB_REF").unwrap_or("?"));
     yew::Renderer::<App>::new().render();
 }

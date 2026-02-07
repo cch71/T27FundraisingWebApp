@@ -1,6 +1,6 @@
 use super::{
     get_active_user,
-    gql_utils::{make_gql_request, GraphQlReq},
+    gql_utils::{GraphQlReq, make_gql_request},
 };
 use chrono::prelude::*;
 use gloo::storage::{LocalStorage, Storage};
