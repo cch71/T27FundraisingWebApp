@@ -28,7 +28,7 @@ System_Boundary(b2, "Serverless Cloud") {
   System(netlify, "Netlify", "Web App Host Server")
   System(awsApiGw, "AWS API Gateway")
   System(awsLambda, "AWS Lambda")
-  System_Ext(keycloak, "phaseTwo (KeyCloak)", "Authentication and IAM")
+  System_Ext(oidc, "OIDC Provider (AWS Cognito)", "Authentication and IAM")
   SystemDb_Ext(db, "CockroachDB (Postgresql)")
   System_Ext(geocoders, "OpenStreetMap / Mapbox")
 }
@@ -38,9 +38,9 @@ Rel(netlify, webClient, "Publishes")
 
 BiRel(admin, webClient, "Uses")
 BiRel(seller, webClient, "Uses")
-BiRel(webClient, keycloak, "Authenticates")
+BiRel(webClient, oidc, "Authenticates")
 BiRel(awsApiGw, webClient, "Uses")
-BiRel(awsApiGw, keycloak, "Verifies")
+BiRel(awsApiGw, oidc, "Verifies")
 BiRel(awsLambda, awsApiGw, "Calls")
 BiRel(awsLambda, db, "SQL")
 BiRel(awsLambda, geocoders, "Geocoding")
@@ -109,9 +109,12 @@ to the static host site.
 
 ### Authentication
 
-Authentication is currently handled by [Phase//](https://phasetwo.io/)(aka
-PhaseTwo). Phase// is a provider that bases their solution on
-[KeyCloak](https://www.keycloak.org/).
+Authentication is handled by a generic OAuth2/OIDC client
+([oidc-client-ts](https://github.com/authts/oidc-client-ts)) using the
+authorization code + PKCE flow. The provider is configured in
+`webapp/index.html` (`window.authConfig`) and is currently
+[AWS Cognito](https://aws.amazon.com/cognito/), but any spec compliant
+OIDC provider (Keycloak, Auth0, ...) works by changing that configuration.
 
 There is also a Rust based AWS custom authenticator use by the API Gateway to
 ensure JWT tokens in the API requests are valid.
@@ -119,9 +122,9 @@ ensure JWT tokens in the API requests are valid.
 Authentication has evolved since the original implementation. The original
 version used AWS Cognito. The next year it moved to Okta's Auth0 service. This
 was done to move towards an OAuth2 standard and move away from any vendor
-specific lock-in. Upon discovering Keycloak and Phase// allowed this system to
-become even more vendor neutral. This is due to Keycloak being offered by other
-vendors with an option to spin it up on a compute instance as a last resort.
+specific lock-in. It later moved to Keycloak (hosted by Phase//). The app now
+uses a generic OIDC client so the provider is a configuration choice rather
+than a code dependency, and has moved back to AWS Cognito.
 
 ### AWS API Gateway
 
