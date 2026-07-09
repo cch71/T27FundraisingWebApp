@@ -1,6 +1,6 @@
 use super::{
     get_active_user,
-    gql_utils::{GraphQlReq, make_gql_request},
+    gql_utils::{GraphQlReq, gql_escape, make_gql_request},
     is_valid_delivery_id,
 };
 use crate::currency_utils::*;
@@ -174,16 +174,23 @@ impl MulchOrder {
         // Collected checks is something all the checks in check nums str needs to be valid
         if self.amount_checks_collected.is_some() {
             self.check_numbers.as_ref().is_some_and(|check_nums_str| {
-                let check_nums: Vec<&str> = CHECKNUM_RE_DELIMETERS.split(check_nums_str).collect();
-                check_nums.iter().all(|&check_num| {
-                    check_num
-                        .trim()
-                        .parse::<u32>()
-                        .inspect_err(|_| {
-                            info!("Check Num: {check_num} in: {check_nums_str} is invalid");
-                        })
-                        .is_ok()
-                })
+                let check_nums: Vec<&str> = CHECKNUM_RE_DELIMETERS
+                    .split(check_nums_str)
+                    // Ignore empty segments produced by a leading/trailing or
+                    // doubled delimiter (e.g. "1234, 5678,") so a valid entry
+                    // isn't rejected.
+                    .filter(|s| !s.trim().is_empty())
+                    .collect();
+                !check_nums.is_empty()
+                    && check_nums.iter().all(|&check_num| {
+                        check_num
+                            .trim()
+                            .parse::<u32>()
+                            .inspect_err(|_| {
+                                info!("Check Num: {check_num} in: {check_nums_str} is invalid");
+                            })
+                            .is_ok()
+                    })
             })
         } else {
             self.check_numbers.is_none()
@@ -280,25 +287,23 @@ fn gen_submit_active_order_req_str() -> Result<String, Box<dyn std::error::Error
         query.push_str("\t updateMulchOrder(order: {\n");
     }
 
-    query.push_str(&format!("\t\t orderId: \"{}\"\n", order.order_id.trim()));
+    query.push_str(&format!(
+        "\t\t orderId: \"{}\"\n",
+        gql_escape(order.order_id.trim())
+    ));
     query.push_str(&format!(
         "\t\t ownerId: \"{}\"\n",
-        order.order_owner_id.trim()
+        gql_escape(order.order_owner_id.trim())
     ));
 
     if let Some(value) = order.comments.as_ref() {
-        // Need to replace/escape quotes.
-        query.push_str(&format!(
-            "\t\t comments: \"{}\"\n",
-            value.trim().replace("\"", "\\\"").replace("\n", r"\n")
-        ));
+        query.push_str(&format!("\t\t comments: \"{}\"\n", gql_escape(value.trim())));
     }
 
     if let Some(value) = order.special_instructions.as_ref() {
-        // Need to replace/escape quotes.
         query.push_str(&format!(
             "\t\t specialInstructions: \"{}\"\n",
-            value.trim().replace("\"", "\\\"").replace("\n", r"\n")
+            gql_escape(value.trim())
         ));
     }
 
@@ -358,7 +363,7 @@ fn gen_submit_active_order_req_str() -> Result<String, Box<dyn std::error::Error
         ));
         query.push_str(&format!(
             "\t\t checkNumbers: \"{}\"\n",
-            order.check_numbers.as_ref().unwrap().trim()
+            gql_escape(order.check_numbers.as_ref().unwrap().trim())
         ));
     }
 
@@ -367,36 +372,38 @@ fn gen_submit_active_order_req_str() -> Result<String, Box<dyn std::error::Error
     query.push_str("\t\t customer: {\n");
     query.push_str(&format!(
         "\t\t\t name: \"{}\"\n",
-        order.customer.name.trim()
+        gql_escape(order.customer.name.trim())
     ));
     query.push_str(&format!(
         "\t\t\t addr1: \"{}\"\n",
-        order.customer.addr1.trim()
+        gql_escape(order.customer.addr1.trim())
     ));
     if let Some(value) = order.customer.addr2.as_ref() {
-        query.push_str(&format!("\t\t\t addr2: \"{}\"\n", value.trim()));
+        query.push_str(&format!("\t\t\t addr2: \"{}\"\n", gql_escape(value.trim())));
     }
     if let Some(value) = order.customer.city.as_ref() {
-        query.push_str(&format!("\t\t\t city: \"{}\"\n", value.trim()));
+        query.push_str(&format!("\t\t\t city: \"{}\"\n", gql_escape(value.trim())));
     }
     if let Some(value) = order.customer.zipcode.as_ref() {
         query.push_str(&format!("\t\t\t zipcode: {value}\n"));
     }
     query.push_str(&format!(
         "\t\t\t phone: \"{}\"\n",
-        order.customer.phone.trim()
+        gql_escape(order.customer.phone.trim())
     ));
     if let Some(value) = order.customer.email.as_ref() {
-        query.push_str(&format!("\t\t email: \"{}\"\n", value.trim()));
+        query.push_str(&format!("\t\t email: \"{}\"\n", gql_escape(value.trim())));
     }
     query.push_str(&format!(
         "\t\t\t neighborhood: \"{}\"\n",
-        order
-            .customer
-            .neighborhood
-            .as_ref()
-            .unwrap_or(&"".to_string())
-            .trim()
+        gql_escape(
+            order
+                .customer
+                .neighborhood
+                .as_ref()
+                .unwrap_or(&"".to_string())
+                .trim()
+        )
     ));
     query.push_str("\t\t }\n");
 

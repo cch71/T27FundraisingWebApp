@@ -13,7 +13,14 @@ const userManager = new UserManager({
     response_type: "code",
     scope: authConfig.scope || "openid email profile",
     automaticSilentRenew: true,
-    userStore: new WebStorageStateStore({ store: window.localStorage }),
+    // Keep tokens and transient auth state in sessionStorage rather than
+    // localStorage. sessionStorage is scoped to the tab and cleared when the
+    // tab closes, so the access/refresh tokens and the PKCE code_verifier are
+    // never persisted to long-lived, cross-tab storage that any XSS on the
+    // origin (or a compromised dependency) could scrape. sessionStorage still
+    // survives the login redirect within the same tab, so the code flow works.
+    userStore: new WebStorageStateStore({ store: window.sessionStorage }),
+    stateStore: new WebStorageStateStore({ store: window.sessionStorage }),
 });
 
 // In-memory copy of the signed-in user. The app clears web storage on logoff

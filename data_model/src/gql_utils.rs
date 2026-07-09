@@ -6,6 +6,20 @@ use tracing::info;
 
 static GQLURL: LazyLock<String> = LazyLock::new(|| crate::CLOUD_API_URL.to_string() + "/graphql");
 
+/// Escapes a string for safe interpolation inside a double-quoted GraphQL
+/// string literal. Backslash must be escaped first so it does not double-escape
+/// the sequences emitted afterwards. Prevents both query corruption (a stray
+/// quote or newline breaking the mutation) and GraphQL injection via free-text
+/// fields.
+pub(super) fn gql_escape(value: &str) -> String {
+    value
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
+        .replace('\t', "\\t")
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub(super) struct GraphQlReq {
     pub query: String,

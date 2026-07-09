@@ -9,33 +9,39 @@ where
 {
     input.map_or_else(
         || "".to_string(),
-        |v| Money::from_str(&v.into(), iso::USD).unwrap().to_string(),
+        |v| {
+            let v = v.into();
+            // Fall back to the raw value rather than panicking on unparseable
+            // input (a wasm panic aborts the whole app).
+            Money::from_str(&v, iso::USD).map_or(v, |m| m.to_string())
+        },
     )
 }
 pub fn str_to_money_str(input: &str) -> String {
-    Money::from_str(input, iso::USD).unwrap().to_string()
+    Money::from_str(input, iso::USD).map_or_else(|_| input.to_string(), |m| m.to_string())
 }
 
 pub fn to_money_str_no_symbol(input: Option<&String>) -> String {
     input.map_or_else(
         || "".to_string(),
-        |v| {
-            let mut money = Money::from_str(v, iso::USD).unwrap();
-            money = money.round(2, Round::HalfEven);
-            let params = Params {
-                positions: &[Position::Amount],
-                ..Default::default()
-            };
-            Formatter::money(&money, params)
+        |v| match Money::from_str(v, iso::USD) {
+            Ok(money) => {
+                let money = money.round(2, Round::HalfEven);
+                let params = Params {
+                    positions: &[Position::Amount],
+                    ..Default::default()
+                };
+                Formatter::money(&money, params)
+            }
+            Err(_) => v.clone(),
         },
     )
 }
 
 pub fn from_cloud_to_money_str(input: Option<String>) -> Option<String> {
-    input.map(|v| {
-        let mut money = Money::from_str(&v, iso::USD).unwrap();
-        money = money.round(2, Round::HalfEven);
-        money.amount().to_string()
+    input.map(|v| match Money::from_str(&v, iso::USD) {
+        Ok(money) => money.round(2, Round::HalfEven).amount().to_string(),
+        Err(_) => v,
     })
 }
 
@@ -43,12 +49,11 @@ pub fn parse_money_str_as_decimal(input: &str) -> Option<Decimal> {
     if input.is_empty() {
         return Some(Decimal::ZERO);
     }
-    Some(
-        Money::from_str(input, iso::USD)
-            .unwrap()
-            .amount()
-            .to_owned(),
-    )
+    // Returns None on unparseable input so callers can handle it instead of
+    // panicking.
+    Money::from_str(input, iso::USD)
+        .ok()
+        .map(|m| m.amount().to_owned())
 }
 
 pub fn on_money_input_filter(input: Option<&String>) -> String {
@@ -57,24 +62,32 @@ pub fn on_money_input_filter(input: Option<&String>) -> String {
     }
 
     let input = input.unwrap();
-    if input.starts_with(".") {
+
+    // Keep only digits per segment. This prevents non-numeric characters
+    // (e.g. a pasted "1.5e3" or scientific notation) from surviving into a
+    // value that would later panic Decimal/Money parsing, and avoids silently
+    // turning an out-of-range integer into 0.
+    let digits_only = |s: &str| -> String { s.chars().filter(|c| c.is_ascii_digit()).collect() };
+
+    if let Some(fract) = input.strip_prefix('.') {
         //Special case money doesn't handle
-        let mut value = input.to_string();
-        value.truncate(3);
-        return format!("0{value}");
+        let mut fract_str = digits_only(fract);
+        fract_str.truncate(2);
+        return format!("0.{fract_str}");
     }
 
     let parts: Vec<&str> = input.split(".").collect();
 
-    let major = parts[0].parse::<i32>().unwrap_or(0);
+    let major = digits_only(parts[0]);
+    let major = if major.is_empty() { "0".to_string() } else { major };
 
     match parts.len().cmp(&1) {
         Ordering::Equal => {
             //don't have to worry about fractions
-            major.to_string()
+            major
         }
         Ordering::Greater => {
-            let mut fract_str = parts[1].to_string();
+            let mut fract_str = digits_only(parts[1]);
             fract_str.truncate(2);
             format!("{major}.{fract_str}")
         }

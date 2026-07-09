@@ -55,7 +55,12 @@ fn get_or_gen_imported_user_id(record: &UserFileRec) -> String {
                 .unwrap_or_else(|| {
                     format!(
                         "{}{}",
-                        record.first_name.trim().chars().next().unwrap(),
+                        record
+                            .first_name
+                            .trim()
+                            .chars()
+                            .next()
+                            .map_or(String::new(), |c| c.to_string()),
                         record.last_name
                     )
                 })
@@ -182,7 +187,7 @@ fn process_uploaded_file(
         {
             process_ods_records(data, potential_new_users)
         }
-        _ => panic!(),
+        _ => Err(format!("Unsupported file type: {filename} ({mimetype})").into()),
     }
 }
 
@@ -399,7 +404,7 @@ fn upload_users_dlg(props: &UploadUsersDlgProps) -> Html {
                                     </ul>
                                 }
 
-                                if users.is_empty() {
+                                if !users.is_empty() {
                                     <h6>{"New Users"}</h6>
                                     <ul class="list-group">
                                     {

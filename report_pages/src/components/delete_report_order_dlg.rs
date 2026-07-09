@@ -23,6 +23,14 @@ struct OrderToDelete {
 pub(crate) fn on_delete_order_from_rpt(evt: MouseEvent, datatable: Rc<RefCell<Option<DataTable>>>) {
     evt.prevent_default();
     evt.stop_propagation();
+
+    // The DataTable may have failed to initialize (e.g. a re-init error);
+    // bail out with feedback instead of panicking on the unwrap below.
+    if datatable.borrow().is_none() {
+        gloo::dialogs::alert("The report table isn't ready yet. Please reload and try again.");
+        return;
+    }
+
     let btn_elm = evt
         .target()
         .and_then(|t| t.dyn_into::<Element>().ok())

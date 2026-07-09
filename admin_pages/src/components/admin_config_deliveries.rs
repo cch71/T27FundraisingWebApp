@@ -58,11 +58,16 @@ fn delivery_add_or_edit_dlg(props: &DeliveryAddEditDlgProps) -> Html {
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .unwrap()
                 .value();
-            onaddorupdate.emit((
-                delivery_info.delivery_id_str.parse::<u32>().unwrap(),
-                delivery_date,
-                order_cutoff_date,
-            ));
+            // Submit is a plain button, so HTML `required` isn't enforced.
+            if delivery_date.trim().is_empty() || order_cutoff_date.trim().is_empty() {
+                gloo::dialogs::alert("Please provide both a delivery date and an order cutoff date.");
+                return;
+            }
+            let Ok(delivery_id) = delivery_info.delivery_id_str.parse::<u32>() else {
+                gloo::dialogs::alert("Invalid delivery id.");
+                return;
+            };
+            onaddorupdate.emit((delivery_id, delivery_date, order_cutoff_date));
         }
     };
 
@@ -233,7 +238,11 @@ pub(crate) fn delivery_list() -> Html {
             // Since we are adding, we don't have a selected delivery id
             SELECTED_DELIVERY.with(|selected_delivery_rc| {
                 let selected_delivery = selected_delivery_rc.borrow().as_ref().unwrap().clone();
-                let delivery_id_str = (deliveries.len() + 1).to_string();
+                // Use one past the highest existing id, not len()+1: after a
+                // delete, len()+1 can collide with a surviving delivery and
+                // silently overwrite it.
+                let next_id = deliveries.keys().copied().max().unwrap_or(0) + 1;
+                let delivery_id_str = next_id.to_string();
                 selected_delivery.set(SelectedDeliveryInfo {
                     delivery_id_str,
                     ..Default::default()

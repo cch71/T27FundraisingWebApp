@@ -31,6 +31,14 @@ pub(crate) fn on_edit_spreading_from_rpt(
 ) {
     evt.prevent_default();
     evt.stop_propagation();
+
+    // The DataTable may have failed to initialize; bail out with feedback
+    // instead of panicking on the unwrap below.
+    if datatable.borrow().is_none() {
+        gloo::dialogs::alert("The report table isn't ready yet. Please reload and try again.");
+        return;
+    }
+
     let btn_elm = evt
         .target()
         .and_then(|t| t.dyn_into::<Element>().ok())

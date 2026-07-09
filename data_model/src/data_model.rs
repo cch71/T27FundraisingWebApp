@@ -1,6 +1,6 @@
 use super::{
     get_active_user,
-    gql_utils::{GraphQlReq, make_gql_request},
+    gql_utils::{GraphQlReq, gql_escape, make_gql_request},
 };
 use chrono::prelude::*;
 use gloo::storage::{LocalStorage, Storage};
@@ -153,23 +153,33 @@ impl DeliveryInfo {
         delivery_date_raw_str: String,
         order_cutoff_raw_str: String,
     ) -> DeliveryInfo {
-        let formatted_delivery_date_api_str = {
-            let nd = NaiveDate::parse_from_str(&delivery_date_raw_str, "%Y-%m-%d").unwrap();
-            // Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0).unwrap()
-            nd.format("%m/%d/%Y").to_string()
-        };
-        let formatted_new_order_cutoff_date_api_str = {
-            let nd = NaiveDate::parse_from_str(&order_cutoff_raw_str, "%Y-%m-%d").unwrap();
-            // Utc.with_ymd_and_hms(nd.year(), nd.month(), nd.day(), 0, 0, 0).unwrap()
-            nd.format("%m/%d/%Y").to_string()
-        };
+        // Parse leniently: fall back to the raw string rather than panicking if
+        // the date is malformed (a wasm panic aborts the whole app).
+        let delivery_nd = NaiveDate::parse_from_str(&delivery_date_raw_str, "%Y-%m-%d").ok();
+        let formatted_delivery_date_api_str = delivery_nd.map_or_else(
+            || delivery_date_raw_str.clone(),
+            |nd| nd.format("%m/%d/%Y").to_string(),
+        );
+
+        let cutoff_nd = NaiveDate::parse_from_str(&order_cutoff_raw_str, "%Y-%m-%d").ok();
+        let formatted_new_order_cutoff_date_api_str = cutoff_nd.map_or_else(
+            || order_cutoff_raw_str.clone(),
+            |nd| nd.format("%m/%d/%Y").to_string(),
+        );
+
+        // Populate the comparison timestamp (end of the cutoff day) so
+        // can_take_orders() enforces the cutoff immediately, without waiting for
+        // a full config reload.
+        let new_order_cutoff_date = cutoff_nd
+            .and_then(|nd| nd.and_hms_opt(23, 59, 59))
+            .map(|ndt| Utc.from_utc_datetime(&ndt));
 
         DeliveryInfo {
             delivery_date_api_str: formatted_delivery_date_api_str,
             new_order_cutoff_date_api_str: formatted_new_order_cutoff_date_api_str,
             delivery_date_str: delivery_date_raw_str,
             new_order_cutoff_date_str: order_cutoff_raw_str,
-            new_order_cutoff_date: None,
+            new_order_cutoff_date,
         }
     }
 
@@ -394,17 +404,18 @@ fn process_config_data(config: FrConfigApi) {
                 )
             })
             .collect::<_>();
+        new_map.insert(
+            "fradmin".to_string(),
+            UserInfo {
+                name: "Super User".to_string(),
+                group: "Admins".to_string(),
+            },
+        );
         if let Ok(mut arc_user_map) = USER_MAP.write() {
-            Arc::get_mut(&mut *arc_user_map)
-                .unwrap()
-                .append(&mut new_map);
-            Arc::get_mut(&mut *arc_user_map).unwrap().insert(
-                "fradmin".to_string(),
-                UserInfo {
-                    name: "Super User".to_string(),
-                    group: "Admins".to_string(),
-                },
-            );
+            // Replace the whole map rather than mutating in place: Arc::get_mut
+            // panics when another clone (handed out by get_users()) is alive,
+            // and replacing also drops users deleted on the server.
+            *arc_user_map = Arc::new(new_map);
         }
     }
     info!("Fundraising Config retrieved");
@@ -605,8 +616,11 @@ pub async fn update_neighborhoods(
         .map(|v| {
             format!(
                 "\t\t{{\n{},\n{},{}{}\n{}\n\t\t}}",
-                format_args!("\t\t\tname: \"{}\"", v.name),
-                format_args!("\t\t\tdistributionPoint: \"{}\"", v.distribution_point),
+                format_args!("\t\t\tname: \"{}\"", gql_escape(&v.name)),
+                format_args!(
+                    "\t\t\tdistributionPoint: \"{}\"",
+                    gql_escape(&v.distribution_point)
+                ),
                 "***CITY***",
                 "***ZIP***",
                 format_args!("\t\t\tisVisible: {}", v.is_visible)
@@ -615,7 +629,7 @@ pub async fn update_neighborhoods(
                 "***CITY***",
                 &v.city
                     .as_ref()
-                    .map(|v| format!("\t\t\tcity: \"{v}\","))
+                    .map(|v| format!("\t\t\tcity: \"{}\",", gql_escape(v)))
                     .unwrap_or("".to_string()),
             )
             .replace(
@@ -747,9 +761,9 @@ pub async fn report_new_issue(
     body: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let query = CREATE_ISSUE_GQL
-        .replace("***USERID***", reporting_id)
-        .replace("***TITLE***", title)
-        .replace("***BODY***", body);
+        .replace("***USERID***", &gql_escape(reporting_id))
+        .replace("***TITLE***", &gql_escape(title))
+        .replace("***BODY***", &gql_escape(body));
 
     let req = GraphQlReq::new(query);
     make_gql_request::<serde_json::Value>(&req)
@@ -1067,7 +1081,13 @@ pub async fn get_fundraiser_closure_static_data()
         if !closure_data.contains_key(&tc.uid) {
             closure_data.insert(tc.uid.clone(), FrClosureMapData::default());
         }
-        let dur = time_val_str_to_duration(tc.time_total.as_str()).unwrap();
+        let Some(dur) = time_val_str_to_duration(tc.time_total.as_str()) else {
+            error!(
+                "Skipping timecard for {} with unparseable time_total: {}",
+                tc.uid, tc.time_total
+            );
+            continue;
+        };
         add_tc(closure_data.get_mut(&tc.uid).unwrap(), dur);
         add_tc(closure_data.get_mut("TROOP_TOTALS").unwrap(), dur);
     }
@@ -1080,26 +1100,30 @@ pub async fn get_fundraiser_closure_static_data()
         }
 
         let new_data = {
+            // Issue #108: server may send thousands-separated amounts like
+            // "1,234.00". Strip commas and default to zero rather than
+            // panicking on an unparseable value.
+            let parse_amount = |v: &str| -> Decimal {
+                Decimal::from_str(&v.replace(',', "")).unwrap_or(Decimal::ZERO)
+            };
             let mut new_data = FrClosureMapData {
                 amount_from_donations: order
                     .amount_from_donations
-                    .map_or(Decimal::ZERO, |v| Decimal::from_str(v.as_str()).unwrap()),
+                    .map_or(Decimal::ZERO, |v| parse_amount(&v)),
                 amount_total_collected: order
                     .amount_total_collected
-                    .map_or(Decimal::ZERO, |v| Decimal::from_str(v.as_str()).unwrap()),
+                    .map_or(Decimal::ZERO, |v| parse_amount(&v)),
                 ..Default::default()
             };
 
             for purchase in order.purchases {
                 if "bags" == purchase.product_id.as_str() && purchase.num_sold != 0 {
                     new_data.num_bags_sold = purchase.num_sold;
-                    // Issue #108 hack replace ","->""
-                    new_data.amount_from_bags_sales =
-                        Decimal::from_str(&purchase.amount_charged.replace(",", "")).unwrap();
+                    new_data.amount_from_bags_sales = parse_amount(&purchase.amount_charged);
                 } else if "spreading" == purchase.product_id.as_str() && purchase.num_sold != 0 {
                     new_data.num_bags_to_spread_sold = purchase.num_sold;
                     new_data.amount_from_bags_to_spread_sales =
-                        Decimal::from_str(&purchase.amount_charged).unwrap();
+                        parse_amount(&purchase.amount_charged);
                 }
             }
 
@@ -1117,9 +1141,9 @@ pub async fn get_fundraiser_closure_static_data()
     }
 
     if let Ok(mut arc_map) = FR_CLOSURE_DATA.write() {
-        Arc::get_mut(&mut *arc_map)
-            .unwrap()
-            .append(&mut closure_data);
+        // Full recompute each call, so replace outright. Avoids the
+        // Arc::get_mut panic when a concurrent caller still holds a clone.
+        *arc_map = Arc::new(closure_data);
     }
 
     Ok(FR_CLOSURE_DATA.read().unwrap().clone())
@@ -1250,7 +1274,7 @@ static SET_FR_CLOSEOUT_ALLOC_DATUM_GRAPHQL: &str = r#"
 pub async fn set_fr_closeout_data(
     dynamic_vars: &FrCloseoutDynamicVars,
     allocation_list: &[FrCloseoutAllocationVals],
-) {
+) -> Result<(), Box<dyn std::error::Error>> {
     // Set Config closeout data
     let query = SET_FR_CLOSEOUT_CONFIG_DATA_GRAPHQL
         .replace(
@@ -1326,7 +1350,7 @@ pub async fn set_fr_closeout_data(
         );
 
     let req = GraphQlReq::new(query);
-    let _ = make_gql_request::<serde_json::Value>(&req).await.unwrap();
+    make_gql_request::<serde_json::Value>(&req).await?;
 
     let query = SET_FR_CLOSEOUT_ALLOC_DATA_GRAPHQL.replace(
         "***ALLOCATIONS***",
@@ -1406,7 +1430,8 @@ pub async fn set_fr_closeout_data(
 
     info!("Allocation Mutation:\n{}", &query);
     let req = GraphQlReq::new(query);
-    let _ = make_gql_request::<serde_json::Value>(&req).await.unwrap();
+    make_gql_request::<serde_json::Value>(&req).await?;
+    Ok(())
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1524,10 +1549,10 @@ pub async fn add_or_update_users_for_admin_config(
         .map(|v| {
             format!(
                 "\t\t{{\n{}\n{}\n{}\n{}\n\t\t}}",
-                format_args!("\t\t\tid: \"{}\"", v.id),
-                format_args!("\t\t\tfirstName: \"{}\"", v.first_name),
-                format_args!("\t\t\tlastName: \"{}\"", v.last_name),
-                format_args!("\t\t\tgroup: \"{}\"", v.group)
+                format_args!("\t\t\tid: \"{}\"", gql_escape(&v.id)),
+                format_args!("\t\t\tfirstName: \"{}\"", gql_escape(&v.first_name)),
+                format_args!("\t\t\tlastName: \"{}\"", gql_escape(&v.last_name)),
+                format_args!("\t\t\tgroup: \"{}\"", gql_escape(&v.group))
             )
         })
         .collect::<Vec<String>>()
@@ -1554,9 +1579,9 @@ pub async fn add_or_update_users_for_admin_config(
         })
         .collect();
     if let Ok(mut arc_user_map) = USER_MAP.write() {
-        Arc::get_mut(&mut *arc_user_map)
-            .unwrap()
-            .append(&mut new_map);
+        // make_mut clones the inner map if another Arc clone is live (as handed
+        // out by get_users()), so this never panics like Arc::get_mut would.
+        Arc::make_mut(&mut *arc_user_map).append(&mut new_map);
     }
 
     Ok(())

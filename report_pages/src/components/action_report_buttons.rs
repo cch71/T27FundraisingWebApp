@@ -29,10 +29,15 @@ pub(crate) fn on_view_or_edit_from_rpt(evt: MouseEvent, history: Navigator) {
         .unwrap();
     wasm_bindgen_futures::spawn_local(async move {
         info!("on_view_or_edit_order: {order_id}");
-        if let Err(err) = load_active_order_from_db(&order_id).await {
-            gloo::dialogs::alert(&format!("Failed to load order: {order_id}: Err: {err:#?}"));
+        // Only navigate once the order actually loaded; otherwise the order
+        // form finds no active order and immediately bounces back to Home,
+        // losing the user's place in Reports.
+        match load_active_order_from_db(&order_id).await {
+            Ok(_) => history.push(&AppRoutes::OrderForm),
+            Err(err) => {
+                gloo::dialogs::alert(&format!("Failed to load order: {order_id}: Err: {err:#?}"))
+            }
         }
-        history.push(&AppRoutes::OrderForm);
     });
 }
 

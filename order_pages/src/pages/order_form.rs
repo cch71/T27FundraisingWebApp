@@ -271,7 +271,10 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
 pub fn hood_selector() -> Html {
     let history = use_navigator().unwrap();
     if !is_active_order() {
+        // No active order (e.g. page reload): redirect and stop rendering
+        // before dereferencing the (now `None`) active order.
         history.push(&AppRoutes::Home);
+        return html! {};
     }
 
     let order = use_state_eq(|| get_active_order().unwrap());
@@ -286,16 +289,26 @@ pub fn hood_selector() -> Html {
                 .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok());
             if let Some(v) = hood_value {
                 let val = v.value();
-                if val.starts_with("Out of Area") {
-                    info!("Is Out Of Area");
-                    on_hood_warning.set("display: block;".to_owned());
-                    update_city_and_zip("", "", &gloo::utils::document());
+                // Case-insensitive so it matches admin-created hoods like
+                // "out of area – North"; also treat a hood with no city/zip
+                // as out-of-area rather than panicking.
+                let city_and_zip = if val.to_lowercase().starts_with("out of area") {
+                    None
                 } else {
-                    info!("Is Not Out Of Area");
-                    on_hood_warning.set("display: none;".to_owned());
-                    let (city, zipcode) = get_city_and_zip_from_neighborhood(&val).unwrap();
-                    info!("Using Neighborhood City: {}, Zipcode: {}", &city, zipcode);
-                    update_city_and_zip(&city, &zipcode.to_string(), &gloo::utils::document());
+                    get_city_and_zip_from_neighborhood(&val)
+                };
+                match city_and_zip {
+                    Some((city, zipcode)) => {
+                        info!("Is Not Out Of Area");
+                        on_hood_warning.set("display: none;".to_owned());
+                        info!("Using Neighborhood City: {}, Zipcode: {}", &city, zipcode);
+                        update_city_and_zip(&city, &zipcode.to_string(), &gloo::utils::document());
+                    }
+                    None => {
+                        info!("Is Out Of Area");
+                        on_hood_warning.set("display: block;".to_owned());
+                        update_city_and_zip("", "", &gloo::utils::document());
+                    }
                 }
             };
         })
@@ -394,14 +407,12 @@ pub fn order_form_fields() -> Html {
 
             let mut total_collected = Decimal::ZERO;
             if let Some(payment) = cash_amt_collected {
-                total_collected = total_collected
-                    .checked_add(Decimal::from_str(&payment).unwrap())
-                    .unwrap();
+                let payment = Decimal::from_str(&payment).unwrap_or(Decimal::ZERO);
+                total_collected = total_collected.checked_add(payment).unwrap_or(total_collected);
             }
             if let Some(payment) = check_amt_collected {
-                total_collected = total_collected
-                    .checked_add(Decimal::from_str(&payment).unwrap())
-                    .unwrap();
+                let payment = Decimal::from_str(&payment).unwrap_or(Decimal::ZERO);
+                total_collected = total_collected.checked_add(payment).unwrap_or(total_collected);
             }
             document
                 .get_element_by_id("orderAmountPaid")

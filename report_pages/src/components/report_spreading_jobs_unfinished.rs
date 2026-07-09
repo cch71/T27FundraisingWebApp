@@ -1,7 +1,7 @@
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
-use tracing::info;
+use tracing::{error, info};
 use yew::prelude::*;
 
 /////////////////////////////////////////////////
@@ -18,7 +18,16 @@ pub(crate) fn report_quick_view() -> Html {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
                         info!("Downloading Unfinished Spreading Jobs Report View Data");
-                        let resp = get_unfinished_spreading_jobs_report_data().await.unwrap();
+                        let resp = match get_unfinished_spreading_jobs_report_data().await {
+                            Ok(resp) => resp,
+                            Err(err) => {
+                                error!("Failed to load unfinished spreading jobs report: {err:#?}");
+                                gloo::dialogs::alert(
+                                    "Failed to load report. Please check your connection and try again.",
+                                );
+                                return;
+                            }
+                        };
                         info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });

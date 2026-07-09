@@ -1,7 +1,7 @@
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
-use tracing::info;
+use tracing::{error, info};
 use yew::prelude::*;
 
 /////////////////////////////////////////////////
@@ -18,7 +18,16 @@ pub(crate) fn report_distribution_points_view() -> Html {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
                         info!("Downloading Distribution Points Report View Data");
-                        let resp = get_distribution_points_report_data().await.unwrap();
+                        let resp = match get_distribution_points_report_data().await {
+                            Ok(resp) => resp,
+                            Err(err) => {
+                                error!("Failed to load distribution points report: {err:#?}");
+                                gloo::dialogs::alert(
+                                    "Failed to load report. Please check your connection and try again.",
+                                );
+                                return;
+                            }
+                        };
                         info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });

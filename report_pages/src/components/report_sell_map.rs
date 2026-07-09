@@ -2,7 +2,7 @@ use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::leaflet::*;
 use serde::{Deserialize, Serialize};
-use tracing::info;
+use tracing::{error, info};
 use yew::prelude::*;
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
@@ -26,7 +26,16 @@ pub(crate) fn report_sell_view() -> Html {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
                         info!("Downloading Geo Location data");
-                        let resp = get_sales_geojson().await.unwrap();
+                        let resp = match get_sales_geojson().await {
+                            Ok(resp) => resp,
+                            Err(err) => {
+                                error!("Failed to load sales map data: {err:#?}");
+                                gloo::dialogs::alert(
+                                    "Failed to load report. Please check your connection and try again.",
+                                );
+                                return;
+                            }
+                        };
                         info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(vec![resp]));
                     });

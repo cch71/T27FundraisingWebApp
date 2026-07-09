@@ -41,15 +41,19 @@ fn pricebreak_add_or_edit_dlg(props: &PriceBreakAddEditDlgProps) -> Html {
             let gt = document
                 .get_element_by_id("formGt")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                .unwrap()
-                .value()
-                .parse::<u32>()
-                .unwrap();
+                .map(|t| t.value())
+                .and_then(|v| v.trim().parse::<u32>().ok());
+            let Some(gt) = gt else {
+                // Submit is a plain button, so HTML `required` isn't enforced;
+                // guard against an empty/non-numeric "Greater Than".
+                gloo::dialogs::alert("Please enter a valid whole number for \"Greater Than\".");
+                return;
+            };
             let unit_price = document
                 .get_element_by_id("formUnitPrice")
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                .unwrap()
-                .value();
+                .map(|t| t.value())
+                .unwrap_or_default();
             onaddorupdate.emit((gt, unit_price));
         }
     };
@@ -270,12 +274,20 @@ pub(crate) fn set_mulch_cost(props: &MulchCostProps) -> Html {
             let mulch_min_units_str =
                 get_html_input_value("formMulchMinUnits", &document).unwrap_or("".to_string());
 
+            let Ok(mulch_min_units) = mulch_min_units_str.trim().parse::<u32>() else {
+                // Save is a plain button, so HTML `required` isn't enforced;
+                // guard against an empty/non-numeric "Min Bags".
+                gloo::dialogs::alert("Please enter a valid whole number for \"Min Bags\".");
+                disable_save_button(&document, false);
+                return;
+            };
+
             let mut products = BTreeMap::new();
             products.insert(
                 "bags".to_string(),
                 ProductInfo {
                     label: "Bags of Mulch".to_string(),
-                    min_units: mulch_min_units_str.parse::<u32>().unwrap(),
+                    min_units: mulch_min_units,
                     unit_price: to_money_str_no_symbol(Some(&mulch_base_per_bag_cost_str)),
                     price_breaks: (*price_breaks)
                         .iter()

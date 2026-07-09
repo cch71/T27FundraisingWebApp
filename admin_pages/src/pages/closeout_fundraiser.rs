@@ -16,7 +16,7 @@ fn calculate_new_dvars(
     svar_map: FrClosureStaticData,
 ) -> Option<FrCloseoutDynamicVars> {
     //use Decimal::dec;
-    let svars = svar_map.get("TROOP_TOTALS").unwrap();
+    let svars = svar_map.get("TROOP_TOTALS")?;
 
     info!(
         "BD: {}, MS: {}, SP: {} DN: {}",
@@ -25,46 +25,39 @@ fn calculate_new_dvars(
         &svars.amount_from_bags_to_spread_sales,
         &svars.amount_from_donations
     );
+    // Any of these can fail (overflow, or division by zero when no bags were
+    // sold or no delivery time has been logged yet). Returning None lets the
+    // caller skip the update instead of panicking the whole app.
     dvars.mulch_sales_gross = dvars
         .bank_deposited
         .checked_sub(svars.amount_from_bags_to_spread_sales)
         .and_then(|v| v.checked_sub(dvars.mulch_cost))
-        .and_then(|v| v.checked_sub(svars.amount_from_donations))
-        .unwrap();
+        .and_then(|v| v.checked_sub(svars.amount_from_donations))?;
     dvars.money_pool_for_troop = dvars
         .mulch_sales_gross
-        .checked_mul(Decimal::from_f32(0.20).unwrap())
-        .unwrap();
+        .checked_mul(Decimal::from_f32(0.20)?)?;
     dvars.money_pool_for_scouts_sub_pools = dvars
         .mulch_sales_gross
-        .checked_mul(Decimal::from_f32(0.80).unwrap())
-        .unwrap();
+        .checked_mul(Decimal::from_f32(0.80)?)?;
     //Distribute profits between selling/delivery buckets
     dvars.money_pool_for_scout_sales = dvars
         .money_pool_for_scouts_sub_pools
-        .checked_div(Decimal::from_f32(2.0).unwrap())
-        .unwrap();
+        .checked_div(Decimal::from_f32(2.0)?)?;
     dvars.money_pool_for_scout_delivery = dvars.money_pool_for_scout_sales;
     dvars.per_bag_avg_earnings = dvars
         .money_pool_for_scout_sales
-        .checked_div(svars.num_bags_sold.into())
-        .unwrap();
-    dvars.per_bag_cost = dvars
-        .mulch_cost
-        .checked_div(svars.num_bags_sold.into())
-        .unwrap();
+        .checked_div(svars.num_bags_sold.into())?;
+    dvars.per_bag_cost = dvars.mulch_cost.checked_div(svars.num_bags_sold.into())?;
     // Profits from bags should be equal to mulch_sales_gross.
     // When satisfied, this is true should just use mulch_sales_gross
     dvars.profits_from_bags = svars
         .amount_from_bags_sales
-        .checked_sub(dvars.mulch_cost)
-        .unwrap();
+        .checked_sub(dvars.mulch_cost)?;
     let delivery_time_in_minutes =
-        Decimal::from_f64(svars.delivery_time_total.as_secs_f64() / 60.0).unwrap();
+        Decimal::from_f64(svars.delivery_time_total.as_secs_f64() / 60.0)?;
     dvars.delivery_earnings_per_minute = dvars
         .money_pool_for_scout_delivery
-        .checked_div(delivery_time_in_minutes)
-        .unwrap();
+        .checked_div(delivery_time_in_minutes)?;
     Some(dvars)
 }
 ////////////////////////////////////////////////////////
@@ -85,7 +78,7 @@ fn calculate_per_scout_report(
     let spreading_price = get_products()
         .get("spreading")
         .and_then(|v| Decimal::from_str(&v.unit_price).ok())
-        .unwrap();
+        .unwrap_or(Decimal::ZERO);
 
     let mut scout_vals = svar_map
         .iter()
@@ -117,7 +110,9 @@ fn calculate_per_scout_report(
                     these_bags_percentage_of_the_overall_sales
                         .checked_mul(dvars.money_pool_for_scout_sales)
                 })
-                .unwrap();
+                // Zero when the troop made no bag profit (deposit == costs) or a
+                // scout sold no bags; avoids a divide-by-zero panic.
+                .unwrap_or(Decimal::ZERO);
             calc_allocations_from_bags_sold = calc_allocations_from_bags_sold
                 .checked_add(allocations_from_bags_sold)
                 .unwrap();
@@ -626,8 +621,15 @@ pub fn closeout_fundraiser_page() -> Html {
             let scout_report_list = scout_report_list.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 info!("on_release_funds_form_submission");
-                set_fr_closeout_data(&dvars.clone(), &scout_report_list).await;
-                gloo::dialogs::alert("Submitted");
+                match set_fr_closeout_data(&dvars.clone(), &scout_report_list).await {
+                    Ok(_) => gloo::dialogs::alert("Submitted"),
+                    Err(err) => {
+                        error!("Failed to release funds: {err:#?}");
+                        gloo::dialogs::alert(
+                            "Failed to release funds. Please check your connection and try again.",
+                        );
+                    }
+                }
             });
         })
     };
@@ -661,7 +663,12 @@ pub fn closeout_fundraiser_page() -> Html {
 
                     let mut input_value = input_elm.value();
                     input_value.retain(|c| c != '$' && c != ',');
-                    let new_val = parse_money_str_as_decimal(input_value.as_str()).unwrap();
+                    let Some(new_val) = parse_money_str_as_decimal(input_value.as_str()) else {
+                        // Non-numeric entry; ignore until it parses instead of
+                        // panicking the app.
+                        error!("Ignoring unparseable currency input: {input_value}");
+                        return;
+                    };
 
                     let new_dvars_opt = match input_elm.id().as_str() {
                         "formBankDeposited" => {
@@ -702,7 +709,16 @@ pub fn closeout_fundraiser_page() -> Html {
         use_effect(move || {
             wasm_bindgen_futures::spawn_local(async move {
                 info!("Downloading Static Fr Closure Data");
-                let resp = get_fundraiser_closure_static_data().await.unwrap();
+                let resp = match get_fundraiser_closure_static_data().await {
+                    Ok(resp) => resp,
+                    Err(err) => {
+                        error!("Failed to download closeout static data: {err:#?}");
+                        gloo::dialogs::alert(
+                            "Failed to load closeout data. Please check your connection and reload.",
+                        );
+                        return;
+                    }
+                };
                 info!("Data has been downloaded");
                 fr_closure_static_data.set(Some(resp));
                 if dvars.bank_deposited > Decimal::ZERO

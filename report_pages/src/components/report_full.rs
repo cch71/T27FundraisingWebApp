@@ -5,7 +5,7 @@ use crate::components::action_report_buttons::{
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
-use tracing::info;
+use tracing::{error, info};
 use web_sys::MouseEvent;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -69,7 +69,16 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                         } else {
                             Some(seller)
                         };
-                        let resp = get_full_report_data(seller.as_ref()).await.unwrap();
+                        let resp = match get_full_report_data(seller.as_ref()).await {
+                            Ok(resp) => resp,
+                            Err(err) => {
+                                error!("Failed to load full report: {err:#?}");
+                                gloo::dialogs::alert(
+                                    "Failed to load report. Please check your connection and try again.",
+                                );
+                                return;
+                            }
+                        };
                         info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });
@@ -142,15 +151,15 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                 let uid = v["ownerId"].as_str().unwrap();
                                 html!{
                                     <tr>
-                                        <td>{v["orderId"].as_str().unwrap()}</td>
-                                        <td>{v["customer"]["name"].as_str().unwrap()}</td>
-                                        <td>{v["customer"]["phone"].as_str().unwrap()}</td>
+                                        <td>{v["orderId"].as_str().unwrap_or("")}</td>
+                                        <td>{v["customer"]["name"].as_str().unwrap_or("")}</td>
+                                        <td>{v["customer"]["phone"].as_str().unwrap_or("")}</td>
                                         <td>{v["customer"]["email"].as_str().unwrap_or("")}</td>
-                                        <td>{v["customer"]["addr1"].as_str().unwrap()}</td>
+                                        <td>{v["customer"]["addr1"].as_str().unwrap_or("")}</td>
                                         <td>{v["customer"]["addr2"].as_str().unwrap_or("")}</td>
                                         <td>{v["customer"]["city"].as_str().unwrap_or("")}</td>
                                         <td>{v["customer"]["zipcode"].as_u64().map_or("".to_string(), |v|v.to_string())}</td>
-                                        <td>{v["customer"]["neighborhood"].as_str().unwrap()}</td>
+                                        <td>{v["customer"]["neighborhood"].as_str().unwrap_or("")}</td>
                                         <td data-deliveryid={delivery_id}>{delivery_date}</td>
                                         <td>{spreaders.clone()}</td>
                                         <td>{&spreading.to_string()}</td>
@@ -165,7 +174,7 @@ pub(crate) fn report_full_view(props: &FullReportViewProps) -> Html {
                                         <td>{v["isVerified"].as_bool().unwrap_or(false).to_string()}</td>
                                         <td>
                                             <ReportActionButtons
-                                                orderid={v["orderId"].as_str().unwrap().to_string()}
+                                                orderid={v["orderId"].as_str().unwrap_or("").to_string()}
                                                 showspreading={enable_spreading_button}
                                                 isreadonly={is_readonly}
                                                 ondeleteorder={on_delete_order.clone()}

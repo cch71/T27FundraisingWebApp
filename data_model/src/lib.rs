@@ -75,7 +75,7 @@ pub fn save_to_active_order() {
     order.customer.addr2 = get_html_input_value("formAddr2", &document);
     order.customer.city = get_html_input_value("formCity", &document);
     order.customer.zipcode =
-        get_html_input_value("formZipcode", &document).map(|v| v.parse::<u32>().unwrap());
+        get_html_input_value("formZipcode", &document).and_then(|v| v.trim().parse::<u32>().ok());
     order.customer.neighborhood = Some(
         document
             .get_element_by_id("formNeighborhood")

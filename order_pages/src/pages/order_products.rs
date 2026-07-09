@@ -132,7 +132,11 @@ pub fn order_products() -> Html {
     let history = use_navigator().unwrap();
 
     if !is_active_order() {
+        // No active order (e.g. page was reloaded): redirect home and stop
+        // rendering. `history.push` does not halt execution, so we must return
+        // before touching the (now `None`) active order.
         history.push(&AppRoutes::Home);
+        return html! {};
     }
     let order = get_active_order().unwrap();
     let is_order_readonly = order.is_readonly();

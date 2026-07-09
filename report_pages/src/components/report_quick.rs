@@ -5,7 +5,7 @@ use crate::components::action_report_buttons::{
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
-use tracing::info;
+use tracing::{error, info};
 use web_sys::MouseEvent;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -69,7 +69,16 @@ pub(crate) fn report_quick_view(props: &QuickReportViewProps) -> Html {
                         } else {
                             Some(seller)
                         };
-                        let resp = get_quick_report_data(seller.as_ref()).await.unwrap();
+                        let resp = match get_quick_report_data(seller.as_ref()).await {
+                            Ok(resp) => resp,
+                            Err(err) => {
+                                error!("Failed to load quick report: {err:#?}");
+                                gloo::dialogs::alert(
+                                    "Failed to load report. Please check your connection and try again.",
+                                );
+                                return;
+                            }
+                        };
                         info!("Report Data has been downloaded");
                         report_state.set(ReportViewState::ReportHtmlGenerated(resp));
                     });

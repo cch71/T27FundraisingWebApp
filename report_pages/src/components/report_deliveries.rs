@@ -1,7 +1,7 @@
 use crate::components::report_loading_spinny::*;
 use data_model::*;
 use js::datatable::*;
-use tracing::info;
+use tracing::{error, info};
 use web_sys::js_sys::encode_uri;
 use yew::prelude::*;
 
@@ -19,7 +19,16 @@ pub(crate) fn report_deliveries_view() -> Html {
                 ReportViewState::IsLoading => {
                     wasm_bindgen_futures::spawn_local(async move {
                         info!("Downloading Deliveries Report View Data");
-                        let mut resp = get_deliveries_report_data().await.unwrap();
+                        let mut resp = match get_deliveries_report_data().await {
+                            Ok(resp) => resp,
+                            Err(err) => {
+                                error!("Failed to load deliveries report: {err:#?}");
+                                gloo::dialogs::alert(
+                                    "Failed to load report. Please check your connection and try again.",
+                                );
+                                return;
+                            }
+                        };
                         info!("Report Data has been downloaded");
                         resp.sort_by(|a, b| {
                             let a_delivery_id = a["deliveryId"].as_u64().unwrap_or(0);

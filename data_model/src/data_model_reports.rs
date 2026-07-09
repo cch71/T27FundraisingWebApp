@@ -380,10 +380,10 @@ pub async fn get_distribution_points_report_data()
                 })
                 .filter(|(_v, num_bags_sold)| *num_bags_sold != 0)
                 .for_each(|(v, num_bags_sold)| {
-                    let delivery_id = v["deliveryId"].as_u64().unwrap();
+                    let delivery_id = v["deliveryId"].as_u64().unwrap_or(0);
                     delivery_id_map.entry(delivery_id).or_default();
                     let dist_point_map = delivery_id_map.get_mut(&delivery_id).unwrap();
-                    let neighborhood = v["customer"]["neighborhood"].as_str().unwrap();
+                    let neighborhood = v["customer"]["neighborhood"].as_str().unwrap_or("");
                     let dist_point = get_neighborhood(neighborhood)
                         .map_or("".to_string(), |v| v.distribution_point.clone());
                     match dist_point_map.get_mut(&dist_point) {
