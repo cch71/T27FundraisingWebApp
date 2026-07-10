@@ -9,7 +9,6 @@ edition = "2024"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-js = { path = "../js" }
 data_model = { path = "../data_model" }
 
 tracing = { workspace = true }
