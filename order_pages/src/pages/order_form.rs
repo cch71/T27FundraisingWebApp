@@ -1,5 +1,7 @@
 use crate::components::delivery_selector::DeliveryDateSelector;
+use crate::{OrderRoutes, save_to_active_order, submit_active_order};
 use data_model::*;
+use js::nav::navigate_to;
 use rust_decimal::prelude::*;
 use rusty_money::{Money, iso};
 use tracing::{error, info};
@@ -215,9 +217,9 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
             evt.stop_propagation();
             info!("On Add/Edit/View Called");
             if props_label == "Donation" {
-                history.push(&AppRoutes::OrderDonations);
+                history.push(&OrderRoutes::OrderDonations);
             } else {
-                history.push(&AppRoutes::OrderProducts);
+                history.push(&OrderRoutes::OrderProducts);
             }
         })
     };
@@ -269,11 +271,10 @@ pub fn order_cost_item(props: &OrderCostItemProps) -> Html {
 
 #[component(HoodSelector)]
 pub fn hood_selector() -> Html {
-    let history = use_navigator().unwrap();
     if !is_active_order() {
         // No active order (e.g. page reload): redirect and stop rendering
         // before dereferencing the (now `None`) active order.
-        history.push(&AppRoutes::Home);
+        navigate_to("/");
         return html! {};
     }
 
@@ -362,10 +363,8 @@ pub fn hood_selector() -> Html {
 
 #[component(OrderFormFields)]
 pub fn order_form_fields() -> Html {
-    let history = use_navigator().unwrap();
-
     if !is_active_order() {
-        history.push(&AppRoutes::Home);
+        navigate_to("/");
         return html! {<div/>};
     }
 
@@ -436,14 +435,13 @@ pub fn order_form_fields() -> Html {
     };
 
     let on_form_submission = {
-        let history = history.clone();
         let on_form_submitted = move |_was_submitted_ok: bool| {
             let was_from_db = is_active_order_from_db();
             reset_active_order();
             if was_from_db {
-                history.push(&AppRoutes::Reports);
+                navigate_to("/reports");
             } else {
-                history.push(&AppRoutes::Home);
+                navigate_to("/");
             }
         };
         Callback::from(move |evt: SubmitEvent| {
@@ -482,7 +480,6 @@ pub fn order_form_fields() -> Html {
     };
 
     let on_cancel_order = {
-        let history = history.clone();
         Callback::from(move |evt: MouseEvent| {
             evt.prevent_default();
             evt.stop_propagation();
@@ -490,9 +487,9 @@ pub fn order_form_fields() -> Html {
             let was_from_db = is_active_order_from_db();
             reset_active_order();
             if was_from_db {
-                history.push(&AppRoutes::Reports);
+                navigate_to("/reports");
             } else {
-                history.push(&AppRoutes::Home);
+                navigate_to("/");
             }
         })
     };

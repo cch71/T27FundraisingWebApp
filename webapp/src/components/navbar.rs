@@ -1,7 +1,6 @@
-use data_model::AppRoutes;
+use js::nav::navigate_to;
 use web_sys::MouseEvent;
 use yew::prelude::*;
-use yew_router::prelude::*;
 
 #[derive(Properties, PartialEq)]
 pub(crate) struct AppNavProps {
@@ -13,9 +12,18 @@ pub(crate) struct AppNavProps {
     pub(crate) isactiveorder: bool,
 }
 
+/// Navigation links go through `navigate_to` rather than yew-router `Link`s:
+/// it wakes both the shell router and the router inside whichever page
+/// module is currently mounted (a `Link` only notifies the shell's).
+fn nav_click(path: &'static str) -> Callback<MouseEvent> {
+    Callback::from(move |evt: MouseEvent| {
+        evt.prevent_default();
+        navigate_to(path);
+    })
+}
+
 #[component(AppNav)]
 pub(crate) fn app_nav(props: &AppNavProps) -> Html {
-    let _ = use_navigator().unwrap(); // This forces re-render on path changes
     let userlabel = if props.username != props.userid {
         format!("{} ({})", props.username, props.userid)
     } else {
@@ -38,21 +46,21 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html {
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::Home} >
+                        <a class="nav-link" href="/" onclick={nav_click("/")}>
                             {"Home"}
-                        </Link<AppRoutes>>
+                        </a>
                     </li>
                     if props.isactiveorder {
                         <li class="nav-item">
-                            <Link<AppRoutes> classes="nav-link" to={AppRoutes::OrderForm} >
+                            <a class="nav-link" href="/order" onclick={nav_click("/order")}>
                                 {"Order"}
-                            </Link<AppRoutes>>
+                            </a>
                         </li>
                     }
                     <li class="nav-item">
-                        <Link<AppRoutes> classes="nav-link" to={AppRoutes::Reports} >
+                        <a class="nav-link" href="/reports" onclick={nav_click("/reports")}>
                             {"Reports"}
-                        </Link<AppRoutes>>
+                        </a>
                     </li>
                 </ul>
                 <span class="navbar-nav nav-item dropdown">
@@ -62,15 +70,15 @@ pub(crate) fn app_nav(props: &AppNavProps) -> Html {
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         if props.isadmin {
-                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::Timecards} >
+                            <a class="dropdown-item" href="/timecards" onclick={nav_click("/timecards")}>
                                 {"Timecards"}
-                            </Link<AppRoutes>>
-                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FundraiserCloseout} >
+                            </a>
+                            <a class="dropdown-item" href="/frcloseout" onclick={nav_click("/frcloseout")}>
                                 {"Closeout Fundraiser"}
-                            </Link<AppRoutes>>
-                            <Link<AppRoutes> classes="dropdown-item" to={AppRoutes::FrConfigEditor} >
+                            </a>
+                            <a class="dropdown-item" href="/frcconfig" onclick={nav_click("/frcconfig")}>
                                 {"Configure Fundraiser"}
-                            </Link<AppRoutes>>
+                            </a>
                         }
                         <a class="dropdown-item" onclick={props.onreportissue.clone()} href="#" data-bs-toggle="modal">
                             {"Report Issue"}

@@ -1,5 +1,5 @@
 use crate::components::report_loading_spinny::*;
-use data_model::*;
+use crate::report_data::*;
 use js::leaflet::*;
 use serde::{Deserialize, Serialize};
 use tracing::{error, info};

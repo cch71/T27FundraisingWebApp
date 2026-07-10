@@ -27,6 +27,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "yew",
+ "yew-router",
 ]
 
 [[package]]
@@ -291,11 +292,12 @@ dependencies = [
  "serde",
  "serde_json",
  "tracing",
+ "tracing-subscriber",
+ "tracing-web",
  "uuid",
  "wasm-bindgen",
  "web-sys",
  "yew",
- "yew-router",
 ]
 
 [[package]]
@@ -1293,7 +1295,6 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "yew",
- "yew-router",
 ]
 
 [[package]]
@@ -1506,13 +1507,9 @@ dependencies = [
 name = "t27-fundraiser-webapp"
 version = "0.1.0"
 dependencies = [
- "admin_pages",
  "data_model",
  "gloo 0.12.0",
  "js",
- "order_pages",
- "report_pages",
- "timecard_pages",
  "tracing",
  "tracing-subscriber",
  "tracing-web",

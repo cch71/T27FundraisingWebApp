@@ -1,23 +1,21 @@
-use data_model::*;
+use data_model::create_new_active_order;
+use js::nav::navigate_to;
 use tracing::info;
 use yew::prelude::*;
-use yew_router::prelude::*;
 
 #[derive(Properties, PartialEq)]
-pub struct AddNewOrderButtonProps {
-    pub userid: String,
+pub(crate) struct AddNewOrderButtonProps {
+    pub(crate) userid: String,
 }
 
 #[component(AddNewOrderButton)]
-pub fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html {
-    let history = use_navigator().unwrap();
+pub(crate) fn add_new_order_button(props: &AddNewOrderButtonProps) -> Html {
     let on_add_new_order = {
-        let history = history.clone();
         let userid = props.userid.clone();
         move |_| {
             info!("Starting process to add new order");
             create_new_active_order(&userid);
-            history.push(&AppRoutes::OrderForm);
+            navigate_to("/order");
         }
     };
 

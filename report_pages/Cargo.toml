@@ -3,10 +3,14 @@ name = "report_pages"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+# cdylib: built standalone as a dynamically loaded wasm module (see build_modules.sh)
+# rlib: keeps `cargo build`/`cargo check` of the workspace working
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 tracing = { workspace = true }
 yew = { workspace = true }
-yew-router = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 web-sys = { workspace = true }

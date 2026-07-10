@@ -14,3 +14,10 @@ watch = [
 	"report_pages",
 	"timecard_pages"
 ]
+
+# Builds the dynamically loaded page-module wasm binaries into
+# <staging>/modules/ so they ship alongside the shell in dist.
+[[hooks]]
+stage = "post_build"
+command = "bash"
+command_arguments = ["build_modules.sh"]

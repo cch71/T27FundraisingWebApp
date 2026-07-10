@@ -4,3 +4,5 @@ pub mod datatable;
 pub mod geolocate;
 pub mod google_charts;
 pub mod leaflet;
+pub mod module_loader;
+pub mod nav;

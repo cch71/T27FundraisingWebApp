@@ -3,6 +3,11 @@ name = "order_pages"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+# cdylib: built standalone as a dynamically loaded wasm module (see build_modules.sh)
+# rlib: keeps `cargo build`/`cargo check` of the workspace working
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 js = { path = "../js" }
 data_model = { path = "../data_model" }

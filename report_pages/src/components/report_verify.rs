@@ -2,12 +2,12 @@ use crate::components::action_report_buttons::{
     ReportActionButtons, on_delete_order_from_rpt, on_view_or_edit_from_rpt,
 };
 use crate::components::report_loading_spinny::*;
+use crate::report_data::*;
 use data_model::*;
 use js::datatable::*;
 use tracing::info;
 use web_sys::MouseEvent;
 use yew::prelude::*;
-use yew_router::prelude::*;
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -18,7 +18,6 @@ pub(crate) struct OrderVerificationViewProps {
 #[component(OrderVerificationView)]
 pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Html {
     let report_state = use_state(|| ReportViewState::IsLoading);
-    let history = use_navigator().unwrap();
     // let is_fr_locked = is_fundraiser_locked();
     let datatable: std::rc::Rc<std::cell::RefCell<Option<DataTable>>> = use_mut_ref(|| None);
     let current_view_seller = use_mut_ref(|| props.seller.clone());
@@ -42,9 +41,8 @@ pub(crate) fn order_verification_view(props: &OrderVerificationViewProps) -> Htm
         })
     };
     let on_view_or_edit_order = {
-        let history = history.clone();
         move |evt: MouseEvent| {
-            on_view_or_edit_from_rpt(evt, history.clone());
+            on_view_or_edit_from_rpt(evt);
         }
     };
 

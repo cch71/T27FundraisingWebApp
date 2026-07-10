@@ -1,14 +1,14 @@
 pub(crate) use crate::components::delete_report_order_dlg::*;
 pub(crate) use crate::components::report_spreaders_dlg::*;
 use data_model::*;
+use js::nav::navigate_to;
 use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlElement, MouseEvent};
 use yew::prelude::*;
-use yew_router::prelude::*;
 
 /////////////////////////////////////////////////
-pub(crate) fn on_view_or_edit_from_rpt(evt: MouseEvent, history: Navigator) {
+pub(crate) fn on_view_or_edit_from_rpt(evt: MouseEvent) {
     evt.prevent_default();
     evt.stop_propagation();
     let btn_elm = evt
@@ -33,7 +33,7 @@ pub(crate) fn on_view_or_edit_from_rpt(evt: MouseEvent, history: Navigator) {
         // form finds no active order and immediately bounces back to Home,
         // losing the user's place in Reports.
         match load_active_order_from_db(&order_id).await {
-            Ok(_) => history.push(&AppRoutes::OrderForm),
+            Ok(_) => navigate_to("/order"),
             Err(err) => {
                 gloo::dialogs::alert(&format!("Failed to load order: {order_id}: Err: {err:#?}"))
             }

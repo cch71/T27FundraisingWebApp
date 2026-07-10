@@ -11,7 +11,7 @@ static GQLURL: LazyLock<String> = LazyLock::new(|| crate::CLOUD_API_URL.to_strin
 /// the sequences emitted afterwards. Prevents both query corruption (a stray
 /// quote or newline breaking the mutation) and GraphQL injection via free-text
 /// fields.
-pub(super) fn gql_escape(value: &str) -> String {
+pub fn gql_escape(value: &str) -> String {
     value
         .replace('\\', "\\\\")
         .replace('"', "\\\"")
@@ -21,7 +21,7 @@ pub(super) fn gql_escape(value: &str) -> String {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(super) struct GraphQlReq {
+pub struct GraphQlReq {
     pub query: String,
 }
 impl GraphQlReq {
@@ -32,7 +32,7 @@ impl GraphQlReq {
     }
 }
 
-pub(super) async fn make_gql_request<T>(req: &GraphQlReq) -> Result<T, Box<dyn std::error::Error>>
+pub async fn make_gql_request<T>(req: &GraphQlReq) -> Result<T, Box<dyn std::error::Error>>
 where
     T: serde::de::DeserializeOwned,
 {

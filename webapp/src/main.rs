@@ -6,28 +6,51 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 use data_model::{
-    AppRoutes, NUM_TOP_SELLERS_TO_GET, are_sales_still_allowed, clear_local_storage,
-    clear_session_storage, get_active_user, get_active_user_async, get_summary_report_data,
-    is_active_order, load_config, save_to_active_order,
+    NUM_TOP_SELLERS_TO_GET, are_sales_still_allowed, clear_local_storage, clear_session_storage,
+    get_active_user, get_active_user_async, get_summary_report_data, is_active_order, load_config,
 };
 use js::auth_utils::{is_authenticated, login, logout};
 
 mod components;
 use components::{
+    add_new_order_button::AddNewOrderButton,
     issue_report_dlg::{ReportIssueDlg, show_report_issue_dlg},
+    module_host::ModuleHost,
     navbar::AppNav,
 };
 
 mod pages;
 use pages::home::Home;
 
-use admin_pages::pages::{CloseoutFundraiser, FrConfigEditor};
-use order_pages::{
-    components::AddNewOrderButton,
-    pages::{OrderDonations, OrderForm, OrderProducts},
-};
-use report_pages::pages::Reports;
-use timecard_pages::Timecards;
+/////////////////////////////////////////////////
+// Route Logic
+//
+// The shell owns the full route table but only renders the home page itself.
+// Every other route is handled by a dynamically loaded wasm page module
+// hosted in a ModuleHost; the module's internal router (same wasm instance)
+// resolves the specific page from the URL.
+#[derive(Clone, Routable, PartialEq, Debug)]
+pub enum AppRoutes {
+    #[at("/")]
+    Home,
+    #[at("/order")]
+    OrderForm,
+    #[at("/orderproducts")]
+    OrderProducts,
+    #[at("/orderdonations")]
+    OrderDonations,
+    #[at("/reports")]
+    Reports,
+    #[at("/timecards")]
+    Timecards,
+    #[at("/frcloseout")]
+    FundraiserCloseout,
+    #[at("/frcconfig")]
+    FrConfigEditor,
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+}
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -54,9 +77,6 @@ pub fn app_footer(props: &AppFooterProps) -> Html {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-
 #[component]
 #[instrument]
 fn App() -> Html {
@@ -66,26 +86,21 @@ fn App() -> Html {
     let route_switch = {
         let is_order_active = is_order_active.clone();
         move |route: AppRoutes| -> Html {
-            // This is kind of a hack to save the order form before we switch away
-            let document = web_sys::window().unwrap().document().unwrap();
-            if document.get_element_by_id("newOrEditOrderForm").is_some() {
-                if is_active_order() {
-                    save_to_active_order();
-                    is_order_active.set(true);
-                } else {
-                    is_order_active.set(false);
-                }
-            }
+            // Keep the navbar's active-order indicator in sync. The order
+            // module maintains the active order in sessionStorage, so this
+            // stays accurate across module boundaries.
+            is_order_active.set(is_active_order());
 
             match route {
                 AppRoutes::Home => html! {<Home/>},
-                AppRoutes::OrderForm => html! {<OrderForm/>},
-                AppRoutes::OrderProducts => html! {<OrderProducts/>},
-                AppRoutes::OrderDonations => html! {<OrderDonations/>},
-                AppRoutes::Reports => html! {<Reports/>},
-                AppRoutes::Timecards => html! {<Timecards/>},
-                AppRoutes::FundraiserCloseout => html! {<CloseoutFundraiser/>},
-                AppRoutes::FrConfigEditor => html! {<FrConfigEditor/>},
+                AppRoutes::OrderForm | AppRoutes::OrderProducts | AppRoutes::OrderDonations => {
+                    html! {<ModuleHost module="orders"/>}
+                }
+                AppRoutes::Reports => html! {<ModuleHost module="reports"/>},
+                AppRoutes::Timecards => html! {<ModuleHost module="timecards"/>},
+                AppRoutes::FundraiserCloseout | AppRoutes::FrConfigEditor => {
+                    html! {<ModuleHost module="admin"/>}
+                }
                 AppRoutes::NotFound => html! { <h1>{ "404" }</h1> },
             }
         }
@@ -104,7 +119,8 @@ fn App() -> Html {
                 info!("User has asked to logout");
                 // We need to clear local storage so a logon/logoff can force a reload
                 clear_local_storage();
-                // We need to delete report settings in case admin is on a view the user can't support
+                // We need to delete session state (report settings, active order, ...)
+                // in case admin is on a view the user can't support
                 clear_session_storage();
                 logout().await;
             });

@@ -1,4 +1,6 @@
+use crate::OrderRoutes;
 use data_model::*;
+use js::nav::navigate_to;
 use tracing::info;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlButtonElement, HtmlInputElement, InputEvent, MouseEvent, SubmitEvent};
@@ -52,7 +54,7 @@ pub fn order_donations() -> Html {
         // No active order (e.g. page was reloaded): redirect home and stop
         // rendering. `history.push` does not halt execution, so we must return
         // before touching the (now `None`) active order.
-        history.push(&AppRoutes::Home);
+        navigate_to("/");
         return html! {};
     }
     let order = get_active_order().unwrap();
@@ -75,7 +77,7 @@ pub fn order_donations() -> Html {
                 updated_order.clear_donations();
             }
             update_active_order(updated_order).unwrap();
-            history.push(&AppRoutes::OrderForm);
+            history.push(&OrderRoutes::OrderForm);
         }
     };
 
@@ -85,7 +87,7 @@ pub fn order_donations() -> Html {
             evt.prevent_default();
             evt.stop_propagation();
             //info!("on_cancel_item");
-            history.push(&AppRoutes::OrderForm);
+            history.push(&OrderRoutes::OrderForm);
         })
     };
 

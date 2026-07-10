@@ -71,6 +71,30 @@ Main categories of functionality:
   - Delivery workers time tracking
   - Allocation adjustment
 
+### App Architecture
+
+The app is split into a small shell binary and four page modules, each its
+own wasm binary that is downloaded and mounted on first visit:
+
+- **Shell** (`webapp`): authentication, navigation, and the home page. This
+  is the only wasm the browser loads up front.
+- **Modules**: `order_pages` (orders), `report_pages` (reports),
+  `admin_pages` (admin), and `timecard_pages` (timecards) are built
+  standalone by `build_modules.sh` (run automatically as a Trunk
+  `post_build` hook) into `dist/modules/<name>/` and loaded on demand by
+  `js/src/js/module_loader.js`. Once loaded, a module's wasm instance is
+  kept for the life of the page so revisiting it is instant.
+
+Because each module is a separate wasm instance, cross-module state is kept
+in web storage rather than wasm memory: the active order lives in
+sessionStorage (`data_model`), which is how Reports hands an order to the
+Order form for editing. Cross-module navigation goes through
+`js/src/js/nav.js`, which dispatches a synthetic `popstate` so the shell
+router and the mounted module's router both react; yew-router `Link`s are
+only used for navigation within a module. Code shared by all binaries
+(config, users, order/report data access) stays in `data_model`; code used
+by a single module lives in that module's crate.
+
 ### Why Rust
 
 Having done web development for many years I have come to swear by Typescript

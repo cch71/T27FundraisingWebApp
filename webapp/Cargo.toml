@@ -6,10 +6,6 @@ edition = "2024"
 [dependencies]
 js = { path = "../js" }
 data_model = { path = "../data_model" }
-timecard_pages = { path = "../timecard_pages" }
-order_pages = { path = "../order_pages" }
-report_pages = { path = "../report_pages" }
-admin_pages = { path = "../admin_pages" }
 
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["fmt"] }

@@ -1,29 +1,34 @@
 use super::{
     get_active_user,
-    gql_utils::{GraphQlReq, gql_escape, make_gql_request},
+    gql_utils::{GraphQlReq, make_gql_request},
     is_valid_delivery_id,
 };
 use crate::currency_utils::*;
+use gloo::storage::{SessionStorage, Storage};
 use regex::Regex;
 use rust_decimal::prelude::*;
 use rusty_money::{Money, iso};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::{LazyLock, RwLock};
+use std::sync::LazyLock;
 use tracing::{error, info};
 
-static ACTIVE_ORDER: LazyLock<RwLock<Option<ActiveOrderState>>> =
-    LazyLock::new(|| RwLock::new(None));
+// The active order lives in sessionStorage rather than wasm memory so it is
+// shared between the shell and the dynamically loaded page modules (each is
+// a separate wasm instance): reports stages an order for editing here and
+// the order module picks it up.
+const ACTIVE_ORDER_STORAGE_KEY: &str = "ActiveOrderState";
+
 static CHECKNUM_RE_DELIMETERS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[ ,;.]+").unwrap());
 
-#[derive(Default, Clone, PartialEq, Debug)]
+#[derive(Default, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ActiveOrderState {
-    order: MulchOrder,
-    is_new_order: bool,
-    is_dirty: bool,
+    pub order: MulchOrder,
+    pub is_new_order: bool,
+    pub is_dirty: bool,
 }
 
-#[derive(Default, Clone, PartialEq, Debug)]
+#[derive(Default, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct MulchOrder {
     pub order_id: String,
     pub order_owner_id: String,
@@ -44,7 +49,7 @@ pub struct MulchOrder {
     pub year_ordered: Option<String>,
 }
 
-#[derive(Default, Clone, PartialEq, Debug)]
+#[derive(Default, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct PurchasedItem {
     pub num_sold: u32,
     pub amount_charged: String,
@@ -225,208 +230,48 @@ pub fn is_order_from_report_data_readonly(j_order: &serde_json::Value) -> bool {
     false
 }
 
+pub fn get_active_order_state() -> Option<ActiveOrderState> {
+    SessionStorage::get(ACTIVE_ORDER_STORAGE_KEY).ok()
+}
+
+fn set_active_order_state(state: &ActiveOrderState) {
+    if let Err(err) = SessionStorage::set(ACTIVE_ORDER_STORAGE_KEY, state) {
+        error!("Failed saving active order to session storage: {err:#?}");
+    }
+}
+
 pub fn create_new_active_order(owner_id: &str) {
-    let new_active_order_state = ActiveOrderState {
+    set_active_order_state(&ActiveOrderState {
         order: MulchOrder::new(owner_id),
         is_new_order: true,
         is_dirty: true,
-    };
-
-    *ACTIVE_ORDER.write().unwrap() = Some(new_active_order_state);
+    });
 }
 
 pub fn is_active_order() -> bool {
-    ACTIVE_ORDER.read().unwrap().is_some()
+    get_active_order_state().is_some()
 }
 
 pub fn is_active_order_from_db() -> bool {
-    ACTIVE_ORDER
-        .read()
-        .unwrap()
-        .as_ref()
-        .is_none_or(|v| !v.is_new_order)
+    get_active_order_state().is_none_or(|v| !v.is_new_order)
 }
 
 pub fn reset_active_order() {
-    *ACTIVE_ORDER.write().unwrap() = None;
+    SessionStorage::delete(ACTIVE_ORDER_STORAGE_KEY);
 }
 
 pub fn get_active_order() -> Option<MulchOrder> {
-    ACTIVE_ORDER
-        .read()
-        .unwrap()
-        .as_ref()
-        .map(|v| v.order.clone())
+    get_active_order_state().map(|v| v.order)
 }
 
 pub fn update_active_order(order: MulchOrder) -> Result<(), Box<dyn std::error::Error>> {
-    let mut order_state_opt = ACTIVE_ORDER.write()?;
-    let order_state = order_state_opt.as_mut().unwrap();
+    let mut order_state = get_active_order_state().ok_or("No active order to update")?;
     if !order_state.is_dirty && order_state.order != order {
         order_state.is_dirty = true;
     }
     order_state.order = order;
+    set_active_order_state(&order_state);
     Ok(())
-}
-
-fn gen_submit_active_order_req_str() -> Result<String, Box<dyn std::error::Error>> {
-    let order_state_opt = ACTIVE_ORDER.write()?;
-    let order_state = order_state_opt.as_ref().unwrap();
-    if !order_state.is_dirty {
-        info!("Order doesn't need updating so not submitting");
-        return Ok("".to_string());
-    }
-
-    let order = &order_state.order;
-
-    let mut query = String::with_capacity(1024 * 32);
-    query.push_str("mutation {\n");
-    if order_state.is_new_order {
-        query.push_str("\t createMulchOrder(order: {\n");
-    } else {
-        query.push_str("\t updateMulchOrder(order: {\n");
-    }
-
-    query.push_str(&format!(
-        "\t\t orderId: \"{}\"\n",
-        gql_escape(order.order_id.trim())
-    ));
-    query.push_str(&format!(
-        "\t\t ownerId: \"{}\"\n",
-        gql_escape(order.order_owner_id.trim())
-    ));
-
-    if let Some(value) = order.comments.as_ref() {
-        query.push_str(&format!("\t\t comments: \"{}\"\n", gql_escape(value.trim())));
-    }
-
-    if let Some(value) = order.special_instructions.as_ref() {
-        query.push_str(&format!(
-            "\t\t specialInstructions: \"{}\"\n",
-            gql_escape(value.trim())
-        ));
-    }
-
-    if let Some(value) = order.is_verified.as_ref() {
-        query.push_str(&format!("\t\t isVerified: {value}\n"));
-    }
-
-    if let Some(value) = order.amount_total_collected.as_ref() {
-        query.push_str(&format!(
-            "\t\t amountTotalCollected: \"{}\"\n",
-            value.trim()
-        ));
-    } else {
-        if !order.will_collect_money_later.unwrap_or(false) {
-            error!("Total collected is zero. will collect later should be true");
-        }
-        query.push_str("\t\t willCollectMoneyLater: true\n");
-    }
-
-    if let Some(value) = order.amount_from_donations.as_ref() {
-        query.push_str(&format!("\t\t amountFromDonations: \"{}\"\n", value.trim()));
-    }
-
-    if let Some(value) = order.amount_from_purchases.as_ref() {
-        query.push_str(&format!("\t\t amountFromPurchases: \"{}\"\n", value.trim()));
-
-        let mut purchases = Vec::new();
-        for (product_id, info) in order.purchases.as_ref().unwrap() {
-            let mut purchase_str = String::new();
-            purchase_str.push_str("\t\t\t {\n");
-            purchase_str.push_str(&format!("\t\t\t\t productId: \"{}\"\n", product_id.trim()));
-            purchase_str.push_str(&format!("\t\t\t\t numSold: {}\n", info.num_sold));
-            purchase_str.push_str(&format!(
-                "\t\t\t\t amountCharged: \"{}\"\n",
-                info.amount_charged.trim()
-            ));
-            purchase_str.push_str("\t\t\t }\n");
-            purchases.push(purchase_str);
-        }
-
-        query.push_str("\t\t purchases: [\n");
-        query.push_str(&purchases.join(","));
-        query.push_str("\t\t ]\n");
-    }
-
-    if let Some(value) = order.amount_cash_collected.as_ref() {
-        query.push_str(&format!(
-            "\t\t amountFromCashCollected: \"{}\"\n",
-            value.trim()
-        ));
-    }
-
-    if let Some(value) = order.amount_checks_collected.as_ref() {
-        query.push_str(&format!(
-            "\t\t amountFromChecksCollected: \"{}\"\n",
-            value.trim()
-        ));
-        query.push_str(&format!(
-            "\t\t checkNumbers: \"{}\"\n",
-            gql_escape(order.check_numbers.as_ref().unwrap().trim())
-        ));
-    }
-
-    query.push_str(&format!("\t\t deliveryId: {}\n", order.delivery_id));
-
-    query.push_str("\t\t customer: {\n");
-    query.push_str(&format!(
-        "\t\t\t name: \"{}\"\n",
-        gql_escape(order.customer.name.trim())
-    ));
-    query.push_str(&format!(
-        "\t\t\t addr1: \"{}\"\n",
-        gql_escape(order.customer.addr1.trim())
-    ));
-    if let Some(value) = order.customer.addr2.as_ref() {
-        query.push_str(&format!("\t\t\t addr2: \"{}\"\n", gql_escape(value.trim())));
-    }
-    if let Some(value) = order.customer.city.as_ref() {
-        query.push_str(&format!("\t\t\t city: \"{}\"\n", gql_escape(value.trim())));
-    }
-    if let Some(value) = order.customer.zipcode.as_ref() {
-        query.push_str(&format!("\t\t\t zipcode: {value}\n"));
-    }
-    query.push_str(&format!(
-        "\t\t\t phone: \"{}\"\n",
-        gql_escape(order.customer.phone.trim())
-    ));
-    if let Some(value) = order.customer.email.as_ref() {
-        query.push_str(&format!("\t\t email: \"{}\"\n", gql_escape(value.trim())));
-    }
-    query.push_str(&format!(
-        "\t\t\t neighborhood: \"{}\"\n",
-        gql_escape(
-            order
-                .customer
-                .neighborhood
-                .as_ref()
-                .unwrap_or(&"".to_string())
-                .trim()
-        )
-    ));
-    query.push_str("\t\t }\n");
-
-    query.push_str("\t})\n");
-    query.push('}');
-    Ok(query)
-}
-
-pub async fn submit_active_order() -> Result<(), Box<dyn std::error::Error>> {
-    let query = gen_submit_active_order_req_str()?;
-
-    if query.is_empty() {
-        // If a query wasn't generated, then we don't need to submit it
-        return Ok(());
-    }
-
-    info!("Submitting Request:\n{}", &query);
-
-    //Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "TODO Issue")))
-    let req = GraphQlReq::new(query);
-    make_gql_request::<serde_json::Value>(&req)
-        .await
-        .map(|_| ())
 }
 
 static DELETE_ORDER_GQL: &str = r"
@@ -571,7 +416,7 @@ pub async fn load_active_order_from_db(order_id: &str) -> Result<(), Box<dyn std
         is_dirty: false,
     };
 
-    *ACTIVE_ORDER.write().unwrap() = Some(new_active_order_state);
+    set_active_order_state(&new_active_order_state);
     Ok(())
 }
 

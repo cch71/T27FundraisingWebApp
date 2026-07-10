@@ -4,6 +4,7 @@ use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlSelectElement};
 use yew::prelude::*;
 
+use crate::report_data::*;
 use data_model::*;
 
 use crate::components::delete_report_order_dlg::DeleteOrderDlg;
